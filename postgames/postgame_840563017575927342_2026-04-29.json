@@ -1,19 +1,17 @@
 {
-  "battleid": "578707636157001893",
+  "battleid": "840563017575927342",
   "date": "2026-04-29",
-  "game_start_time": "2026-04-29T07:29:57.919Z",
-  "game_end_time": "2026-04-29T07:38:15.533Z",
-  "game_duration": "14:31",
-  "camp1_tricode": "ONIC",
-  "camp2_tricode": "FLCN",
-  "camp1": {
-    "tricode": "ONIC",
+  "game_start_time": "2026-04-29T05:35:21.695Z",
+  "game_end_time": "2026-04-29T05:35:21.700Z",
+  "game_duration": "16:19",
+  "home": {
+    "tricode": "FLCN",
+    "camp_code": "FLCN",
+    "camp_name": "TEAM FALCONS",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
-          "player_name": "Yrvee x Abe",
+          "player_name": "Flap",
           "role": "EXP LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -25,9 +23,7 @@
       },
       {
         "player2": {
-          "slot": "slot9",
-          "name": "watch9",
-          "player_name": "SHINE.",
+          "player_name": "Kyle",
           "role": "JUNGLER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -39,9 +35,7 @@
       },
       {
         "player3": {
-          "slot": "slot8",
-          "name": "watch8",
-          "player_name": "Foolish One",
+          "player_name": "Hadji",
           "role": "MID LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -53,9 +47,7 @@
       },
       {
         "player4": {
-          "slot": "slot7",
-          "name": "watch7",
-          "player_name": "KELRA'S DAUGHTER",
+          "player_name": "Owgwen",
           "role": "ROAMER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -67,9 +59,7 @@
       },
       {
         "player5": {
-          "slot": "slot6",
-          "name": "watch6",
-          "player_name": "민지",
+          "player_name": "SuperMarco",
           "role": "GOLD LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -81,14 +71,14 @@
       }
     ]
   },
-  "camp2": {
-    "tricode": "FLCN",
+  "away": {
+    "tricode": "ONIC",
+    "camp_code": "ONIC",
+    "camp_name": "ONIC PH",
     "players": [
       {
         "player1": {
-          "slot": "slot1",
-          "name": "watch1",
-          "player_name": "LevTzy x Sunshine",
+          "player_name": "Kirk",
           "role": "EXP LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -100,9 +90,7 @@
       },
       {
         "player2": {
-          "slot": "slot2",
-          "name": "watch2",
-          "player_name": "Hatredd",
+          "player_name": "K1NGKONG",
           "role": "JUNGLER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -114,9 +102,7 @@
       },
       {
         "player3": {
-          "slot": "slot3",
-          "name": "watch3",
-          "player_name": "Nelsennn",
+          "player_name": "SuperFrince",
           "role": "MID LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -128,9 +114,7 @@
       },
       {
         "player4": {
-          "slot": "slot4",
-          "name": "watch4",
-          "player_name": "CrozzzOMG.",
+          "player_name": "Brusko",
           "role": "ROAMER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -142,9 +126,7 @@
       },
       {
         "player5": {
-          "slot": "slot5",
-          "name": "watch5",
-          "player_name": "Luci",
+          "player_name": "Savero",
           "role": "GOLD LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -164,16 +146,9 @@
     "highest_peak_at_objectives": null
   },
   "clashes": {
-    "clash_count": 1,
+    "clash_count": null,
     "camp1_avg_bpm_in_clashes": null,
     "camp2_avg_bpm_in_clashes": null,
-    "clashes": [
-      {
-        "game_time": "06:36",
-        "kill_jump": 15,
-        "camp1_avg_bpm": null,
-        "camp2_avg_bpm": null
-      }
-    ]
+    "clashes": []
   }
 }

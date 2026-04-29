@@ -19,7 +19,9 @@ function httpGet(url, cb) {
 
 const PORT         = 3000;
 const POLL_MS      = 1000;
-const POSTGAME_DIR = path.join(__dirname, "postgames");
+const POSTGAME_DIR   = path.join(__dirname, "postgames");
+const POSITIONS_FILE = path.join(__dirname, "positions_live.json");
+const FIGHTS_FILE    = path.join(__dirname, "fights_live.json");
 
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const CONFIG_PATH = path.join(__dirname, "config.json");
@@ -162,9 +164,43 @@ const MAX_EVENTS = 500;
 // ── POSITION LOG (all players, every poll while playing) ──────────────────────
 let positionLog = [];    // [{ game_time_s, camp, seat, x, y }]
 const MAX_POS_LOG = 50000; // ~30min × 10 players × 1s = 18k; headroom for long games
+let posWriteCounter = 0;   // periodic disk flush counter
 let prevSeatKDA  = {};   // `${campKey}-${seatNum}` → { kills, assists, deaths }
 let prevC1Lord   = 0, prevC2Lord   = 0;
 let prevC1Turtle = 0, prevC2Turtle = 0;
+
+// ── FIGHT TRACKING ───────────────────────────────────────────────────────────
+let activeFight    = null;   // fight currently in progress
+let fightLog       = [];     // completed fights this game
+let fightIdSeq     = 0;      // monotonic, survives game resets (unique per server run)
+let lastPlayerSnap = {};     // `${campid}-${seat}` → { campid, seat, name, hero, stats }
+const MAX_FIGHTS   = 100;
+const FIGHT_GAP_S  = 3;      // seconds of no damage activity before fight is closed
+
+// ── RTF → JSON PARSER (for /fights-static) ───────────────────────────────────
+function parseRtfToJson(rtfPath) {
+  let s = fs.readFileSync(rtfPath, 'utf8');
+  // unicode: \uc0\uNNNN or \uNNNN
+  s = s.replace(/\\uc0\s*/g, '');
+  s = s.replace(/\\u(-?\d+)\s?/g, (_, n) => {
+    const cp = parseInt(n);
+    return String.fromCodePoint(cp < 0 ? cp + 65536 : cp);
+  });
+  // protect escaped braces (JSON braces that RTF escaped)
+  s = s.replace(/\\\{/g, '\x01');
+  s = s.replace(/\\\}/g, '\x02');
+  // remove RTF groups (unescaped { ... }) iteratively innermost-first
+  let prev;
+  do { prev = s; s = s.replace(/\{[^{}]*\}/g, ''); } while (s !== prev);
+  // remove RTF control words and line continuations
+  s = s.replace(/\\[a-zA-Z]+\*?(-?\d+)?\s?/g, '');
+  s = s.replace(/\\\n/g, '').replace(/\\/g, '');
+  // restore JSON braces
+  s = s.replace(/\x01/g, '{').replace(/\x02/g, '}');
+  // extract JSON object
+  s = s.trim();
+  return JSON.parse(s.slice(s.indexOf('{'), s.lastIndexOf('}') + 1));
+}
 
 // ── POSTGAME META ─────────────────────────────────────────────────────────────
 let currentBattleId = null;
@@ -178,13 +214,247 @@ function resetForNewGame(battleid) {
   clashSnapshots   = [];
   prevTotalKills   = 0;
   gameEvents       = [];
-  positionLog      = [];
+  // positionLog intentionally NOT cleared here — kept until state leaves "end" with a new battleid
+  activeFight      = null;
+  fightLog         = [];
+  saveFightsToDisk();
+  lastPlayerSnap   = {};
   prevSeatKDA      = {};
   prevC1Lord       = 0; prevC2Lord   = 0;
   prevC1Turtle     = 0; prevC2Turtle = 0;
   currentBattleId  = battleid;
   gameStartTime    = new Date().toISOString();
   console.log(`[GAME] New game detected — battleid=${battleid}`);
+}
+
+// ── FIGHT PERSISTENCE ────────────────────────────────────────────────────────
+function saveFightsToDisk() {
+  try {
+    fs.writeFileSync(FIGHTS_FILE, JSON.stringify({ battleid: currentBattleId, fights: fightLog }));
+  } catch (e) {
+    console.warn("[FIGHTS] Could not save to disk:", e.message);
+  }
+}
+
+// ── POSITION PERSISTENCE ─────────────────────────────────────────────────────
+function savePositionsToDisk() {
+  try {
+    fs.writeFileSync(POSITIONS_FILE, JSON.stringify({ battleid: currentBattleId, positions: positionLog }));
+  } catch (e) {
+    console.warn("[POSITIONS] Could not save to disk:", e.message);
+  }
+}
+
+// ── FIGHT DETECTION & RECAP ──────────────────────────────────────────────────
+function extractSeatStats(seat) {
+  const ep = seat.extra_param || {};
+  // filter hit_rate to real skills only (skillid "0" = unknown/passive)
+  const hr = (seat.hit_rate || []).filter(sk => sk.skillid && sk.skillid !== "0" && sk.skill_name !== "Unknown");
+  return {
+    dmg_out:     seat.total_damage     ?? 0,  // hero damage dealt  ← confirmed field name
+    dmg_in:      seat.total_hurt       ?? 0,  // damage received    ← confirmed field name
+    gold:        seat.gold             ?? 0,
+    kills:       seat.kill_num         ?? 0,
+    deaths:      seat.dead_num         ?? 0,
+    assists:     seat.assist_num       ?? 0,
+    heal_self:   seat.total_heal       ?? 0,
+    heal_other:  seat.total_heal_other ?? 0,
+    control_ms:  seat.control_time_ms  ?? 0,  // CC time in ms
+    skills:      hr.reduce((s, sk) => s + (sk.cast_times || 0), 0),
+    hit_rate:    hr,
+    multi_kills: {
+      double: ep.double_kill || 0,
+      triple: ep.triple_kill || 0,
+      quadra: ep.quadra_kill || 0,
+      penta:  ep.penta_kill  || 0,
+    },
+  };
+}
+
+function computeSkillsDelta(finalHR, baseHR) {
+  const result = [];
+  for (const fsk of (finalHR || [])) {
+    const bsk   = (baseHR || []).find(s => s.skillid === fsk.skillid) || { cast_times: 0, hit_times: 0 };
+    const casts = Math.max(0, (fsk.cast_times || 0) - (bsk.cast_times || 0));
+    const hits  = Math.max(0, (fsk.hit_times  || 0) - (bsk.hit_times  || 0));
+    result.push({
+      skill_name: fsk.skill_name,
+      casts,
+      hits,
+      hit_pct: casts > 0 ? Math.round((hits / casts) * 100) : 0,
+    });
+  }
+  return result;
+}
+
+function tickFight(camps, game_time_s, game_time_fmt) {
+  const now = {};
+  for (const camp of camps) {
+    if (camp.campid !== 1 && camp.campid !== 2) continue;
+    for (let s = 1; s <= 5; s++) {
+      const seat = camp[`seat_${s}`];
+      if (!seat) continue;
+      const key = `${camp.campid}-${s}`;
+      const heroArr = Array.isArray(seat.hero_name) ? seat.hero_name : null;
+      now[key] = {
+        campid:  camp.campid,
+        seat:    s,
+        name:    seat.name || null,
+        hero:    heroArr ? (heroArr[0] || null) : (seat.hero_name || null),
+        hero_id: seat.hero_id ?? seat.heroid ?? (heroArr ? (heroArr[1] || null) : null) ?? null,
+        stats:   extractSeatStats(seat),
+      };
+    }
+  }
+
+  // activity = any player's hero damage dealt went up since last snapshot
+  let anyActivity = false;
+  for (const [key, p] of Object.entries(now)) {
+    const prev = lastPlayerSnap[key];
+    if (prev && p.stats.dmg_out > prev.stats.dmg_out) { anyActivity = true; break; }
+  }
+
+  if (anyActivity) {
+    if (!activeFight) {
+      activeFight = {
+        id:             ++fightIdSeq,
+        start_time_s:   game_time_s,
+        start_time_fmt: game_time_fmt,
+        last_active_s:  game_time_s,
+        baseline:       JSON.parse(JSON.stringify(lastPlayerSnap)),
+      };
+      console.log(`[FIGHT] Started — id=${activeFight.id} at ${game_time_fmt}`);
+    } else {
+      activeFight.last_active_s = game_time_s;
+    }
+  }
+
+  // close fight after FIGHT_GAP_S seconds of no damage activity
+  if (activeFight && (game_time_s - activeFight.last_active_s) >= FIGHT_GAP_S) {
+    closeFight(activeFight, now);
+    activeFight = null;
+  }
+
+  lastPlayerSnap = now;
+}
+
+function closeFight(fight, finalSnap) {
+  const end_time_s   = fight.last_active_s;
+  const em           = String(Math.floor(end_time_s / 60)).padStart(2, "0");
+  const es           = String(end_time_s % 60).padStart(2, "0");
+  const end_time_fmt = `${em}:${es}`;
+  const duration_s   = Math.max(1, end_time_s - fight.start_time_s);
+
+  if (duration_s < 5) {
+    console.log(`[FIGHT] Discarded — id=${fight.id} dur=${duration_s}s (skirmish)`);
+    return;
+  }
+
+  const players = [];
+  for (const [key, p] of Object.entries(finalSnap)) {
+    const base = fight.baseline[key];
+    if (!base) continue;
+    const b = base.stats;
+    const mk_f = p.stats.multi_kills || {};
+    const mk_b = b.multi_kills || {};
+    players.push({
+      camp:        p.campid,
+      seat:        p.seat,
+      name:        p.name,
+      hero:        p.hero,
+      hero_id:     p.hero_id ?? null,
+      dmg_dealt:   Math.max(0, p.stats.dmg_out    - (b.dmg_out    || 0)),
+      dmg_rcvd:    Math.max(0, p.stats.dmg_in     - (b.dmg_in     || 0)),
+      gold_earned: Math.max(0, p.stats.gold       - (b.gold       || 0)),
+      kills:       Math.max(0, p.stats.kills      - (b.kills      || 0)),
+      deaths:      Math.max(0, p.stats.deaths     - (b.deaths     || 0)),
+      assists:     Math.max(0, p.stats.assists    - (b.assists    || 0)),
+      skills_used: Math.max(0, p.stats.skills     - (b.skills     || 0)),
+      heal_self:   Math.max(0, p.stats.heal_self  - (b.heal_self  || 0)),
+      heal_other:  Math.max(0, p.stats.heal_other - (b.heal_other || 0)),
+      control_ms:  Math.max(0, p.stats.control_ms - (b.control_ms || 0)),
+      multi_kills: {
+        double: Math.max(0, (mk_f.double || 0) - (mk_b.double || 0)),
+        triple: Math.max(0, (mk_f.triple || 0) - (mk_b.triple || 0)),
+        quadra: Math.max(0, (mk_f.quadra || 0) - (mk_b.quadra || 0)),
+        penta:  Math.max(0, (mk_f.penta  || 0) - (mk_b.penta  || 0)),
+      },
+      skills_detail: computeSkillsDelta(p.stats.hit_rate, b.hit_rate),
+    });
+  }
+  players.sort((a, b) => a.camp - b.camp || a.seat - b.seat);
+
+  // team roll-ups
+  const c1p     = players.filter(p => p.camp === 1);
+  const c2p     = players.filter(p => p.camp === 2);
+  const sum     = (arr, f) => arr.reduce((t, p) => t + p[f], 0);
+  const c1_kills  = sum(c1p, 'kills'),     c2_kills   = sum(c2p, 'kills');
+  const c1_deaths = sum(c1p, 'deaths'),    c2_deaths  = sum(c2p, 'deaths');
+  const c1_dmg    = sum(c1p, 'dmg_dealt'), c2_dmg     = sum(c2p, 'dmg_dealt');
+  const c1_rcvd   = sum(c1p, 'dmg_rcvd'), c2_rcvd    = sum(c2p, 'dmg_rcvd');
+  const c1_cc_s   = Math.round(sum(c1p, 'control_ms') / 1000);
+  const c2_cc_s   = Math.round(sum(c2p, 'control_ms') / 1000);
+  const total_kills = c1_kills + c2_kills;
+
+  // enrich each player with derived per-fight stats
+  for (const p of players) {
+    const teamDmg   = p.camp === 1 ? c1_dmg   : c2_dmg;
+    const teamKills = p.camp === 1 ? c1_kills  : c2_kills;
+    p.dmg_share          = teamDmg   > 0 ? Math.round((p.dmg_dealt / teamDmg)   * 100) : 0;
+    p.kill_participation = teamKills > 0 ? Math.round(((p.kills + p.assists) / teamKills) * 100) : 0;
+    p.dps                = Math.round(p.dmg_dealt / duration_s);
+    p.control_s          = +(p.control_ms / 1000).toFixed(1);
+    p.survived           = p.deaths === 0;
+  }
+
+  const winning_camp = c1_kills  > c2_kills  ? 1 : c2_kills  > c1_kills  ? 2 : null;
+  const mvp          = players.reduce((a, p) => (!a || p.dmg_dealt  > a.dmg_dealt)  ? p : a, null);
+  const top_absorber = players.reduce((a, p) => (!a || p.dmg_rcvd   > a.dmg_rcvd)   ? p : a, null);
+  const most_kills   = players.reduce((a, p) => (!a || p.kills      > a.kills)      ? p : a, null);
+  const top_healer   = players.reduce((a, p) => (!a || (p.heal_self + p.heal_other) > (a.heal_self + a.heal_other)) ? p : a, null);
+
+  const recap = {
+    id:             fight.id,
+    start_time_s:   fight.start_time_s,
+    start_time_fmt: fight.start_time_fmt,
+    end_time_s,
+    end_time_fmt,
+    duration_s,
+    summary: {
+      total_kills,
+      camp1_kills:     c1_kills,
+      camp2_kills:     c2_kills,
+      camp1_deaths:    c1_deaths,
+      camp2_deaths:    c2_deaths,
+      camp1_dmg:       c1_dmg,
+      camp2_dmg:       c2_dmg,
+      camp1_dmg_rcvd:  c1_rcvd,
+      camp2_dmg_rcvd:  c2_rcvd,
+      camp1_cc_s:      c1_cc_s,
+      camp2_cc_s:      c2_cc_s,
+      dominant_camp:   c1_dmg   > c2_dmg   ? 1 : c2_dmg   > c1_dmg   ? 2 : null,
+      winning_camp,
+      damage_ratio:    c2_dmg   > 0        ? +(c1_dmg / c2_dmg).toFixed(2) : null,
+      mvp: mvp && mvp.dmg_dealt > 0
+        ? { name: mvp.name, hero: mvp.hero, camp: mvp.camp, dmg_dealt: mvp.dmg_dealt, dps: mvp.dps }
+        : null,
+      top_damage_absorber: top_absorber && top_absorber.dmg_rcvd > 0
+        ? { name: top_absorber.name, hero: top_absorber.hero, camp: top_absorber.camp, dmg_rcvd: top_absorber.dmg_rcvd }
+        : null,
+      top_killer: most_kills && most_kills.kills > 0
+        ? { name: most_kills.name, hero: most_kills.hero, camp: most_kills.camp, kills: most_kills.kills }
+        : null,
+      top_healer: top_healer && (top_healer.heal_self + top_healer.heal_other) > 0
+        ? { name: top_healer.name, hero: top_healer.hero, camp: top_healer.camp, heal_self: top_healer.heal_self, heal_other: top_healer.heal_other }
+        : null,
+    },
+    players,
+  };
+
+  fightLog.push(recap);
+  if (fightLog.length > MAX_FIGHTS) fightLog.splice(0, fightLog.length - MAX_FIGHTS);
+  saveFightsToDisk();
+  console.log(`[FIGHT] Closed — id=${fight.id} dur=${duration_s}s kills=${total_kills} winner=${winning_camp ? 'camp' + winning_camp : 'draw'}`);
 }
 
 // ── COMPUTE DERIVED STATS FOR ONE PLAYER ─────────────────────────────────────
@@ -541,9 +811,23 @@ function pollGameAPI() {
           pollGameAPI._lastLoggedState = state;
         }
 
+        // snapshot before any mutation so we can detect transitions
+        const prevState    = gameState.state;
+        const prevBattleId = currentBattleId;
+
         // detect new game (new battleid)
         if (battleid && battleid !== currentBattleId) {
           resetForNewGame(battleid);
+        }
+
+        // flush positionLog only when both conditions are true simultaneously:
+        // the state just left "end" AND the battleid changed — this keeps the last
+        // game's positions queryable through the entire "end" state
+        if (prevState === "end" && state !== "end" && battleid !== prevBattleId) {
+          positionLog = [];
+          posWriteCounter = 0;
+          try { if (fs.existsSync(POSITIONS_FILE)) fs.unlinkSync(POSITIONS_FILE); } catch {}
+          console.log("[POSITIONS] Flushed — new game started after end state");
         }
 
         // extract team tricodes and player names from camp_list (seats structure)
@@ -677,7 +961,16 @@ function pollGameAPI() {
             }
           }
           if (positionLog.length > MAX_POS_LOG) positionLog.splice(0, positionLog.length - MAX_POS_LOG);
+          // persist to disk every 60 polls so a mid-game restart doesn't lose everything
+          if (++posWriteCounter % 60 === 0) savePositionsToDisk();
         }
+
+        // fight detection — runs every play-state poll (paused or not; game_time won't
+        // advance while paused so the gap timeout naturally holds)
+        if (state === "play") tickFight(camps, game_time_s, game_time_fmt);
+
+        // persist positions to disk on first transition to "end"
+        if (state === "end" && gameState.state !== "end") savePositionsToDisk();
 
         // write postgame when state = "end", but only if we saw "play" this session
         // and haven't already written for this battleid
@@ -709,6 +1002,35 @@ function pollGameAPI() {
   }).on("error", (e) => {
     console.warn("[POLL] Game API unreachable:", e.message);
   });
+}
+
+// ── RESTORE FIGHTS FROM LAST SESSION ─────────────────────────────────────────
+if (fs.existsSync(FIGHTS_FILE)) {
+  try {
+    const saved = JSON.parse(fs.readFileSync(FIGHTS_FILE, "utf8"));
+    if (saved.battleid && Array.isArray(saved.fights) && saved.fights.length > 0) {
+      fightLog        = saved.fights;
+      fightIdSeq      = Math.max(...saved.fights.map(f => f.id), 0);
+      currentBattleId = saved.battleid;
+      console.log(`[FIGHTS] Restored ${fightLog.length} fights from disk (battleid=${currentBattleId})`);
+    }
+  } catch (e) {
+    console.warn("[FIGHTS] Could not restore from disk:", e.message);
+  }
+}
+
+// ── RESTORE POSITIONS FROM LAST SESSION ──────────────────────────────────────
+if (fs.existsSync(POSITIONS_FILE)) {
+  try {
+    const saved = JSON.parse(fs.readFileSync(POSITIONS_FILE, "utf8"));
+    if (saved.battleid && Array.isArray(saved.positions) && saved.positions.length > 0) {
+      positionLog     = saved.positions;
+      currentBattleId = saved.battleid;
+      console.log(`[POSITIONS] Restored ${positionLog.length} positions from disk (battleid=${currentBattleId})`);
+    }
+  } catch (e) {
+    console.warn("[POSITIONS] Could not restore from disk:", e.message);
+  }
 }
 
 setInterval(pollGameAPI, POLL_MS);
@@ -1118,6 +1440,75 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /hero/:filename — serve hero icon images
+  if (req.method === "GET" && req.url.startsWith("/hero/")) {
+    const filename = path.basename(req.url.slice("/hero/".length).split("?")[0]);
+    const filePath = path.join(__dirname, "hero", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.writeHead(200);
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
+  // GET /fights-static — fights.json (for debug mode)
+  if (req.method === "GET" && req.url === "/fights-static") {
+    const file = path.join(__dirname, "fights.json");
+    if (!fs.existsSync(file)) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: "fights.json not found" }));
+      return;
+    }
+    try {
+      const data = JSON.parse(fs.readFileSync(file, "utf8"));
+      res.writeHead(200);
+      res.end(JSON.stringify(data));
+    } catch (e) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: "fights.json parse failed: " + e.message }));
+    }
+    return;
+  }
+
+  // GET /fights-overlay — fight recap overlay HTML
+  if (req.method === "GET" && req.url === "/fights-overlay") {
+    const file = path.join(__dirname, "fights.html");
+    if (!fs.existsSync(file)) {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: "fights.html not found" }));
+      return;
+    }
+    res.setHeader("Content-Type", "text/html");
+    res.writeHead(200);
+    res.end(fs.readFileSync(file, "utf8"));
+    return;
+  }
+
+  // GET /fights?last=N — completed fight recaps this game, optional ?last=N for last N fights
+  if (req.method === "GET" && req.url.startsWith("/fights")) {
+    const params = new URL(req.url, "http://localhost").searchParams;
+    const last   = params.has("last") ? parseInt(params.get("last")) : null;
+    const list   = last ? fightLog.slice(-last) : [...fightLog];
+
+    const active = activeFight ? {
+      id:              activeFight.id,
+      start_time_s:    activeFight.start_time_s,
+      start_time_fmt:  activeFight.start_time_fmt,
+      last_active_s:   activeFight.last_active_s,
+      duration_so_far: gameState.game_time_s - activeFight.start_time_s,
+    } : null;
+
+    res.writeHead(200);
+    res.end(JSON.stringify({
+      game:         { state: gameState.state, battleid: gameState.battleid, game_time: gameState.game_time_fmt },
+      active_fight: active,
+      count:        list.length,
+      fights:       list,
+    }));
+    return;
+  }
+
   // GET / — dashboard
   if (req.method === "GET" && req.url === "/") {
     res.setHeader("Content-Type", "text/html");
@@ -1187,6 +1578,22 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /overlay/fights/show — show fight recap overlay
+  if (req.method === "GET" && req.url === "/overlay/fights/show") {
+    overlayClients.forEach(c => { try { c.write('event: fights\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+
+  // GET /overlay/fights/hide — hide fight recap overlay
+  if (req.method === "GET" && req.url === "/overlay/fights/hide") {
+    overlayClients.forEach(c => { try { c.write('event: fights\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
   // GET or POST /overlay/slot1..slot10  → show player
   // GET or POST /overlay/hide           → hide overlay
   if ((req.method === "GET" || req.method === "POST" || req.method === "OPTIONS") && req.url.startsWith("/overlay/") && !req.url.startsWith("/overlay/events")) {
@@ -1221,7 +1628,11 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`  League     → http://localhost:${PORT}/stats/league`);
   console.log(`  Overlay    → GET  http://localhost:${PORT}/overlay/slot1  (show)`);
   console.log(`             → GET  http://localhost:${PORT}/overlay/hide   (hide)`);
+  console.log(`  Fights OL  → GET  http://localhost:${PORT}/overlay/fights/show`);
+  console.log(`             → GET  http://localhost:${PORT}/overlay/fights/hide`);
   console.log(`  Positions  → GET  http://localhost:${PORT}/positions`);
+  console.log(`  Fights     → GET  http://localhost:${PORT}/fights`);
+  console.log(`             →      ?last=N  for last N fights`);
   console.log(`             →      ?camp=1&seat=2&from=0&to=600`);
   console.log(`             →      camp 1|2  seat 1-5  from/to in seconds`);
   console.log("================================================");
