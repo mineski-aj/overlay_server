@@ -153,6 +153,7 @@ let prevTotalKills = 0;
 
 // ── OVERLAY SSE CLIENTS ───────────────────────────────────────────────────────
 const overlayClients = [];
+let fightsPendingAction = null;
 setInterval(() => {
   overlayClients.forEach(c => { try { c.write(': heartbeat\n\n'); } catch {} });
 }, 15000);
@@ -707,6 +708,18 @@ function buildHomeAwayPayload(payload) {
 }
 
 function writePostgame(payload) {
+  const now    = new Date();
+  const h      = now.getHours();
+  const m      = now.getMinutes();
+  const mins   = h * 60 + m;
+  const start  = 13 * 60 + 50; // 13:50
+  const end    = 1  * 60 + 0;  // 01:00
+  const inWindow = mins >= start || mins < end;
+  if (!inWindow) {
+    console.log(`[POSTGAME] Skipped — time ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} is outside recording window (13:50–01:00)`);
+    return;
+  }
+
   const liveJson    = JSON.stringify(payload, null, 2);
   const archivePayload = buildHomeAwayPayload(payload);
   const archiveJson = JSON.stringify(archivePayload, null, 2);
@@ -1580,6 +1593,7 @@ const server = http.createServer((req, res) => {
 
   // GET /overlay/fights/show — show fight recap overlay
   if (req.method === "GET" && req.url === "/overlay/fights/show") {
+    fightsPendingAction = { action: "show", ts: Date.now() };
     overlayClients.forEach(c => { try { c.write('event: fights\ndata: {"action":"show"}\n\n'); } catch {} });
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, action: "show" }));
@@ -1588,9 +1602,19 @@ const server = http.createServer((req, res) => {
 
   // GET /overlay/fights/hide — hide fight recap overlay
   if (req.method === "GET" && req.url === "/overlay/fights/hide") {
+    fightsPendingAction = { action: "hide", ts: Date.now() };
     overlayClients.forEach(c => { try { c.write('event: fights\ndata: {"action":"hide"}\n\n'); } catch {} });
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /overlay/fights/pending — polled by overlay to get queued action
+  if (req.method === "GET" && req.url === "/overlay/fights/pending") {
+    const p = fightsPendingAction;
+    fightsPendingAction = null;
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify(p || { action: null }));
     return;
   }
 

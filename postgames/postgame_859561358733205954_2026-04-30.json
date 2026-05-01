@@ -1,19 +1,17 @@
 {
-  "battleid": "669903621645935744",
-  "date": "2026-05-01",
-  "game_start_time": "2026-05-01T03:58:57.377Z",
-  "game_end_time": "2026-05-01T04:25:12.839Z",
-  "game_duration": "23:10",
-  "camp1_tricode": "TWIS",
-  "camp2_tricode": "OMG",
-  "camp1": {
-    "tricode": "TWIS",
+  "battleid": "859561358733205954",
+  "date": "2026-04-30",
+  "game_start_time": "2026-04-29T11:05:03.041Z",
+  "game_end_time": "2026-04-30T01:50:37.092Z",
+  "game_duration": "25:56",
+  "home": {
+    "tricode": "FLCN",
+    "camp_code": "FLCN",
+    "camp_name": "TEAM FALCONS",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
-          "player_name": "數|•Ruby",
+          "player_name": "Flap",
           "role": "EXP LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -25,9 +23,7 @@
       },
       {
         "player2": {
-          "slot": "slot9",
-          "name": "watch9",
-          "player_name": "Michikatsu Tsugikuni",
+          "player_name": "Kyle",
           "role": "JUNGLER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -39,9 +35,7 @@
       },
       {
         "player3": {
-          "slot": "slot8",
-          "name": "watch8",
-          "player_name": "hanaja",
+          "player_name": "Hadji",
           "role": "MID LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -53,9 +47,7 @@
       },
       {
         "player4": {
-          "slot": "slot7",
-          "name": "watch7",
-          "player_name": "saá Crayylièʚɞ",
+          "player_name": "Owgwen",
           "role": "ROAMER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -67,9 +59,7 @@
       },
       {
         "player5": {
-          "slot": "slot6",
-          "name": "watch6",
-          "player_name": "Anakin Skywalker",
+          "player_name": "SuperMarco",
           "role": "GOLD LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -81,14 +71,14 @@
       }
     ]
   },
-  "camp2": {
-    "tricode": "OMG",
+  "away": {
+    "tricode": "ONIC",
+    "camp_code": "ONIC",
+    "camp_name": "ONIC PH",
     "players": [
       {
         "player1": {
-          "slot": "slot1",
-          "name": "watch1",
-          "player_name": "asep punya gedek",
+          "player_name": "Kirk",
           "role": "EXP LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -100,9 +90,7 @@
       },
       {
         "player2": {
-          "slot": "slot2",
-          "name": "watch2",
-          "player_name": "ᠻꪖꪀꪀꪗ",
+          "player_name": "K1NGKONG",
           "role": "JUNGLER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -114,9 +102,7 @@
       },
       {
         "player3": {
-          "slot": "slot3",
-          "name": "watch3",
-          "player_name": "Lynxxx",
+          "player_name": "SuperFrince",
           "role": "MID LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -128,9 +114,7 @@
       },
       {
         "player4": {
-          "slot": "slot4",
-          "name": "watch4",
-          "player_name": "{♠AL♠}",
+          "player_name": "Brusko",
           "role": "ROAMER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -142,9 +126,7 @@
       },
       {
         "player5": {
-          "slot": "slot5",
-          "name": "watch5",
-          "player_name": "Ucii Chérie",
+          "player_name": "Savero",
           "role": "GOLD LANER",
           "avg_bpm": null,
           "peak_bpm": null,
@@ -164,31 +146,19 @@
     "highest_peak_at_objectives": null
   },
   "clashes": {
-    "clash_count": 4,
+    "clash_count": 2,
     "camp1_avg_bpm_in_clashes": null,
     "camp2_avg_bpm_in_clashes": null,
     "clashes": [
       {
-        "game_time": "02:44",
-        "kill_jump": 5,
-        "camp1_avg_bpm": null,
-        "camp2_avg_bpm": null
-      },
-      {
-        "game_time": "14:16",
-        "kill_jump": 34,
-        "camp1_avg_bpm": null,
-        "camp2_avg_bpm": null
-      },
-      {
-        "game_time": "21:10",
-        "kill_jump": 10,
-        "camp1_avg_bpm": null,
-        "camp2_avg_bpm": null
-      },
-      {
-        "game_time": "22:22",
+        "game_time": "06:23",
         "kill_jump": 12,
+        "camp1_avg_bpm": null,
+        "camp2_avg_bpm": null
+      },
+      {
+        "game_time": "15:06",
+        "kill_jump": 11,
         "camp1_avg_bpm": null,
         "camp2_avg_bpm": null
       }

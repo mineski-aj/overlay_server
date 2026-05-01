@@ -593,7 +593,7 @@ body.debug-mode {
 
 <script>
 const qs      = new URLSearchParams(window.location.search);
-let   baseUrl = (qs.get('api') || 'http://localhost:3000').replace(/\/$/, '');
+let   baseUrl = (qs.get('api') || window.location.origin).replace(/\/$/, '');
 
 const POLL_MS = 2000;
 
@@ -752,21 +752,29 @@ function heroImgUrl(id) {
 // ── SSE: listen for show/hide triggers ───────────────────────────────
 function connectSSE() {
   const es = new EventSource(`${baseUrl}/overlay/events`);
-  es.addEventListener('fights', e => {
-    const { action } = JSON.parse(e.data);
-    if (action === 'show') {
-      if (allFights.length) {
-        debugIdx = allFights.length - 1;
-        render(allFights[debugIdx], feedData);
-      }
-      animateIn();
-    } else if (action === 'hide') {
-      animateOut();
-    }
-  });
   es.onerror = () => { es.close(); setTimeout(connectSSE, 3000); };
 }
 connectSSE();
+
+// ── ACTION POLL — picks up show/hide from server every 500ms ─────────
+let lastActionTs = 0;
+async function pollAction() {
+  try {
+    const r = await fetch(`${baseUrl}/overlay/fights/pending`);
+    const { action, ts } = await r.json();
+    if (action && ts && ts !== lastActionTs) {
+      lastActionTs = ts;
+      if (action === 'show') {
+        if (allFights.length) { debugIdx = allFights.length - 1; render(allFights[debugIdx], feedData); }
+        animateIn();
+      } else if (action === 'hide') {
+        animateOut();
+      }
+    }
+  } catch {}
+}
+setInterval(pollAction, 500);
+pollAction();
 
 // ── DEBUG MODE: load fights.json static data ─────────────────────────
 async function loadStatic() {
