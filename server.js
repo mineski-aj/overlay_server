@@ -323,10 +323,27 @@ function tickFight(camps, game_time_s, game_time_fmt) {
         start_time_fmt: game_time_fmt,
         last_active_s:  game_time_s,
         baseline:       JSON.parse(JSON.stringify(lastPlayerSnap)),
+        bpm_ticks:      {},  // campid-seat → [bpm samples]
       };
       console.log(`[FIGHT] Started — id=${activeFight.id} at ${game_time_fmt}`);
     } else {
       activeFight.last_active_s = game_time_s;
+    }
+  }
+
+  // snapshot BPM for every active fight tick (swap-aware via activeCampMap)
+  if (activeFight) {
+    for (const [campKey, entries] of Object.entries(activeCampMap)) {
+      const campid = campKey === 'camp1' ? 1 : 2;
+      entries.forEach(({ pid }, i) => {
+        const seat = i + 1;
+        const r    = readings[pid];
+        if (r && r.status === 'ok' && r.bpm !== null) {
+          const key = `${campid}-${seat}`;
+          if (!activeFight.bpm_ticks[key]) activeFight.bpm_ticks[key] = [];
+          activeFight.bpm_ticks[key].push(r.bpm);
+        }
+      });
     }
   }
 
@@ -384,6 +401,15 @@ function closeFight(fight, finalSnap) {
     });
   }
   players.sort((a, b) => a.camp - b.camp || a.seat - b.seat);
+
+  // attach per-player BPM averages from fight ticks
+  const avgArr = (arr) => arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+  for (const p of players) {
+    const ticks     = (fight.bpm_ticks || {})[ `${p.camp}-${p.seat}` ] || [];
+    p.avg_bpm      = avgArr(ticks);
+    p.peak_bpm     = ticks.length ? Math.max(...ticks) : null;
+    p.bpm_samples  = ticks.length;
+  }
 
   // team roll-ups
   const c1p     = players.filter(p => p.camp === 1);
@@ -1588,6 +1614,20 @@ const server = http.createServer((req, res) => {
       const i = overlayClients.indexOf(res);
       if (i !== -1) overlayClients.splice(i, 1);
     });
+    return;
+  }
+
+  // GET /meter/show|hide|plus|minus|clear — heart rate meter overlay controls
+  if (req.method === "GET" && req.url.startsWith("/meter/")) {
+    const cmd = req.url.slice("/meter/".length).split("?")[0];
+    if (["show", "hide", "plus", "minus", "clear"].includes(cmd)) {
+      overlayClients.forEach(c => { try { c.write(`event: meter\ndata: {"cmd":"${cmd}"}\n\n`); } catch {} });
+      res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+      res.end(JSON.stringify({ ok: true, cmd }));
+    } else {
+      res.writeHead(404);
+      res.end(JSON.stringify({ error: "unknown meter command" }));
+    }
     return;
   }
 
