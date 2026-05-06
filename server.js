@@ -52,6 +52,10 @@ const players = {
   player8:  { name: "Player 8",  team: "team2", slot: "player8",  role: "MID"    },
   player9:  { name: "Player 9",  team: "team2", slot: "player9",  role: "JUNGLE" },
   player10: { name: "Player 10", team: "team2", slot: "player10", role: "EXP"    },
+  coach_home1: { name: "Home Coach 1", team: "team1", slot: "coach_home1", role: "COACH" },
+  coach_home2: { name: "Home Coach 2", team: "team1", slot: "coach_home2", role: "COACH" },
+  coach_away1: { name: "Away Coach 1", team: "team2", slot: "coach_away1", role: "COACH" },
+  coach_away2: { name: "Away Coach 2", team: "team2", slot: "coach_away2", role: "COACH" },
 };
 
 // ── ROLE DISPLAY NAMES ───────────────────────────────────────────────────────
@@ -1133,12 +1137,30 @@ function buildCampFeed() {
         ? (gameState.campNames && gameState.campNames.camp2 ? gameState.campNames.camp2.toUpperCase().trim() : campTricodes.camp2)
         : (gameState.campNames && gameState.campNames.camp1 ? gameState.campNames.camp1.toUpperCase().trim() : campTricodes.camp1),
       players: mapCamp(activeCampMap.camp1),
+      coaches: campSwapped
+        ? [
+            { slot: "coach_away1", name: "Away Coach 1", role: "COACH", bpm: readings.coach_away1.status === "ok" ? readings.coach_away1.bpm : (readings.coach_away1.simulated_bpm !== null ? readings.coach_away1.simulated_bpm : readings.coach_away1.last_bpm), bpm_simulated: readings.coach_away1.status !== "ok" && readings.coach_away1.simulated_bpm !== null, status: readings.coach_away1.status },
+            { slot: "coach_away2", name: "Away Coach 2", role: "COACH", bpm: readings.coach_away2.status === "ok" ? readings.coach_away2.bpm : (readings.coach_away2.simulated_bpm !== null ? readings.coach_away2.simulated_bpm : readings.coach_away2.last_bpm), bpm_simulated: readings.coach_away2.status !== "ok" && readings.coach_away2.simulated_bpm !== null, status: readings.coach_away2.status },
+          ]
+        : [
+            { slot: "coach_home1", name: "Home Coach 1", role: "COACH", bpm: readings.coach_home1.status === "ok" ? readings.coach_home1.bpm : (readings.coach_home1.simulated_bpm !== null ? readings.coach_home1.simulated_bpm : readings.coach_home1.last_bpm), bpm_simulated: readings.coach_home1.status !== "ok" && readings.coach_home1.simulated_bpm !== null, status: readings.coach_home1.status },
+            { slot: "coach_home2", name: "Home Coach 2", role: "COACH", bpm: readings.coach_home2.status === "ok" ? readings.coach_home2.bpm : (readings.coach_home2.simulated_bpm !== null ? readings.coach_home2.simulated_bpm : readings.coach_home2.last_bpm), bpm_simulated: readings.coach_home2.status !== "ok" && readings.coach_home2.simulated_bpm !== null, status: readings.coach_home2.status },
+          ],
     },
     camp2: {
       tricode: campSwapped
         ? (gameState.campNames && gameState.campNames.camp1 ? gameState.campNames.camp1.toUpperCase().trim() : campTricodes.camp1)
         : (gameState.campNames && gameState.campNames.camp2 ? gameState.campNames.camp2.toUpperCase().trim() : campTricodes.camp2),
       players: mapCamp(activeCampMap.camp2),
+      coaches: campSwapped
+        ? [
+            { slot: "coach_home1", name: "Home Coach 1", role: "COACH", bpm: readings.coach_home1.status === "ok" ? readings.coach_home1.bpm : (readings.coach_home1.simulated_bpm !== null ? readings.coach_home1.simulated_bpm : readings.coach_home1.last_bpm), bpm_simulated: readings.coach_home1.status !== "ok" && readings.coach_home1.simulated_bpm !== null, status: readings.coach_home1.status },
+            { slot: "coach_home2", name: "Home Coach 2", role: "COACH", bpm: readings.coach_home2.status === "ok" ? readings.coach_home2.bpm : (readings.coach_home2.simulated_bpm !== null ? readings.coach_home2.simulated_bpm : readings.coach_home2.last_bpm), bpm_simulated: readings.coach_home2.status !== "ok" && readings.coach_home2.simulated_bpm !== null, status: readings.coach_home2.status },
+          ]
+        : [
+            { slot: "coach_away1", name: "Away Coach 1", role: "COACH", bpm: readings.coach_away1.status === "ok" ? readings.coach_away1.bpm : (readings.coach_away1.simulated_bpm !== null ? readings.coach_away1.simulated_bpm : readings.coach_away1.last_bpm), bpm_simulated: readings.coach_away1.status !== "ok" && readings.coach_away1.simulated_bpm !== null, status: readings.coach_away1.status },
+            { slot: "coach_away2", name: "Away Coach 2", role: "COACH", bpm: readings.coach_away2.status === "ok" ? readings.coach_away2.bpm : (readings.coach_away2.simulated_bpm !== null ? readings.coach_away2.simulated_bpm : readings.coach_away2.last_bpm), bpm_simulated: readings.coach_away2.status !== "ok" && readings.coach_away2.simulated_bpm !== null, status: readings.coach_away2.status },
+          ],
     },
     highlights: buildHighlights(playerNames),
     clashes:    buildClashSummary(),
