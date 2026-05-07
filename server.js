@@ -85,6 +85,13 @@ const CAMP_MAP = {
   ],
 };
 
+// watch number → { campid, seat } — static reverse of CAMP_MAP
+const WATCH_TO_CAMP_SEAT = {};
+for (const [campKey, entries] of Object.entries(CAMP_MAP)) {
+  const campid = campKey === 'camp1' ? 1 : 2;
+  entries.forEach(({ watch }, i) => { WATCH_TO_CAMP_SEAT[watch] = { campid, seat: i + 1 }; });
+}
+
 // ── ACTIVE CAMP MAP (may be swapped per game) ────────────────────────────────
 // camp1Pids = watches 1-5, camp2Pids = watches 10-6 (default, no swap)
 let campSwapped = false;
@@ -171,6 +178,8 @@ let positionLog = [];    // [{ game_time_s, camp, seat, x, y }]
 const MAX_POS_LOG = 50000; // ~30min × 10 players × 1s = 18k; headroom for long games
 let posWriteCounter = 0;   // periodic disk flush counter
 let prevSeatKDA  = {};   // `${campKey}-${seatNum}` → { kills, assists, deaths }
+let itemLog       = {};  // pid → [{ game_time_s, game_time_fmt, item_id }]
+let prevItemCounts = {}; // pid → { itemId: count }
 let prevC1Lord   = 0, prevC2Lord   = 0;
 let prevC1Turtle = 0, prevC2Turtle = 0;
 
@@ -225,6 +234,8 @@ function resetForNewGame(battleid) {
   saveFightsToDisk();
   lastPlayerSnap   = {};
   prevSeatKDA      = {};
+  itemLog          = {};
+  prevItemCounts   = {};
   prevC1Lord       = 0; prevC2Lord   = 0;
   prevC1Turtle     = 0; prevC2Turtle = 0;
   currentBattleId  = battleid;
@@ -274,6 +285,29 @@ function extractSeatStats(seat) {
       penta:  ep.penta_kill  || 0,
     },
   };
+}
+
+// ── ITEM DATABASE (loaded from items.json — edit that file, not this one) ─────
+const ITEMS_PATH = path.join(__dirname, "items.json");
+let ITEM_NAMES   = {};
+let TIER3_ITEMS  = new Set();
+function loadItems() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(ITEMS_PATH, "utf8"));
+    ITEM_NAMES  = Object.fromEntries(Object.entries(raw).map(([k, v]) => [Number(k), v]));
+    TIER3_ITEMS = new Set(Object.keys(ITEM_NAMES).map(Number));
+    console.log(`[ITEMS] Loaded ${TIER3_ITEMS.size} tier-3 items from items.json`);
+  } catch (e) {
+    console.warn("[ITEMS] Could not load items.json:", e.message);
+  }
+}
+loadItems();
+
+function countItems(equipList) {
+  const c = {};
+  for (const it of (equipList || []))
+    if (it.value && it.value !== 9999) c[it.value] = (c[it.value] || 0) + 1;
+  return c;
 }
 
 function computeSkillsDelta(finalHR, baseHR) {
@@ -632,18 +666,22 @@ function buildPostgamePayload(data) {
   for (const [campKey, entries] of Object.entries(activeCampMap)) {
     campResult[campKey] = entries.map(({ pid, watch }, i) => {
       const d = deriveStats(pid);
+      const cs = WATCH_TO_CAMP_SEAT[watch];
+      const heroId = cs ? (lastPlayerSnap[`${cs.campid}-${cs.seat}`]?.hero_id ?? null) : null;
       return {
         [`player${i + 1}`]: {
           slot:                    `slot${watch}`,
           name:                    `watch${watch}`,
           player_name:             postgamePlayerNames[watch] || playerNames[watch] || null,
           role:                    ROLE_DISPLAY[players[pid].role] || players[pid].role,
+          hero_id:                 heroId,
           avg_bpm:                 d.avg_bpm,
           peak_bpm:                d.peak_bpm,
           pct_above_120:           d.pct_above_120,
           avg_bpm_at_objectives:   d.avg_bpm_at_objectives,
           peak_bpm_at_objectives:  d.peak_bpm_at_objectives,
           bpm_on_end:              bpmOnEnd[pid] || null,
+          item_timeline:           itemLog[pid] || [],
         },
       };
     });
@@ -973,6 +1011,21 @@ function pollGameAPI() {
               for (let i = 0; i < curD - prev.deaths;  i++)
                 gameEvents.push({ time_s: game_time_s, time_fmt: game_time_fmt, type: 'death',  slot: `slot${watch}` });
               prevSeatKDA[statKey] = { kills: curK, assists: curA, deaths: curD };
+
+              // item purchase detection — keyed by pid so swap doesn't affect it
+              const pid = `player${watch}`;
+              const currItems = countItems(seat.equip_list);
+              const prevItems = prevItemCounts[pid] || {};
+              for (const [idStr, cnt] of Object.entries(currItems)) {
+                const added = cnt - (prevItems[idStr] || 0);
+                for (let n = 0; n < added; n++) {
+                  if (!itemLog[pid]) itemLog[pid] = [];
+                  const iid = Number(idStr);
+                  itemLog[pid].push({ game_time_s, game_time_fmt, item_id: iid, item_name: ITEM_NAMES[iid] || null, is_tier3: TIER3_ITEMS.has(iid) });
+                  console.log(`[ITEMS] ${pid} bought item ${idStr} at ${game_time_fmt}`);
+                }
+              }
+              prevItemCounts[pid] = currItems;
             }
           }
           if (gameEvents.length > MAX_EVENTS) gameEvents.splice(0, gameEvents.length - MAX_EVENTS);
@@ -1099,8 +1152,10 @@ function buildVmix() {
 function buildCampFeed() {
   const mapCamp = (entries) =>
     entries.map(({ pid, watch }, i) => {
-      const r = readings[pid];
-      const d = deriveStats(pid);
+      const r  = readings[pid];
+      const d  = deriveStats(pid);
+      const cs = WATCH_TO_CAMP_SEAT[watch];
+      const heroId = cs ? (lastPlayerSnap[`${cs.campid}-${cs.seat}`]?.hero_id ?? null) : null;
       return {
         [`player${i + 1}`]: {
           // live always
@@ -1108,6 +1163,7 @@ function buildCampFeed() {
           name:        `watch${watch}`,
           player_name: playerNames[watch] || null,
           role:        ROLE_DISPLAY[players[pid].role] || players[pid].role,
+          hero_id:     heroId,
           bpm:         r.status === "ok"
                        ? r.bpm
                        : (r.simulated_bpm !== null ? r.simulated_bpm : r.last_bpm),
@@ -1119,6 +1175,7 @@ function buildCampFeed() {
           pct_above_120:           d.pct_above_120,
           avg_bpm_at_objectives:   d.avg_bpm_at_objectives,
           peak_bpm_at_objectives:  d.peak_bpm_at_objectives,
+          item_timeline:           itemLog[pid] || [],
         },
       };
     });
@@ -1513,6 +1570,30 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /items/:filename — serve item images
+  if (req.method === "GET" && req.url.startsWith("/items/")) {
+    const filename = path.basename(req.url.slice("/items/".length).split("?")[0]);
+    const filePath = path.join(__dirname, "items", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.writeHead(200);
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
+  // GET /role/:filename — serve role icon images
+  if (req.method === "GET" && req.url.startsWith("/role/")) {
+    const filename = decodeURIComponent(path.basename(req.url.slice("/role/".length).split("?")[0]));
+    const filePath = path.join(__dirname, "role", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.writeHead(200);
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
   // GET /fights-static — fights.json (for debug mode)
   if (req.method === "GET" && req.url === "/fights-static") {
     const file = path.join(__dirname, "fights.json");
@@ -1685,6 +1766,56 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /richguy/:filename — serve richguy asset images
+  if (req.method === "GET" && req.url.startsWith("/richguy/")) {
+    const filename = decodeURIComponent(path.basename(req.url.slice("/richguy/".length).split("?")[0]));
+    const filePath = path.join(__dirname, "richguy", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    const ext  = path.extname(filename).toLowerCase();
+    const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
+  // GET /photos/:filename — serve player photo images
+  if (req.method === "GET" && req.url.startsWith("/photos/")) {
+    const filename = decodeURIComponent(path.basename(req.url.slice("/photos/".length).split("?")[0]));
+    const filePath = path.join(__dirname, "photos", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    const ext  = path.extname(filename).toLowerCase();
+    const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/overlay/post_richguy/show") {
+    overlayClients.forEach(c => { try { c.write('event: post_richguy\ndata: {"action":"show","data":{}}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+  if (req.method === "GET" && req.url === "/overlay/post_richguy/hide") {
+    overlayClients.forEach(c => { try { c.write('event: post_richguy\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  if (req.method === "GET" && req.url === "/overlay/post_itemline/show") {
+    overlayClients.forEach(c => { try { c.write('event: post_itemline\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+  if (req.method === "GET" && req.url === "/overlay/post_itemline/hide") {
+    overlayClients.forEach(c => { try { c.write('event: post_itemline\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
   // GET /overlay/fights/pending — polled by overlay to get queued action
   if (req.method === "GET" && req.url === "/overlay/fights/pending") {
     const p = fightsPendingAction;
@@ -1709,6 +1840,24 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, action: slot === "hide" ? "hide" : "show", slot }));
+    return;
+  }
+
+  // GET /proxy/richguy?host=theapi.dpdns.org  — server-side proxy to avoid CORS
+  if (req.method === "GET" && req.url.startsWith("/proxy/richguy")) {
+    const u = new URL(req.url, "http://localhost");
+    const host = u.searchParams.get("host") || "theapi.dpdns.org";
+    (async () => {
+      try {
+        const upstream = await fetch(`http://${host}/api/gold_vs_gold_sector`);
+        const data = await upstream.json();
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(data));
+      } catch (e) {
+        res.writeHead(502, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    })();
     return;
   }
 

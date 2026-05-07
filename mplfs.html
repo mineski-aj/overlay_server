@@ -193,6 +193,125 @@
       color: #000;
       transition: color 0.6s;
     }
+
+    /* ── POST RICHGUY PAGE ── */
+    #post-richguy-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent;
+    }
+    #post-richguy-page.rg-on { display: block; }
+
+    @keyframes rg-in {
+      0%   { opacity: 0; transform: translateY(40px) scale(0.85); }
+      55%  { opacity: 1; transform: translateY(-8px) scale(1.05); }
+      75%  { transform: translateY(4px) scale(0.97); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes rg-photo-in {
+      0%   { opacity: 0; transform: scale(1.12) translateX(-20px); }
+      60%  { opacity: 1; transform: scale(0.98) translateX(6px); }
+      100% { opacity: 1; transform: scale(1) translateX(0); }
+    }
+    @keyframes rg-out {
+      from { opacity: 1; transform: translateY(0);    }
+      to   { opacity: 0; transform: translateY(16px); }
+    }
+
+    /* ── ITEM TIMELINE PAGE ── */
+    #item-timeline-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent;
+    }
+    #item-timeline-page.itl-on { display: block; }
+
+    @keyframes itl-row-in {
+      from { transform: translateX(-40px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+    @keyframes itl-item-in {
+      from { transform: translate(-50%,-50%) scale(0.4); opacity: 0; }
+      to   { transform: translate(-50%,-50%) scale(1);   opacity: 1; }
+    }
+    @keyframes itl-wrap-out {
+      from { opacity: 1; transform: translateY(0);    }
+      to   { opacity: 0; transform: translateY(16px); }
+    }
+
+    .itl-tick {
+      position: absolute;
+      top: 0; height: 44px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .itl-tick-mark { width: 1px; background: rgba(0,0,0,0.2); flex: 1; margin-top: 8px; }
+    .itl-tick-label {
+      font-size: 10px;
+      font-family: monospace;
+      color: rgba(0,0,0,0.45);
+      padding-bottom: 4px;
+      white-space: nowrap;
+    }
+
+    .itl-item-circle {
+      position: absolute;
+      border-radius: 50%;
+      overflow: hidden;
+      background: #888;
+      transform: translate(-50%, -50%);
+      border: 1px solid rgba(0,0,0,0.3);
+    }
+    .itl-item-circle img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .itl-item-circle.t1 { opacity: 0.75; }
+    .itl-item-circle.t2 { opacity: 0.9; }
+    .itl-item-circle.t3 {
+      opacity: 1;
+      border: none;
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .itl-item-ts {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: monospace;
+      font-size: 9px;
+      font-weight: bold;
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .itl-item-ts.blue { background: #1a3f9e; }
+    .itl-item-ts.red  { background: #7f1d1d; }
+
+    .itl-portrait-box {
+      position: absolute;
+      border-radius: 3px;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .itl-portrait-box.camp1-border { border: 2px solid #2563eb; }
+    .itl-portrait-box.camp2-border { border: 2px solid #dc2626; }
+    .itl-portrait-name {
+      font-family: 'Anton', sans-serif;
+      font-size: 7.5px;
+      text-align: center;
+      padding: 3px;
+      word-break: break-all;
+      line-height: 1.35;
+    }
+    .camp1-border .itl-portrait-name { color: #2563eb; }
+    .camp2-border .itl-portrait-name { color: #dc2626; }
   </style>
 </head>
 <body>
@@ -215,11 +334,29 @@
       <button class="dbg-btn" id="bg-toggle" onclick="toggleBg()">BG: transparent</button>
     </div>
 
+    <div class="bar-row">
+      <span class="dbg-label">POST_RICHGUY</span>
+      <label>API</label>
+      <input id="rg-api-url" type="text" value="theapi.dpdns.org" spellcheck="false" style="background:#1e1e1e;border:1px solid #444;color:#eee;padding:3px 8px;font-family:monospace;font-size:12px;width:200px;border-radius:3px">
+      <span id="rg-api-status" style="font-size:11px;color:#555">—</span>
+      <button class="dbg-btn show" onclick="fetchAndShowRichguy()">▶ FETCH & SHOW</button>
+      <button class="dbg-btn hide" onclick="hidePostRichguy()">■ HIDE</button>
+    </div>
+
+    <div class="bar-row">
+      <span class="dbg-label">ITEM TIMELINE</span>
+      <button class="dbg-btn show" onclick="showItemTimeline()">▶ SHOW</button>
+      <button class="dbg-btn hide" onclick="hideItemTimeline()">■ HIDE</button>
+      <button class="dbg-btn" onclick="fetchItemTimeline()" style="margin-left:4px">↺ REFRESH</button>
+    </div>
+
   </div>
 
   <!-- ── BROADCAST CANVAS ── -->
   <div id="canvas">
     <!-- post_hearts containers injected by JS -->
+    <div id="post-richguy-page"></div>
+    <div id="item-timeline-page"></div>
   </div>
 
   <script>
@@ -445,6 +582,18 @@
         if (msg.action === 'show') showPostHearts();
         else if (msg.action === 'hide') hidePostHearts();
       });
+
+      sseSource.addEventListener('post_itemline', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') showPostItemline();
+        else if (msg.action === 'hide') hidePostItemline();
+      });
+
+      sseSource.addEventListener('post_richguy', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') fetchAndShowRichguy();
+        else if (msg.action === 'hide') hidePostRichguy();
+      });
     }
 
     function reconnectSSE() {
@@ -453,7 +602,580 @@
       connectSSE();
     }
 
+    /* ═══════════════════════════════════════════════
+       ITEM TIMELINE
+    ═══════════════════════════════════════════════ */
+    const ITL = {
+      HEADER_H:   44,
+      BLOCK_H:    207,   /* (1080 - 44) / 5 */
+      ROW_H:      103,   /* 207 / 2 */
+      LEFT_W:     175,
+      ROLE_COL:   58,
+      PORTRAIT_W: 92,
+      PORTRAIT_H: 89,
+      TIMELINE_X: 175,
+      TIMELINE_W: 1725,  /* 1920 - 175 - 20 */
+    };
+
+    let itlOn = false;
+
+    function showItemTimeline() { itlOn = true;  showPostItemline(); }
+    function hideItemTimeline() { itlOn = false; hidePostItemline(); }
+
+    function itlDurToSec(dur) {
+      const [m, s] = dur.split(':').map(Number);
+      return m * 60 + s;
+    }
+
+    function itlTier(id) {
+      if (id >= 3000) return 3;
+      if (id >= 2000) return 2;
+      return 1;
+    }
+
+    function buildItl(data) {
+      const page = document.getElementById('item-timeline-page');
+      page.innerHTML = '';
+      const maxSec = itlDurToSec(data.game_duration);
+
+      /* ── layout constants ── */
+      const HDR_H  = 40;                        /* header height                  */
+      const ROW_H  = 70;                        /* row height  (40 + 10×70 = 740) */
+      const HERO_W = ROW_H;                     /* square hero image              */
+      const NAME_W = 180;                       /* name strip width inside row    */
+      const ROL_W  = 52;                        /* role icon col width            */
+      const CONT_W = 1540;
+      const CONT_H = HDR_H + 10 * ROW_H;       /* = 740                          */
+      const CONT_X = (1920 - CONT_W) / 2;      /* = 190 — centered in 1920px     */
+      const CY     = (1080 - CONT_H) / 2;      /* = 170 — centered in 1080px     */
+      const CX     = CONT_X - ROL_W - 40;      /* role icons 40px left of container */
+
+      /* container-relative coords */
+      const ROW_X = HERO_W;                    /* colored row left               */
+      const TL_X  = HERO_W + NAME_W;           /* timeline left                  */
+      const TL_END = CONT_W;                   /* timeline right = container edge */
+      const TL_W  = TL_END - TL_X;
+
+      const C1 = 'rgba(32,96,208,0.5)';
+      const C2 = 'rgba(204,32,32,0.5)';
+
+      /* ── clipping container (hero + name + timeline) ── */
+      const wrapper = document.createElement('div');
+      wrapper.dataset.itlWrapper = '1';
+      wrapper.style.cssText = `position:absolute;left:${CONT_X}px;top:${CY}px;width:${CONT_W}px;height:${CONT_H}px;overflow:hidden`;
+      page.appendChild(wrapper);
+
+      /* ── time-axis header ── */
+      const hdr = document.createElement('div');
+      hdr.style.cssText = `position:absolute;left:0;top:0;width:${CONT_W}px;height:${HDR_H}px;background:rgba(8,16,48,0.88);overflow:hidden`;
+      const hdrLabel = document.createElement('div');
+      hdrLabel.textContent = 'ITEM TIMELINE';
+      hdrLabel.style.cssText = `position:absolute;left:${HERO_W + 10}px;top:0;height:${HDR_H}px;display:flex;align-items:center;font-family:'General Sans',sans-serif;font-weight:700;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:2px`;
+      hdr.appendChild(hdrLabel);
+      wrapper.appendChild(hdr);
+
+      for (let m = 0; m * 60 <= maxSec; m++) {
+        const sec  = m * 60;
+        const absX = TL_X + (sec / maxSec) * TL_W;
+        if (absX > TL_END) break;
+
+        const lbl = document.createElement('div');
+        lbl.style.cssText = `position:absolute;left:${absX}px;top:5px;transform:translateX(-50%);font-family:monospace;font-size:10px;color:rgba(255,255,255,0.8);white-space:nowrap;z-index:10`;
+        lbl.textContent = String(m).padStart(2, '0') + ':00';
+        wrapper.appendChild(lbl);
+
+        const tick = document.createElement('div');
+        tick.style.cssText = `position:absolute;left:${absX}px;top:${HDR_H - 8}px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid rgba(255,255,255,0.75);z-index:10`;
+        wrapper.appendChild(tick);
+      }
+
+      /* ── role pairs ── */
+      const ROLES = ['EXP LANER','JUNGLER','MID LANER','ROAMER','GOLD LANER'];
+      const CAMPS = [
+        { key:'camp1', color:C1, tsCls:'blue' },
+        { key:'camp2', color:C2, tsCls:'red'  },
+      ];
+
+      for (let ri = 0; ri < 5; ri++) {
+        const pairY = HDR_H + ri * ROW_H * 2;   /* container-relative */
+
+        /* role icon — on page (outside container), animates with pair */
+        const pairDelay = ri * 2 * 65;
+        const roleEl = document.createElement('div');
+        roleEl.dataset.itlRole = '1';
+        roleEl.style.cssText = `position:absolute;left:${CX}px;top:${CY + pairY}px;width:${ROL_W}px;height:${ROW_H*2}px;display:flex;align-items:center;justify-content:center;z-index:10;overflow:hidden;animation:itl-row-in 380ms cubic-bezier(0.22,1,0.36,1) ${pairDelay}ms both`;
+        const roleImg = document.createElement('img');
+        roleImg.src = `role/${encodeURIComponent(ROLES[ri])}.png`;
+        roleImg.style.cssText = `width:${ROL_W}px;height:${ROL_W}px;object-fit:contain;filter:invert(1)`;
+        roleImg.onerror = () => {
+          roleImg.style.display = 'none';
+          const rs = document.createElement('span');
+          rs.style.cssText = `font-family:Anton,sans-serif;font-size:9px;letter-spacing:1px;color:rgba(0,0,0,0.55);writing-mode:vertical-rl;transform:rotate(180deg)`;
+          rs.textContent = ROLES[ri].split(' ')[0].slice(0,3).toUpperCase();
+          roleEl.appendChild(rs);
+        };
+        roleEl.appendChild(roleImg);
+        page.appendChild(roleEl);
+
+        /* minute separators + diamonds */
+        for (let m = 1; m * 60 <= maxSec; m++) {
+          const absX = TL_X + (m * 60 / maxSec) * TL_W;
+          if (absX >= TL_END) break;
+
+          const sep = document.createElement('div');
+          sep.style.cssText = `position:absolute;left:${absX}px;top:${pairY}px;width:1px;height:${ROW_H*2}px;background:rgba(255,255,255,0.22);z-index:3`;
+          wrapper.appendChild(sep);
+
+          const dm = document.createElement('div');
+          dm.style.cssText = `position:absolute;left:${absX}px;top:${pairY}px;width:9px;height:9px;background:white;transform:translateX(-50%) translateY(-50%) rotate(45deg);z-index:7`;
+          wrapper.appendChild(dm);
+        }
+
+        for (let ci = 0; ci < 2; ci++) {
+          const rowY     = pairY + ci * ROW_H;
+          const rowIndex = ri * 2 + ci;              /* 0–9 */
+          const rowDelay = rowIndex * 65;            /* stagger: 0–585ms */
+          const { key, color, tsCls } = CAMPS[ci];
+          const playerObj = data[key]?.players?.[ri];
+          if (!playerObj) continue;
+          const p = playerObj[`player${ri + 1}`];
+          if (!p) continue;
+
+          /* animated row group — hero + bg + name slide in together */
+          const rowGroup = document.createElement('div');
+          rowGroup.style.cssText = `position:absolute;left:0;top:${rowY}px;width:${CONT_W}px;height:${ROW_H}px;animation:itl-row-in 380ms cubic-bezier(0.22,1,0.36,1) ${rowDelay}ms both`;
+          wrapper.appendChild(rowGroup);
+
+          const heroBox = document.createElement('div');
+          heroBox.style.cssText = `position:absolute;left:0;top:0;width:${HERO_W}px;height:${ROW_H}px;overflow:hidden;z-index:4`;
+          const heroImg = document.createElement('img');
+          heroImg.style.cssText = `width:100%;height:100%;object-fit:cover;display:block`;
+          heroImg.src = p.hero_id ? `hero/HERO_${p.hero_id}_KOTAK.png` : '';
+          heroImg.onerror = () => { heroImg.style.display = 'none'; };
+          heroBox.appendChild(heroImg);
+          rowGroup.appendChild(heroBox);
+
+          const bg = document.createElement('div');
+          bg.style.cssText = `position:absolute;left:${ROW_X}px;top:0;width:${TL_END - ROW_X}px;height:${ROW_H}px;background:${color};z-index:1`;
+          rowGroup.appendChild(bg);
+
+          const nameBox = document.createElement('div');
+          nameBox.style.cssText = `position:absolute;left:${ROW_X}px;top:0;width:${NAME_W}px;height:${ROW_H}px;display:flex;align-items:center;padding-left:10px;z-index:4;overflow:hidden`;
+          const nm = document.createElement('span');
+          nm.style.cssText = `font-family:'General Sans',sans-serif;font-weight:800;font-size:18px;color:rgba(255,255,255,0.95);white-space:nowrap;display:inline-block;max-width:${NAME_W - 14}px;transform-origin:left center;`;
+          nm.textContent = p.player_name || p.name || '';
+          nameBox.appendChild(nm);
+          rowGroup.appendChild(nameBox);
+          requestAnimationFrame(() => {
+            const avail = NAME_W - 14;
+            if (nm.scrollWidth > avail) nm.style.transform = `scaleX(${avail / nm.scrollWidth})`;
+          });
+
+          /* items — staggered after the row slides in, sweeping left→right */
+          const itemY = rowY + ROW_H / 2 - 4;
+          const itemsInRow = (p.item_timeline || []).filter(item => {
+            const size = itlTier(item.item_id) === 1 ? 22 : itlTier(item.item_id) === 2 ? 32 : 44;
+            return TL_X + (item.game_time_s / maxSec) * TL_W + size / 2 <= TL_END;
+          });
+          itemsInRow.forEach((item, idx) => {
+            const tier  = itlTier(item.item_id);
+            const size  = tier === 1 ? 22 : tier === 2 ? 32 : 44;
+            const xPos  = TL_X + (item.game_time_s / maxSec) * TL_W;
+            const itemDelay = rowDelay + 260 + idx * 18;   /* after row + sweep */
+
+            const wrap = document.createElement('div');
+            wrap.style.cssText = `position:absolute;left:${xPos}px;top:${itemY}px;width:0;height:0;z-index:5;animation:itl-item-in 220ms cubic-bezier(0.34,1.56,0.64,1) ${itemDelay}ms both`;
+
+            const circle = document.createElement('div');
+            circle.className = `itl-item-circle t${tier}`;
+            circle.style.cssText = `width:${size}px;height:${size}px`;
+            const img = document.createElement('img');
+            img.src = `items/${item.item_id}.png`;
+            img.onerror = () => {
+              img.style.display = 'none';
+              circle.style.background = tier === 3 ? '#a07828' : tier === 2 ? '#334466' : '#555';
+            };
+            circle.appendChild(img);
+            wrap.appendChild(circle);
+
+            if (tier === 3) {
+              const ts = document.createElement('div');
+              ts.className = `itl-item-ts ${tsCls}`;
+              ts.style.top = (size / 2 + 3) + 'px';
+              ts.textContent = item.game_time_fmt;
+              wrap.appendChild(ts);
+            }
+
+            wrapper.appendChild(wrap);
+          });
+        }
+      }
+    }
+
+    async function fetchItemTimeline() {
+      try {
+        const res  = await fetch(buildUrl('/postgame'));
+        const data = await res.json();
+        buildItl(data);
+      } catch (e) {
+        console.error('[item_timeline] fetch error', e);
+      }
+    }
+
+    const itlPage = document.getElementById('item-timeline-page');
+
+    async function showPostItemline() {
+      await fetchItemTimeline();
+      itlPage.style.animation = '';
+      itlPage.classList.add('itl-on');
+    }
+
+    function hidePostItemline() {
+      const wrapper   = itlPage.querySelector('[data-itl-wrapper]');
+      const roleIcons = [...itlPage.querySelectorAll('[data-itl-role]')];
+      const targets   = [wrapper, ...roleIcons].filter(Boolean);
+      if (!targets.length) { itlPage.classList.remove('itl-on'); return; }
+      targets.forEach(el => { el.style.animation = 'itl-wrap-out 400ms ease-in both'; });
+      targets[0].addEventListener('animationend', () => {
+        itlPage.classList.remove('itl-on');
+        itlPage.innerHTML = '';
+      }, { once: true });
+    }
+
+    /* ═══════════════════════════════════════════════
+       POST RICHGUY
+    ═══════════════════════════════════════════════ */
+    const rgPage = document.getElementById('post-richguy-page');
+
+    const RG_C_W = 370, RG_C_H = 80, RG_ROW_GAP = 33;
+    const RG_BASE_X = 730, RG_BASE_Y = 378;
+    const RG_COL2_X = RG_BASE_X + RG_C_W + 275; // 1375
+
+    const RC_POSITIONS = [
+      { x: RG_BASE_X,  y: RG_BASE_Y },
+      { x: RG_BASE_X,  y: RG_BASE_Y + (RG_C_H + RG_ROW_GAP) },
+      { x: RG_BASE_X,  y: RG_BASE_Y + 2 * (RG_C_H + RG_ROW_GAP) },
+      { x: RG_COL2_X,  y: RG_BASE_Y },
+      { x: RG_COL2_X,  y: RG_BASE_Y + (RG_C_H + RG_ROW_GAP) },
+      { x: RG_COL2_X,  y: RG_BASE_Y + 2 * (RG_C_H + RG_ROW_GAP) },
+      { x: 882,  y: 750, zIndex: 48, noDelta: true },
+      { x: 1311, y: 750, zIndex: 49, noDelta: true },
+    ];
+
+    function countUp(el, rawVal, duration, startDelay = 0) {
+      const str = String(rawVal);
+      const prefix = str.startsWith('+') ? '+' : str.startsWith('-') ? '-' : '';
+      const target = parseInt(str.replace(/[^0-9]/g, ''), 10) || 0;
+      if (target === 0) return;
+      el.textContent = prefix + '0';
+      setTimeout(() => {
+        const t0 = performance.now();
+        (function tick(now) {
+          const p = Math.min((now - t0) / duration, 1);
+          const ease = 1 - Math.pow(1 - p, 3);
+          el.textContent = prefix + Math.round(ease * target);
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = str;
+        })(performance.now());
+      }, startDelay);
+    }
+
+    function buildOneRC(page, x, y, { stat_label = 'STAT', value = '0000', delta = '+000' } = {}, delay = 0, { zIndex = 6, noDelta = false } = {}, idx = 0) {
+      const rc = document.createElement('div');
+      rc.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${RG_C_W}px;height:${RG_C_H}px;z-index:${zIndex};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay}ms both`;
+      const rcBg = document.createElement('img');
+      rcBg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      rcBg.src = 'richguy/richcontainer.png';
+      rc.appendChild(rcBg);
+
+      const lblBox = document.createElement('div');
+      lblBox.style.cssText = `position:absolute;left:10px;top:${(RG_C_H-57)/2}px;width:143px;height:57px;display:flex;align-items:center;justify-content:center;z-index:11`;
+      const lbl = document.createElement('div');
+      lbl.innerHTML = stat_label.replace(' ', '<br>');
+      lbl.dataset.rcLbl = idx;
+      lbl.style.cssText = `font-family:'General Sans',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:rgb(0,0,0)`;
+      lblBox.appendChild(lbl);
+      rc.appendChild(lblBox);
+
+      const valBox = document.createElement('div');
+      valBox.style.cssText = `position:absolute;left:${RG_C_W-10-168}px;top:${(RG_C_H-57)/2}px;width:168px;height:57px;display:flex;align-items:center;justify-content:center;z-index:12`;
+      const val = document.createElement('div');
+      val.textContent = value;
+      val.dataset.rcVal = idx;
+      val.style.cssText = `font-family:'General Sans',sans-serif;font-size:52px;font-weight:800;line-height:1;color:rgb(0,0,0)`;
+      countUp(val, value, 600, delay);
+      valBox.appendChild(val);
+      rc.appendChild(valBox);
+
+      page.appendChild(rc);
+
+      if (!noDelta) {
+        const dltWrap = document.createElement('div');
+        dltWrap.style.cssText = `position:absolute;left:${x + RG_C_W + 24}px;top:${y}px;height:${RG_C_H}px;display:flex;align-items:center;z-index:14`;
+        const dlt = document.createElement('div');
+        dlt.textContent = delta;
+        dlt.dataset.rcDlt = idx;
+        countUp(dlt, delta, 600, delay + 40);
+        dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:rgb(0,147,3);animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
+        dltWrap.appendChild(dlt);
+        page.appendChild(dltWrap);
+      }
+    }
+
+    const NT_W = 607, NT_H = 120, NT_X = 32, NT_Y = 1080 - 113 - 120; // 847
+    const OPP_W = 360, OPP_H = 67, OPP_X = 1087, OPP_Y = 864;
+    const OPP_S = OPP_W / NT_W; // ~0.593 scale factor
+
+    function buildNameTag(page, { name = '', role = '', tricode = '', heroid = 0, winnerCamp = 1 } = {}) {
+      const wrap = document.createElement('div');
+      wrap.dataset.rgNametag = '1';
+      wrap.style.cssText = `position:absolute;left:${NT_X}px;top:${NT_Y}px;width:${NT_W}px;height:${NT_H}px;z-index:50;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 80ms both`;
+
+      const bg = document.createElement('img');
+      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      bg.src = winnerCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
+      wrap.appendChild(bg);
+
+      /* tricode — black text in the white panel area, 12px from left */
+      const tc = document.createElement('div');
+      tc.dataset.rgNtTricode = '1';
+      tc.textContent = tricode;
+      tc.style.cssText = `position:absolute;left:12px;top:50%;transform:translateY(-50%);width:120px;font-family:'General Sans',sans-serif;font-size:24px;font-weight:800;color:#000;z-index:2;text-align:center`;
+      wrap.appendChild(tc);
+
+      /* role icon — 40×40, 142px from left */
+      const roleImg = document.createElement('img');
+      roleImg.dataset.rgNtRole = '1';
+      roleImg.style.cssText = `position:absolute;left:142px;top:50%;transform:translateY(-50%);width:40px;height:40px;z-index:2`;
+      roleImg.src = buildUrl('/role/' + role.toUpperCase() + '.png');
+      roleImg.onerror = () => { roleImg.style.display = 'none'; };
+      wrap.appendChild(roleImg);
+
+      /* player name — 18px right of role icon (left:200), width:275 */
+      const txt = document.createElement('div');
+      txt.dataset.rgNtName = '1';
+      txt.textContent = name.toUpperCase();
+      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      wrap.appendChild(txt);
+
+      /* hero icon — 107×107, 5px from right edge, vertically centered, inside container */
+      const hero = document.createElement('img');
+      hero.dataset.rgNtHero = '1';
+      hero.style.cssText = `position:absolute;right:5px;top:50%;transform:translateY(-50%);width:107px;height:107px;object-fit:contain;z-index:2`;
+      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.onerror = () => { hero.style.display = 'none'; };
+      wrap.appendChild(hero);
+
+      page.appendChild(wrap);
+    }
+
+    function buildOpponentTag(page, { name = '', role = '', heroid = 0, winnerCamp = 1 } = {}) {
+      const oppCamp = winnerCamp === 1 ? 2 : 1;
+      const heroSz  = Math.round(107 * OPP_S);
+      const wrap = document.createElement('div');
+      wrap.dataset.rgOppTag = '1';
+      wrap.style.cssText = `position:absolute;left:${OPP_X}px;top:${OPP_Y}px;width:${OPP_W}px;height:${OPP_H}px;z-index:66;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 100ms both`;
+
+      const bg = document.createElement('img');
+      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      bg.src = oppCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
+      wrap.appendChild(bg);
+
+      /* VS text — in place of team logo */
+      const vs = document.createElement('div');
+      vs.textContent = 'VS';
+      vs.style.cssText = `position:absolute;left:${Math.round(12*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(120*OPP_S)}px;font-family:'General Sans',sans-serif;font-size:${Math.round(24*OPP_S)}px;font-weight:800;color:#000;z-index:2;text-align:center`;
+      wrap.appendChild(vs);
+
+      /* role icon — scaled */
+      const roleImg = document.createElement('img');
+      const ri = Math.round(40 * OPP_S);
+      roleImg.style.cssText = `position:absolute;left:${Math.round(142*OPP_S)}px;top:50%;transform:translateY(-50%);width:${ri}px;height:${ri}px;z-index:2`;
+      roleImg.src = buildUrl('/role/' + role.toUpperCase() + '.png');
+      roleImg.onerror = () => { roleImg.style.display = 'none'; };
+      wrap.appendChild(roleImg);
+
+      /* opponent name — scaled */
+      const txt = document.createElement('div');
+      txt.textContent = name.toUpperCase();
+      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(275*OPP_S)}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      wrap.appendChild(txt);
+
+      /* hero icon — scaled, 5px from right, inside container */
+      const hero = document.createElement('img');
+      hero.style.cssText = `position:absolute;right:5px;top:50%;transform:translateY(-50%);width:${heroSz}px;height:${heroSz}px;object-fit:contain;z-index:2`;
+      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.onerror = () => { hero.style.display = 'none'; };
+      wrap.appendChild(hero);
+
+      page.appendChild(wrap);
+    }
+
+    function buildRichguy({ photo = 'KarlTzy_FRONT.png', name = '', role = '', heroid = 0, tricode = '', winnerCamp = 1, opponent = {}, containers = [] } = {}) {
+      rgPage.innerHTML = '';
+
+      const panel = document.createElement('div');
+      panel.style.cssText = `position:absolute;left:4px;top:26px;width:920px;height:1054px;z-index:4;overflow:hidden;animation:rg-photo-in 500ms cubic-bezier(0.22,1,0.36,1) both`;
+      const img = document.createElement('img');
+      img.style.cssText = `width:100%;height:100%;object-fit:cover;object-position:top center;display:block`;
+      img.onerror = () => { img.style.display = 'none'; };
+      img.src = `photos/${encodeURIComponent(photo)}`;
+      panel.appendChild(img);
+      rgPage.appendChild(panel);
+
+      const title = document.createElement('div');
+      title.textContent = 'RICH GUY';
+      title.style.cssText = `position:absolute;left:964px;top:125px;font-family:'Anton',sans-serif;font-size:198px;line-height:1;color:rgb(1,1,0);z-index:69;white-space:nowrap;animation:rg-in 380ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
+      rgPage.appendChild(title);
+
+      const divider = document.createElement('div');
+      divider.style.cssText = `position:absolute;left:1287px;top:357px;width:3px;height:350px;z-index:68;background:#000;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
+      rgPage.appendChild(divider);
+
+      const defaults = [
+        { stat_label: 'MINION GOLD',  value: '0000', delta: '+000' },
+        { stat_label: 'STAT TWO',     value: '0000', delta: '+000' },
+        { stat_label: 'STAT THREE',   value: '0000', delta: '+000' },
+        { stat_label: 'STAT FOUR',    value: '0000', delta: '+000' },
+        { stat_label: 'STAT FIVE',    value: '0000', delta: '+000' },
+        { stat_label: 'STAT SIX',     value: '0000', delta: '+000' },
+        { stat_label: 'TOTAL GOLD',   value: '0000' },
+        { stat_label: 'GPM',          value: '0000' },
+      ];
+      const data = (containers.length === 8) ? containers : defaults;
+      RC_POSITIONS.forEach((pos, i) => buildOneRC(rgPage, pos.x, pos.y, data[i], 60 + i * 25, pos, i));
+      buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
+      buildOpponentTag(rgPage, { name: opponent.name || '', role: opponent.role || '', heroid: opponent.heroid || 0, winnerCamp });
+    }
+
+    const GOLD_LABELS = [
+      'MINION GOLD',
+      'JUNGLE CREEPS',
+      'TURTLE LORD',
+      'TURRET GOLD',
+      'ROAM EQUIP',
+      'KILLS ASSISTS',
+    ];
+
+    async function fetchRichguyData(apiBase) {
+      const [rgRes, feedRes] = await Promise.all([
+        fetch(buildUrl(`/proxy/richguy?host=${encodeURIComponent(apiBase)}`)),
+        fetch(buildUrl('/feed/order')),
+      ]);
+      if (!rgRes.ok) throw new Error(`proxy ${rgRes.status}`);
+      const rows     = await rgRes.json();
+      const feedData = feedRes.ok ? await feedRes.json() : null;
+
+      const camp1Tricode = (feedData?.camp1_tricode || '').toUpperCase();
+      const camp2Tricode = (feedData?.camp2_tricode || '').toUpperCase();
+
+      let best = null, bestGold = -1;
+      for (const entry of rows) {
+        const c1wins = entry.camp1.CampWin;
+        const winner = c1wins ? entry.camp1 : entry.camp2;
+        if (winner.gold > bestGold) {
+          bestGold = winner.gold;
+          best = { winner, loser: c1wins ? entry.camp2 : entry.camp1, winnerCamp: c1wins ? 1 : 2 };
+        }
+      }
+      if (!best) return null;
+
+      const { winner, loser, winnerCamp } = best;
+      const winnerTricode = winnerCamp === 1 ? camp1Tricode : camp2Tricode;
+      const loserTricode  = winnerCamp === 1 ? camp2Tricode : camp1Tricode;
+
+      const containers = GOLD_LABELS.map((label, i) => {
+        const key = String(i + 1);
+        const wVal = winner.gold_map[key] || 0;
+        const lVal = loser.gold_map[key] || 0;
+        const diff  = wVal - lVal;
+        return { stat_label: label, value: String(wVal), delta: (diff >= 0 ? '+' : '') + diff };
+      });
+      containers.push({ stat_label: 'TOTAL GOLD', value: String(winner.gold) });
+      containers.push({ stat_label: 'GPM',        value: String(winner.gpm)  });
+
+      return {
+        photo: `${winner.name}_FRONT.png`,
+        name: winner.name, role: winner.role, heroid: winner.heroid,
+        tricode: winnerTricode, winnerCamp,
+        opponent: { name: loser.name, role: loser.role, heroid: loser.heroid, tricode: loserTricode },
+        containers,
+      };
+    }
+
+    function updateRichguyData(payload) {
+      const { containers = [], photo } = payload;
+      const img = rgPage.querySelector('img');
+      if (img && photo) img.src = `photos/${encodeURIComponent(photo)}`;
+      containers.forEach((c, i) => {
+        const lblEl = rgPage.querySelector(`[data-rc-lbl="${i}"]`);
+        const valEl = rgPage.querySelector(`[data-rc-val="${i}"]`);
+        const dltEl = rgPage.querySelector(`[data-rc-dlt="${i}"]`);
+        if (lblEl && c.stat_label) lblEl.innerHTML = c.stat_label.replace(' ', '<br>');
+        if (valEl) countUp(valEl, c.value ?? '0000', 700, 0);
+        if (dltEl) countUp(dltEl, c.delta ?? '+000', 700, 0);
+      });
+      const ntName = rgPage.querySelector('[data-rg-nt-name]');
+      const ntRole = rgPage.querySelector('[data-rg-nt-role]');
+      const ntBg   = rgPage.querySelector('[data-rg-nametag] img');
+      if (ntName && payload.name) ntName.textContent = payload.name.toUpperCase();
+      if (ntRole && payload.role) ntRole.src = buildUrl('/role/' + payload.role.toUpperCase() + '.png');
+      if (ntBg   && payload.winnerCamp) ntBg.src = payload.winnerCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
+    }
+
+    let rgCache = null;
+    let rgPollTimer = null;
+
+    async function pollRichguy() {
+      const apiBase = (document.getElementById('rg-api-url').value || 'theapi.dpdns.org').trim();
+      const status = document.getElementById('rg-api-status');
+      try {
+        const payload = await fetchRichguyData(apiBase);
+        if (payload) {
+          rgCache = payload;
+          if (status) { status.textContent = 'ok'; status.style.color = '#22c55e'; }
+        }
+      } catch (e) {
+        console.error('richguy poll failed:', e);
+        if (status) { status.textContent = e.message; status.style.color = '#f87171'; }
+      }
+    }
+
+    function startRichguyPoll() {
+      if (rgPollTimer) return;
+      pollRichguy();
+      rgPollTimer = setInterval(pollRichguy, 5000);
+    }
+
+    function fetchAndShowRichguy() {
+      if (rgCache) showPostRichguy(rgCache);
+      // no cache yet — do nothing, poll will populate it within 5s
+    }
+
+    function showPostRichguy(data) {
+      buildRichguy(data || {});
+      rgPage.classList.add('rg-on');
+    }
+
+    function hidePostRichguy() {
+      const children = [...rgPage.children];
+      if (!children.length) { rgPage.classList.remove('rg-on'); return; }
+      children.forEach(el => { el.style.animation = 'rg-out 400ms ease-in both'; });
+      children[0].addEventListener('animationend', () => {
+        rgPage.classList.remove('rg-on');
+        rgPage.innerHTML = '';
+      }, { once: true });
+    }
+
     connectSSE();
+    startRichguyPoll();
+
+    document.addEventListener('keydown', e => {
+      if (e.key === '`') {
+        const bar = document.getElementById('config-bar');
+        bar.style.display = bar.style.display === 'none' ? '' : 'none';
+      }
+    });
   </script>
 
 </body>
