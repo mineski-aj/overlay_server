@@ -1,5 +1,5 @@
 # MPL Overlay Server — Instructions
-**Version:** 1.0  
+**Version:** 1.1  
 **File:** mploverlay_instructionsV1.md
 
 ---
@@ -36,17 +36,30 @@ Only touch what is explicitly requested. If a task requires editing a block of c
 | GET | `/fights` | Completed fight recaps (`?last=N`) |
 | GET | `/fights-static` | Serves `fights.json` for debug mode |
 | GET | `/fights-overlay` | Serves `fights.html` |
-| GET | `/hero/:filename` | Serves hero icon images from `/hero/` folder |
+| GET | `/hero/:filename` | Serves hero icon images from `hero/` folder |
+| GET | `/items/:filename` | Serves item images from `items/` folder |
+| GET | `/role/:filename` | Serves role icon images from `role/` folder (filenames have spaces, e.g. `GOLD LANER.png`) |
+| GET | `/richguy/:filename` | Serves richguy overlay assets from `richguy/` folder |
+| GET | `/logos/:filename` | Serves team logo images from `logos/` folder (named by tricode, e.g. `RORA.png`) |
+| GET | `/photos/:filename` | Serves player photo images from `photos/` folder (e.g. `KarlTzy_FRONT.png`) |
+| GET | `/proxy/richguy?host=X` | Server-side proxy to `http://{host}/api/gold_vs_gold_sector` — avoids CORS when fetching from `mplfs.html` |
 | GET | `/` | Server dashboard (auto-refreshes) |
 | GET | `/overlay/events` | SSE stream — all overlays connect here |
-| GET | `/meter/show` | Sends `event: meter` `cmd:show` via SSE → triggers `heart_stopping_moment_v14.html` |
-| GET | `/meter/hide` | Sends `event: meter` `cmd:hide` via SSE → triggers `heart_stopping_moment_v14.html` |
+| GET | `/meter/show` | Sends `event: meter` `cmd:show` via SSE |
+| GET | `/meter/hide` | Sends `event: meter` `cmd:hide` via SSE |
 | GET | `/meter/plus` | Sends `event: meter` `cmd:plus` — increments meter level |
 | GET | `/meter/minus` | Sends `event: meter` `cmd:minus` — decrements meter level |
 | GET | `/meter/clear` | Sends `event: meter` `cmd:clear` — resets meter level to 0 |
 | GET | `/overlay/fights/show` | Sends `event: fights` `action:show` via SSE + sets pending action |
 | GET | `/overlay/fights/hide` | Sends `event: fights` `action:hide` via SSE + sets pending action |
 | GET | `/overlay/fights/pending` | Polled by `fights.html` every 500ms — returns and clears pending show/hide action |
+| GET | `/overlay/post_hearts/show` | Sends `event: post_hearts` `action:show` via SSE |
+| GET | `/overlay/post_hearts/hide` | Sends `event: post_hearts` `action:hide` via SSE |
+| GET | `/overlay/post_richguy/show` | Sends `event: post_richguy` `action:show` via SSE |
+| GET | `/overlay/post_richguy/hide` | Sends `event: post_richguy` `action:hide` via SSE |
+| GET | `/overlay/post_itemline/show` | Sends `event: post_itemline` `action:show` via SSE |
+| GET | `/overlay/post_itemline/hide` | Sends `event: post_itemline` `action:hide` via SSE |
+| GET | `/overlay/fs/hide` | Sends `event: fs_hide` via SSE — hides ALL overlays on `mplfs.html` |
 | GET | `/overlay/slot1–slot10` | Sends `event: show` with slot to SSE clients |
 | GET | `/overlay/hide` | Sends `event: hide` to SSE clients |
 
@@ -58,8 +71,12 @@ All overlays connect to one shared SSE stream at `/overlay/events`.
 Different overlays listen for different named events:
 
 - `event: meter` → `heart_stopping_moment_v14.html` (BPM meter overlay)
-- `event: fights` → `fights.html` (fight recap overlay) — also uses 500ms poll fallback
+- `event: fights` → `fights.html` (fight recap overlay) — also uses 500ms poll fallback at `/overlay/fights/pending`
 - `event: show` / `event: hide` → general player BPM overlays
+- `event: post_hearts` → `mplfs.html` (postgame hearts BPM overlay)
+- `event: post_richguy` → `mplfs.html` (richguy postgame gold stats overlay)
+- `event: post_itemline` → `mplfs.html` (item timeline overlay)
+- `event: fs_hide` → `mplfs.html` — triggers hide on ALL three overlays on the page simultaneously
 
 **Do not collapse or merge these event types.**
 
@@ -70,6 +87,7 @@ Different overlays listen for different named events:
 | File | Purpose |
 |------|---------|
 | `server.js` | Main server — all logic, routes, polling, fight detection |
+| `mplfs.html` | Combined overlay page — post_hearts, post_richguy, post_itemline all in one |
 | `fights.html` | Fight recap overlay — 905×286px, served at `/fights-overlay` |
 | `fights.json` | Static fight data for debug mode in `fights.html` |
 | `fights_live.json` | Persisted fight log — survives server restarts |
@@ -77,7 +95,58 @@ Different overlays listen for different named events:
 | `postgame.json` | Latest postgame snapshot (live pointer) |
 | `postgames/` | Archived postgame JSON files |
 | `hero/` | Hero icon images (`HERO_{id}_KOTAK.png`) |
+| `items/` | Item icon images (`{item_id}.png`) |
+| `role/` | Role icon images — filenames have spaces: `GOLD LANER.png`, `EXP LANER.png`, `MID LANER.png`, `ROAMER.png`, `JUNGLER.png` |
+| `richguy/` | Richguy overlay assets: `richcontainer.png`, `ignblue.png`, `ignred.png` |
+| `logos/` | Team logo PNGs named by tricode (e.g. `RORA.png`, `FLCN.png`) |
+| `photos/` | Player cutout photos (e.g. `KarlTzy_FRONT.png`) |
+| `items.json` | Item ID → name mapping (edit this, not server.js) |
 | `/Users/ajsarmiento/Desktop/heartstop/heart_stopping_moment_v14.html` | BPM meter overlay — **outside this directory** |
+
+---
+
+## mplfs.html Overlay Sections
+
+`mplfs.html` hosts three overlay scenes on a 1920×1080 broadcast canvas (transparent background):
+
+### post_hearts
+- Shows per-player BPM hearts at postgame
+- SSE: `event: post_hearts` `action: show|hide`
+- Guard: if already hidden, hide does nothing (no re-animation)
+
+### post_richguy
+- Postgame gold breakdown overlay with 8 richcontainers + IGN name tags
+- Data pulled from external API via `/proxy/richguy?host=X` + `/postgame` for tricodes
+- Background-polled every 5s into `rgCache` — show is instant, no wait
+- If no cache yet, show does nothing (no placeholder)
+- **GOLD_LABELS** (container order → gold_map key):
+  1. MINION GOLD → key `"1"`
+  2. KILLS / ASSISTS → key `"6"`
+  3. JUNGLE CREEPS → key `"2"`
+  4. TURTLE / LORD → key `"3"`
+  5. TURRET GOLD → key `"4"`
+  6. ROAM EQUIP → key `"5"`
+  7. TOTAL GOLD (no delta) — from `winner.gold`
+  8. GPM (no delta) — from `winner.gpm`
+- Delta: green if positive, red if negative, hidden if zero
+- Role icons served from `/role/` — filenames matched fuzzy via `roleFile()` (checks `.includes()` for gold/exp/mid/roam/jung)
+- Team logos from `/logos/{tricode}.png`
+- SSE: `event: post_richguy` `action: show|hide`
+
+### post_itemline
+- Item timeline overlay per player
+- SSE: `event: post_itemline` `action: show|hide`
+
+### fs_hide
+- `/overlay/fs/hide` broadcasts `event: fs_hide` which hides all three scenes simultaneously
+
+---
+
+## Proxy Route
+
+`/proxy/richguy?host=X` proxies to `http://{host}/api/gold_vs_gold_sector`.  
+Uses `async/await` inside an IIFE `(async () => { ... })()` because the `http.createServer` callback is synchronous.  
+Default host: `theapi.dpdns.org`.
 
 ---
 
@@ -115,3 +184,5 @@ Games outside this window are skipped (test games). The check is in `writePostga
 4. **fights.html** is served fresh on every request — no restart needed for HTML/CSS/JS changes.
 5. **Do not flush `fights_live.json`** on server start — it is intentionally restored.
 6. **Do not flush `positionLog`** on game start — only flush when state leaves `end` with a new `battleid`.
+7. **Static file routes** (`/hero/`, `/items/`, `/role/`, `/richguy/`, `/logos/`, `/photos/`) all require a `fs.existsSync` 404 check before streaming — never skip this.
+8. **Route ordering matters** — specific routes (`/fights-static`, `/fights-overlay`, `/overlay/post_richguy/*`, `/overlay/fs/hide`, etc.) must appear **before** the generic catch-alls (`/fights`, `/overlay/*`).

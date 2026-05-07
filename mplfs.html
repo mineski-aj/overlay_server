@@ -392,6 +392,15 @@
     });
 
 
+    /* richguy API URL — persisted separately */
+    const RG_URL_KEY  = 'mplfs_rg_api_url';
+    const rgUrlInput  = document.getElementById('rg-api-url');
+    rgUrlInput.value  = localStorage.getItem(RG_URL_KEY) || 'theapi.dpdns.org';
+    rgUrlInput.addEventListener('change', () => {
+      const v = rgUrlInput.value.trim();
+      if (v) localStorage.setItem(RG_URL_KEY, v);
+    });
+
     /* ════════════════════════════════════════════════
        POST_HEARTS — postgame BPM cards
     ════════════════════════════════════════════════ */
@@ -473,6 +482,7 @@
     }
 
     function hidePostHearts() {
+      if (!phVisible) return;
       phVisible = false;
       CONTAINERS.forEach(({ cls }, i) => {
         const el    = canvas.querySelector(`.${cls}`);
@@ -593,6 +603,12 @@
         const msg = JSON.parse(e.data);
         if (msg.action === 'show') fetchAndShowRichguy();
         else if (msg.action === 'hide') hidePostRichguy();
+      });
+
+      sseSource.addEventListener('fs_hide', () => {
+        hidePostHearts();
+        hidePostItemline();
+        hidePostRichguy();
       });
     }
 
@@ -847,6 +863,16 @@
     ═══════════════════════════════════════════════ */
     const rgPage = document.getElementById('post-richguy-page');
 
+    function roleFile(role) {
+      const r = (role || '').toLowerCase();
+      if (r.includes('gold')) return 'GOLD LANER';
+      if (r.includes('exp'))  return 'EXP LANER';
+      if (r.includes('mid'))  return 'MID LANER';
+      if (r.includes('roam')) return 'ROAMER';
+      if (r.includes('jung')) return 'JUNGLER';
+      return role?.toUpperCase() || '';
+    }
+
     const RG_C_W = 370, RG_C_H = 80, RG_ROW_GAP = 33;
     const RG_BASE_X = 730, RG_BASE_Y = 378;
     const RG_COL2_X = RG_BASE_X + RG_C_W + 275; // 1375
@@ -891,7 +917,9 @@
       const lblBox = document.createElement('div');
       lblBox.style.cssText = `position:absolute;left:10px;top:${(RG_C_H-57)/2}px;width:143px;height:57px;display:flex;align-items:center;justify-content:center;z-index:11`;
       const lbl = document.createElement('div');
-      lbl.innerHTML = stat_label.replace(' ', '<br>');
+      lbl.innerHTML = stat_label.includes('/')
+        ? stat_label.replace('/', ' /<br>')
+        : stat_label.replace(' ', '<br>');
       lbl.dataset.rcLbl = idx;
       lbl.style.cssText = `font-family:'General Sans',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:rgb(0,0,0)`;
       lblBox.appendChild(lbl);
@@ -910,14 +938,19 @@
       page.appendChild(rc);
 
       if (!noDelta) {
+        const deltaNum = parseInt(String(delta).replace(/[^0-9-]/g, ''), 10) || 0;
         const dltWrap = document.createElement('div');
+        dltWrap.dataset.rcDltWrap = idx;
         dltWrap.style.cssText = `position:absolute;left:${x + RG_C_W + 24}px;top:${y}px;height:${RG_C_H}px;display:flex;align-items:center;z-index:14`;
-        const dlt = document.createElement('div');
-        dlt.textContent = delta;
-        dlt.dataset.rcDlt = idx;
-        countUp(dlt, delta, 600, delay + 40);
-        dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:rgb(0,147,3);animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
-        dltWrap.appendChild(dlt);
+        if (deltaNum !== 0) {
+          const dltColor = deltaNum < 0 ? 'rgb(239,68,68)' : 'rgb(0,147,3)';
+          const dlt = document.createElement('div');
+          dlt.textContent = delta;
+          dlt.dataset.rcDlt = idx;
+          countUp(dlt, delta, 600, delay + 40);
+          dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
+          dltWrap.appendChild(dlt);
+        }
         page.appendChild(dltWrap);
       }
     }
@@ -936,18 +969,19 @@
       bg.src = winnerCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
       wrap.appendChild(bg);
 
-      /* tricode — black text in the white panel area, 12px from left */
-      const tc = document.createElement('div');
-      tc.dataset.rgNtTricode = '1';
-      tc.textContent = tricode;
-      tc.style.cssText = `position:absolute;left:12px;top:50%;transform:translateY(-50%);width:120px;font-family:'General Sans',sans-serif;font-size:24px;font-weight:800;color:#000;z-index:2;text-align:center`;
-      wrap.appendChild(tc);
+      /* team logo — 80×80, 18px from left, vertically centered */
+      const logo = document.createElement('img');
+      logo.dataset.rgNtLogo = '1';
+      logo.style.cssText = `position:absolute;left:18px;top:50%;transform:translateY(-50%);width:80px;height:80px;object-fit:contain;z-index:2`;
+      logo.src = buildUrl('/logos/' + encodeURIComponent(tricode) + '.png');
+      logo.onerror = () => { logo.style.display = 'none'; };
+      wrap.appendChild(logo);
 
       /* role icon — 40×40, 142px from left */
       const roleImg = document.createElement('img');
       roleImg.dataset.rgNtRole = '1';
       roleImg.style.cssText = `position:absolute;left:142px;top:50%;transform:translateY(-50%);width:40px;height:40px;z-index:2`;
-      roleImg.src = buildUrl('/role/' + role.toUpperCase() + '.png');
+      roleImg.src = buildUrl('/role/' + encodeURIComponent(roleFile(role)) + '.png');
       roleImg.onerror = () => { roleImg.style.display = 'none'; };
       wrap.appendChild(roleImg);
 
@@ -981,17 +1015,18 @@
       bg.src = oppCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
       wrap.appendChild(bg);
 
-      /* VS text — in place of team logo */
+      /* VS text — in place of team logo, scaled to match logo area */
+      const logoSz = Math.round(80 * OPP_S);
       const vs = document.createElement('div');
       vs.textContent = 'VS';
-      vs.style.cssText = `position:absolute;left:${Math.round(12*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(120*OPP_S)}px;font-family:'General Sans',sans-serif;font-size:${Math.round(24*OPP_S)}px;font-weight:800;color:#000;z-index:2;text-align:center`;
+      vs.style.cssText = `position:absolute;left:${Math.round(18*OPP_S)}px;top:50%;transform:translateY(-50%);width:${logoSz}px;height:${logoSz}px;display:flex;align-items:center;justify-content:center;font-family:'General Sans',sans-serif;font-size:23px;font-weight:800;color:#000;z-index:2`;
       wrap.appendChild(vs);
 
       /* role icon — scaled */
       const roleImg = document.createElement('img');
       const ri = Math.round(40 * OPP_S);
       roleImg.style.cssText = `position:absolute;left:${Math.round(142*OPP_S)}px;top:50%;transform:translateY(-50%);width:${ri}px;height:${ri}px;z-index:2`;
-      roleImg.src = buildUrl('/role/' + role.toUpperCase() + '.png');
+      roleImg.src = buildUrl('/role/' + encodeURIComponent(roleFile(role)) + '.png');
       roleImg.onerror = () => { roleImg.style.display = 'none'; };
       wrap.appendChild(roleImg);
 
@@ -1033,14 +1068,14 @@
       rgPage.appendChild(divider);
 
       const defaults = [
-        { stat_label: 'MINION GOLD',  value: '0000', delta: '+000' },
-        { stat_label: 'STAT TWO',     value: '0000', delta: '+000' },
-        { stat_label: 'STAT THREE',   value: '0000', delta: '+000' },
-        { stat_label: 'STAT FOUR',    value: '0000', delta: '+000' },
-        { stat_label: 'STAT FIVE',    value: '0000', delta: '+000' },
-        { stat_label: 'STAT SIX',     value: '0000', delta: '+000' },
-        { stat_label: 'TOTAL GOLD',   value: '0000' },
-        { stat_label: 'GPM',          value: '0000' },
+        { stat_label: 'MINION GOLD',   value: '0000', delta: '+000' },
+        { stat_label: 'KILLS/ASSISTS',  value: '0000', delta: '+000' },
+        { stat_label: 'JUNGLE CREEPS', value: '0000', delta: '+000' },
+        { stat_label: 'TURTLE/LORD',   value: '0000', delta: '+000' },
+        { stat_label: 'TURRET GOLD',   value: '0000', delta: '+000' },
+        { stat_label: 'ROAM EQUIP',    value: '0000', delta: '+000' },
+        { stat_label: 'TOTAL GOLD',    value: '0000' },
+        { stat_label: 'GPM',           value: '0000' },
       ];
       const data = (containers.length === 8) ? containers : defaults;
       RC_POSITIONS.forEach((pos, i) => buildOneRC(rgPage, pos.x, pos.y, data[i], 60 + i * 25, pos, i));
@@ -1049,25 +1084,25 @@
     }
 
     const GOLD_LABELS = [
-      'MINION GOLD',
-      'JUNGLE CREEPS',
-      'TURTLE LORD',
-      'TURRET GOLD',
-      'ROAM EQUIP',
-      'KILLS ASSISTS',
+      { label: 'MINION GOLD',   key: '1' },
+      { label: 'KILLS/ASSISTS',  key: '6' },
+      { label: 'JUNGLE CREEPS', key: '2' },
+      { label: 'TURTLE/LORD',   key: '3' },
+      { label: 'TURRET GOLD',   key: '4' },
+      { label: 'ROAM EQUIP',    key: '5' },
     ];
 
     async function fetchRichguyData(apiBase) {
-      const [rgRes, feedRes] = await Promise.all([
+      const [rgRes, pgRes] = await Promise.all([
         fetch(buildUrl(`/proxy/richguy?host=${encodeURIComponent(apiBase)}`)),
-        fetch(buildUrl('/feed/order')),
+        fetch(buildUrl('/postgame')),
       ]);
       if (!rgRes.ok) throw new Error(`proxy ${rgRes.status}`);
-      const rows     = await rgRes.json();
-      const feedData = feedRes.ok ? await feedRes.json() : null;
+      const rows   = await rgRes.json();
+      const pgData = pgRes.ok ? await pgRes.json() : null;
 
-      const camp1Tricode = (feedData?.camp1_tricode || '').toUpperCase();
-      const camp2Tricode = (feedData?.camp2_tricode || '').toUpperCase();
+      const camp1Tricode = (pgData?.camp1_tricode || '').toUpperCase();
+      const camp2Tricode = (pgData?.camp2_tricode || '').toUpperCase();
 
       let best = null, bestGold = -1;
       for (const entry of rows) {
@@ -1084,8 +1119,7 @@
       const winnerTricode = winnerCamp === 1 ? camp1Tricode : camp2Tricode;
       const loserTricode  = winnerCamp === 1 ? camp2Tricode : camp1Tricode;
 
-      const containers = GOLD_LABELS.map((label, i) => {
-        const key = String(i + 1);
+      const containers = GOLD_LABELS.map(({ label, key }) => {
         const wVal = winner.gold_map[key] || 0;
         const lVal = loser.gold_map[key] || 0;
         const diff  = wVal - lVal;
@@ -1108,18 +1142,30 @@
       const img = rgPage.querySelector('img');
       if (img && photo) img.src = `photos/${encodeURIComponent(photo)}`;
       containers.forEach((c, i) => {
-        const lblEl = rgPage.querySelector(`[data-rc-lbl="${i}"]`);
-        const valEl = rgPage.querySelector(`[data-rc-val="${i}"]`);
-        const dltEl = rgPage.querySelector(`[data-rc-dlt="${i}"]`);
+        const lblEl  = rgPage.querySelector(`[data-rc-lbl="${i}"]`);
+        const valEl  = rgPage.querySelector(`[data-rc-val="${i}"]`);
+        const wrapEl = rgPage.querySelector(`[data-rc-dlt-wrap="${i}"]`);
         if (lblEl && c.stat_label) lblEl.innerHTML = c.stat_label.replace(' ', '<br>');
         if (valEl) countUp(valEl, c.value ?? '0000', 700, 0);
-        if (dltEl) countUp(dltEl, c.delta ?? '+000', 700, 0);
+        if (wrapEl) {
+          const deltaNum = parseInt(String(c.delta ?? '0').replace(/[^0-9-]/g, ''), 10) || 0;
+          wrapEl.innerHTML = '';
+          if (deltaNum !== 0) {
+            const dltColor = deltaNum < 0 ? 'rgb(239,68,68)' : 'rgb(0,147,3)';
+            const dlt = document.createElement('div');
+            dlt.dataset.rcDlt = i;
+            dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor}`;
+            dlt.textContent = c.delta;
+            countUp(dlt, c.delta, 700, 0);
+            wrapEl.appendChild(dlt);
+          }
+        }
       });
       const ntName = rgPage.querySelector('[data-rg-nt-name]');
       const ntRole = rgPage.querySelector('[data-rg-nt-role]');
       const ntBg   = rgPage.querySelector('[data-rg-nametag] img');
       if (ntName && payload.name) ntName.textContent = payload.name.toUpperCase();
-      if (ntRole && payload.role) ntRole.src = buildUrl('/role/' + payload.role.toUpperCase() + '.png');
+      if (ntRole && payload.role) ntRole.src = buildUrl('/role/' + encodeURIComponent(roleFile(payload.role)) + '.png');
       if (ntBg   && payload.winnerCamp) ntBg.src = payload.winnerCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
     }
 

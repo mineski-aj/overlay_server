@@ -1778,6 +1778,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /logos/:filename — serve team logo images
+  if (req.method === "GET" && req.url.startsWith("/logos/")) {
+    const filename = decodeURIComponent(path.basename(req.url.slice("/logos/".length).split("?")[0]));
+    const filePath = path.join(__dirname, "logos", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    const ext  = path.extname(filename).toLowerCase();
+    const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : 'image/png';
+    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
   // GET /photos/:filename — serve player photo images
   if (req.method === "GET" && req.url.startsWith("/photos/")) {
     const filename = decodeURIComponent(path.basename(req.url.slice("/photos/".length).split("?")[0]));
@@ -1800,6 +1812,14 @@ const server = http.createServer((req, res) => {
     overlayClients.forEach(c => { try { c.write('event: post_richguy\ndata: {"action":"hide"}\n\n'); } catch {} });
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /overlay/fs/hide — hide all overlays on mplfs.html
+  if (req.method === "GET" && req.url === "/overlay/fs/hide") {
+    overlayClients.forEach(c => { try { c.write('event: fs_hide\ndata: {}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
     return;
   }
 
