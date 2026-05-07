@@ -1671,6 +1671,20 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /overlay/post_hearts/show|hide
+  if (req.method === "GET" && req.url === "/overlay/post_hearts/show") {
+    overlayClients.forEach(c => { try { c.write('event: post_hearts\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+  if (req.method === "GET" && req.url === "/overlay/post_hearts/hide") {
+    overlayClients.forEach(c => { try { c.write('event: post_hearts\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
   // GET /overlay/fights/pending — polled by overlay to get queued action
   if (req.method === "GET" && req.url === "/overlay/fights/pending") {
     const p = fightsPendingAction;
