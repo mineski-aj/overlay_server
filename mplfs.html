@@ -377,6 +377,12 @@
       return base + path;
     }
 
+    (function injectFont() {
+      const style = document.createElement('style');
+      style.textContent = `@font-face { font-family: 'Anton'; src: url('${buildUrl('/fonts/Anton-Regular.ttf')}') format('truetype'), local('Anton Regular'), local('Anton'), local('Anton-Regular'); }`;
+      document.head.appendChild(style);
+    })();
+
     const urlInput  = document.getElementById('server-url');
     const urlStatus = document.getElementById('url-status');
     const sseDot    = document.getElementById('sse-dot');
