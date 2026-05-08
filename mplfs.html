@@ -662,9 +662,9 @@
       return m * 60 + s;
     }
 
-    function itlTier(id) {
-      if (id >= 3000) return 3;
-      if (id >= 2000) return 2;
+    function itlTier(item) {
+      if (item.is_tier3) return 3;
+      if (item.item_id >= 2000) return 2;
       return 1;
     }
 
@@ -809,11 +809,11 @@
           /* items — staggered after the row slides in, sweeping left→right */
           const itemY = rowY + ROW_H / 2 - 4;
           const itemsInRow = (p.item_timeline || []).filter(item => {
-            const size = itlTier(item.item_id) === 1 ? 22 : itlTier(item.item_id) === 2 ? 32 : 44;
+            const size = itlTier(item) === 1 ? 22 : itlTier(item) === 2 ? 32 : 44;
             return TL_X + (item.game_time_s / maxSec) * TL_W + size / 2 <= TL_END;
           });
           itemsInRow.forEach((item, idx) => {
-            const tier  = itlTier(item.item_id);
+            const tier  = itlTier(item);
             const size  = tier === 1 ? 22 : tier === 2 ? 32 : 44;
             const xPos  = TL_X + (item.game_time_s / maxSec) * TL_W;
             const itemDelay = rowDelay + 260 + idx * 18;   /* after row + sweep */
