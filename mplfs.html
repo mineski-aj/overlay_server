@@ -635,6 +635,11 @@
         hidePostItemline();
         hidePostRichguy();
       });
+
+      sseSource.addEventListener('fs_debugoff', () => {
+        const bar = document.getElementById('config-bar');
+        if (bar.style.display !== 'none') bar.style.display = 'none';
+      });
     }
 
     function reconnectSSE() {

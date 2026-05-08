@@ -1824,6 +1824,14 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /overlay/fs/debugoff — hide debug bar on mplfs.html
+  if (req.method === "GET" && req.url === "/overlay/fs/debugoff") {
+    overlayClients.forEach(c => { try { c.write('event: fs_debugoff\ndata: {}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
   // GET /overlay/fs/hide — hide all overlays on mplfs.html
   if (req.method === "GET" && req.url === "/overlay/fs/hide") {
     overlayClients.forEach(c => { try { c.write('event: fs_hide\ndata: {}\n\n'); } catch {} });
