@@ -776,25 +776,28 @@ function buildHomeAwayPayload(payload) {
 }
 
 function writePostgame(payload) {
-  const now    = new Date();
-  const h      = now.getHours();
-  const m      = now.getMinutes();
-  const mins   = h * 60 + m;
-  const start  = 13 * 60 + 50; // 13:50
-  const end    = 1  * 60 + 0;  // 01:00
-  const inWindow = mins >= start || mins < end;
+  const liveJson = JSON.stringify(payload, null, 2);
+
+  // always write the live pointer — overlays depend on this regardless of time
+  fs.writeFileSync(path.join(__dirname, "postgame.json"), liveJson);
+  console.log(`[POSTGAME] postgame.json updated`);
+
+  // archive to postgames/ only within the recording window (13:50–01:00)
+  const now   = new Date();
+  const h     = now.getHours();
+  const m     = now.getMinutes();
+  const mins  = h * 60 + m;
+  const inWindow = mins >= (13 * 60 + 50) || mins < (1 * 60 + 0);
   if (!inWindow) {
-    console.log(`[POSTGAME] Skipped — time ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} is outside recording window (13:50–01:00)`);
+    console.log(`[POSTGAME] Archive skipped — time ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')} is outside recording window (13:50–01:00)`);
     return;
   }
 
-  const liveJson    = JSON.stringify(payload, null, 2);
   const archivePayload = buildHomeAwayPayload(payload);
   const archiveJson = JSON.stringify(archivePayload, null, 2);
   const date = payload.date || "unknown";
   const base = `postgame_${currentBattleId}_${date}`;
 
-  // find a non-conflicting filename
   let filename = `${base}.json`;
   let counter  = 2;
   while (fs.existsSync(path.join(POSTGAME_DIR, filename))) {
@@ -802,13 +805,8 @@ function writePostgame(payload) {
     counter++;
   }
 
-  // latest pointer stays as camp1/camp2 (for /feed/order compatibility)
-  fs.writeFileSync(path.join(__dirname, "postgame.json"), liveJson);
-
-  // archive is always home/away (clean for league stats)
   fs.writeFileSync(path.join(POSTGAME_DIR, filename), archiveJson);
-
-  console.log(`[POSTGAME] Written — ${filename}`);
+  console.log(`[POSTGAME] Archive written — ${filename}`);
 }
 
 // ── MAIN API POLLER (camp swap + lineup) ─────────────────────────────────────
