@@ -1790,6 +1790,18 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /fonts/:filename — serve font files
+  if (req.method === "GET" && req.url.startsWith("/fonts/")) {
+    const filename = decodeURIComponent(path.basename(req.url.slice("/fonts/".length).split("?")[0]));
+    const filePath = path.join(__dirname, "fonts", filename);
+    if (!fs.existsSync(filePath)) { res.writeHead(404); res.end("not found"); return; }
+    const ext  = path.extname(filename).toLowerCase();
+    const mime = ext === '.otf' ? 'font/otf' : 'font/ttf';
+    res.writeHead(200, { "Content-Type": mime, "Cache-Control": "public, max-age=86400" });
+    fs.createReadStream(filePath).pipe(res);
+    return;
+  }
+
   // GET /photos/:filename — serve player photo images
   if (req.method === "GET" && req.url.startsWith("/photos/")) {
     const filename = decodeURIComponent(path.basename(req.url.slice("/photos/".length).split("?")[0]));
