@@ -664,10 +664,10 @@ function buildHighlights(nameSource) {
 function buildPostgamePayload(data) {
   const campResult = {};
   for (const [campKey, entries] of Object.entries(activeCampMap)) {
+    const gameCampId = campKey === 'camp1' ? 1 : 2;
     campResult[campKey] = entries.map(({ pid, watch }, i) => {
       const d = deriveStats(pid);
-      const cs = WATCH_TO_CAMP_SEAT[watch];
-      const heroId = cs ? (lastPlayerSnap[`${cs.campid}-${cs.seat}`]?.hero_id ?? null) : null;
+      const heroId = lastPlayerSnap[`${gameCampId}-${i + 1}`]?.hero_id ?? null;
       return {
         [`player${i + 1}`]: {
           slot:                    `slot${watch}`,
@@ -1148,12 +1148,11 @@ function buildVmix() {
 }
 
 function buildCampFeed() {
-  const mapCamp = (entries) =>
+  const mapCamp = (entries, gameCampId) =>
     entries.map(({ pid, watch }, i) => {
       const r  = readings[pid];
       const d  = deriveStats(pid);
-      const cs = WATCH_TO_CAMP_SEAT[watch];
-      const heroId = cs ? (lastPlayerSnap[`${cs.campid}-${cs.seat}`]?.hero_id ?? null) : null;
+      const heroId = lastPlayerSnap[`${gameCampId}-${i + 1}`]?.hero_id ?? null;
       return {
         [`player${i + 1}`]: {
           // live always
@@ -1191,7 +1190,7 @@ function buildCampFeed() {
       tricode: campSwapped
         ? (gameState.campNames && gameState.campNames.camp2 ? gameState.campNames.camp2.toUpperCase().trim() : campTricodes.camp2)
         : (gameState.campNames && gameState.campNames.camp1 ? gameState.campNames.camp1.toUpperCase().trim() : campTricodes.camp1),
-      players: mapCamp(activeCampMap.camp1),
+      players: mapCamp(activeCampMap.camp1, 1),
       coaches: campSwapped
         ? [
             { slot: "coach_away1", name: "Away Coach 1", role: "COACH", bpm: readings.coach_away1.status === "ok" ? readings.coach_away1.bpm : (readings.coach_away1.simulated_bpm !== null ? readings.coach_away1.simulated_bpm : readings.coach_away1.last_bpm), bpm_simulated: readings.coach_away1.status !== "ok" && readings.coach_away1.simulated_bpm !== null, status: readings.coach_away1.status },
@@ -1206,7 +1205,7 @@ function buildCampFeed() {
       tricode: campSwapped
         ? (gameState.campNames && gameState.campNames.camp1 ? gameState.campNames.camp1.toUpperCase().trim() : campTricodes.camp1)
         : (gameState.campNames && gameState.campNames.camp2 ? gameState.campNames.camp2.toUpperCase().trim() : campTricodes.camp2),
-      players: mapCamp(activeCampMap.camp2),
+      players: mapCamp(activeCampMap.camp2, 2),
       coaches: campSwapped
         ? [
             { slot: "coach_home1", name: "Home Coach 1", role: "COACH", bpm: readings.coach_home1.status === "ok" ? readings.coach_home1.bpm : (readings.coach_home1.simulated_bpm !== null ? readings.coach_home1.simulated_bpm : readings.coach_home1.last_bpm), bpm_simulated: readings.coach_home1.status !== "ok" && readings.coach_home1.simulated_bpm !== null, status: readings.coach_home1.status },

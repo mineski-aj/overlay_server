@@ -608,20 +608,26 @@
 
       sseSource.addEventListener('post_hearts', (e) => {
         const msg = JSON.parse(e.data);
-        if (msg.action === 'show') showPostHearts();
-        else if (msg.action === 'hide') hidePostHearts();
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').style.display = 'none';
+          setTimeout(showPostHearts, 100);
+        } else if (msg.action === 'hide') hidePostHearts();
       });
 
       sseSource.addEventListener('post_itemline', (e) => {
         const msg = JSON.parse(e.data);
-        if (msg.action === 'show') showPostItemline();
-        else if (msg.action === 'hide') hidePostItemline();
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').style.display = 'none';
+          setTimeout(showPostItemline, 100);
+        } else if (msg.action === 'hide') hidePostItemline();
       });
 
       sseSource.addEventListener('post_richguy', (e) => {
         const msg = JSON.parse(e.data);
-        if (msg.action === 'show') fetchAndShowRichguy();
-        else if (msg.action === 'hide') hidePostRichguy();
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').style.display = 'none';
+          setTimeout(fetchAndShowRichguy, 100);
+        } else if (msg.action === 'hide') hidePostRichguy();
       });
 
       sseSource.addEventListener('fs_hide', () => {
