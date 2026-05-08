@@ -9,27 +9,27 @@
       src: local('Anton'), local('Anton-Regular');
     }
     @font-face {
-      font-family: 'General Sans';
-      src: local('GeneralSans-Regular'), local('General Sans Regular'), local('GeneralSans Regular'), local('General Sans');
+      font-family: 'Anton';
+      src: local('GeneralSans-Regular'), local('General Sans Regular'), local('GeneralSans Regular'), local('Anton');
       font-weight: 400;
     }
     @font-face {
-      font-family: 'General Sans';
+      font-family: 'Anton';
       src: local('GeneralSans-Medium'), local('General Sans Medium'), local('GeneralSans Medium');
       font-weight: 500;
     }
     @font-face {
-      font-family: 'General Sans';
+      font-family: 'Anton';
       src: local('GeneralSans-Semibold'), local('General Sans Semibold'), local('GeneralSans Semibold'), local('GeneralSans-SemiBold'), local('General Sans SemiBold');
       font-weight: 600;
     }
     @font-face {
-      font-family: 'General Sans';
+      font-family: 'Anton';
       src: local('GeneralSans-Bold'), local('General Sans Bold'), local('GeneralSans Bold');
       font-weight: 700;
     }
     @font-face {
-      font-family: 'General Sans';
+      font-family: 'Anton';
       src: local('GeneralSans-Extrabold'), local('General Sans Extrabold'), local('GeneralSans Extrabold'), local('GeneralSans-ExtraBold'), local('General Sans ExtraBold');
       font-weight: 800;
     }
@@ -713,7 +713,7 @@
       hdr.style.cssText = `position:absolute;left:0;top:0;width:${CONT_W}px;height:${HDR_H}px;background:rgba(8,16,48,0.88);overflow:hidden`;
       const hdrLabel = document.createElement('div');
       hdrLabel.textContent = 'ITEM TIMELINE';
-      hdrLabel.style.cssText = `position:absolute;left:${HERO_W + 10}px;top:0;height:${HDR_H}px;display:flex;align-items:center;font-family:'General Sans',sans-serif;font-weight:700;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:2px`;
+      hdrLabel.style.cssText = `position:absolute;left:${HERO_W + 10}px;top:0;height:${HDR_H}px;display:flex;align-items:center;font-family:'Anton',sans-serif;font-weight:700;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:2px`;
       hdr.appendChild(hdrLabel);
       wrapper.appendChild(hdr);
 
@@ -805,7 +805,7 @@
           const nameBox = document.createElement('div');
           nameBox.style.cssText = `position:absolute;left:${ROW_X}px;top:0;width:${NAME_W}px;height:${ROW_H}px;display:flex;align-items:center;padding-left:10px;z-index:4;overflow:hidden`;
           const nm = document.createElement('span');
-          nm.style.cssText = `font-family:'General Sans',sans-serif;font-weight:800;font-size:18px;color:rgba(255,255,255,0.95);white-space:nowrap;display:inline-block;max-width:${NAME_W - 14}px;transform-origin:left center;`;
+          nm.style.cssText = `font-family:'Anton',sans-serif;font-weight:800;font-size:18px;color:rgba(255,255,255,0.95);white-space:nowrap;display:inline-block;max-width:${NAME_W - 14}px;transform-origin:left center;`;
           nm.textContent = p.player_name || p.name || '';
           nameBox.appendChild(nm);
           rowGroup.appendChild(nameBox);
@@ -948,7 +948,7 @@
         ? stat_label.replace('/', ' /<br>')
         : stat_label.replace(' ', '<br>');
       lbl.dataset.rcLbl = idx;
-      lbl.style.cssText = `font-family:'General Sans',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:rgb(0,0,0)`;
+      lbl.style.cssText = `font-family:'Anton',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:rgb(0,0,0)`;
       lblBox.appendChild(lbl);
       rc.appendChild(lblBox);
 
@@ -957,7 +957,7 @@
       const val = document.createElement('div');
       val.textContent = value;
       val.dataset.rcVal = idx;
-      val.style.cssText = `font-family:'General Sans',sans-serif;font-size:52px;font-weight:800;line-height:1;color:rgb(0,0,0)`;
+      val.style.cssText = `font-family:'Anton',sans-serif;font-size:52px;font-weight:800;line-height:1;color:rgb(0,0,0)`;
       countUp(val, value, 600, delay);
       valBox.appendChild(val);
       rc.appendChild(valBox);
@@ -975,7 +975,7 @@
           dlt.textContent = delta;
           dlt.dataset.rcDlt = idx;
           countUp(dlt, delta, 600, delay + 40);
-          dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
+          dlt.style.cssText = `font-family:'Anton',sans-serif;font-size:42px;font-weight:700;color:${dltColor};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
           dltWrap.appendChild(dlt);
         }
         page.appendChild(dltWrap);
@@ -1016,7 +1016,7 @@
       const txt = document.createElement('div');
       txt.dataset.rgNtName = '1';
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'Anton',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
       wrap.appendChild(txt);
 
       /* hero icon — 107×107, 5px from right edge, vertically centered, inside container */
@@ -1046,7 +1046,7 @@
       const logoSz = Math.round(80 * OPP_S);
       const vs = document.createElement('div');
       vs.textContent = 'VS';
-      vs.style.cssText = `position:absolute;left:${Math.round(18*OPP_S)}px;top:50%;transform:translateY(-50%);width:${logoSz}px;height:${logoSz}px;display:flex;align-items:center;justify-content:center;font-family:'General Sans',sans-serif;font-size:23px;font-weight:800;color:#000;z-index:2`;
+      vs.style.cssText = `position:absolute;left:${Math.round(18*OPP_S)}px;top:50%;transform:translateY(-50%);width:${logoSz}px;height:${logoSz}px;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:23px;font-weight:800;color:#000;z-index:2`;
       wrap.appendChild(vs);
 
       /* role icon — scaled */
@@ -1060,7 +1060,7 @@
       /* opponent name — scaled */
       const txt = document.createElement('div');
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(275*OPP_S)}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(275*OPP_S)}px;font-family:'Anton',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
       wrap.appendChild(txt);
 
       /* hero icon — scaled, 5px from right, inside container */
@@ -1181,7 +1181,7 @@
             const dltColor = deltaNum < 0 ? 'rgb(239,68,68)' : 'rgb(0,147,3)';
             const dlt = document.createElement('div');
             dlt.dataset.rcDlt = i;
-            dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor}`;
+            dlt.style.cssText = `font-family:'Anton',sans-serif;font-size:42px;font-weight:700;color:${dltColor}`;
             dlt.textContent = c.delta;
             countUp(dlt, c.delta, 700, 0);
             wrapEl.appendChild(dlt);
