@@ -1007,8 +1007,11 @@
       const txt = document.createElement('div');
       txt.dataset.rgNtName = '1';
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
       wrap.appendChild(txt);
+      requestAnimationFrame(() => {
+        if (txt.scrollWidth > 275) txt.style.transform = `translateY(-50%) scaleX(${275 / txt.scrollWidth})`;
+      });
 
       /* hero icon — 107×107, 5px from right edge, vertically centered, inside container */
       const hero = document.createElement('img');
@@ -1049,10 +1052,14 @@
       wrap.appendChild(roleImg);
 
       /* opponent name — scaled */
+      const oppNameW = Math.round(275 * OPP_S);
       const txt = document.createElement('div');
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${Math.round(275*OPP_S)}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:hidden`;
+      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${oppNameW}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
       wrap.appendChild(txt);
+      requestAnimationFrame(() => {
+        if (txt.scrollWidth > oppNameW) txt.style.transform = `translateY(-50%) scaleX(${oppNameW / txt.scrollWidth})`;
+      });
 
       /* hero icon — scaled, 5px from right, inside container */
       const hero = document.createElement('img');
