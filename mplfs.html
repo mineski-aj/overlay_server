@@ -8,6 +8,31 @@
       font-family: 'Anton';
       src: local('Anton'), local('Anton-Regular');
     }
+    @font-face {
+      font-family: 'General Sans';
+      src: local('GeneralSans-Regular'), local('General Sans Regular'), local('GeneralSans Regular'), local('General Sans');
+      font-weight: 400;
+    }
+    @font-face {
+      font-family: 'General Sans';
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), local('GeneralSans Medium');
+      font-weight: 500;
+    }
+    @font-face {
+      font-family: 'General Sans';
+      src: local('GeneralSans-Semibold'), local('General Sans Semibold'), local('GeneralSans Semibold'), local('GeneralSans-SemiBold'), local('General Sans SemiBold');
+      font-weight: 600;
+    }
+    @font-face {
+      font-family: 'General Sans';
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), local('GeneralSans Bold');
+      font-weight: 700;
+    }
+    @font-face {
+      font-family: 'General Sans';
+      src: local('GeneralSans-Extrabold'), local('General Sans Extrabold'), local('GeneralSans Extrabold'), local('GeneralSans-ExtraBold'), local('General Sans ExtraBold');
+      font-weight: 800;
+    }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -78,9 +103,11 @@
     #sse-dot.error     { background: #ef4444; }
 
     /* ── BROADCAST CANVAS ── */
-    body {
-      background: #1a1a1a;
-      padding-top: 58px;
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
     }
     #canvas {
       width: 1920px;
