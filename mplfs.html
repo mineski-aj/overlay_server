@@ -1009,7 +1009,7 @@
       txt.textContent = name.toUpperCase();
       txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
       wrap.appendChild(txt);
-      requestAnimationFrame(() => {
+      document.fonts.ready.then(() => {
         if (txt.scrollWidth > 275) txt.style.transform = `translateY(-50%) scaleX(${275 / txt.scrollWidth})`;
       });
 
@@ -1057,7 +1057,7 @@
       txt.textContent = name.toUpperCase();
       txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${oppNameW}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
       wrap.appendChild(txt);
-      requestAnimationFrame(() => {
+      document.fonts.ready.then(() => {
         if (txt.scrollWidth > oppNameW) txt.style.transform = `translateY(-50%) scaleX(${oppNameW / txt.scrollWidth})`;
       });
 
