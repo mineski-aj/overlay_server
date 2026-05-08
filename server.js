@@ -1840,6 +1840,19 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  if (req.method === "GET" && req.url === "/overlay/post_itemline/itemin") {
+    overlayClients.forEach(c => { try { c.write('event: post_itemline_itemin\ndata: {}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+  if (req.method === "GET" && req.url === "/overlay/post_itemline/itemout") {
+    overlayClients.forEach(c => { try { c.write('event: post_itemline_itemout\ndata: {}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
   if (req.method === "GET" && req.url === "/overlay/post_itemline/show") {
     overlayClients.forEach(c => { try { c.write('event: post_itemline\ndata: {"action":"show"}\n\n'); } catch {} });
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });

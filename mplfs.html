@@ -310,6 +310,18 @@
     .itl-item-ts.blue { background: #1a3f9e; }
     .itl-item-ts.red  { background: #7f1d1d; }
 
+    @keyframes itl-nonT3-in {
+      0%   { opacity: 0; transform: scale(0.65); }
+      65%  { opacity: 1; transform: scale(1.12); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes itl-nonT3-out {
+      0%   { opacity: 1; transform: scale(1); }
+      30%  { transform: scale(1.08); }
+      100% { opacity: 0; transform: scale(0.65); }
+    }
+    .itl-nonT3-hidden { opacity: 0; pointer-events: none; }
+
     .itl-portrait-box {
       position: absolute;
       border-radius: 3px;
@@ -636,6 +648,20 @@
         hidePostRichguy();
       });
 
+      sseSource.addEventListener('post_itemline_itemin', () => {
+        document.querySelectorAll('#item-timeline-page .itl-item-circle.t1, #item-timeline-page .itl-item-circle.t2').forEach(circle => {
+          const wrap = circle.parentElement;
+          wrap.style.animation = 'itl-nonT3-in 250ms cubic-bezier(0.34,1.56,0.64,1) both';
+        });
+      });
+
+      sseSource.addEventListener('post_itemline_itemout', () => {
+        document.querySelectorAll('#item-timeline-page .itl-item-circle.t1, #item-timeline-page .itl-item-circle.t2').forEach(circle => {
+          const wrap = circle.parentElement;
+          wrap.style.animation = 'itl-nonT3-out 250ms ease-in both';
+        });
+      });
+
       sseSource.addEventListener('fs_debugoff', () => {
         const bar = document.getElementById('config-bar');
         if (bar.style.display !== 'none') bar.style.display = 'none';
@@ -829,8 +855,9 @@
             const xPos  = TL_X + (item.game_time_s / maxSec) * TL_W;
             const itemDelay = rowDelay + 260 + idx * 18;   /* after row + sweep */
 
+            const itemZ = tier === 3 ? 9 : tier === 2 ? 7 : 5;
             const wrap = document.createElement('div');
-            wrap.style.cssText = `position:absolute;left:${xPos}px;top:${itemY}px;width:0;height:0;z-index:5;animation:itl-item-in 220ms cubic-bezier(0.34,1.56,0.64,1) ${itemDelay}ms both`;
+            wrap.style.cssText = `position:absolute;left:${xPos}px;top:${itemY}px;width:0;height:0;z-index:${itemZ};animation:itl-item-in 220ms cubic-bezier(0.34,1.56,0.64,1) ${itemDelay}ms both`;
 
             const circle = document.createElement('div');
             circle.className = `itl-item-circle t${tier}`;
