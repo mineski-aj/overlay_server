@@ -1879,14 +1879,19 @@ const server = http.createServer((req, res) => {
   // GET /overlay/draftpredict/show|hide|poll — remote control for draftpredict overlay
   if (req.method === "GET" && req.url.startsWith("/overlay/draftpredict/")) {
     const cmd = req.url.slice("/overlay/draftpredict/".length).split("?")[0];
+    const dpHeaders = {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*"
+    };
     if (cmd === "show" || cmd === "hide") {
       _draftpredictCmds.push(cmd);
-      res.writeHead(200); res.end(JSON.stringify({ ok: true }));
+      res.writeHead(200, dpHeaders); res.end(JSON.stringify({ ok: true }));
     } else if (cmd === "poll") {
       const cmds = _draftpredictCmds.splice(0);
-      res.writeHead(200); res.end(JSON.stringify({ commands: cmds }));
+      res.writeHead(200, dpHeaders); res.end(JSON.stringify({ commands: cmds }));
     } else {
-      res.writeHead(404); res.end("{}");
+      res.writeHead(404, dpHeaders); res.end("{}");
     }
     return;
   }
