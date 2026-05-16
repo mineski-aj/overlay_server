@@ -42,11 +42,12 @@ Only touch what is explicitly requested. If a task requires editing a block of c
 | GET | `/richguy/:filename` | Serves richguy overlay assets from `richguy/` folder |
 | GET | `/logos/:filename` | Serves team logo images from `logos/` folder (named by tricode, e.g. `RORA.png`) |
 | GET | `/photos/:filename` | Serves player photo images from `photos/` folder (e.g. `KarlTzy_FRONT.png`) |
+| GET | `/draftpredict` | Serves `draftpredict.html` — **load this URL in OBS** so it is same-origin with the server (fixes SSE/CORS) |
 | GET | `/proxy/predictions` | Proxies to draftpredict API (`r3z8c353h3.ap-southeast-1.awsapprunner.com`) — passes `?authKey=&judgeId=` through |
 | GET | `/proxy/richguy?host=X` | Server-side proxy to `http://{host}/api/gold_vs_gold_sector` — avoids CORS when fetching from `mplfs.html` |
-| GET | `/overlay/draftpredict/show` | Shows the draft predict overlay and starts the data poller |
-| GET | `/overlay/draftpredict/hide` | Hides the draft predict overlay and stops the data poller |
-| GET | `/overlay/draftpredict/poll` | Polled by `draftpredict.html` every 500ms — returns and clears pending commands as `{ commands: [] }` |
+| GET | `/overlay/draftpredict/show` | Shows the draft predict overlay — broadcasts `event: draftpredict cmd:show` via SSE |
+| GET | `/overlay/draftpredict/hide` | Hides the draft predict overlay — broadcasts `event: draftpredict cmd:hide` via SSE |
+| GET | `/overlay/draftpredict/poll` | Legacy poll fallback — returns and clears pending commands as `{ commands: [] }` |
 | GET | `/` | Server dashboard (auto-refreshes) |
 | GET | `/overlay/events` | SSE stream — all overlays connect here |
 | GET | `/meter/show` | Sends `event: meter` `cmd:show` via SSE |
