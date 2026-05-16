@@ -1708,6 +1708,7 @@ const server = http.createServer((req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.writeHead(200);
     res.write(': connected\n\n');
     overlayClients.push(res);
@@ -1886,6 +1887,7 @@ const server = http.createServer((req, res) => {
     };
     if (cmd === "show" || cmd === "hide") {
       _draftpredictCmds.push(cmd);
+      overlayClients.forEach(c => { try { c.write(`event: draftpredict\ndata: {"cmd":"${cmd}"}\n\n`); } catch {} });
       res.writeHead(200, dpHeaders); res.end(JSON.stringify({ ok: true }));
     } else if (cmd === "poll") {
       const cmds = _draftpredictCmds.splice(0);
