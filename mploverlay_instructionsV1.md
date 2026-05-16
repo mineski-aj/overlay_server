@@ -81,6 +81,7 @@ Different overlays listen for different named events:
 - `event: post_richguy` → `mplfs.html` (richguy postgame gold stats overlay)
 - `event: post_itemline` → `mplfs.html` (item timeline overlay)
 - `event: fs_hide` → `mplfs.html` — triggers hide on ALL three overlays on the page simultaneously
+- `event: draftpredict` → `draftpredict.html` — show/hide the draft predict overlay
 
 **Do not collapse or merge these event types.**
 
@@ -105,7 +106,7 @@ Different overlays listen for different named events:
 | `logos/` | Team logo PNGs named by tricode (e.g. `RORA.png`, `FLCN.png`) |
 | `photos/` | Player cutout photos (e.g. `KarlTzy_FRONT.png`) |
 | `items.json` | Item ID → name mapping (edit this, not server.js) |
-| `/Users/ajsarmiento/Desktop/draftpredict/draftpredict.html` | Draft predict overlay — **outside this directory**; polls `/proxy/predictions` and `/overlay/draftpredict/poll` |
+| `/Users/ajsarmiento/Desktop/draftpredict/draftpredict.html` | Draft predict overlay — **outside this directory**; polls `/proxy/predictions`; receives show/hide via `event: draftpredict` SSE + `/overlay/draftpredict/poll` fallback |
 | `/Users/ajsarmiento/Desktop/heartstop/heart_stopping_moment_v14.html` | BPM meter overlay — **outside this directory** |
 
 ---
@@ -191,4 +192,6 @@ Games outside this window are skipped (test games). The check is in `writePostga
 6. **Do not flush `positionLog`** on game start — only flush when state leaves `end` with a new `battleid`.
 7. **Static file routes** (`/hero/`, `/items/`, `/role/`, `/richguy/`, `/logos/`, `/photos/`) all require a `fs.existsSync` 404 check before streaming — never skip this.
 8. **Route ordering matters** — specific routes (`/fights-static`, `/fights-overlay`, `/overlay/post_richguy/*`, `/overlay/fs/hide`, `/overlay/draftpredict/*`, etc.) must appear **before** the generic catch-alls (`/fights`, `/overlay/*`).
-9. **`_draftpredictCmds`** is a module-level array (`const _draftpredictCmds = []`) at the top of `server.js`. `toggle` and `fetch` push to it; `poll` splices and returns it. No persistence — commands are lost on server restart.
+9. **`_draftpredictCmds`** is a module-level array (`const _draftpredictCmds = []`) at the top of `server.js`. `show` and `hide` push to it AND broadcast `event: draftpredict` via SSE simultaneously. `poll` splices and returns it. No persistence — commands are lost on server restart.
+10. **`draftpredict.html` command delivery uses a hybrid**: SSE (`event: draftpredict`) for instant delivery + a 300ms poll at `/overlay/draftpredict/poll` as fallback. The `/overlay/events` SSE stream sends `Access-Control-Allow-Origin: *` so `file://` origins can connect. **Do not remove either mechanism.**
+11. **`draftpredict.html` show/hide logic** (`applyCmd`): `show` hides the debug panel, waits 500ms, then calls `renderPrediction` (if data exists) or `showPanel` (if `activePanel` is set). `hide` calls `hideAll()` + `stopPoller()`. On new draft detection (room/team fingerprint change), `userHidden` is reset to `false` so the overlay auto-shows.
