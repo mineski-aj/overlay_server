@@ -396,8 +396,23 @@
     const LS_KEY     = 'mplfs_server_url';
     const DEFAULT_URL = 'localhost:3000';
 
+    function _lsGet(k)    { try { return localStorage.getItem(k); }    catch { return null; } }
+    function _lsSet(k, v) { try { localStorage.setItem(k, v); }        catch {} }
+    function _hashServer() {
+      try { return new URLSearchParams(location.hash.replace(/^#/, '')).get('srv') || null; }
+      catch { return null; }
+    }
+    function _saveServerUrl(v) {
+      _lsSet(LS_KEY, v);
+      try {
+        const p = new URLSearchParams(location.hash.replace(/^#/, ''));
+        p.set('srv', v);
+        history.replaceState(null, '', '#' + p.toString());
+      } catch {}
+    }
+
     function getServerUrl() {
-      return localStorage.getItem(LS_KEY) || DEFAULT_URL;
+      return _hashServer() || _lsGet(LS_KEY) || DEFAULT_URL;
     }
     function buildUrl(path) {
       let base = getServerUrl().trim().replace(/\/$/, '');
@@ -414,12 +429,17 @@
     urlInput.addEventListener('change', () => {
       const v = urlInput.value.trim();
       if (v) {
-        localStorage.setItem(LS_KEY, v);
+        _saveServerUrl(v);
         urlStatus.textContent = 'saved';
         urlStatus.className   = 'ok';
         setTimeout(() => { urlStatus.textContent = '—'; urlStatus.className = ''; }, 1500);
         reconnectSSE();
       }
+    });
+
+    window.addEventListener('beforeunload', () => {
+      const v = urlInput.value.trim();
+      if (v) _saveServerUrl(v);
     });
 
 

@@ -42,7 +42,11 @@ Only touch what is explicitly requested. If a task requires editing a block of c
 | GET | `/richguy/:filename` | Serves richguy overlay assets from `richguy/` folder |
 | GET | `/logos/:filename` | Serves team logo images from `logos/` folder (named by tricode, e.g. `RORA.png`) |
 | GET | `/photos/:filename` | Serves player photo images from `photos/` folder (e.g. `KarlTzy_FRONT.png`) |
+| GET | `/proxy/predictions` | Proxies to draftpredict API (`r3z8c353h3.ap-southeast-1.awsapprunner.com`) — passes `?authKey=&judgeId=` through |
 | GET | `/proxy/richguy?host=X` | Server-side proxy to `http://{host}/api/gold_vs_gold_sector` — avoids CORS when fetching from `mplfs.html` |
+| GET | `/overlay/draftpredict/show` | Shows the draft predict overlay and starts the data poller |
+| GET | `/overlay/draftpredict/hide` | Hides the draft predict overlay and stops the data poller |
+| GET | `/overlay/draftpredict/poll` | Polled by `draftpredict.html` every 500ms — returns and clears pending commands as `{ commands: [] }` |
 | GET | `/` | Server dashboard (auto-refreshes) |
 | GET | `/overlay/events` | SSE stream — all overlays connect here |
 | GET | `/meter/show` | Sends `event: meter` `cmd:show` via SSE |
@@ -101,6 +105,7 @@ Different overlays listen for different named events:
 | `logos/` | Team logo PNGs named by tricode (e.g. `RORA.png`, `FLCN.png`) |
 | `photos/` | Player cutout photos (e.g. `KarlTzy_FRONT.png`) |
 | `items.json` | Item ID → name mapping (edit this, not server.js) |
+| `/Users/ajsarmiento/Desktop/draftpredict/draftpredict.html` | Draft predict overlay — **outside this directory**; polls `/proxy/predictions` and `/overlay/draftpredict/poll` |
 | `/Users/ajsarmiento/Desktop/heartstop/heart_stopping_moment_v14.html` | BPM meter overlay — **outside this directory** |
 
 ---
@@ -185,4 +190,5 @@ Games outside this window are skipped (test games). The check is in `writePostga
 5. **Do not flush `fights_live.json`** on server start — it is intentionally restored.
 6. **Do not flush `positionLog`** on game start — only flush when state leaves `end` with a new `battleid`.
 7. **Static file routes** (`/hero/`, `/items/`, `/role/`, `/richguy/`, `/logos/`, `/photos/`) all require a `fs.existsSync` 404 check before streaming — never skip this.
-8. **Route ordering matters** — specific routes (`/fights-static`, `/fights-overlay`, `/overlay/post_richguy/*`, `/overlay/fs/hide`, etc.) must appear **before** the generic catch-alls (`/fights`, `/overlay/*`).
+8. **Route ordering matters** — specific routes (`/fights-static`, `/fights-overlay`, `/overlay/post_richguy/*`, `/overlay/fs/hide`, `/overlay/draftpredict/*`, etc.) must appear **before** the generic catch-alls (`/fights`, `/overlay/*`).
+9. **`_draftpredictCmds`** is a module-level array (`const _draftpredictCmds = []`) at the top of `server.js`. `toggle` and `fetch` push to it; `poll` splices and returns it. No persistence — commands are lost on server restart.

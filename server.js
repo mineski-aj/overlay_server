@@ -18,6 +18,7 @@ function httpGet(url, cb) {
 }
 
 const PORT         = 3000;
+const _draftpredictCmds = [];
 const POLL_MS      = 1000;
 const POSTGAME_DIR   = path.join(__dirname, "postgames");
 const POSITIONS_FILE = path.join(__dirname, "positions_live.json");
@@ -1875,6 +1876,21 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /overlay/draftpredict/show|hide|poll — remote control for draftpredict overlay
+  if (req.method === "GET" && req.url.startsWith("/overlay/draftpredict/")) {
+    const cmd = req.url.slice("/overlay/draftpredict/".length).split("?")[0];
+    if (cmd === "show" || cmd === "hide") {
+      _draftpredictCmds.push(cmd);
+      res.writeHead(200); res.end(JSON.stringify({ ok: true }));
+    } else if (cmd === "poll") {
+      const cmds = _draftpredictCmds.splice(0);
+      res.writeHead(200); res.end(JSON.stringify({ commands: cmds }));
+    } else {
+      res.writeHead(404); res.end("{}");
+    }
+    return;
+  }
+
   // GET or POST /overlay/slot1..slot10  → show player
   // GET or POST /overlay/hide           → hide overlay
   if ((req.method === "GET" || req.method === "POST" || req.method === "OPTIONS") && req.url.startsWith("/overlay/") && !req.url.startsWith("/overlay/events")) {
@@ -1890,6 +1906,24 @@ const server = http.createServer((req, res) => {
     }
     res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
     res.end(JSON.stringify({ ok: true, action: slot === "hide" ? "hide" : "show", slot }));
+    return;
+  }
+
+  // GET /proxy/predictions — proxy to draftpredict API (passes all query params through)
+  if (req.method === "GET" && req.url.startsWith("/proxy/predictions")) {
+    const qs = req.url.slice("/proxy/predictions".length); // preserve ?authKey=...&judgeId=...
+    const upstream = `https://r3z8c353h3.ap-southeast-1.awsapprunner.com/api/live/predictions${qs}`;
+    (async () => {
+      try {
+        const r    = await fetch(upstream);
+        const data = await r.json();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(data));
+      } catch (e) {
+        res.writeHead(502, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    })();
     return;
   }
 
