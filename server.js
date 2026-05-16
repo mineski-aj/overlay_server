@@ -1611,15 +1611,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // GET /draftpredict — serves draftpredict.html from desktop (same-origin so SSE works)
-  if (req.method === "GET" && req.url.split("?")[0] === "/draftpredict") {
-    const file = "/Users/ajsarmiento/Desktop/draftpredict/draftpredict.html";
-    if (!fs.existsSync(file)) { res.writeHead(404); res.end("draftpredict.html not found"); return; }
-    res.writeHead(200, { "Content-Type": "text/html", "Cache-Control": "no-cache" });
-    res.end(fs.readFileSync(file, "utf8"));
-    return;
-  }
-
   // GET /fights-overlay — fight recap overlay HTML
   if (req.method === "GET" && req.url === "/fights-overlay") {
     const file = path.join(__dirname, "fights.html");
