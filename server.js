@@ -1952,6 +1952,100 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // GET /led/home — set LED overlay to HOME mode (camp1 on left, isSwapped=false)
+  if (req.method === "GET" && req.url === "/led/home") {
+    overlayClients.forEach(c => { try { c.write('event: led_side\ndata: {"side":"home"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, side: "home" }));
+    return;
+  }
+
+  // GET /led/swap — set LED overlay to SWAP mode (camp1 on right, isSwapped=true)
+  if (req.method === "GET" && req.url === "/led/swap") {
+    overlayClients.forEach(c => { try { c.write('event: led_side\ndata: {"side":"swap"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, side: "swap" }));
+    return;
+  }
+
+  // GET /led/fightshow — show teamfight damage on LED overlay
+  if (req.method === "GET" && req.url === "/led/fightshow") {
+    overlayClients.forEach(c => { try { c.write('event: led_fight\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+
+  // GET /led/fighthide — hide teamfight damage on LED overlay
+  if (req.method === "GET" && req.url === "/led/fighthide") {
+    overlayClients.forEach(c => { try { c.write('event: led_fight\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /led/draftpredshow — show draft predict on LED overlay
+  if (req.method === "GET" && req.url === "/led/draftpredshow") {
+    overlayClients.forEach(c => { try { c.write('event: led_draftpred\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+
+  // GET /led/draftpredhide — hide draft predict on LED overlay
+  if (req.method === "GET" && req.url === "/led/draftpredhide") {
+    overlayClients.forEach(c => { try { c.write('event: led_draftpred\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /led/winshow — show win probability on LED overlay
+  if (req.method === "GET" && req.url === "/led/winshow") {
+    overlayClients.forEach(c => { try { c.write('event: led_win\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+
+  // GET /led/winhide — hide win probability on LED overlay
+  if (req.method === "GET" && req.url === "/led/winhide") {
+    overlayClients.forEach(c => { try { c.write('event: led_win\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /led/healthshow — show team HP bar on LED overlay
+  if (req.method === "GET" && req.url === "/led/healthshow") {
+    overlayClients.forEach(c => { try { c.write('event: led_health\ndata: {"action":"show"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "show" }));
+    return;
+  }
+
+  // GET /led/healthhide — hide team HP bar on LED overlay
+  if (req.method === "GET" && req.url === "/led/healthhide") {
+    overlayClients.forEach(c => { try { c.write('event: led_health\ndata: {"action":"hide"}\n\n'); } catch {} });
+    res.writeHead(200, { "Cache-Control": "no-store", "Content-Type": "application/json" });
+    res.end(JSON.stringify({ ok: true, action: "hide" }));
+    return;
+  }
+
+  // GET /api/sub-info/ — serve sub-info_sample.json for local testing
+  if (req.method === "GET" && req.url.startsWith("/api/sub-info")) {
+    const samplePath = path.join(__dirname, "sub-info_sample.json");
+    try {
+      const data = fs.readFileSync(samplePath, "utf8");
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(data);
+    } catch (e) {
+      res.writeHead(500);
+      res.end(JSON.stringify({ error: "sub-info_sample.json not found" }));
+    }
+    return;
+  }
+
   res.writeHead(404);
   res.end(JSON.stringify({ error: "not found" }));
 });
@@ -1975,5 +2069,15 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`             →      ?last=N  for last N fights`);
   console.log(`             →      ?camp=1&seat=2&from=0&to=600`);
   console.log(`             →      camp 1|2  seat 1-5  from/to in seconds`);
+  console.log(`  LED Side   → GET  http://localhost:${PORT}/led/home  (HOME)`);
+  console.log(`             → GET  http://localhost:${PORT}/led/swap  (SWAP/AWAY)`);
+  console.log(`  LED Health → GET  http://localhost:${PORT}/led/healthshow`);
+  console.log(`             → GET  http://localhost:${PORT}/led/healthhide`);
+  console.log(`  LED WinPct → GET  http://localhost:${PORT}/led/winshow`);
+  console.log(`             → GET  http://localhost:${PORT}/led/winhide`);
+  console.log(`  LED Fight  → GET  http://localhost:${PORT}/led/fightshow`);
+  console.log(`             → GET  http://localhost:${PORT}/led/fighthide`);
+  console.log(`  LED Draft  → GET  http://localhost:${PORT}/led/draftpredshow`);
+  console.log(`             → GET  http://localhost:${PORT}/led/draftpredhide`);
   console.log("================================================");
 });
