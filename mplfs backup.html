@@ -351,7 +351,7 @@
 
     <div class="bar-row">
       <label>SERVER URL</label>
-      <input id="server-url" type="text" value="172.16.10.50:3000" spellcheck="false">
+      <input id="server-url" type="text" value="" spellcheck="false">
       <span id="sse-dot"></span>
       <span id="url-status">—</span>
     </div>
@@ -950,9 +950,9 @@
       return role?.toUpperCase() || '';
     }
 
-    const RG_C_W = 370, RG_C_H = 100, RG_ROW_GAP = 22;
-    const RG_BASE_X = 822, RG_BASE_Y = 365;
-    const RG_COL2_X = RG_BASE_X + RG_C_W + 175; // 1367
+    const RG_C_W = 370, RG_C_H = 80, RG_ROW_GAP = 33;
+    const RG_BASE_X = 730, RG_BASE_Y = 378;
+    const RG_COL2_X = RG_BASE_X + RG_C_W + 275; // 1375
 
     const RC_POSITIONS = [
       { x: RG_BASE_X,  y: RG_BASE_Y },
@@ -961,8 +961,8 @@
       { x: RG_COL2_X,  y: RG_BASE_Y },
       { x: RG_COL2_X,  y: RG_BASE_Y + (RG_C_H + RG_ROW_GAP) },
       { x: RG_COL2_X,  y: RG_BASE_Y + 2 * (RG_C_H + RG_ROW_GAP) },
-      { x: 849,  y: 746, zIndex: 48, noDelta: true, lightText: true },
-      { x: 1378, y: 746, zIndex: 49, noDelta: true, lightText: true },
+      { x: 882,  y: 750, zIndex: 48, noDelta: true },
+      { x: 1311, y: 750, zIndex: 49, noDelta: true },
     ];
 
     function countUp(el, rawVal, duration, startDelay = 0) {
@@ -983,9 +983,13 @@
       }, startDelay);
     }
 
-    function buildOneRC(page, x, y, { stat_label = 'STAT', value = '0000', delta = '+000' } = {}, delay = 0, { zIndex = 6, noDelta = false, lightText = false } = {}, idx = 0) {
+    function buildOneRC(page, x, y, { stat_label = 'STAT', value = '0000', delta = '+000' } = {}, delay = 0, { zIndex = 6, noDelta = false } = {}, idx = 0) {
       const rc = document.createElement('div');
       rc.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${RG_C_W}px;height:${RG_C_H}px;z-index:${zIndex};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay}ms both`;
+      const rcBg = document.createElement('img');
+      rcBg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      rcBg.src = 'richguy/richcontainer.png';
+      rc.appendChild(rcBg);
 
       const lblBox = document.createElement('div');
       lblBox.style.cssText = `position:absolute;left:10px;top:${(RG_C_H-57)/2}px;width:143px;height:57px;display:flex;align-items:center;justify-content:center;z-index:11`;
@@ -994,7 +998,7 @@
         ? stat_label.replace('/', ' /<br>')
         : stat_label.replace(' ', '<br>');
       lbl.dataset.rcLbl = idx;
-      lbl.style.cssText = `font-family:'General Sans',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:${lightText ? '#fff' : 'rgb(0,0,0)'}`;
+      lbl.style.cssText = `font-family:'General Sans',sans-serif;font-size:22.23px;font-weight:700;text-transform:uppercase;line-height:1.2;text-align:center;color:rgb(0,0,0)`;
       lblBox.appendChild(lbl);
       rc.appendChild(lblBox);
 
@@ -1003,11 +1007,7 @@
       const val = document.createElement('div');
       val.textContent = value;
       val.dataset.rcVal = idx;
-      if (lightText) {
-        val.style.cssText = `font-family:'Anton',sans-serif;font-size:77px;line-height:1;background:linear-gradient(180deg,#e4c255,#fef092);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text`;
-      } else {
-        val.style.cssText = `font-family:'Anton',sans-serif;font-size:77px;line-height:1;color:rgb(0,0,0)`;
-      }
+      val.style.cssText = `font-family:'General Sans',sans-serif;font-size:52px;font-weight:800;line-height:1;color:rgb(0,0,0)`;
       countUp(val, value, 600, delay);
       valBox.appendChild(val);
       rc.appendChild(valBox);
@@ -1018,113 +1018,114 @@
         const deltaNum = parseInt(String(delta).replace(/[^0-9-]/g, ''), 10) || 0;
         const dltWrap = document.createElement('div');
         dltWrap.dataset.rcDltWrap = idx;
-        dltWrap.style.cssText = `position:absolute;left:${x + RG_C_W - 4}px;top:${y}px;height:${RG_C_H}px;display:flex;align-items:center;z-index:14`;
+        dltWrap.style.cssText = `position:absolute;left:${x + RG_C_W + 24}px;top:${y}px;height:${RG_C_H}px;display:flex;align-items:center;z-index:14`;
         if (deltaNum !== 0) {
           const dltColor = deltaNum < 0 ? 'rgb(239,68,68)' : 'rgb(0,147,3)';
           const dlt = document.createElement('div');
           dlt.textContent = delta;
           dlt.dataset.rcDlt = idx;
           countUp(dlt, delta, 600, delay + 40);
-          dlt.style.cssText = `font-family:'Anton',sans-serif;font-size:45px;color:${dltColor};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
+          dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor};animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) ${delay + 40}ms both`;
           dltWrap.appendChild(dlt);
         }
         page.appendChild(dltWrap);
       }
     }
 
-    const NT_W = 743, NT_H = 122, NT_X = 0, NT_Y = 911;
-    const OPP_W = 645, OPP_H = 106, OPP_X = 1095, OPP_Y = 922;
+    const NT_W = 607, NT_H = 120, NT_X = 32, NT_Y = 1080 - 113 - 120; // 847
+    const OPP_W = 360, OPP_H = 67, OPP_X = 1087, OPP_Y = 864;
+    const OPP_S = OPP_W / NT_W; // ~0.593 scale factor
 
     function buildNameTag(page, { name = '', role = '', tricode = '', heroid = 0, winnerCamp = 1 } = {}) {
       const wrap = document.createElement('div');
       wrap.dataset.rgNametag = '1';
       wrap.style.cssText = `position:absolute;left:${NT_X}px;top:${NT_Y}px;width:${NT_W}px;height:${NT_H}px;z-index:50;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 80ms both`;
 
-      /* background — blueplayer.png or redplayer.png */
       const bg = document.createElement('img');
-      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;display:block`;
-      bg.src = winnerCamp === 1 ? 'richguy/blueplayer.png' : 'richguy/redplayer.png';
+      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      bg.src = winnerCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
       wrap.appendChild(bg);
 
-      /* hero portrait — black left section */
-      const hero = document.createElement('img');
-      hero.dataset.rgNtHero = '1';
-      hero.style.cssText = `position:absolute;left:0;top:50%;transform:translateY(-50%);width:123px;height:123px;object-fit:contain;z-index:2`;
-      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
-      hero.onerror = () => { hero.style.display = 'none'; };
-      wrap.appendChild(hero);
+      /* team logo — 80×80, 18px from left, vertically centered */
+      const logo = document.createElement('img');
+      logo.dataset.rgNtLogo = '1';
+      logo.style.cssText = `position:absolute;left:18px;top:50%;transform:translateY(-50%);width:80px;height:80px;object-fit:contain;z-index:2`;
+      logo.src = buildUrl('/logos/' + encodeURIComponent(tricode) + '.png');
+      logo.onerror = () => { logo.style.display = 'none'; };
+      wrap.appendChild(logo);
 
-      /* role icon — white middle section, dark */
+      /* role icon — 40×40, 142px from left */
       const roleImg = document.createElement('img');
       roleImg.dataset.rgNtRole = '1';
-      roleImg.style.cssText = `position:absolute;left:159px;top:50%;transform:translateY(-50%);width:60px;height:60px;object-fit:contain;z-index:2;filter:brightness(0)`;
+      roleImg.style.cssText = `position:absolute;left:142px;top:50%;transform:translateY(-50%);width:40px;height:40px;z-index:2`;
       roleImg.src = buildUrl('/role/' + encodeURIComponent(roleFile(role)) + '.png');
       roleImg.onerror = () => { roleImg.style.display = 'none'; };
       wrap.appendChild(roleImg);
 
-      /* player name — blue/red section */
-      const nameW = 498;
+      /* player name — 18px right of role icon (left:200), width:275 */
       const txt = document.createElement('div');
       txt.dataset.rgNtName = '1';
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `position:absolute;left:256px;top:50%;transform:translateY(-50%);width:${nameW}px;font-family:'General Sans',sans-serif;font-size:46px;font-weight:700;line-height:1;text-transform:uppercase;text-align:center;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:center center`;
+      txt.style.cssText = `position:absolute;left:${142+40+18}px;top:50%;transform:translateY(-50%);width:275px;font-family:'General Sans',sans-serif;font-size:38.57px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
       wrap.appendChild(txt);
       document.fonts.ready.then(() => {
-        if (txt.scrollWidth > nameW) txt.style.transform = `translateY(-50%) scaleX(${nameW / txt.scrollWidth})`;
+        if (txt.scrollWidth > 275) txt.style.transform = `translateY(-50%) scaleX(${275 / txt.scrollWidth})`;
       });
+
+      /* hero icon — 107×107, 5px from right edge, vertically centered, inside container */
+      const hero = document.createElement('img');
+      hero.dataset.rgNtHero = '1';
+      hero.style.cssText = `position:absolute;right:5px;top:50%;transform:translateY(-50%);width:107px;height:107px;object-fit:contain;z-index:2`;
+      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.onerror = () => { hero.style.display = 'none'; };
+      wrap.appendChild(hero);
 
       page.appendChild(wrap);
     }
 
     function buildOpponentTag(page, { name = '', role = '', heroid = 0, winnerCamp = 1 } = {}) {
       const oppCamp = winnerCamp === 1 ? 2 : 1;
+      const heroSz  = Math.round(107 * OPP_S);
       const wrap = document.createElement('div');
-      /* VS colored box — 105×105, directly left of opponent bar */
-      const vsBox = document.createElement('div');
-      const vsColor = oppCamp === 1 ? '#003bd6' : '#e20101';
-      vsBox.style.cssText = `position:absolute;left:${OPP_X - 105}px;top:${OPP_Y}px;width:105px;height:105px;background:${vsColor};display:flex;align-items:center;justify-content:center;z-index:66;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 100ms both`;
-      vsBox.style.height = `${OPP_H}px`;
-      const vsTxt = document.createElement('span');
-      vsTxt.textContent = 'VS';
-      vsTxt.style.cssText = `font-family:'General Sans',sans-serif;font-size:36px;font-weight:700;color:#fff`;
-      vsBox.appendChild(vsTxt);
-      page.appendChild(vsBox);
-
       wrap.dataset.rgOppTag = '1';
       wrap.style.cssText = `position:absolute;left:${OPP_X}px;top:${OPP_Y}px;width:${OPP_W}px;height:${OPP_H}px;z-index:66;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 100ms both`;
 
-      /* background — same player PNG scaled to opponent bar size */
       const bg = document.createElement('img');
-      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%;display:block`;
-      bg.src = oppCamp === 1 ? 'richguy/blueplayer.png' : 'richguy/redplayer.png';
+      bg.style.cssText = `position:absolute;left:0;top:0;width:100%;height:100%`;
+      bg.src = oppCamp === 1 ? 'richguy/ignblue.png' : 'richguy/ignred.png';
       wrap.appendChild(bg);
 
-      /* hero portrait — black left section */
-      const hero = document.createElement('img');
-      hero.style.cssText = `position:absolute;left:0;top:50%;transform:translateY(-50%);width:107px;height:107px;object-fit:contain;z-index:2`;
-      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
-      hero.onerror = () => { hero.style.display = 'none'; };
-      wrap.appendChild(hero);
+      /* VS text — in place of team logo, scaled to match logo area */
+      const logoSz = Math.round(80 * OPP_S);
+      const vs = document.createElement('div');
+      vs.textContent = 'VS';
+      vs.style.cssText = `position:absolute;left:${Math.round(18*OPP_S)}px;top:50%;transform:translateY(-50%);width:${logoSz}px;height:${logoSz}px;display:flex;align-items:center;justify-content:center;font-family:'General Sans',sans-serif;font-size:23px;font-weight:800;color:#000;z-index:2`;
+      wrap.appendChild(vs);
 
-      /* role icon — white middle section, dark */
+      /* role icon — scaled */
       const roleImg = document.createElement('img');
-      roleImg.style.cssText = `position:absolute;left:138px;top:50%;transform:translateY(-50%);width:52px;height:52px;object-fit:contain;z-index:2;filter:brightness(0)`;
+      const ri = Math.round(40 * OPP_S);
+      roleImg.style.cssText = `position:absolute;left:${Math.round(142*OPP_S)}px;top:50%;transform:translateY(-50%);width:${ri}px;height:${ri}px;z-index:2`;
       roleImg.src = buildUrl('/role/' + encodeURIComponent(roleFile(role)) + '.png');
       roleImg.onerror = () => { roleImg.style.display = 'none'; };
       wrap.appendChild(roleImg);
 
-      /* opponent name — blue/red section, flexbox container ensures true center on scale */
-      const nameBox = document.createElement('div');
-      nameBox.style.cssText = `position:absolute;left:256px;top:0;width:355px;height:100%;display:flex;align-items:center;justify-content:center;z-index:2;overflow:visible`;
+      /* opponent name — scaled */
+      const oppNameW = Math.round(275 * OPP_S);
       const txt = document.createElement('div');
       txt.textContent = name.toUpperCase();
-      txt.style.cssText = `font-family:'General Sans',sans-serif;font-size:40px;font-weight:700;line-height:1;text-transform:uppercase;color:#fff;white-space:nowrap;transform-origin:center center`;
-      nameBox.appendChild(txt);
-      wrap.appendChild(nameBox);
+      txt.style.cssText = `position:absolute;left:${Math.round(200*OPP_S)}px;top:50%;transform:translateY(-50%);width:${oppNameW}px;font-family:'General Sans',sans-serif;font-size:${(38.57*OPP_S).toFixed(1)}px;font-weight:700;text-transform:uppercase;color:#fff;z-index:2;white-space:nowrap;overflow:visible;transform-origin:left center`;
+      wrap.appendChild(txt);
       document.fonts.ready.then(() => {
-        const natural = txt.scrollWidth;
-        if (natural > 355) txt.style.transform = `scaleX(${355 / natural})`;
+        if (txt.scrollWidth > oppNameW) txt.style.transform = `translateY(-50%) scaleX(${oppNameW / txt.scrollWidth})`;
       });
+
+      /* hero icon — scaled, 5px from right, inside container */
+      const hero = document.createElement('img');
+      hero.style.cssText = `position:absolute;right:5px;top:50%;transform:translateY(-50%);width:${heroSz}px;height:${heroSz}px;object-fit:contain;z-index:2`;
+      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.onerror = () => { hero.style.display = 'none'; };
+      wrap.appendChild(hero);
 
       page.appendChild(wrap);
     }
@@ -1132,44 +1133,23 @@
     function buildRichguy({ photo = 'KarlTzy_FRONT.png', name = '', role = '', heroid = 0, tricode = '', winnerCamp = 1, opponent = {}, containers = [] } = {}) {
       rgPage.innerHTML = '';
 
-      /* background panel — behind everything */
-      const bgRect = document.createElement('div');
-      bgRect.style.cssText = `position:absolute;left:715px;top:0;width:1205px;height:1080px;background:rgb(248,250,250);z-index:0`;
-      rgPage.appendChild(bgRect);
-
-      /* flag behind player photo */
-      const flag = document.createElement('img');
-      flag.src = winnerCamp === 1 ? 'richguy/blueflag.png' : 'richguy/redflag.png';
-      flag.style.cssText = `position:absolute;left:77px;top:0;height:1080px;width:auto;z-index:2;animation:rg-photo-in 500ms cubic-bezier(0.22,1,0.36,1) both`;
-      rgPage.appendChild(flag);
-
-      /* player photo (cutout PNG) in front of flag */
       const panel = document.createElement('div');
-      panel.style.cssText = `position:absolute;left:-177px;top:0;width:1080px;height:1080px;z-index:47;animation:rg-photo-in 500ms cubic-bezier(0.22,1,0.36,1) both`;
+      panel.style.cssText = `position:absolute;left:4px;top:26px;width:920px;height:1054px;z-index:4;overflow:hidden;animation:rg-photo-in 500ms cubic-bezier(0.22,1,0.36,1) both`;
       const img = document.createElement('img');
-      img.style.cssText = `width:100%;height:100%;object-fit:contain;object-position:bottom center;display:block`;
+      img.style.cssText = `width:100%;height:100%;object-fit:cover;object-position:top center;display:block`;
       img.onerror = () => { img.style.display = 'none'; };
       img.src = `photos/${encodeURIComponent(photo)}`;
       panel.appendChild(img);
       rgPage.appendChild(panel);
 
-      /* RICH GUY title image */
-      const titleImg = document.createElement('img');
-      titleImg.src = 'richguy/richguytitle.png';
-      titleImg.style.cssText = `position:absolute;left:743px;top:57px;width:1137px;height:auto;z-index:10;animation:rg-in 380ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
-      rgPage.appendChild(titleImg);
+      const title = document.createElement('div');
+      title.textContent = 'RICH GUY';
+      title.style.cssText = `position:absolute;left:964px;top:125px;font-family:'Anton',sans-serif;font-size:198px;line-height:1;color:rgb(1,1,0);z-index:69;white-space:nowrap;animation:rg-in 380ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
+      rgPage.appendChild(title);
 
-
-      /* content border — no bottom edge */
-      const border = document.createElement('div');
-      border.style.cssText = `position:absolute;left:743px;top:57px;width:1137px;height:1023px;border:2px solid #08080a;border-bottom:none;background:transparent;z-index:1;pointer-events:none;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
-      rgPage.appendChild(border);
-
-      /* bar behind TOTAL GOLD / GPM */
-      const goldBar = document.createElement('img');
-      goldBar.src = 'richguy/richblackbar.png';
-      goldBar.style.cssText = `position:absolute;left:745px;top:746px;width:1133px;height:103px;z-index:46;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
-      rgPage.appendChild(goldBar);
+      const divider = document.createElement('div');
+      divider.style.cssText = `position:absolute;left:1287px;top:357px;width:3px;height:350px;z-index:68;background:#000;animation:rg-in 320ms cubic-bezier(0.22,1,0.36,1) 60ms both`;
+      rgPage.appendChild(divider);
 
       const defaults = [
         { stat_label: 'MINION GOLD',   value: '0000', delta: '+000' },
@@ -1183,8 +1163,7 @@
       ];
       const data = (containers.length === 8) ? containers : defaults;
       RC_POSITIONS.forEach((pos, i) => buildOneRC(rgPage, pos.x, pos.y, data[i], 60 + i * 25, pos, i));
-
-buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
+      buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
       buildOpponentTag(rgPage, { name: opponent.name || '', role: opponent.role || '', heroid: opponent.heroid || 0, winnerCamp });
     }
 
@@ -1259,7 +1238,7 @@ buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
             const dltColor = deltaNum < 0 ? 'rgb(239,68,68)' : 'rgb(0,147,3)';
             const dlt = document.createElement('div');
             dlt.dataset.rcDlt = i;
-            dlt.style.cssText = `font-family:'Anton',sans-serif;font-size:45px;color:${dltColor}`;
+            dlt.style.cssText = `font-family:'General Sans',sans-serif;font-size:42px;font-weight:700;color:${dltColor}`;
             dlt.textContent = c.delta;
             countUp(dlt, c.delta, 700, 0);
             wrapEl.appendChild(dlt);
@@ -1300,6 +1279,7 @@ buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
 
     function fetchAndShowRichguy() {
       if (rgCache) showPostRichguy(rgCache);
+      // no cache yet — do nothing, poll will populate it within 5s
     }
 
     function showPostRichguy(data) {
