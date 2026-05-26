@@ -342,6 +342,8 @@
     }
     .camp1-border .itl-portrait-name { color: #2563eb; }
     .camp2-border .itl-portrait-name { color: #dc2626; }
+    @keyframes coin-spin1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes coin-spin2 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
@@ -1133,8 +1135,9 @@
       rgPage.innerHTML = '';
 
       /* background panel — behind everything */
-      const bgRect = document.createElement('div');
-      bgRect.style.cssText = `position:absolute;left:715px;top:0;width:1205px;height:1080px;background:rgb(248,250,250);z-index:0`;
+      const bgRect = document.createElement('img');
+      bgRect.src = 'richguy/richbg.png';
+      bgRect.style.cssText = `position:absolute;left:715px;top:0;width:1205px;height:1080px;z-index:0`;
       rgPage.appendChild(bgRect);
 
       /* flag behind player photo */
@@ -1184,7 +1187,18 @@
       const data = (containers.length === 8) ? containers : defaults;
       RC_POSITIONS.forEach((pos, i) => buildOneRC(rgPage, pos.x, pos.y, data[i], 60 + i * 25, pos, i));
 
-buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
+      /* coin 1 */
+      const coin1 = document.createElement('img');
+      coin1.src = 'richguy/coin.png';
+      coin1.style.cssText = `position:absolute;left:609px;top:357px;width:193px;height:191px;z-index:500;animation:coin-spin1 3s linear infinite`;
+      rgPage.appendChild(coin1);
+      /* coin 2 — different speed for async look */
+      const coin2 = document.createElement('img');
+      coin2.src = 'richguy/coin.png';
+      coin2.style.cssText = `position:absolute;left:1740px;top:757px;width:164px;height:163px;z-index:500;animation:coin-spin2 4.3s linear infinite`;
+      rgPage.appendChild(coin2);
+
+      buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
       buildOpponentTag(rgPage, { name: opponent.name || '', role: opponent.role || '', heroid: opponent.heroid || 0, winnerCamp });
     }
 
@@ -1326,6 +1340,7 @@ buildNameTag(rgPage, { name, role, tricode, heroid, winnerCamp });
         bar.style.display = bar.style.display === 'none' ? '' : 'none';
       }
     });
+
   </script>
 
 </body>

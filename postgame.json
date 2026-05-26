@@ -1,21 +1,21 @@
 {
-  "battleid": "811233231373095157",
-  "date": "2026-05-07",
-  "game_start_time": "2026-05-07T08:47:29.290Z",
-  "game_end_time": "2026-05-07T09:09:18.562Z",
-  "game_duration": "17:34",
-  "camp1_tricode": "RORA",
-  "camp2_tricode": "FLCN",
+  "battleid": "3602894602917732154",
+  "date": "2026-05-26",
+  "game_start_time": "2026-05-26T09:02:25.821Z",
+  "game_end_time": "2026-05-26T09:21:47.407Z",
+  "game_duration": "07:26",
+  "camp1_tricode": "ONIC",
+  "camp2_tricode": "RORA",
   "camp1": {
-    "tricode": "RORA",
+    "tricode": "ONIC",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
-          "player_name": "nas.",
+          "slot": "slot1",
+          "name": "watch1",
+          "player_name": "Edward",
           "role": "EXP LANER",
-          "hero_id": 37,
+          "hero_id": 120,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
@@ -24,184 +24,260 @@
           "bpm_on_end": null,
           "item_timeline": [
             {
-              "game_time_s": 1,
-              "game_time_fmt": "00:01",
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1202,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
               "item_id": 1301,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 53,
-              "game_time_fmt": "00:53",
-              "item_id": 2304,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2002,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 90,
-              "game_time_fmt": "01:30",
+              "game_time_s": 169,
+              "game_time_fmt": "02:49",
+              "item_id": 1005,
+              "item_name": null,
+              "is_tier3": false
+            }
+          ]
+        }
+      },
+      {
+        "player2": {
+          "slot": "slot2",
+          "name": "watch2",
+          "player_name": "Demonkite",
+          "role": "JUNGLER",
+          "hero_id": 84,
+          "avg_bpm": null,
+          "peak_bpm": null,
+          "pct_above_120": null,
+          "avg_bpm_at_objectives": null,
+          "peak_bpm_at_objectives": null,
+          "bpm_on_end": null,
+          "item_timeline": [
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1001,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1008,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1411,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 191,
+              "game_time_fmt": "03:11",
+              "item_id": 1008,
+              "item_name": null,
+              "is_tier3": false
+            }
+          ]
+        }
+      },
+      {
+        "player3": {
+          "slot": "slot3",
+          "name": "watch3",
+          "player_name": "Yue",
+          "role": "MID LANER",
+          "hero_id": 63,
+          "avg_bpm": null,
+          "peak_bpm": null,
+          "pct_above_120": null,
+          "avg_bpm_at_objectives": null,
+          "peak_bpm_at_objectives": null,
+          "bpm_on_end": null,
+          "item_timeline": [
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
               "item_id": 1101,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 125,
-              "game_time_fmt": "02:05",
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1103,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1301,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2102,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 189,
+              "game_time_fmt": "03:09",
+              "item_id": 2101,
+              "item_name": null,
+              "is_tier3": false
+            }
+          ]
+        }
+      },
+      {
+        "player4": {
+          "slot": "slot4",
+          "name": "watch4",
+          "player_name": "Light",
+          "role": "ROAMER",
+          "hero_id": 119,
+          "avg_bpm": null,
+          "peak_bpm": null,
+          "pct_above_120": null,
+          "avg_bpm_at_objectives": null,
+          "peak_bpm_at_objectives": null,
+          "bpm_on_end": null,
+          "item_timeline": [
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1103,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
               "item_id": 2104,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 153,
-              "game_time_fmt": "02:33",
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 3544,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 176,
+              "game_time_fmt": "02:56",
               "item_id": 1101,
               "item_name": null,
               "is_tier3": false
-            },
+            }
+          ]
+        }
+      },
+      {
+        "player5": {
+          "slot": "slot5",
+          "name": "watch5",
+          "player_name": "Domengkite",
+          "role": "GOLD LANER",
+          "hero_id": 79,
+          "avg_bpm": null,
+          "peak_bpm": null,
+          "pct_above_120": null,
+          "avg_bpm_at_objectives": null,
+          "peak_bpm_at_objectives": null,
+          "bpm_on_end": null,
+          "item_timeline": [
             {
-              "game_time_s": 204,
-              "game_time_fmt": "03:24",
-              "item_id": 2101,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1008,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 258,
-              "game_time_fmt": "04:18",
-              "item_id": 3111,
-              "item_name": "Genius Wand",
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2004,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 157,
+              "game_time_fmt": "02:37",
+              "item_id": 1008,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 178,
+              "game_time_fmt": "02:58",
+              "item_id": 2014,
+              "item_name": "Sky Piercer",
               "is_tier3": true
             },
             {
-              "game_time_s": 314,
-              "game_time_fmt": "05:14",
-              "item_id": 1101,
+              "game_time_s": 193,
+              "game_time_fmt": "03:13",
+              "item_id": 1301,
+              "item_name": null,
+              "is_tier3": false
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "camp2": {
+    "tricode": "RORA",
+    "players": [
+      {
+        "player1": {
+          "slot": "slot10",
+          "name": "watch10",
+          "player_name": "Kirk",
+          "role": "EXP LANER",
+          "hero_id": 26,
+          "avg_bpm": null,
+          "peak_bpm": null,
+          "pct_above_120": null,
+          "avg_bpm_at_objectives": null,
+          "peak_bpm_at_objectives": null,
+          "bpm_on_end": null,
+          "item_timeline": [
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1001,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 342,
-              "game_time_fmt": "05:42",
-              "item_id": 2104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 392,
-              "game_time_fmt": "06:32",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 417,
-              "game_time_fmt": "06:57",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 534,
-              "game_time_fmt": "08:54",
-              "item_id": 3105,
-              "item_name": "Glowing Wand",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 570,
-              "game_time_fmt": "09:30",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 649,
-              "game_time_fmt": "10:49",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 657,
-              "game_time_fmt": "10:57",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 666,
-              "game_time_fmt": "11:06",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 687,
-              "game_time_fmt": "11:27",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 719,
-              "game_time_fmt": "11:59",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 765,
-              "game_time_fmt": "12:45",
-              "item_id": 3102,
-              "item_name": "Holy Crystal",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 779,
-              "game_time_fmt": "12:59",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 856,
-              "game_time_fmt": "14:16",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 916,
-              "game_time_fmt": "15:16",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 974,
-              "game_time_fmt": "16:14",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1004,
-              "game_time_fmt": "16:44",
-              "item_id": 3108,
-              "item_name": "Blood Wings",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 1027,
-              "game_time_fmt": "17:07",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1047,
-              "game_time_fmt": "17:27",
-              "item_id": 2101,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2302,
               "item_name": null,
               "is_tier3": false
             }
@@ -212,9 +288,9 @@
         "player2": {
           "slot": "slot9",
           "name": "watch9",
-          "player_name": "Smooth",
+          "player_name": "K1NGKONG",
           "role": "JUNGLER",
-          "hero_id": 25,
+          "hero_id": 126,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
@@ -223,114 +299,23 @@
           "bpm_on_end": null,
           "item_timeline": [
             {
-              "game_time_s": 4,
-              "game_time_fmt": "00:04",
-              "item_id": 1301,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2004,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 66,
-              "game_time_fmt": "01:06",
-              "item_id": 1201,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 3431,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 117,
-              "game_time_fmt": "01:57",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 153,
-              "game_time_fmt": "02:33",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 205,
-              "game_time_fmt": "03:25",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 237,
-              "game_time_fmt": "03:57",
-              "item_id": 2208,
-              "item_name": "Queen's Wings",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 313,
-              "game_time_fmt": "05:13",
-              "item_id": 2303,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 497,
-              "game_time_fmt": "08:17",
-              "item_id": 2002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 546,
-              "game_time_fmt": "09:06",
-              "item_id": 1005,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 609,
-              "game_time_fmt": "10:09",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 657,
-              "game_time_fmt": "10:57",
-              "item_id": 2013,
-              "item_name": "War Axe",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 772,
-              "game_time_fmt": "12:52",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 774,
-              "game_time_fmt": "12:54",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 875,
-              "game_time_fmt": "14:35",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 916,
-              "game_time_fmt": "15:16",
-              "item_id": 3208,
-              "item_name": "Brute Force Breastplate",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 1021,
-              "game_time_fmt": "17:01",
-              "item_id": 2201,
+              "game_time_s": 173,
+              "game_time_fmt": "02:53",
+              "item_id": 1001,
               "item_name": null,
               "is_tier3": false
             }
@@ -341,9 +326,9 @@
         "player3": {
           "slot": "slot8",
           "name": "watch8",
-          "player_name": ".HrZq.",
+          "player_name": "SuperFrince",
           "role": "MID LANER",
-          "hero_id": 130,
+          "hero_id": 57,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
@@ -352,186 +337,25 @@
           "bpm_on_end": null,
           "item_timeline": [
             {
-              "game_time_s": 2,
-              "game_time_fmt": "00:02",
-              "item_id": 1411,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1101,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 57,
-              "game_time_fmt": "00:57",
-              "item_id": 1001,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 2308,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 113,
-              "game_time_fmt": "01:53",
-              "item_id": 2004,
+              "game_time_s": 194,
+              "game_time_fmt": "03:14",
+              "item_id": 1105,
               "item_name": null,
               "is_tier3": false
-            },
-            {
-              "game_time_s": 161,
-              "game_time_fmt": "02:41",
-              "item_id": 1005,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 180,
-              "game_time_fmt": "03:00",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 235,
-              "game_time_fmt": "03:55",
-              "item_id": 3009,
-              "item_name": "Hunter Strike",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 275,
-              "game_time_fmt": "04:35",
-              "item_id": 3431,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 289,
-              "game_time_fmt": "04:49",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 309,
-              "game_time_fmt": "05:09",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 310,
-              "game_time_fmt": "05:10",
-              "item_id": 2002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 342,
-              "game_time_fmt": "05:42",
-              "item_id": 1005,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 381,
-              "game_time_fmt": "06:21",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 437,
-              "game_time_fmt": "07:17",
-              "item_id": 2013,
-              "item_name": "War Axe",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 478,
-              "game_time_fmt": "07:58",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 512,
-              "game_time_fmt": "08:32",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 518,
-              "game_time_fmt": "08:38",
-              "item_id": 2001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 608,
-              "game_time_fmt": "10:08",
-              "item_id": 3001,
-              "item_name": "Malefic Roar",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 625,
-              "game_time_fmt": "10:25",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 640,
-              "game_time_fmt": "10:40",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 657,
-              "game_time_fmt": "10:57",
-              "item_id": 2001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 670,
-              "game_time_fmt": "11:10",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 686,
-              "game_time_fmt": "11:26",
-              "item_id": 2001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 779,
-              "game_time_fmt": "12:59",
-              "item_id": 3008,
-              "item_name": "Blade of Despair",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 808,
-              "game_time_fmt": "13:28",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 818,
-              "game_time_fmt": "13:38",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 998,
-              "game_time_fmt": "16:38",
-              "item_id": 2208,
-              "item_name": "Queen's Wings",
-              "is_tier3": true
             }
           ]
         }
@@ -540,9 +364,9 @@
         "player4": {
           "slot": "slot7",
           "name": "watch7",
-          "player_name": "WATAK UTAMA!?",
+          "player_name": "Brusko",
           "role": "ROAMER",
-          "hero_id": 34,
+          "hero_id": 128,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
@@ -551,177 +375,9 @@
           "bpm_on_end": null,
           "item_timeline": [
             {
-              "game_time_s": 5,
-              "game_time_fmt": "00:05",
-              "item_id": 1511,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 63,
-              "game_time_fmt": "01:03",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 86,
-              "game_time_fmt": "01:26",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 131,
-              "game_time_fmt": "02:11",
-              "item_id": 2204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 155,
-              "game_time_fmt": "02:35",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 203,
-              "game_time_fmt": "03:23",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 275,
-              "game_time_fmt": "04:35",
-              "item_id": 3206,
-              "item_name": "Dominance Ice",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 342,
-              "game_time_fmt": "05:42",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 416,
-              "game_time_fmt": "06:56",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 469,
-              "game_time_fmt": "07:49",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 543,
-              "game_time_fmt": "09:03",
-              "item_id": 3109,
-              "item_name": "Fleeting Time",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 581,
-              "game_time_fmt": "09:41",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 600,
-              "game_time_fmt": "10:00",
-              "item_id": 3521,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 615,
-              "game_time_fmt": "10:15",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 635,
-              "game_time_fmt": "10:35",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 645,
-              "game_time_fmt": "10:45",
-              "item_id": 2205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 666,
-              "game_time_fmt": "11:06",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 693,
-              "game_time_fmt": "11:33",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 765,
-              "game_time_fmt": "12:45",
-              "item_id": 3203,
-              "item_name": "Antique Cuirass",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 789,
-              "game_time_fmt": "13:09",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 834,
-              "game_time_fmt": "13:54",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 876,
-              "game_time_fmt": "14:36",
-              "item_id": 2203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 908,
-              "game_time_fmt": "15:08",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1004,
-              "game_time_fmt": "16:44",
-              "item_id": 3205,
-              "item_name": "Athena's Shield",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 1016,
-              "game_time_fmt": "16:56",
-              "item_id": 1201,
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 3562,
               "item_name": null,
               "is_tier3": false
             }
@@ -732,9 +388,9 @@
         "player5": {
           "slot": "slot6",
           "name": "watch6",
-          "player_name": "Chimp",
+          "player_name": "Savero",
           "role": "GOLD LANER",
-          "hero_id": 72,
+          "hero_id": 31,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
@@ -743,1200 +399,32 @@
           "bpm_on_end": null,
           "item_timeline": [
             {
-              "game_time_s": 1,
-              "game_time_fmt": "00:01",
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1002,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
+              "item_id": 1002,
+              "item_name": null,
+              "is_tier3": false
+            },
+            {
+              "game_time_s": 154,
+              "game_time_fmt": "02:34",
               "item_id": 1301,
               "item_name": null,
               "is_tier3": false
             },
             {
-              "game_time_s": 52,
-              "game_time_fmt": "00:52",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 70,
-              "game_time_fmt": "01:10",
-              "item_id": 2304,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 99,
-              "game_time_fmt": "01:39",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 113,
-              "game_time_fmt": "01:53",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 158,
-              "game_time_fmt": "02:38",
+              "game_time_s": 193,
+              "game_time_fmt": "03:13",
               "item_id": 1007,
               "item_name": null,
               "is_tier3": false
-            },
-            {
-              "game_time_s": 198,
-              "game_time_fmt": "03:18",
-              "item_id": 1104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 247,
-              "game_time_fmt": "04:07",
-              "item_id": 2108,
-              "item_name": "Feather of Heaven",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 255,
-              "game_time_fmt": "04:15",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 274,
-              "game_time_fmt": "04:34",
-              "item_id": 1105,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 318,
-              "game_time_fmt": "05:18",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 368,
-              "game_time_fmt": "06:08",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 405,
-              "game_time_fmt": "06:45",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 458,
-              "game_time_fmt": "07:38",
-              "item_id": 3103,
-              "item_name": "Concentrated Energy",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 500,
-              "game_time_fmt": "08:20",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 530,
-              "game_time_fmt": "08:50",
-              "item_id": 1003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 562,
-              "game_time_fmt": "09:22",
-              "item_id": 2003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 609,
-              "game_time_fmt": "10:09",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 656,
-              "game_time_fmt": "10:56",
-              "item_id": 3005,
-              "item_name": "Windtalker",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 661,
-              "game_time_fmt": "11:01",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 699,
-              "game_time_fmt": "11:39",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 714,
-              "game_time_fmt": "11:54",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 752,
-              "game_time_fmt": "12:32",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 827,
-              "game_time_fmt": "13:47",
-              "item_id": 3102,
-              "item_name": "Holy Crystal",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 843,
-              "game_time_fmt": "14:03",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 924,
-              "game_time_fmt": "15:24",
-              "item_id": 2005,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1004,
-              "game_time_fmt": "16:44",
-              "item_id": 3012,
-              "item_name": "Rose Gold Meteor",
-              "is_tier3": true
-            }
-          ]
-        }
-      }
-    ]
-  },
-  "camp2": {
-    "tricode": "FLCN",
-    "players": [
-      {
-        "player1": {
-          "slot": "slot1",
-          "name": "watch1",
-          "player_name": "Huizoy",
-          "role": "EXP LANER",
-          "hero_id": 36,
-          "avg_bpm": null,
-          "peak_bpm": null,
-          "pct_above_120": null,
-          "avg_bpm_at_objectives": null,
-          "peak_bpm_at_objectives": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 3,
-              "game_time_fmt": "00:03",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 38,
-              "game_time_fmt": "00:38",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 84,
-              "game_time_fmt": "01:24",
-              "item_id": 2302,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 108,
-              "game_time_fmt": "01:48",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 161,
-              "game_time_fmt": "02:41",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 170,
-              "game_time_fmt": "02:50",
-              "item_id": 2002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 230,
-              "game_time_fmt": "03:50",
-              "item_id": 1005,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 271,
-              "game_time_fmt": "04:31",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 329,
-              "game_time_fmt": "05:29",
-              "item_id": 2013,
-              "item_name": "War Axe",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 371,
-              "game_time_fmt": "06:11",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 387,
-              "game_time_fmt": "06:27",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 453,
-              "game_time_fmt": "07:33",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 511,
-              "game_time_fmt": "08:31",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 615,
-              "game_time_fmt": "10:15",
-              "item_id": 2208,
-              "item_name": "Queen's Wings",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 687,
-              "game_time_fmt": "11:27",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 732,
-              "game_time_fmt": "12:12",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 777,
-              "game_time_fmt": "12:57",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 833,
-              "game_time_fmt": "13:53",
-              "item_id": 3204,
-              "item_name": "Oracle",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 855,
-              "game_time_fmt": "14:15",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 903,
-              "game_time_fmt": "15:03",
-              "item_id": 2004,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 906,
-              "game_time_fmt": "15:06",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 907,
-              "game_time_fmt": "15:07",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 915,
-              "game_time_fmt": "15:15",
-              "item_id": 2204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 948,
-              "game_time_fmt": "15:48",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1033,
-              "game_time_fmt": "17:13",
-              "item_id": 3206,
-              "item_name": "Dominance Ice",
-              "is_tier3": true
-            }
-          ]
-        }
-      },
-      {
-        "player2": {
-          "slot": "slot2",
-          "name": "watch2",
-          "player_name": "[•|Kàizen|•] :3",
-          "role": "JUNGLER",
-          "hero_id": 131,
-          "avg_bpm": null,
-          "peak_bpm": null,
-          "pct_above_120": null,
-          "avg_bpm_at_objectives": null,
-          "peak_bpm_at_objectives": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 4,
-              "game_time_fmt": "00:04",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 92,
-              "game_time_fmt": "01:32",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 95,
-              "game_time_fmt": "01:35",
-              "item_id": 2303,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 156,
-              "game_time_fmt": "02:36",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 217,
-              "game_time_fmt": "03:37",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 271,
-              "game_time_fmt": "04:31",
-              "item_id": 2014,
-              "item_name": "Sky Piercer",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 320,
-              "game_time_fmt": "05:20",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 338,
-              "game_time_fmt": "05:38",
-              "item_id": 2104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 358,
-              "game_time_fmt": "05:58",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 394,
-              "game_time_fmt": "06:34",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 425,
-              "game_time_fmt": "07:05",
-              "item_id": 3111,
-              "item_name": "Genius Wand",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 444,
-              "game_time_fmt": "07:24",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 483,
-              "game_time_fmt": "08:03",
-              "item_id": 2104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 506,
-              "game_time_fmt": "08:26",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 543,
-              "game_time_fmt": "09:03",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 686,
-              "game_time_fmt": "11:26",
-              "item_id": 3105,
-              "item_name": "Glowing Wand",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 699,
-              "game_time_fmt": "11:39",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 725,
-              "game_time_fmt": "12:05",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 777,
-              "game_time_fmt": "12:57",
-              "item_id": 1104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 860,
-              "game_time_fmt": "14:20",
-              "item_id": 3110,
-              "item_name": "Lightning Truncheon",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 898,
-              "game_time_fmt": "14:58",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 951,
-              "game_time_fmt": "15:51",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1036,
-              "game_time_fmt": "17:16",
-              "item_id": 3108,
-              "item_name": "Blood Wings",
-              "is_tier3": true
-            }
-          ]
-        }
-      },
-      {
-        "player3": {
-          "slot": "slot3",
-          "name": "watch3",
-          "player_name": "Zick.",
-          "role": "MID LANER",
-          "hero_id": 126,
-          "avg_bpm": null,
-          "peak_bpm": null,
-          "pct_above_120": null,
-          "avg_bpm_at_objectives": null,
-          "peak_bpm_at_objectives": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 11,
-              "game_time_fmt": "00:11",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 48,
-              "game_time_fmt": "00:48",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 75,
-              "game_time_fmt": "01:15",
-              "item_id": 1003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 106,
-              "game_time_fmt": "01:46",
-              "item_id": 2003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 140,
-              "game_time_fmt": "02:20",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 202,
-              "game_time_fmt": "03:22",
-              "item_id": 3005,
-              "item_name": "Windtalker",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 249,
-              "game_time_fmt": "04:09",
-              "item_id": 1004,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 285,
-              "game_time_fmt": "04:45",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 304,
-              "game_time_fmt": "05:04",
-              "item_id": 1003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 326,
-              "game_time_fmt": "05:26",
-              "item_id": 2003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 334,
-              "game_time_fmt": "05:34",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 354,
-              "game_time_fmt": "05:54",
-              "item_id": 3002,
-              "item_name": "Haas's Claws",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 399,
-              "game_time_fmt": "06:39",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 430,
-              "game_time_fmt": "07:10",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 453,
-              "game_time_fmt": "07:33",
-              "item_id": 2014,
-              "item_name": "Sky Piercer",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 488,
-              "game_time_fmt": "08:08",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 496,
-              "game_time_fmt": "08:16",
-              "item_id": 2301,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 520,
-              "game_time_fmt": "08:40",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 534,
-              "game_time_fmt": "08:54",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 551,
-              "game_time_fmt": "09:11",
-              "item_id": 2001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 574,
-              "game_time_fmt": "09:34",
-              "item_id": 1003,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 641,
-              "game_time_fmt": "10:41",
-              "item_id": 3003,
-              "item_name": "Berserker's Fury",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 663,
-              "game_time_fmt": "11:03",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 710,
-              "game_time_fmt": "11:50",
-              "item_id": 2004,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 771,
-              "game_time_fmt": "12:51",
-              "item_id": 3015,
-              "item_name": "Malefic Gun",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 876,
-              "game_time_fmt": "14:36",
-              "item_id": 3012,
-              "item_name": "Rose Gold Meteor",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 1022,
-              "game_time_fmt": "17:02",
-              "item_id": 3013,
-              "item_name": "Sea Halberd",
-              "is_tier3": true
-            }
-          ]
-        }
-      },
-      {
-        "player4": {
-          "slot": "slot4",
-          "name": "watch4",
-          "player_name": "ICE  ッ",
-          "role": "ROAMER",
-          "hero_id": 6,
-          "avg_bpm": null,
-          "peak_bpm": null,
-          "pct_above_120": null,
-          "avg_bpm_at_objectives": null,
-          "peak_bpm_at_objectives": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 3,
-              "game_time_fmt": "00:03",
-              "item_id": 1513,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 50,
-              "game_time_fmt": "00:50",
-              "item_id": 1204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 79,
-              "game_time_fmt": "01:19",
-              "item_id": 1204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 116,
-              "game_time_fmt": "01:56",
-              "item_id": 3563,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 159,
-              "game_time_fmt": "02:39",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 260,
-              "game_time_fmt": "04:20",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 313,
-              "game_time_fmt": "05:13",
-              "item_id": 1104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 340,
-              "game_time_fmt": "05:40",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 364,
-              "game_time_fmt": "06:04",
-              "item_id": 3112,
-              "item_name": "Flask of the Oasis",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 381,
-              "game_time_fmt": "06:21",
-              "item_id": 1103,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 430,
-              "game_time_fmt": "07:10",
-              "item_id": 1104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 453,
-              "game_time_fmt": "07:33",
-              "item_id": 2102,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 469,
-              "game_time_fmt": "07:49",
-              "item_id": 1103,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 493,
-              "game_time_fmt": "08:13",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 543,
-              "game_time_fmt": "09:03",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 551,
-              "game_time_fmt": "09:11",
-              "item_id": 2106,
-              "item_name": "Enchanted Talisman",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 600,
-              "game_time_fmt": "10:00",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 650,
-              "game_time_fmt": "10:50",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 723,
-              "game_time_fmt": "12:03",
-              "item_id": 1008,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 803,
-              "game_time_fmt": "13:23",
-              "item_id": 3109,
-              "item_name": "Fleeting Time",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 829,
-              "game_time_fmt": "13:49",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 874,
-              "game_time_fmt": "14:34",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 904,
-              "game_time_fmt": "15:04",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 949,
-              "game_time_fmt": "15:49",
-              "item_id": 2101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1035,
-              "game_time_fmt": "17:15",
-              "item_id": 3102,
-              "item_name": "Holy Crystal",
-              "is_tier3": true
-            }
-          ]
-        }
-      },
-      {
-        "player5": {
-          "slot": "slot5",
-          "name": "watch5",
-          "player_name": "ZYNX Jr 969",
-          "role": "GOLD LANER",
-          "hero_id": 107,
-          "avg_bpm": null,
-          "peak_bpm": null,
-          "pct_above_120": null,
-          "avg_bpm_at_objectives": null,
-          "peak_bpm_at_objectives": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 3,
-              "game_time_fmt": "00:03",
-              "item_id": 1411,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 48,
-              "game_time_fmt": "00:48",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 97,
-              "game_time_fmt": "01:37",
-              "item_id": 3411,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 130,
-              "game_time_fmt": "02:10",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 167,
-              "game_time_fmt": "02:47",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 221,
-              "game_time_fmt": "03:41",
-              "item_id": 1007,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 250,
-              "game_time_fmt": "04:10",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 272,
-              "game_time_fmt": "04:32",
-              "item_id": 1006,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 315,
-              "game_time_fmt": "05:15",
-              "item_id": 2008,
-              "item_name": "Corrosion Scythe",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 352,
-              "game_time_fmt": "05:52",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 381,
-              "game_time_fmt": "06:21",
-              "item_id": 2202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 401,
-              "game_time_fmt": "06:41",
-              "item_id": 1002,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 430,
-              "game_time_fmt": "07:10",
-              "item_id": 1006,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 440,
-              "game_time_fmt": "07:20",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 459,
-              "game_time_fmt": "07:39",
-              "item_id": 1001,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 509,
-              "game_time_fmt": "08:29",
-              "item_id": 2009,
-              "item_name": "Golden Staff",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 517,
-              "game_time_fmt": "08:37",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 542,
-              "game_time_fmt": "09:02",
-              "item_id": 1203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 564,
-              "game_time_fmt": "09:24",
-              "item_id": 2203,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 596,
-              "game_time_fmt": "09:56",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 683,
-              "game_time_fmt": "11:23",
-              "item_id": 3205,
-              "item_name": "Athena's Shield",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 726,
-              "game_time_fmt": "12:06",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 735,
-              "game_time_fmt": "12:15",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 744,
-              "game_time_fmt": "12:24",
-              "item_id": 2205,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 805,
-              "game_time_fmt": "13:25",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 828,
-              "game_time_fmt": "13:48",
-              "item_id": 2201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 891,
-              "game_time_fmt": "14:51",
-              "item_id": 3203,
-              "item_name": "Antique Cuirass",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 901,
-              "game_time_fmt": "15:01",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 930,
-              "game_time_fmt": "15:30",
-              "item_id": 2202,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 935,
-              "game_time_fmt": "15:35",
-              "item_id": 2204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 1007,
-              "game_time_fmt": "16:47",
-              "item_id": 3206,
-              "item_name": "Dominance Ice",
-              "is_tier3": true
             }
           ]
         }
@@ -1951,9 +439,16 @@
     "highest_peak_at_objectives": null
   },
   "clashes": {
-    "clash_count": null,
+    "clash_count": 1,
     "camp1_avg_bpm_in_clashes": null,
     "camp2_avg_bpm_in_clashes": null,
-    "clashes": []
+    "clashes": [
+      {
+        "game_time": "02:34",
+        "kill_jump": 8,
+        "camp1_avg_bpm": null,
+        "camp2_avg_bpm": null
+      }
+    ]
   }
 }
