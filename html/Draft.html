@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <base href="/">
+  <title>Draft Overlay</title>
+  <style>
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 600;
+      font-display: block;
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold');
+    }
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 700;
+      font-display: block;
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'Anton';
+      font-weight: 400;
+      font-display: block;
+      src: local('Anton'), local('Anton Regular'), url('fonts/Anton-Regular.ttf') format('truetype');
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    /* ── Debug bar ─────────────────────────────────────────────── */
+    #debug-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 30px;
+      background: rgba(0,0,0,0.85);
+      display: flex; align-items: center;
+      padding: 0 14px; gap: 8px;
+      z-index: 9999;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px; color: #bbb;
+    }
+    #debug-bar label { color: #888; white-space: nowrap; }
+    #api-url-input {
+      width: 380px; height: 22px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid #444; border-radius: 3px;
+      color: #eee; padding: 0 8px;
+      font-family: inherit; font-size: 12px; outline: none;
+    }
+    #api-url-input:focus { border-color: #777; }
+    #debug-apply {
+      height: 22px; padding: 0 10px;
+      background: #2a2a2a; border: 1px solid #555; border-radius: 3px;
+      color: #bbb; cursor: pointer; font-size: 12px;
+    }
+    #debug-apply:hover { background: #383838; color: #fff; }
+    #debug-status { padding: 2px 8px; border-radius: 3px; font-size: 11px; }
+    #debug-status.ok      { background: rgba(0,200,80,0.18);  color: #3f3; }
+    #debug-status.err     { background: rgba(220,0,0,0.22);   color: #f55; }
+    #debug-status.pending { background: rgba(220,220,0,0.15); color: #ff0; }
+    #debug-last { font-size: 11px; color: #555; }
+
+    /* ── Scene ─────────────────────────────────────────────────── */
+    #scene {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      background: url('assets/draft/draftbg.png') no-repeat 0 0 / 1920px 1080px;
+    }
+
+    /* ── Status area (BANNING / PICKING / FINAL CHANGES) ────────
+       left: -125.889px, top: 660.077px from design CSS.
+       Width 2172px makes the visual center land at 960px (screen center).
+    ─────────────────────────────────────────────────────────────── */
+    #status-area {
+      position: absolute;
+      left: -125.889px;
+      top: 923.077px;
+      width: 2172px;
+      text-align: center;
+    }
+    #status-text {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 600;
+      font-size: 18px; /* 4.3pt @ 300dpi */
+      color: rgb(40,40,40);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      line-height: 1;
+    }
+
+    /* ── Countdown row ─────────────────────────────────────────── */
+    #countdown-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 10px;
+    }
+    #countdown-text {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 63px; /* 15.12pt @ 300dpi */
+      color: rgb(40,40,40);
+      line-height: 1;
+    }
+
+    /* ── Camp indicator triangles ──────────────────────────────── */
+    .tri {
+      width: 14px; height: 14px;
+      flex-shrink: 0;
+      visibility: hidden; /* reserves space; keeps countdown centered */
+      background: #00E878;
+      animation: tri-hover 2.2s ease-in-out infinite;
+    }
+    .tri.active { visibility: visible; }
+
+    /* Camp1 → left-pointing (on left of countdown, points toward camp1 side) */
+    #tri-camp1 { clip-path: polygon(14px 0, 0 7px, 14px 14px); }
+    /* Camp2 → right-pointing (on right of countdown, points toward camp2 side) */
+    #tri-camp2 { clip-path: polygon(0 0, 14px 7px, 0 14px); }
+
+    @keyframes tri-hover {
+      0%   { transform: translateX(-4px); }
+      50%  { transform: translateX(4px); }
+      100% { transform: translateX(-4px); }
+    }
+
+    /* ── Pick plate flex layout ────────────────────────────────── */
+    .plates-camp {
+      position: absolute;
+      top: 851px;
+      display: flex;
+      gap: 1px;
+      align-items: flex-start;
+    }
+    .plates-camp-1 { left: 0; }
+    /* Camp2: seat_1 rightmost → row-reverse, container starts at left:1161 */
+    .plates-camp-2 { left: 1161px; flex-direction: row-reverse; }
+
+    /* Flex item — its width transitions drive the squeeze/expand */
+    .seat-unit {
+      flex: 0 0 auto;
+      width: 151px;
+      height: 168px;
+      position: relative;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      min-width: 0;
+    }
+    .seat-unit.picking-expand { width: 167px; }
+
+    /* 1 picker: others shrink to 147 px */
+    .plates-camp.has-picker .seat-unit:not(.picking-expand) { width: 147px; }
+
+    /* 2 pickers: others shrink to fill remaining span exactly */
+    .plates-camp.has-two-pickers .seat-unit.picking-expand  { width: 167px; }
+    .plates-camp.has-two-pickers .seat-unit:not(.picking-expand) {
+      width: calc((759px - 2 * 167px - 4px) / 3); /* ≈ 140.33 px */
+    }
+
+    /* Plate — fills the seat-unit so plateback.png background grows with it */
+    .plate {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 168px;
+      background: url('assets/draft/plateback.png') no-repeat center center / cover;
+    }
+
+    /* Content wrapper — fills the plate width so cropping scales with it */
+    .plate-content {
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 168px;
+      overflow: hidden;
+    }
+
+    /* Hero WebM video — 168 px wide (uniform scale), centred.
+       plate-content overflow:hidden crops sides as plate shrinks,
+       and crops top/bottom since the video is taller than 168 px. */
+    .hero-video {
+      position: absolute;
+      left: 50%; top: -3px;
+      transform: translateX(-50%);
+      width: 168px;
+      height: auto;
+      display: none;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Matte-reveal canvas — matches hero-video position exactly */
+    .plate-canvas {
+      position: absolute;
+      left: 50%; top: -3px;
+      transform: translateX(-50%);
+      width: 168px;
+      /* height set dynamically to match hero video natural aspect ratio */
+      opacity: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Name — centred under the seat-unit (auto width = seat-unit width) */
+    .player-name {
+      position: absolute;
+      top: 177px; /* 168 + 9 */
+      left: 0; right: 0;
+      text-align: center;
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 17px;
+      color: #fff;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+
+    /* Pick plate reveal flash (kept for reference, not triggered) */
+    @keyframes reveal-blue {
+      0%   { box-shadow: none; }
+      16%  { box-shadow: inset 0 0 0 4px rgba(30,120,255,1),
+                         0 0 36px 18px rgba(30,120,255,0.95); }
+      32%  { box-shadow: none; }
+      48%  { box-shadow: inset 0 0 0 4px rgba(30,120,255,1),
+                         0 0 36px 18px rgba(30,120,255,0.95); }
+      64%  { box-shadow: none; }
+      80%  { box-shadow: inset 0 0 0 3px rgba(30,120,255,0.6),
+                         0 0 18px 8px rgba(30,120,255,0.4); }
+      100% { box-shadow: none; }
+    }
+    @keyframes reveal-red {
+      0%   { box-shadow: none; }
+      16%  { box-shadow: inset 0 0 0 4px rgba(255,50,50,1),
+                         0 0 36px 18px rgba(255,50,50,0.95); }
+      32%  { box-shadow: none; }
+      48%  { box-shadow: inset 0 0 0 4px rgba(255,50,50,1),
+                         0 0 36px 18px rgba(255,50,50,0.95); }
+      64%  { box-shadow: none; }
+      80%  { box-shadow: inset 0 0 0 3px rgba(255,50,50,0.6),
+                         0 0 18px 8px rgba(255,50,50,0.4); }
+      100% { box-shadow: none; }
+    }
+    @keyframes hero-fadein {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .plate.revealing-blue { animation: reveal-blue 0.72s ease-in-out forwards; }
+    .plate.revealing-red  { animation: reveal-red  0.72s ease-in-out forwards; }
+    .plate-hero.fadein    { animation: hero-fadein 0.45s ease-in forwards; }
+
+    /* ── Hero banner (bluehero / redhero) ──────────────────────── */
+    .hero-banner {
+      position: absolute;
+      top: 0;
+      width: 27px; height: 202px;
+      pointer-events: none;
+      z-index: 4;
+      transition: transform 0.3s ease-out;
+    }
+    .hero-banner-c1 { left:  0; transform: translateX(-100%); }
+    .hero-banner-c2 { right: 0; transform: translateX(100%);  }
+    .hero-banner-c1.slide-in { transform: translateX(0); }
+    .hero-banner-c2.slide-in { transform: translateX(0); }
+
+    .hero-banner-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 27px; height: 202px;
+      display: block;
+    }
+    .hero-banner-name {
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      writing-mode: vertical-lr;
+      text-orientation: mixed;
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 600;
+      font-size: 15.4px; /* 3.69pt @ 300dpi */
+      color: #fff;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* ── Post-pick glow overlay (div above canvas, z-index 3) ──── */
+    .plate-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    @keyframes picked-glow-gold {
+      0%   { box-shadow: none; }
+      25%  { box-shadow: inset 0 0 0 3px rgba(255,215,80,1),
+                         inset 0 0 50px 20px rgba(255,200,60,0.75); }
+      100% { box-shadow: none; }
+    }
+    .plate-glow.picked { animation: picked-glow-gold 0.9s ease-out forwards; }
+
+    @keyframes hero-brighten {
+      0%   { filter: brightness(1); }
+      25%  { filter: brightness(2); }
+      100% { filter: brightness(1); }
+    }
+    .hero-video.brightening   { animation: hero-brighten 0.9s ease-out forwards; }
+    .plate-canvas.brightening { animation: hero-brighten 0.9s ease-out forwards; }
+
+    /* ── Role icons ────────────────────────────────────────────── */
+    /* Anchored at left:5 top:5; default transform centres it in the plate.
+       (151-70)/2 - 5 = 35.5   (168-70)/2 - 5 = 44                        */
+    .role-icon {
+      position: absolute;
+      width: 70px; height: 70px;
+      /* always centred regardless of plate-content width */
+      left: calc(50% - 35px); top: calc(50% - 35px);
+      object-fit: contain;
+      transform-origin: center;
+      transform: scale(1);
+      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+      z-index: 2;
+      filter: brightness(0) invert(1) brightness(0.086);
+    }
+
+    /* Press squishes from centre — translate calculated in JS at animationend */
+    @keyframes role-press {
+      0%   { transform: scale(1);    }
+      35%  { transform: scale(0.78); }
+      65%  { transform: scale(1.10); }
+      100% { transform: scale(1);    }
+    }
+    .role-icon.pressing {
+      animation: role-press 0.55s ease-out forwards;
+      transition: none;
+    }
+
+    /* ── Ban plates ────────────────────────────────────────────── */
+    /* overflow:hidden clips the hero tween to the banplate area.
+       The element's own box-shadow (outer glow) is NOT clipped by
+       its own overflow:hidden — it renders outside the bounds. */
+    .banplate {
+      position: absolute;
+      width: 91px; height: 71px;
+      overflow: hidden;
+    }
+
+    /* Inset border on top of hero via ::after (same size → no overflow clipping) */
+    .banplate::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Red glow when banning — inset only, slow pulse */
+    @keyframes ban-inner {
+      0%, 100% { box-shadow: inset 0 0 0 0 rgba(255,50,50,0),
+                             inset 0 0 0 0 rgba(255,50,50,0); }
+      50%       { box-shadow: inset 0 0 0 3px rgba(255,50,50,1),
+                              inset 0 0 14px 3px rgba(255,50,50,0.55); }
+    }
+    .banplate.banning::after { animation: ban-inner 1.8s ease-in-out infinite; }
+
+    /* Ban hero image */
+    .ban-hero {
+      width: 91px; height: 71px;
+      object-fit: cover; display: block;
+      opacity: 0;
+    }
+
+    /* Ban reveal: slides up from below (masked by overflow:hidden),
+       then fades to greyscale + 50% brightness */
+    @keyframes ban-reveal {
+      0%   { transform: translateY(71px); filter: none; }
+      55%  { transform: translateY(0);    filter: none; }
+      100% { transform: translateY(0);    filter: grayscale(1) brightness(0.5); }
+    }
+    .ban-hero.ban-revealing { animation: ban-reveal 0.95s ease-out forwards; }
+
+    /* ── Pick gradient overlay ─────────────────────────────────── */
+    .pick-gradient {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      display: none;
+      animation: grad-pulse 1.4s ease-in-out infinite;
+    }
+    .pick-gradient.camp1 {
+      background: linear-gradient(to top, rgba(30,100,255,0.85) 0%, transparent 70%);
+    }
+    .pick-gradient.camp2 {
+      background: linear-gradient(to top, rgba(255,50,50,0.85) 0%, transparent 70%);
+    }
+    @keyframes grad-pulse {
+      0%, 100% { opacity: 0.25; }
+      50%       { opacity: 0.9;  }
+    }
+
+    /* ── Pick background video + matte canvas (inside each plate) ── */
+    .plate { overflow: hidden; }
+
+    .plate-pick-video {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+      object-fit: fill;
+      display: none;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+
+    /* ── Timer bar ─────────────────────────────────────────────── */
+    #timer-bar {
+      position: absolute;
+      left: 0px; top: 1066px;
+      width: 1920px; height: 14px;
+      background: rgb(0,80,220);
+      transform-origin: center center;
+      transform: scaleX(1);
+      display: none;
+    }
+
+    /* ── Score boxes ─────────────────────────────────────────────── */
+    .score-box {
+      position: absolute;
+      top: 860px;
+      width: 55px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+    #score-c1 { left: 768px; }
+    #score-c2 { left: 1097px; }
+    .score-bar {
+      width: 11px;
+      height: 40px;
+      background: #161616;
+      flex-shrink: 0;
+    }
+    #score-c1 .score-bar.scored { background: #1E64FF; }
+    #score-c2 .score-bar.scored { background: #FF3232; }
+
+    /* ── Team tricode labels ────────────────────────────────────── */
+    #team-c1, #team-c2 {
+      position: absolute;
+      top: 1028.849px;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 31px; /* 7.5pt @ 300dpi */
+      color: #fff;
+      text-transform: uppercase;
+      line-height: 1;
+      text-align: center;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #team-c1 { left: 816.964px; transform: translateX(-50%); }
+    #team-c2 { left: 1107.737px; transform: translateX(-50%); }
+
+    /* ── Sponsor loop ───────────────────────────────────────────── */
+    #sponsor-loop {
+      position: absolute;
+      left: 890px;
+      top: 1019px;
+      width: 140px;
+      height: 50px;
+      overflow: hidden;
+    }
+    #sponsor-img {
+      position: absolute;
+      top: 0; left: 0;
+      width: 140px;
+      height: 50px;
+      object-fit: contain;
+      transform: translateX(-110%);
+    }
+    #sponsor-img.spon-in {
+      transform: translateX(0);
+      transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1.0);
+    }
+    #sponsor-img.spon-out {
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
+    }
+  </style>
+</head>
+<body>
+
+<div id="debug-bar">
+  <span id="debug-status" class="pending">connecting…</span>
+  <span id="debug-last"></span>
+</div>
+
+<div id="scene"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var DEFAULT_URL = window.location.protocol + '//' + window.location.hostname + ':5001/api/gamedata';
+  var STORAGE_KEY = 'draft_overlay_api_url';
+  var POLL_MS     = 1000;
+
+  /* Fetch game API URL from server, override default if set */
+  fetch('/api/game-url').then(function(r){ return r.json(); }).then(function(d){
+    if (d.url) apiUrl = d.url;
+  }).catch(function(){});
+
+  /* Pick plate layout */
+  var PLATE_W = 151, PLATE_H = 168, PLATE_TOP = 851, PLATE_GAP = 1;
+  var NAME_TOP = 1028;
+  /* seat index 0-4 → role icon filename */
+  var ROLE_FILES = [
+    'role/EXP LANER.png',
+    'role/JUNGLER.png',
+    'role/MID LANER.png',
+    'role/ROAMER.png',
+    'role/GOLD LANER.png',
+  ];
+
+  /* Ban plate layout — no gap between seats */
+  var BAN_W = 91, BAN_H = 71, BAN_TOP = 780;
+  var C1_BAN_X = [0,1,2,3,4].map(function(i){ return 304 + i * BAN_W; });
+  var C2_BAN_X = [0,1,2,3,4].map(function(i){ return 1525 - i * BAN_W; });
+
+  /* ── DOM refs ──────────────────────────────────────────────── */
+  var statusEl = document.getElementById('debug-status');
+  var lastEl   = document.getElementById('debug-last');
+  var scene    = document.getElementById('scene');
+
+  var apiUrl = DEFAULT_URL;
+
+  /* ── Timer bar (smooth rAF countdown) ─────────────────────── */
+  var TIMER_MAX   = 50;   /* max seconds per pick/ban turn */
+  var timerEl     = null;
+  var tmSyncAt    = 0;    /* performance.now() at last API sync */
+  var tmSyncVal   = 0;    /* state_left_time at last sync */
+  var tmCampid    = 0;    /* 0 = hidden, 1/2 = active camp */
+  var tmRAF       = null;
+
+  function tmGetCurrent() {
+    return Math.max(0, tmSyncVal - (performance.now() - tmSyncAt) / 1000);
+  }
+
+  function tmFrame() {
+    var t     = tmGetCurrent();
+    var scale = Math.min(1, Math.max(0, t / TIMER_MAX));
+    timerEl.style.transform = 'scaleX(' + scale + ')';
+    tmRAF = (t > 0) ? requestAnimationFrame(tmFrame) : null;
+  }
+
+  function tmSync(campid, leftTime) {
+    if (!timerEl) return;
+    if (campid === 0 || leftTime <= 0) {
+      timerEl.style.display = 'none';
+      if (tmRAF) { cancelAnimationFrame(tmRAF); tmRAF = null; }
+      tmCampid = 0;
+      return;
+    }
+    timerEl.style.background = campid === 1 ? 'rgb(0,80,220)' : 'rgb(220,50,50)';
+    timerEl.style.display    = 'block';
+    /* Resync when camp changes or API time drifts > 1.5s from our prediction */
+    var predicted = tmGetCurrent();
+    if (campid !== tmCampid ||
+        leftTime > predicted + 1.5 ||
+        leftTime < predicted - 2.5) {
+      tmSyncAt  = performance.now();
+      tmSyncVal = leftTime;
+      tmCampid  = campid;
+      if (!tmRAF) tmRAF = requestAnimationFrame(tmFrame);
+    }
+  }
+
+  function buildTimerBar() {
+    timerEl = document.createElement('div');
+    timerEl.id = 'timer-bar';
+    scene.appendChild(timerEl);
+  }
+
+
+  /* ── Element / state maps ──────────────────────────────────── */
+  var campContainers = {}; /* campid → flex container div */
+  var pickEls  = {};
+  var prevPick = {};
+  var banEls   = {};  /* campid_i → { banplate, bhi } */
+  var prevBan  = {};  /* campid_i → { ban_heroid, banning } */
+  var teamEls  = {};  /* campid → div */
+
+  /* ── Update camp-level picker class ────────────────────────── */
+  function updateCampPickerClass(campid) {
+    var container = campContainers[campid];
+    var count = container.querySelectorAll('.seat-unit.picking-expand').length;
+    container.classList.remove('has-picker', 'has-two-pickers');
+    if      (count === 1) container.classList.add('has-picker');
+    else if (count >= 2)  container.classList.add('has-two-pickers');
+  }
+
+  /* ── Build pick plates ─────────────────────────────────────── */
+  function buildPickPlates() {
+    for (var ci = 0; ci < 2; ci++) {
+      var campid = ci + 1;
+
+      /* Flex container for this camp */
+      var container = document.createElement('div');
+      container.className = 'plates-camp plates-camp-' + campid;
+      scene.appendChild(container);
+      campContainers[campid] = container;
+
+      for (var i = 0; i < 5; i++) {
+        var key = campid + '_' + i;
+
+        /* Seat unit — the flex item whose width transitions */
+        var seatUnit = document.createElement('div');
+        seatUnit.className = 'seat-unit';
+
+        /* Plate — always 151 px; edge seats anchor inward so they only expand toward centre */
+        var plate = document.createElement('div');
+        plate.id = 'plate-' + key;
+        /* Expansion direction per seat:
+           Camp1: seat1→right, seat2→left, seat3→right, seat4→left, seat5→left
+           Camp2: TBD */
+        var C1_ANCHORS = ['anchor-left','anchor-right','anchor-left','anchor-right','anchor-right'];
+        var anchor = '';
+        if (campid === 1) { anchor = C1_ANCHORS[i]; }
+        else              { if (i === 0) anchor = 'anchor-right'; else if (i === 4) anchor = 'anchor-left'; }
+        plate.className = 'plate' + (anchor ? ' ' + anchor : '');
+
+        /* Content wrapper — 151 px fixed, clipped, anchored inside the expanding plate */
+        var plateContent = document.createElement('div');
+        plateContent.className = 'plate-content';
+
+        var vid = document.createElement('video');
+        vid.className   = 'plate-pick-video';
+        vid.src         = campid === 1
+          ? 'assets/draft/motion/bluepickbg1.webm'
+          : 'assets/draft/motion/redpickbg1.webm';
+        vid.loop = true; vid.muted = true;
+        vid.playsInline = true; vid.preload = 'auto';
+        plate.appendChild(vid); /* direct child of plate so it scales with the full width */
+
+        var pickGrad = document.createElement('div');
+        pickGrad.className = 'pick-gradient ' + (campid === 1 ? 'camp1' : 'camp2');
+        plate.appendChild(pickGrad);
+
+        var heroVid = document.createElement('video');
+        heroVid.className   = 'hero-video';
+        heroVid.loop        = true;
+        heroVid.muted       = true;
+        heroVid.playsInline = true;
+        heroVid.preload     = 'none';
+        plateContent.appendChild(heroVid);
+
+        /* Canvas for matte composite — on top of heroVid during reveal */
+        var cvs = document.createElement('canvas');
+        cvs.className = 'plate-canvas';
+        cvs.width = 168; cvs.height = 168;
+        plateContent.appendChild(cvs);
+        var ctx2d = cvs.getContext('2d', { willReadFrequently: true });
+
+        var matteCanv = document.createElement('canvas');
+        matteCanv.width = 168; matteCanv.height = 168;
+        var matteCtx = matteCanv.getContext('2d', { willReadFrequently: true });
+
+        var matteVid = document.createElement('video');
+        matteVid.src = 'assets/draft/motion/s17_matte2.webm';
+        matteVid.muted = true; matteVid.playsInline = true;
+        matteVid.preload = 'auto'; matteVid.style.display = 'none';
+        plateContent.appendChild(matteVid);
+
+        var glowDiv = document.createElement('div');
+        glowDiv.className = 'plate-glow';
+        plateContent.appendChild(glowDiv);
+
+        /* Hero banner — bluehero for camp1, redhero for camp2 */
+        var banner = document.createElement('div');
+        banner.className = 'hero-banner ' + (campid === 1 ? 'hero-banner-c1' : 'hero-banner-c2');
+
+        var bannerImg = document.createElement('img');
+        bannerImg.className = 'hero-banner-img';
+        bannerImg.src = campid === 1 ? 'assets/draft/bluehero.png' : 'assets/draft/redhero.png';
+        bannerImg.alt = '';
+        banner.appendChild(bannerImg);
+
+        var bannerName = document.createElement('span');
+        bannerName.className = 'hero-banner-name';
+        banner.appendChild(bannerName);
+
+        plateContent.appendChild(banner);
+
+        var roleImg = document.createElement('img');
+        roleImg.className = 'role-icon';
+        roleImg.src = ROLE_FILES[i]; roleImg.alt = '';
+        plateContent.appendChild(roleImg);
+
+        plate.appendChild(plateContent);
+
+        /* Player name sits below, centred in the seat-unit */
+        var nameEl = document.createElement('div');
+        nameEl.className = 'player-name';
+        nameEl.id = 'name-' + key;
+
+        seatUnit.appendChild(plate);
+        seatUnit.appendChild(nameEl);
+        container.appendChild(seatUnit);
+
+        pickEls[key] = {
+          key: key, campid: campid,
+          seatUnit: seatUnit, plate: plate, pickVid: vid,
+          heroVid: heroVid, pickGrad: pickGrad,
+          canvasEl: cvs, ctx2d: ctx2d,
+          matteCtx: matteCtx, matteVid: matteVid,
+          glowDiv: glowDiv, banner: banner, bannerName: bannerName,
+          roleImg: roleImg, nameEl: nameEl
+        };
+        prevPick[key] = {
+          heroid: undefined, picking: false, banning: false,
+          small: false, expanded: false, matteActive: false
+        };
+      }
+    }
+  }
+
+  /* ── Build ban plates ──────────────────────────────────────── */
+  function buildBanPlates() {
+    for (var ci = 0; ci < 2; ci++) {
+      var campid = ci + 1;
+      var xArr = campid === 1 ? C1_BAN_X : C2_BAN_X;
+      for (var i = 0; i < 5; i++) {
+        var key = campid + '_' + i;
+        var x = xArr[i];
+
+        var bp = document.createElement('div');
+        bp.className = 'banplate';
+        bp.id = 'bp-' + key;
+        bp.style.left = x + 'px';
+        bp.style.top  = BAN_TOP + 'px';
+
+        var bhi = document.createElement('img');
+        bhi.className = 'ban-hero';
+        bhi.id  = 'bhi-' + key;
+        bhi.alt = '';
+        bhi.style.opacity = '0';
+        bhi.onerror = function () { this.style.opacity = '0'; };
+        bp.appendChild(bhi);
+        scene.appendChild(bp);
+
+        banEls[key]  = { banplate: bp, bhi: bhi };
+        prevBan[key] = { ban_heroid: undefined, banning: false };
+      }
+    }
+  }
+
+  /* ── Score boxes ───────────────────────────────────────────── */
+  var scoreEls = {};
+
+  function buildScoreBoxes() {
+    [1, 2].forEach(function(c) {
+      var box = document.createElement('div');
+      box.id = 'score-c' + c;
+      box.className = 'score-box';
+      scene.appendChild(box);
+      scoreEls[c] = box;
+    });
+  }
+
+  function renderBars(container, total, scored, goldFromRight) {
+    container.innerHTML = '';
+    for (var i = 0; i < total; i++) {
+      var bar = document.createElement('div');
+      bar.className = 'score-bar';
+      var isGold = goldFromRight ? (i >= total - scored) : (i < scored);
+      if (isGold) bar.classList.add('scored');
+      container.appendChild(bar);
+    }
+  }
+
+  function pollMatchState() {
+    fetch('/match/state', { cache: 'no-store' })
+      .then(function(r) { return r.json(); })
+      .then(function(s) {
+        var maxWins = Math.ceil(parseInt((s.series || 'BO3').replace('BO', '')) / 2);
+        var c1Team  = s.blueTeam === 'A' ? s.teamA : s.teamB;
+        var c2Team  = s.blueTeam === 'A' ? s.teamB : s.teamA;
+        renderBars(scoreEls[1], maxWins, c1Team.score, true);
+        renderBars(scoreEls[2], maxWins, c2Team.score, false);
+      })
+      .catch(function() {});
+  }
+
+  /* ── Build team tricode labels ─────────────────────────────── */
+  function buildTeamNames() {
+    [1, 2].forEach(function(c) {
+      var el = document.createElement('div');
+      el.id = 'team-c' + c;
+      scene.appendChild(el);
+      teamEls[c] = el;
+    });
+  }
+
+  /* ── Build status / countdown area ────────────────────────── */
+  function buildStatusArea() {
+    var area = document.createElement('div');
+    area.id = 'status-area';
+
+    var stxt = document.createElement('div');
+    stxt.id = 'status-text';
+    area.appendChild(stxt);
+
+    var row = document.createElement('div');
+    row.id = 'countdown-row';
+
+    var triL = document.createElement('div');
+    triL.className = 'tri';
+    triL.id = 'tri-camp1';
+
+    var cdown = document.createElement('div');
+    cdown.id = 'countdown-text';
+
+    var triR = document.createElement('div');
+    triR.className = 'tri';
+    triR.id = 'tri-camp2';
+
+    row.appendChild(triL);
+    row.appendChild(cdown);
+    row.appendChild(triR);
+    area.appendChild(row);
+
+    scene.appendChild(area);
+
+    var sponsorBox = document.createElement('div');
+    sponsorBox.id = 'sponsor-loop';
+    var sponsorImg = document.createElement('img');
+    sponsorImg.id = 'sponsor-img';
+    sponsorBox.appendChild(sponsorImg);
+    scene.appendChild(sponsorBox);
+  }
+
+
+  /* ── Sponsor loop ──────────────────────────────────────────── */
+  var SPONSORS = [];
+  var sponsorIdx = 0;
+
+  function startSponsorLoop() {
+    fetch('/api/sponsors')
+      .then(function(r) { return r.json(); })
+      .then(function(list) {
+        if (!list || !list.length) return;
+        SPONSORS = list;
+        runSponsorLoop();
+      })
+      .catch(function() {});
+  }
+
+  function runSponsorLoop() {
+    var img = document.getElementById('sponsor-img');
+    (function nextSponsor() {
+      var s = SPONSORS[sponsorIdx];
+      img.className = '';
+      img.src = s.src;
+      void img.offsetWidth;
+      img.classList.add('spon-in');
+
+      function onIn(ev) {
+        if (ev.propertyName !== 'transform') return;
+        img.removeEventListener('transitionend', onIn);
+        setTimeout(function() {
+          img.classList.remove('spon-in');
+          img.classList.add('spon-out');
+          function onExit(ev) {
+            if (ev.propertyName !== 'transform') return;
+            img.removeEventListener('transitionend', onExit);
+            sponsorIdx = (sponsorIdx + 1) % SPONSORS.length;
+            nextSponsor();
+          }
+          img.addEventListener('transitionend', onExit);
+        }, s.dur);
+      }
+      img.addEventListener('transitionend', onIn);
+    })();
+  }
+
+  /* ── Matte reveal over hero video ──────────────────────────── */
+  function startMatteReveal(e, campid) {
+    var cvs      = e.canvasEl;
+    var ctx      = e.ctx2d;
+    var mCtx     = e.matteCtx;
+    var matteVid = e.matteVid;
+    var heroVid  = e.heroVid;
+    var rafId    = null;
+
+    function fireGlow() {
+      var gd = e.glowDiv;
+      gd.classList.remove('picked');
+      cvs.classList.remove('brightening');
+      heroVid.classList.remove('brightening');
+      void gd.offsetWidth;
+      gd.classList.add('picked');
+      cvs.classList.add('brightening');
+      heroVid.classList.add('brightening');
+      gd.addEventListener('animationend', function () {
+        prevPick[e.key].expanded = false;
+        e.seatUnit.classList.remove('picking-expand');
+        updateCampPickerClass(campid);
+        /* Slide banner in once the plate width transition finishes */
+        function onCollapse(ev) {
+          if (ev.propertyName !== 'width') return;
+          e.seatUnit.removeEventListener('transitionend', onCollapse);
+          e.banner.classList.add('slide-in');
+        }
+        e.seatUnit.addEventListener('transitionend', onCollapse);
+      }, { once: true });
+    }
+
+    function done() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      prevPick[e.key].matteActive = false;
+      cvs.style.opacity = '0';
+      cvs.classList.remove('brightening');
+      /* Stop pick video now that reveal is complete */
+      e.pickVid.style.display = 'none';
+      e.pickVid.pause();
+      /* Hero video was hidden — show it now that matte has revealed it */
+      heroVid.style.display = 'block';
+      fireGlow();
+    }
+
+    function composite(H) {
+      if (matteVid.ended) { done(); return; }
+      try {
+        ctx.clearRect(0, 0, 168, H);
+        ctx.drawImage(heroVid, 0, 0, 168, H);
+        var hd = ctx.getImageData(0, 0, 168, H);
+        mCtx.clearRect(0, 0, 168, H);
+        mCtx.drawImage(matteVid, 0, 0, 168, H);
+        var md = mCtx.getImageData(0, 0, 168, H);
+        var h = hd.data, m = md.data;
+        for (var i = 0; i < h.length; i += 4) {
+          h[i + 3] = m[i + 3] < 254
+            ? 255 - m[i + 3]
+            : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
+        }
+        ctx.putImageData(hd, 0, 0);
+      } catch (err) { done(); return; }
+      rafId = requestAnimationFrame(function () { composite(H); });
+    }
+
+    function beginComposite() {
+      /* Size canvas to exactly match hero video's natural aspect ratio at 168 px wide */
+      var natW = heroVid.videoWidth  || 168;
+      var natH = heroVid.videoHeight || 300;
+      var H    = Math.round(natH * 168 / natW);
+      cvs.width = 168; cvs.height = H; cvs.style.height = H + 'px';
+      e.matteCtx.canvas.width = 168; e.matteCtx.canvas.height = H;
+
+      cvs.style.opacity = '1';
+      matteVid.currentTime = 0;
+      matteVid.addEventListener('ended', done, { once: true });
+
+      matteVid.play()
+        .then(function () {
+          if ('requestVideoFrameCallback' in matteVid) {
+            (function onVF() {
+              if (matteVid.ended) return;
+              try {
+                ctx.clearRect(0, 0, 168, H);
+                ctx.drawImage(heroVid, 0, 0, 168, H);
+                var hd = ctx.getImageData(0, 0, 168, H);
+                mCtx.clearRect(0, 0, 168, H);
+                mCtx.drawImage(matteVid, 0, 0, 168, H);
+                var md = mCtx.getImageData(0, 0, 168, H);
+                var h = hd.data, m = md.data;
+                for (var i = 0; i < h.length; i += 4) {
+                  h[i + 3] = m[i + 3] < 254
+                    ? 255 - m[i + 3]
+                    : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
+                }
+                ctx.putImageData(hd, 0, 0);
+              } catch (err) { done(); return; }
+              matteVid.requestVideoFrameCallback(onVF);
+            }());
+          } else {
+            composite(H);
+          }
+        })
+        .catch(done);
+    }
+
+    /* Start hero video playing (still hidden), wait for metadata before
+       sizing canvas — prevents the wrong-size-then-snap issue */
+    if (heroVid.readyState >= 1 /* HAVE_METADATA */) {
+      heroVid.play().catch(function () {});
+      beginComposite();
+    } else {
+      heroVid.addEventListener('loadedmetadata', function () {
+        heroVid.play().catch(function () {});
+        beginComposite();
+      }, { once: true });
+      heroVid.load(); /* trigger load since preload="none" */
+    }
+  }
+
+  /* ── Ban hero reveal ───────────────────────────────────────── */
+  function revealBanHero(bhi) {
+    bhi.style.opacity = '1';
+    bhi.style.transform = '';
+    bhi.style.filter = '';
+    bhi.classList.remove('ban-revealing');
+    void bhi.offsetWidth;
+    bhi.classList.add('ban-revealing');
+    bhi.addEventListener('animationend', function () {
+      bhi.classList.remove('ban-revealing');
+      bhi.style.transform = 'translateY(0)';
+      bhi.style.filter    = 'grayscale(1) brightness(0.5)';
+    }, { once: true });
+  }
+
+  /* ── Update pick seat ──────────────────────────────────────── */
+  function updatePickSeat(campid, seatIdx, seat) {
+    var key    = campid + '_' + seatIdx;
+    var e      = pickEls[key];
+    var p      = prevPick[key];
+    var heroid = seat.heroid  || 0;
+    var pick   = !!seat.picking;
+    var ban    = !!seat.banning;
+
+    e.nameEl.textContent = seat.name || '';
+
+    /* Keep banner name in sync */
+    if ((seat.hero_name && seat.hero_name[0]) && e.bannerName.textContent !== seat.hero_name[0]) {
+      e.bannerName.textContent = seat.hero_name[0];
+    }
+
+    if (heroid !== p.heroid) {
+      if (heroid > 0) {
+        /* Load and play the hero WebM */
+        e.heroVid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+        e.heroVid.currentTime = 0;
+
+        if (p.heroid !== undefined) {
+          /* Live pick: matte reveal drives play() and display */
+          e.heroVid.style.display = 'none'; /* hidden until canvas reveals it */
+          p.matteActive = true;
+          startMatteReveal(e, campid);
+        } else {
+          /* First load: show video directly, no matte, banner instant */
+          e.heroVid.style.display = 'block';
+          e.heroVid.play().catch(function () {});
+          e.banner.style.transition = 'none';
+          e.banner.classList.add('slide-in');
+          void e.banner.offsetWidth;
+          e.banner.style.transition = '';
+        }
+
+        e.roleImg.style.display = 'none';
+        e.roleImg.style.transform = '';
+      } else {
+        /* Slot reset */
+        e.banner.classList.remove('slide-in');
+        e.bannerName.textContent = '';
+        e.pickGrad.style.display = 'none';
+        e.heroVid.pause();
+        e.heroVid.src = '';
+        e.heroVid.style.display = 'none';
+        e.heroVid.classList.remove('brightening');
+        e.canvasEl.style.opacity = '0';
+        e.canvasEl.classList.remove('brightening');
+        e.ctx2d.clearRect(0, 0, e.canvasEl.width, e.canvasEl.height);
+        e.glowDiv.classList.remove('picked');
+        p.expanded = false;
+        e.seatUnit.classList.remove('picking-expand');
+        updateCampPickerClass(campid);
+        e.roleImg.style.display = '';
+      }
+      p.heroid = heroid;
+    }
+
+    /* Plate expand: grows to 168 px when picking starts, squeezes others */
+    if (pick && !p.picking && !p.expanded) {
+      p.expanded = true;
+      e.seatUnit.classList.add('picking-expand');
+      updateCampPickerClass(campid);
+    }
+
+    /* Pick background video + gradient */
+    if (pick && !p.picking) {
+      e.pickVid.currentTime = 0;
+      e.pickVid.style.display = 'block';
+      e.pickVid.play().catch(function () {});
+      e.pickGrad.style.display = 'block';
+    } else if (!pick && p.picking) {
+      e.pickGrad.style.display = 'none';
+      if (!p.matteActive) {
+        e.pickVid.style.display = 'none';
+        e.pickVid.pause();
+      }
+      /* if matteActive, done() in startMatteReveal will stop it */
+    }
+
+
+    /* Role icon: press + fly to corner when picking starts */
+    var ri = e.roleImg;
+    if (pick && !p.picking && !p.small) {
+      p.small = true;
+      ri.classList.remove('pressing', 'small');
+      void ri.offsetWidth;
+      ri.classList.add('pressing');
+      ri.addEventListener('animationend', function () {
+        ri.classList.remove('pressing');
+        void ri.offsetWidth;
+        /* Calculate corner translate using the live plate width.
+           left:calc(50%-35px) centres the icon; after scale(0.343) the
+           visual half-size is 12px, so to land top-left at (5,5):
+           tx = 5 - (plate_w/2 - 12) = 17 - plate_w/2
+           ty = 5 - (plate_h/2 - 12) = 17 - 84 = -67 (constant) */
+        var pw = e.plate.offsetWidth;
+        var tx = 17 - pw / 2;
+        ri.style.transform = 'translate(' + tx + 'px, -67px) scale(0.343)';
+      }, { once: true });
+    }
+    /* Reset role icon to centre if the draft resets */
+    if (heroid === 0 && p.heroid > 0) {
+      p.small = false;
+      ri.style.display = '';
+      ri.style.transform = '';
+      ri.classList.remove('pressing');
+    }
+
+    p.picking = pick;
+    p.banning = ban;
+  }
+
+  /* ── Update ban seat ───────────────────────────────────────── */
+  function updateBanSeat(campid, seatIdx, seat) {
+    var key        = campid + '_' + seatIdx;
+    var e          = banEls[key];
+    var p          = prevBan[key];
+    var ban_heroid = seat.ban_heroid || 0;
+    var banning    = !!seat.banning;
+
+    if (ban_heroid !== p.ban_heroid) {
+      if (ban_heroid > 0) {
+        e.bhi.src = 'hero/HERO_' + ban_heroid + '_KOTAK.png';
+        if (p.ban_heroid !== undefined) {
+          revealBanHero(e.bhi);
+        } else {
+          /* First load: show already-banned hero silently */
+          e.bhi.style.opacity   = '1';
+          e.bhi.style.transform = 'translateY(0)';
+          e.bhi.style.filter    = 'grayscale(1) brightness(0.5)';
+        }
+      } else {
+        e.bhi.src = '';
+        e.bhi.style.opacity   = '0';
+        e.bhi.style.transform = '';
+        e.bhi.style.filter    = '';
+      }
+      p.ban_heroid = ban_heroid;
+    }
+
+    /* Ban plate red glow when banning */
+    if (banning !== p.banning) {
+      if (banning) {
+        e.banplate.classList.add('banning');
+      } else {
+        e.banplate.classList.remove('banning');
+      }
+      p.banning = banning;
+    }
+  }
+
+  /* ── Update status text + countdown + triangles ────────────── */
+  function fmtTime(s) {
+    s = Math.max(0, Math.round(s));
+    var m = Math.floor(s / 60);
+    var r = s % 60;
+    if (m > 0) return m + ':' + (r < 10 ? '0' : '') + r;
+    return String(s);
+  }
+
+  function updateStatus(gameData, allSeats) {
+    var anyBanning = allSeats.some(function (s) { return !!s.banning; });
+    var anyPicking = allSeats.some(function (s) { return !!s.picking; });
+    var allPicked  = allSeats
+      .filter(function (s) { return !s.judger; })
+      .every(function (s)  { return (s.heroid || 0) > 0; });
+
+    var txt = '';
+    if      (anyBanning) txt = 'BANNING';
+    else if (anyPicking) txt = 'PICKING';
+    else if (allPicked)  txt = 'FINAL CHANGES';
+
+    document.getElementById('status-text').textContent = txt;
+
+    var leftTime = gameData.state_left_time || 0;
+    document.getElementById('countdown-text').textContent =
+      (txt && leftTime > 0) ? fmtTime(leftTime) : '';
+
+    /* Triangle: show camp1 side if camp1 is active, camp2 side if camp2 */
+    var camp1Active = allSeats.some(function (s) {
+      return s.campid === 1 && (!!s.picking || !!s.banning);
+    });
+    var camp2Active = allSeats.some(function (s) {
+      return s.campid === 2 && (!!s.picking || !!s.banning);
+    });
+
+    var triL = document.getElementById('tri-camp1');
+    var triR = document.getElementById('tri-camp2');
+    triL.classList.toggle('active', camp1Active);
+    triR.classList.toggle('active', camp2Active);
+
+    /* Timer bar */
+    var activeCamp = camp1Active ? 1 : camp2Active ? 2 : 0;
+    tmSync(activeCamp, gameData.state_left_time || 0);
+
+  }
+
+  /* ── Poll ──────────────────────────────────────────────────── */
+  /* ── Full reset on new battleid ────────────────────────────── */
+  var currentBattleId = null;
+
+  function resetAll() {
+    /* Pick seats */
+    Object.keys(pickEls).forEach(function (key) {
+      var e = pickEls[key];
+      var p = prevPick[key];
+
+      /* Videos */
+      e.heroVid.pause(); e.heroVid.src = ''; e.heroVid.style.display = 'none';
+      e.heroVid.classList.remove('brightening');
+      e.pickVid.pause(); e.pickVid.style.display = 'none';
+      e.pickGrad.style.display = 'none';
+
+      /* Canvas */
+      e.ctx2d.clearRect(0, 0, e.canvasEl.width, e.canvasEl.height);
+      e.canvasEl.style.opacity = '0';
+      e.canvasEl.classList.remove('brightening');
+
+      /* Glow / banner / role */
+      e.glowDiv.classList.remove('picked');
+      e.banner.classList.remove('slide-in');
+      e.bannerName.textContent = '';
+      e.roleImg.style.display = '';
+      e.roleImg.style.transform = '';
+      e.roleImg.classList.remove('pressing');
+
+      /* Plate / seat-unit state */
+      e.seatUnit.classList.remove('picking-expand');
+      e.nameEl.textContent = '';
+
+      /* Reset prev state */
+      prevPick[key] = {
+        heroid: undefined, picking: false, banning: false,
+        small: false, expanded: false, matteActive: false
+      };
+    });
+
+    /* Camp containers */
+    [1, 2].forEach(function (c) {
+      if (campContainers[c]) {
+        campContainers[c].classList.remove('has-picker', 'has-two-pickers');
+      }
+    });
+
+    /* Ban seats */
+    Object.keys(banEls).forEach(function (key) {
+      var e = banEls[key];
+      e.bhi.src = ''; e.bhi.style.opacity = '0';
+      e.bhi.style.transform = ''; e.bhi.style.filter = '';
+      e.bhi.classList.remove('ban-revealing');
+      e.banplate.classList.remove('banning');
+      prevBan[key] = { ban_heroid: undefined, banning: false };
+    });
+
+    /* Team names */
+    if (teamEls[1]) teamEls[1].textContent = '';
+    if (teamEls[2]) teamEls[2].textContent = '';
+
+    /* Status / countdown / triangles */
+    document.getElementById('status-text').textContent  = '';
+    document.getElementById('countdown-text').textContent = '';
+    document.getElementById('tri-camp1').classList.remove('active');
+    document.getElementById('tri-camp2').classList.remove('active');
+
+    /* Timer bar */
+    tmSync(0, 0);
+  }
+
+  function poll() {
+    fetch(apiUrl, { cache: 'no-store' })
+      .then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      })
+      .then(function (json) {
+        if (json.code !== 0 || !json.data) throw new Error('unexpected payload');
+
+        /* Detect new battle → reset everything before processing new data */
+        var bid = json.data.battleid || null;
+        if (bid && bid !== currentBattleId) {
+          if (currentBattleId !== null) resetAll();
+          currentBattleId = bid;
+        }
+
+        var campList = json.data.camp_list || [];
+        var camp1 = campList.find(function (c) { return c.campid === 1; });
+        var camp2 = campList.find(function (c) { return c.campid === 2; });
+
+        if (teamEls[1]) teamEls[1].textContent = (camp1 && camp1.team_simple_name) || '';
+        if (teamEls[2]) teamEls[2].textContent = (camp2 && camp2.team_simple_name) || '';
+        var allSeats = [];
+
+        for (var i = 1; i <= 5; i++) {
+          if (camp1 && camp1['seat_' + i]) {
+            updatePickSeat(1, i - 1, camp1['seat_' + i]);
+            updateBanSeat (1, i - 1, camp1['seat_' + i]);
+            allSeats.push(camp1['seat_' + i]);
+          }
+          if (camp2 && camp2['seat_' + i]) {
+            updatePickSeat(2, i - 1, camp2['seat_' + i]);
+            updateBanSeat (2, i - 1, camp2['seat_' + i]);
+            allSeats.push(camp2['seat_' + i]);
+          }
+        }
+
+        updateStatus(json.data, allSeats);
+        statusEl.className   = 'ok';
+        statusEl.textContent = 'OK';
+        lastEl.textContent   = new Date().toLocaleTimeString();
+      })
+      .catch(function (err) {
+        statusEl.className   = 'err';
+        statusEl.textContent = err.message;
+      });
+  }
+
+  /* SSE — listen for global debug hide */
+  (function() {
+    var sse = new EventSource('/overlay/events');
+    sse.addEventListener('debugoff', function() {
+      var bar = document.getElementById('debug-bar');
+      if (bar) bar.style.display = 'none';
+    });
+  })();
+
+  buildPickPlates();
+  buildBanPlates();
+  buildScoreBoxes();
+  buildTeamNames();
+  buildStatusArea();
+  buildTimerBar();
+  startSponsorLoop();
+  pollMatchState();
+  setInterval(pollMatchState, 3000);
+  poll();
+  setInterval(poll, POLL_MS);
+})();
+</script>
+</body>
+</html>

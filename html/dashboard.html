@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Overlay Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d0d12;
+      color: #d0d0d8;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      overflow: hidden;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #222232;
+      flex-shrink: 0;
+    }
+    header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #fff;
+      letter-spacing: 0.03em;
+    }
+    #server-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: #888;
+    }
+    .status-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: #444;
+      transition: background 0.3s;
+    }
+    .status-dot.online  { background: #00cc88; box-shadow: 0 0 6px #00cc8888; }
+    .status-dot.offline { background: #ff4455; box-shadow: 0 0 6px #ff445588; }
+
+    /* ── Tab bar ─────────────────────────────────────────────── */
+    #tab-bar {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 0;
+      flex-shrink: 0;
+      border-bottom: 1px solid #1e1e2c;
+      margin-bottom: 16px;
+    }
+    .tab-btn {
+      padding: 5px 22px;
+      border-radius: 6px;
+      border: 1px solid #222232;
+      background: #13131c;
+      color: #555;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { background: #1a1a28; color: #999; }
+    .tab-btn.active {
+      background: #1e2340;
+      border-color: #3344aa;
+      color: #aabbff;
+    }
+    .tab-sep {
+      width: 1px;
+      height: 18px;
+      background: #222232;
+      margin: 0 8px;
+    }
+
+    /* ── Pages ───────────────────────────────────────────────── */
+    .page { display: none; flex: 1; flex-direction: column; min-height: 0; overflow: hidden; }
+    .page.active { display: flex; }
+
+    /* ── Layout (Control page) ──────────────────────────────── */
+    #layout {
+      flex: 1;
+      display: flex;
+      gap: 16px;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    /* ── Sidebar / Grid ─────────────────────────────────────── */
+    #grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 16px;
+      align-content: start;
+      overflow-y: auto;
+      flex: 1;
+      min-width: 0;
+      padding-right: 4px;
+    }
+    #layout.split #grid {
+      flex: none;
+      width: 360px;
+      grid-template-columns: 1fr;
+    }
+
+    /* ── Preview panel ──────────────────────────────────────── */
+    #preview-panel {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      background: #0a0a14;
+      border: 1px solid #222232;
+      border-radius: 10px;
+      overflow: hidden;
+      min-width: 0;
+    }
+    #layout.split #preview-panel { display: flex; }
+
+    #preview-hdr {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 16px;
+      border-bottom: 1px solid #1e1e2c;
+      flex-shrink: 0;
+    }
+    #preview-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8e8f0;
+    }
+    #preview-label {
+      font-size: 11px;
+      color: #555;
+      font-family: 'Consolas', monospace;
+      margin-left: 10px;
+    }
+
+    #preview-frame-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+    }
+    #preview-iframe {
+      position: absolute;
+      width: 1920px;
+      height: 1080px;
+      border: none;
+      transform-origin: top left;
+    }
+
+    /* ── Card ───────────────────────────────────────────────── */
+    .card {
+      background: #16161f;
+      border: 1px solid #222232;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .card.previewing {
+      border-color: #6677cc;
+      box-shadow: 0 0 0 1px #6677cc33;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid #1e1e2c;
+    }
+    .card-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #333;
+      flex-shrink: 0;
+      transition: background 0.4s, box-shadow 0.4s;
+    }
+    .card-dot.online  { background: #00cc88; box-shadow: 0 0 6px #00cc8880; }
+    .card-dot.offline { background: #ff4455; box-shadow: 0 0 6px #ff445580; }
+    .card-dot.unknown { background: #555; }
+
+    .card-title {
+      flex: 1;
+      font-size: 14px;
+      font-weight: 600;
+      color: #e8e8f0;
+    }
+    .card-url {
+      font-size: 11px;
+      color: #555;
+      font-family: 'Consolas', monospace;
+    }
+
+    .card-body { padding: 12px 16px; }
+
+    /* ── Button row ─────────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .btn-row:last-child { margin-bottom: 0; }
+
+    .btn {
+      padding: 5px 14px;
+      border-radius: 5px;
+      border: 1px solid transparent;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: filter 0.15s, opacity 0.15s;
+      text-decoration: none;
+      display: inline-block;
+      line-height: 22px;
+    }
+    .btn:hover  { filter: brightness(1.15); }
+    .btn:active { filter: brightness(0.9);  }
+
+    .btn-open    { background: #1e2a4a; border-color: #2a3a6a; color: #7aabff; }
+    .btn-show    { background: #1a3a2a; border-color: #2a5a3a; color: #44cc88; }
+    .btn-hide    { background: #3a1a1a; border-color: #5a2a2a; color: #ff6677; }
+    .btn-action  { background: #222230; border-color: #33334a; color: #9090c0; }
+    .btn-preview { background: #1a1a2e; border-color: #2a2a4a; color: #6677cc; }
+    .btn-preview.active { background: #2a2a4a; border-color: #6677cc; color: #aabbff; }
+
+    /* ── Feature section ────────────────────────────────────── */
+    .features-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #444;
+      margin: 10px 0 6px;
+    }
+    .feature-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #0f0f18;
+      margin-bottom: 5px;
+    }
+    .feature-row:last-child { margin-bottom: 0; }
+    .feature-name { font-size: 12px; color: #a0a0b8; }
+    .feature-btns { display: flex; gap: 6px; }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .divider { height: 1px; background: #1e1e2c; margin: 10px 0; }
+
+    /* ── Flash feedback ─────────────────────────────────────── */
+    @keyframes flash-ok {
+      0%   { background: #1a3a2a; }
+      100% { background: transparent; }
+    }
+    .flash-ok { animation: flash-ok 0.6s ease-out; }
+
+    /* ── Feature toggle buttons ─────────────────────────────── */
+    .btn-toggle { min-width: 94px; text-align: center; font-size: 11px; }
+    .btn-toggle-on  { background: #1a3a2a; border-color: #2a5a3a; color: #44cc88; }
+    .btn-toggle-off { background: #2a1818; border-color: #3a2020; color: #886666; }
+
+    /* ── Kill event inline row ──────────────────────────────── */
+    .killevent-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: #0f0f18;
+    }
+    .killevent-row label { font-size: 11px; color: #666; white-space: nowrap; }
+    .killevent-select {
+      flex: 1;
+      height: 26px;
+      padding: 0 8px;
+      background: #1a1a2a;
+      border: 1px solid #333355;
+      border-radius: 5px;
+      color: #aaaadd;
+      font-size: 11px;
+      cursor: pointer;
+      outline: none;
+    }
+    .killevent-trigger {
+      height: 26px;
+      padding: 0 12px;
+      background: #1a2a1a;
+      border: 1px solid #2a5a2a;
+      border-radius: 5px;
+      color: #66cc88;
+      cursor: pointer;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    .killevent-trigger:hover { filter: brightness(1.2); }
+
+    /* ── Settings page ──────────────────────────────────────── */
+    #page-settings {
+      padding: 4px 0;
+      overflow-y: auto;
+    }
+    .settings-section {
+      background: #16161f;
+      border: 1px solid #222232;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .settings-section-hdr {
+      padding: 12px 16px;
+      border-bottom: 1px solid #1e1e2c;
+      font-size: 12px;
+      font-weight: 600;
+      color: #8888aa;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .settings-section-body {
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .settings-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .settings-row label {
+      font-size: 12px;
+      color: #666;
+      white-space: nowrap;
+      min-width: 80px;
+    }
+    #game-api-input {
+      flex: 1;
+      max-width: 380px;
+      height: 30px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333344;
+      border-radius: 5px;
+      color: #eee;
+      padding: 0 10px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      outline: none;
+    }
+    #game-api-input:focus { border-color: #556; }
+    #game-api-apply {
+      height: 30px; padding: 0 16px;
+      background: #1e2a4a; border: 1px solid #2a3a6a;
+      border-radius: 5px; color: #7aabff;
+      cursor: pointer; font-size: 12px;
+    }
+    #game-api-apply:hover { filter: brightness(1.2); }
+    #game-api-status { font-size: 11px; color: #555; }
+    #btn-debugoff {
+      height: 30px; padding: 0 16px;
+      background: #2a1a1a; border: 1px solid #5a2a2a;
+      border-radius: 5px; color: #ff6677;
+      cursor: pointer; font-size: 12px;
+    }
+    #btn-debugoff:hover { filter: brightness(1.2); }
+
+    /* ── Edit page ───────────────────────────────────────────── */
+    #edit-layout {
+      flex: 1;
+      display: flex;
+      gap: 16px;
+      overflow: hidden;
+      min-height: 0;
+    }
+    #edit-panel {
+      width: 360px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      background: #16161f;
+      border: 1px solid #222232;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #edit-panel-hdr {
+      padding: 14px 16px;
+      border-bottom: 1px solid #1e1e2c;
+      flex-shrink: 0;
+    }
+    #edit-panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e8e8f0;
+      margin-bottom: 10px;
+    }
+    #edit-panel-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .edit-btn {
+      height: 28px;
+      padding: 0 14px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .edit-btn:hover { filter: brightness(1.2); }
+    #edit-btn-defaults { background: #1a1a2a; border-color: #333355; color: #8888cc; }
+    #edit-btn-save     { background: #1a3a2a; border-color: #2a5a3a; color: #44cc88; }
+    #edit-save-status  { font-size: 11px; color: #555; }
+
+    #edit-elements {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 10px;
+      min-height: 0;
+    }
+    .edit-group-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #444;
+      margin: 10px 0 4px 4px;
+    }
+    .edit-group-label:first-child { margin-top: 2px; }
+    .edit-elem-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      color: #7777aa;
+      font-size: 12px;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: background 0.1s, color 0.1s;
+    }
+    .edit-elem-btn:hover  { background: #1a1a28; color: #aaaacc; }
+    .edit-elem-btn.active { background: #1e2340; border-color: #3344aa; color: #aabbff; }
+
+    #edit-controls {
+      border-top: 1px solid #1e1e2c;
+      padding: 14px 16px;
+      flex-shrink: 0;
+    }
+    .edit-ctrl-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #9090bb;
+      margin-bottom: 12px;
+    }
+    .edit-ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    .edit-ctrl-row:last-child { margin-bottom: 0; }
+    .edit-ctrl-label {
+      font-size: 11px;
+      color: #666;
+      width: 70px;
+      flex-shrink: 0;
+    }
+    .edit-ctrl-input {
+      width: 74px;
+      height: 28px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333344;
+      border-radius: 5px;
+      color: #eee;
+      padding: 0 8px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      outline: none;
+      text-align: right;
+    }
+    .edit-ctrl-input:focus { border-color: #4455aa; }
+    .edit-step-btn {
+      width: 26px; height: 28px;
+      background: #1a1a2a;
+      border: 1px solid #333355;
+      border-radius: 4px;
+      color: #8888cc;
+      font-size: 15px;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .edit-step-btn:hover  { filter: brightness(1.3); }
+    .edit-step-btn:active { filter: brightness(0.85); }
+    .edit-ctrl-unit { font-size: 11px; color: #444; }
+    .edit-no-sel { font-size: 12px; color: #444; font-style: italic; }
+
+    #edit-frame-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #000;
+      border-radius: 8px;
+      min-width: 0;
+    }
+    #edit-iframe {
+      position: absolute;
+      width: 1920px;
+      height: 1080px;
+      border: none;
+      transform-origin: top left;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Overlay Dashboard</h1>
+  <div id="server-status">
+    <div class="status-dot" id="srv-dot"></div>
+    <span id="srv-label">Checking server…</span>
+    <span style="color:#333; margin: 0 6px;">|</span>
+    <span id="srv-time" style="font-size:11px; color:#444;"></span>
+  </div>
+</header>
+
+<nav id="tab-bar">
+  <button class="tab-btn active" data-page="control">Control</button>
+  <button class="tab-btn" data-page="edit">Edit</button>
+  <button class="tab-btn" data-page="settings">Settings</button>
+</nav>
+
+<!-- Page 1: Control -->
+<div id="page-control" class="page active">
+  <div id="layout">
+    <div id="grid"></div>
+    <div id="preview-panel">
+      <div id="preview-hdr">
+        <div>
+          <span id="preview-title">Preview</span>
+          <span id="preview-label"></span>
+        </div>
+        <button class="btn btn-action" id="preview-close">✕ Close</button>
+      </div>
+      <div id="preview-frame-wrap">
+        <iframe id="preview-iframe" src="" allow="autoplay"></iframe>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Edit -->
+<div id="page-edit" class="page">
+  <div id="edit-layout">
+    <div id="edit-panel">
+      <div id="edit-panel-hdr">
+        <div id="edit-panel-title">Scoreboard · mploverlay_v7</div>
+        <div id="edit-panel-actions">
+          <button class="edit-btn" id="edit-btn-defaults">Load Defaults</button>
+          <button class="edit-btn" id="edit-btn-save">Save</button>
+          <span id="edit-save-status"></span>
+        </div>
+      </div>
+      <div id="edit-elements"></div>
+      <div id="edit-controls">
+        <div class="edit-no-sel">Select an element to edit</div>
+      </div>
+    </div>
+    <div id="edit-frame-wrap">
+      <iframe id="edit-iframe" src="" allow="autoplay"></iframe>
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Settings -->
+<div id="page-settings" class="page">
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Game API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="game-api-input">Base URL</label>
+        <input type="text" id="game-api-input" placeholder="http://192.168.1.100:5001" spellcheck="false" autocomplete="off" />
+        <button id="game-api-apply">Apply</button>
+        <span id="game-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Debug</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>Overlays</label>
+        <button id="btn-debugoff">Hide Debug Bars</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  function base(path) { return path; }
+  function fileUrl(f)  { return '/html/' + f; }
+
+  /* ── Tab switching ───────────────────────────────────────── */
+  var tabBtns = document.querySelectorAll('.tab-btn');
+  tabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      tabBtns.forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById('page-' + btn.dataset.page).classList.add('active');
+      if (btn.dataset.page === 'control' && document.getElementById('layout').classList.contains('split')) {
+        requestAnimationFrame(scalePreview);
+      }
+    });
+  });
+
+  /* ── Game API URL ─────────────────────────────────────────── */
+  var gameApiInput  = document.getElementById('game-api-input');
+  var gameApiApply  = document.getElementById('game-api-apply');
+  var gameApiStatus = document.getElementById('game-api-status');
+
+  fetch('/api/game-url').then(function(r){ return r.json(); }).then(function(d){
+    gameApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveGameApiUrl() {
+    var url = gameApiInput.value.trim().replace(/\/$/, '');
+    fetch('/api/game-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      gameApiStatus.textContent = 'Saved ✓';
+      gameApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ gameApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      gameApiStatus.textContent = 'Error';
+      gameApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  gameApiApply.addEventListener('click', saveGameApiUrl);
+  gameApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGameApiUrl(); });
+
+  document.getElementById('btn-debugoff').addEventListener('click', function() {
+    fetch('/overlay/debugoff').catch(function(){});
+  });
+
+  var KILL_PRIORITIES = {
+    'firstblood.webm': 1, 'doublekill.webm': 2, 'triplekill.webm': 3,
+    'maniac.webm': 4, 'savage.webm': 5,
+    'lordslain.webm': 1, 'turtleslain.webm': 1, 'wipedout.webm': 3,
+  };
+
+  /* ── Feature toggle state ────────────────────────────────── */
+  var featureStates = {};
+  var toggleBtns    = {};
+
+  function applyToggleBtn(feature, enabled) {
+    var b = toggleBtns[feature];
+    if (!b) return;
+    b.textContent = enabled ? '● Enabled' : '○ Disabled';
+    b.className   = 'btn btn-toggle ' + (enabled ? 'btn-toggle-on' : 'btn-toggle-off');
+  }
+
+  fetch('/overlay/features').then(function(r){ return r.json(); }).then(function(d) {
+    featureStates = d || {};
+    Object.keys(featureStates).forEach(function(f) { applyToggleBtn(f, featureStates[f]); });
+  }).catch(function(){});
+
+  function toggleFeature(feature) {
+    var enabled = !(featureStates[feature] !== false);
+    featureStates[feature] = enabled;
+    applyToggleBtn(feature, enabled);
+    var action = enabled ? 'enable' : 'disable';
+    fetch('/overlay/feature/' + encodeURIComponent(feature) + '/' + action).catch(function(){});
+  }
+
+  /* ── Overlay definitions ──────────────────────────────────── */
+  var OVERLAYS = [
+    {
+      id: 'draft',
+      name: 'Draft Overlay',
+      file: 'Draft.html',
+    },
+    {
+      id: 'mplfs',
+      name: 'MPL Full Screen',
+      file: 'mplfs.html',
+      globalHide: '/overlay/fs/hide',
+      features: [
+        { name: 'Post Hearts',   show: '/overlay/post_hearts/show',   hide: '/overlay/post_hearts/hide'   },
+        { name: 'Post Richguy',  show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
+        { name: 'Post Itemline', show: '/overlay/post_itemline/show', hide: '/overlay/post_itemline/hide' },
+      ],
+      extraActions: [
+        { label: 'Item In',   action: '/overlay/post_itemline/itemin'  },
+        { label: 'Item Out',  action: '/overlay/post_itemline/itemout' },
+        { label: 'Debug Off', action: '/overlay/fs/debugoff'           },
+      ],
+    },
+    {
+      id: 'mploverlay7',
+      name: 'MPL Player Overlay v7',
+      file: 'mploverlay_v7.html',
+      killEventTrigger: true,
+      extraActions: [
+        { label: 'Recap Show', action: '/overlay/fights/show' },
+        { label: 'Recap Hide', action: '/overlay/fights/hide' },
+      ],
+      featureToggles: [
+        { name: 'Scoreboard',  feature: 'scoreboard' },
+        { name: 'Kill Events', feature: 'killevents' },
+        { name: 'Item Pickup', feature: 'items'      },
+        { name: 'Trinity',     feature: 'trinity'    },
+        { name: 'Quick Swap',  feature: 'swap'       },
+        { name: 'Level 15',    feature: 'lvl15'      },
+        { name: 'Conceal',     feature: 'conceal'    },
+        { name: 'Fight Recap', feature: 'fights'     },
+      ],
+    },
+    {
+      id: 'ingame',
+      name: 'In-Game Cam',
+      file: 'ingame_camv1.html',
+    },
+    {
+      id: 'bpm',
+      name: 'BPM Meter',
+      file: 'heart_stopping_moment_v14.html',
+      show: '/meter/show',
+      hide: '/meter/hide',
+      extraActions: [
+        { label: '+',     action: '/meter/plus'  },
+        { label: '−',     action: '/meter/minus' },
+        { label: 'Clear', action: '/meter/clear' },
+      ],
+    },
+    {
+      id: 'draftpredict',
+      name: 'Draft Predict',
+      file: null,
+      show: '/overlay/draftpredict/show',
+      hide: '/overlay/draftpredict/hide',
+    },
+  ];
+
+  /* ── DOM helpers ──────────────────────────────────────────── */
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls)  e.className = cls;
+    if (text) e.textContent = text;
+    return e;
+  }
+  function btn(label, cls, onClick) {
+    var b = el('button', 'btn ' + cls, label);
+    b.addEventListener('click', onClick);
+    return b;
+  }
+
+  /* ── Hit a control endpoint ───────────────────────────────── */
+  function hit(url, cardBody) {
+    fetch(base(url)).then(function (r) {
+      if (r.ok && cardBody) {
+        cardBody.classList.remove('flash-ok');
+        void cardBody.offsetWidth;
+        cardBody.classList.add('flash-ok');
+      }
+    }).catch(function () {});
+  }
+
+  /* ── Shared preview panel ────────────────────────────────── */
+  var layout       = document.getElementById('layout');
+  var previewPanel = document.getElementById('preview-panel');
+  var previewIframe = document.getElementById('preview-iframe');
+  var previewTitle = document.getElementById('preview-title');
+  var previewLabel = document.getElementById('preview-label');
+  var activeCard   = null;
+  var activeBtn    = null;
+
+  function scalePreview() {
+    var wrap = document.getElementById('preview-frame-wrap');
+    var scaleX = wrap.clientWidth  / 1920;
+    var scaleY = wrap.clientHeight / 1080;
+    var scale  = Math.min(scaleX, scaleY);
+    var scaledW = Math.round(1920 * scale);
+    var scaledH = Math.round(1080 * scale);
+    previewIframe.style.transform = 'scale(' + scale + ')';
+    previewIframe.style.left = Math.round((wrap.clientWidth  - scaledW) / 2) + 'px';
+    previewIframe.style.top  = Math.round((wrap.clientHeight - scaledH) / 2) + 'px';
+  }
+
+  function openPreview(ov, pBtn, card) {
+    if (activeCard === card) { closePreview(); return; }
+
+    if (activeCard) {
+      activeCard.classList.remove('previewing');
+      if (activeBtn) { activeBtn.classList.remove('active'); activeBtn.textContent = 'Preview'; }
+    }
+
+    previewIframe.src = fileUrl(ov.file) + '?t=' + Date.now();
+    previewTitle.textContent = ov.name;
+    previewLabel.textContent = ov.file;
+    card.classList.add('previewing');
+    pBtn.classList.add('active');
+    pBtn.textContent = 'Previewing';
+    activeCard = card;
+    activeBtn  = pBtn;
+
+    Array.prototype.forEach.call(grid.querySelectorAll('.card'), function (c) {
+      c.style.display = c === card ? '' : 'none';
+    });
+
+    layout.classList.add('split');
+    requestAnimationFrame(scalePreview);
+  }
+
+  function closePreview() {
+    Array.prototype.forEach.call(grid.querySelectorAll('.card'), function (c) {
+      c.style.display = '';
+    });
+    layout.classList.remove('split');
+    if (activeCard) activeCard.classList.remove('previewing');
+    if (activeBtn)  { activeBtn.classList.remove('active'); activeBtn.textContent = 'Preview'; }
+    activeCard = null;
+    activeBtn  = null;
+  }
+
+  document.getElementById('preview-close').addEventListener('click', closePreview);
+  window.addEventListener('resize', function () {
+    if (layout.classList.contains('split')) scalePreview();
+  });
+
+  /* ── Build cards ──────────────────────────────────────────── */
+  var grid = document.getElementById('grid');
+  var dots = {};
+
+  OVERLAYS.forEach(function (ov) {
+    var card = el('div', 'card');
+
+    /* Header */
+    var hdr   = el('div', 'card-header');
+    var dot   = el('div', 'card-dot unknown');
+    var info  = el('div');
+    var title = el('div', 'card-title', ov.name);
+    var urlLbl = el('div', 'card-url', ov.file || '(no page)');
+    info.appendChild(title);
+    info.appendChild(urlLbl);
+    hdr.appendChild(dot);
+    hdr.appendChild(info);
+
+    if (ov.file) {
+      var openBtn = el('a', 'btn btn-open', 'Open ↗');
+      openBtn.target = '_blank';
+      openBtn.href   = ov.file;
+      openBtn.addEventListener('click', function (e) {
+        e.preventDefault();
+        window.open(fileUrl(ov.file), '_blank');
+      });
+      hdr.appendChild(openBtn);
+    }
+
+    card.appendChild(hdr);
+    dots[ov.id] = dot;
+
+    /* Body */
+    var body = el('div', 'card-body');
+
+    /* Show / Hide row */
+    if (ov.show || ov.hide || ov.globalHide) {
+      var row = el('div', 'btn-row');
+      if (ov.show)       row.appendChild(btn('Show',     'btn-show', function () { hit(ov.show, body); }));
+      if (ov.hide)       row.appendChild(btn('Hide',     'btn-hide', function () { hit(ov.hide, body); }));
+      if (ov.globalHide) row.appendChild(btn('Hide All', 'btn-hide', function () { hit(ov.globalHide, body); }));
+      body.appendChild(row);
+    }
+
+    /* Extra action buttons */
+    if (ov.extraActions && ov.extraActions.length) {
+      var arow = el('div', 'btn-row');
+      ov.extraActions.forEach(function (a) {
+        arow.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
+      });
+      body.appendChild(arow);
+    }
+
+    /* Kill event trigger */
+    if (ov.killEventTrigger) {
+      if (body.children.length) body.appendChild(el('div', 'divider'));
+      body.appendChild(el('div', 'features-label', 'Kill Event Trigger'));
+      var keRow = el('div', 'killevent-row');
+      var keLabel = el('label', '', 'Event');
+      var keSelect = el('select', 'killevent-select');
+      [
+        ['firstblood.webm',  'First Blood'],
+        ['doublekill.webm',  'Double Kill'],
+        ['triplekill.webm',  'Triple Kill'],
+        ['maniac.webm',      'Maniac'],
+        ['savage.webm',      'Savage'],
+        ['lordslain.webm',   'Lord Slain'],
+        ['turtleslain.webm', 'Turtle Slain'],
+        ['wipedout.webm',    'Wipe Out'],
+      ].forEach(function(opt) {
+        var o = document.createElement('option');
+        o.value = opt[0]; o.textContent = opt[1];
+        keSelect.appendChild(o);
+      });
+      var keTrigger = el('button', 'killevent-trigger', '▶ Trigger');
+      keTrigger.addEventListener('click', function() {
+        var video    = keSelect.value;
+        var priority = KILL_PRIORITIES[video] || 1;
+        fetch('/overlay/killevent?video=' + encodeURIComponent(video)).catch(function(){});
+        try {
+          var iwin = previewIframe.contentWindow;
+          if (iwin) iwin.postMessage({ type: 'killevent', video: video, priority: priority }, '*');
+        } catch(e) {}
+        body.classList.remove('flash-ok');
+        void body.offsetWidth;
+        body.classList.add('flash-ok');
+      });
+      keRow.appendChild(keLabel);
+      keRow.appendChild(keSelect);
+      keRow.appendChild(keTrigger);
+      body.appendChild(keRow);
+    }
+
+    /* Sub-features */
+    if (ov.features && ov.features.length) {
+      if (body.children.length) body.appendChild(el('div', 'divider'));
+      body.appendChild(el('div', 'features-label', 'Features'));
+      ov.features.forEach(function (feat) {
+        var fr = el('div', 'feature-row');
+        fr.appendChild(el('div', 'feature-name', feat.name));
+        var fb = el('div', 'feature-btns');
+        if (feat.show) fb.appendChild(btn('Show', 'btn-show', function () { hit(feat.show, body); }));
+        if (feat.hide) fb.appendChild(btn('Hide', 'btn-hide', function () { hit(feat.hide, body); }));
+        fr.appendChild(fb);
+        body.appendChild(fr);
+      });
+    }
+
+    /* Feature toggles */
+    if (ov.featureToggles && ov.featureToggles.length) {
+      if (body.children.length) body.appendChild(el('div', 'divider'));
+      body.appendChild(el('div', 'features-label', 'Feature Toggles'));
+      ov.featureToggles.forEach(function (ft) {
+        var fr = el('div', 'feature-row');
+        fr.appendChild(el('div', 'feature-name', ft.name));
+        var tb = el('button', 'btn btn-toggle btn-toggle-on', '● Enabled');
+        tb.addEventListener('click', (function (f) { return function () { toggleFeature(f); }; })(ft.feature));
+        toggleBtns[ft.feature] = tb;
+        fr.appendChild(tb);
+        body.appendChild(fr);
+      });
+    }
+
+    /* Placeholder if no controls */
+    if (!body.children.length) {
+      var ph = el('div', '', 'No controls available');
+      ph.style.cssText = 'font-size:12px;color:#444;padding:4px 0;';
+      body.appendChild(ph);
+    }
+
+    /* Preview button */
+    if (ov.file) {
+      if (body.children.length) body.appendChild(el('div', 'divider'));
+      var prow = el('div', 'btn-row');
+      var pBtn = btn('Preview', 'btn-action btn-preview', function () {
+        openPreview(ov, pBtn, card);
+      });
+      prow.appendChild(pBtn);
+      body.appendChild(prow);
+    }
+
+    card.appendChild(body);
+    grid.appendChild(card);
+  });
+
+  /* ── Status polling ───────────────────────────────────────── */
+  function pollStatus() {
+    fetch(base('/')).then(function (r) {
+      var dot  = document.getElementById('srv-dot');
+      var lbl  = document.getElementById('srv-label');
+      var time = document.getElementById('srv-time');
+      dot.className   = 'status-dot ' + (r.ok ? 'online' : 'offline');
+      lbl.textContent = r.ok ? 'Server online' : 'Server error';
+      time.textContent = 'last check ' + new Date().toLocaleTimeString();
+    }).catch(function () {
+      document.getElementById('srv-dot').className  = 'status-dot offline';
+      document.getElementById('srv-label').textContent = 'Server offline';
+    });
+
+    OVERLAYS.forEach(function (ov) {
+      if (!ov.file) { dots[ov.id].className = 'card-dot unknown'; return; }
+      fetch(fileUrl(ov.file), { method: 'HEAD', cache: 'no-store' })
+        .then(function (r) { dots[ov.id].className = 'card-dot ' + (r.ok ? 'online' : 'offline'); })
+        .catch(function () { dots[ov.id].className = 'card-dot offline'; });
+    });
+  }
+
+  pollStatus();
+  setInterval(pollStatus, 5000);
+
+  /* ── Edit page ─────────────────────────────────────────────── */
+  var SB_DEFAULTS = {
+    '#scoreboard-gametime':    {                top: 3,       fontSize: 21 },
+    '#scoreboard-kills-c1':   { left: 846,     top: 14,      fontSize: 53 },
+    '#scoreboard-kills-c2':   { left: 1074,    top: 14,      fontSize: 53 },
+    '#scoreboard-tricode-c1': { left: 576.941, top: 60.351,  fontSize: 29 },
+    '#scoreboard-tricode-c2': { left: 1346.336,top: 60.356,  fontSize: 29 },
+    '#scoreboard-turtle-c1':  { left: 542.09,  top: 18,      fontSize: 19 },
+    '#scoreboard-lord-c1':    { left: 605.59,  top: 18,      fontSize: 19 },
+    '#scoreboard-tower-c1':   { left: 668.59,  top: 19,      fontSize: 19 },
+    '#scoreboard-gold-c1':    { left: 734.779, top: 18,      fontSize: 19 },
+    '#sb-goldlead-c1':        { left: 790.894, top: 58,      fontSize: 18 },
+    '#scoreboard-turtle-c2':  { left: 1369.09, top: 18,      fontSize: 19 },
+    '#scoreboard-lord-c2':    { left: 1309.09, top: 18,      fontSize: 19 },
+    '#scoreboard-tower-c2':   { left: 1245.59, top: 18,      fontSize: 19 },
+    '#scoreboard-gold-c2':    { left: 1166.983,top: 18,      fontSize: 19 },
+    '#sb-goldlead-c2':        { left: 1137.393,top: 58,      fontSize: 18 },
+    '#sb-score-c1':           { left: 645,     top: 40 },
+    '#sb-score-c2':           { left: 1230,    top: 40 },
+    '#sb-sponsor-loop':       { left: 1689,    top: 7  },
+    '#sb-logo-c1':            { left: 424,     top: 5  },
+    '#sb-logo-c2':            { left: 1431,    top: 5  },
+  };
+  var ARROW_MAP = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] };
+
+  var SB_ELEMENTS = [
+    { group: 'Timer',      id: '#scoreboard-gametime',    name: 'Game Timer'       },
+    { group: 'Kills',      id: '#scoreboard-kills-c1',   name: 'Kills (Team 1)'   },
+    { group: 'Kills',      id: '#scoreboard-kills-c2',   name: 'Kills (Team 2)'   },
+    { group: 'Team Codes', id: '#scoreboard-tricode-c1', name: 'Tricode (Team 1)' },
+    { group: 'Team Codes', id: '#scoreboard-tricode-c2', name: 'Tricode (Team 2)' },
+    { group: 'Team 1',     id: '#scoreboard-turtle-c1',  name: 'Turtle'           },
+    { group: 'Team 1',     id: '#scoreboard-lord-c1',    name: 'Lord'             },
+    { group: 'Team 1',     id: '#scoreboard-tower-c1',   name: 'Tower'            },
+    { group: 'Team 1',     id: '#scoreboard-gold-c1',    name: 'Gold'             },
+    { group: 'Team 1',     id: '#sb-goldlead-c1',        name: 'Gold Lead'        },
+    { group: 'Team 2',     id: '#scoreboard-turtle-c2',  name: 'Turtle'           },
+    { group: 'Team 2',     id: '#scoreboard-lord-c2',    name: 'Lord'             },
+    { group: 'Team 2',     id: '#scoreboard-tower-c2',   name: 'Tower'            },
+    { group: 'Team 2',     id: '#scoreboard-gold-c2',    name: 'Gold'             },
+    { group: 'Team 2',     id: '#sb-goldlead-c2',        name: 'Gold Lead'        },
+    { group: 'Score',      id: '#sb-score-c1',           name: 'Match Score (T1)' },
+    { group: 'Score',      id: '#sb-score-c2',           name: 'Match Score (T2)' },
+    { group: 'Sponsor',    id: '#sb-sponsor-loop',       name: 'Sponsor Box'      },
+    { group: 'Logos',      id: '#sb-logo-c1',            name: 'Logo (Team 1)'    },
+    { group: 'Logos',      id: '#sb-logo-c2',            name: 'Logo (Team 2)'    },
+  ];
+
+  function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+  function parseNum(s)    { return parseFloat(String(s)) || 0; }
+
+  var editValues    = deepClone(SB_DEFAULTS);
+  var editHistory   = [];   /* up to 3 undo snapshots */
+  var selectedElId  = null;
+  var editIfLoaded  = false;
+  var editElemBtns  = {};
+  var editInputRefs = {};   /* propKey -> input el for currently shown controls */
+  var editIframe    = document.getElementById('edit-iframe');
+
+  /* Expose to iframe (same-origin callbacks) */
+  window.SB_DEFAULTS   = SB_DEFAULTS;
+  window.getEditValues = function() { return editValues; };
+
+  /* ── History ─────────────────────────────────────────────── */
+  function pushHistory() {
+    editHistory.push(deepClone(editValues));
+    if (editHistory.length > 3) editHistory.shift();
+  }
+  function sbEditUndo() {
+    if (!editHistory.length) return;
+    var prev = editHistory.pop();
+    Object.keys(editValues).forEach(function(k) { delete editValues[k]; });
+    Object.keys(prev).forEach(function(k) { editValues[k] = prev[k]; });
+    applyToEditIframe();
+    if (selectedElId) showEditControls(selectedElId);
+  }
+  window.pushHistory = pushHistory;
+  window.sbEditUndo  = sbEditUndo;
+
+  /* ── Arrow key movement ──────────────────────────────────── */
+  function sbEditArrow(dx, dy) {
+    if (!selectedElId) return;
+    var id   = selectedElId;
+    var vals = editValues[id] || {};
+    var defs = SB_DEFAULTS[id] || {};
+    var newL = 'left' in defs
+      ? Math.round(((vals.left !== undefined ? vals.left : defs.left) + dx) * 10) / 10
+      : undefined;
+    var newT = 'top' in defs
+      ? Math.round(((vals.top  !== undefined ? vals.top  : defs.top)  + dy) * 10) / 10
+      : undefined;
+    window.sbEditDrag(id, newL, newT);
+  }
+  window.sbEditArrow = sbEditArrow;
+
+  function applyToEditIframe() {
+    if (!editIfLoaded) return;
+    var doc = editIframe.contentDocument;
+    if (!doc || !doc.head) return;
+    var css = Object.keys(editValues).map(function(sel) {
+      var p = editValues[sel];
+      var d = [];
+      if (p.left     !== undefined) d.push('left:'      + p.left     + 'px !important');
+      if (p.top      !== undefined) d.push('top:'       + p.top      + 'px !important');
+      if (p.fontSize !== undefined) d.push('font-size:' + p.fontSize + 'px !important');
+      return sel + '{' + d.join(';') + '}';
+    }).join('\n');
+    var s = doc.getElementById('sb-live-edit');
+    if (!s) { s = doc.createElement('style'); s.id = 'sb-live-edit'; doc.head.appendChild(s); }
+    s.textContent = css;
+  }
+
+  function scaleEditIframe() {
+    var wrap = document.getElementById('edit-frame-wrap');
+    if (!wrap) return;
+    var scaleX = wrap.clientWidth  / 1920;
+    var scaleY = wrap.clientHeight / 1080;
+    var scale  = Math.min(scaleX, scaleY);
+    editIframe.style.transform = 'scale(' + scale + ')';
+    editIframe.style.left = Math.round((wrap.clientWidth  - Math.round(1920 * scale)) / 2) + 'px';
+    editIframe.style.top  = Math.round((wrap.clientHeight - Math.round(1080 * scale)) / 2) + 'px';
+  }
+
+  /* ── Drag callbacks — called from injected iframe code ─────── */
+  window.sbEditSelect = function(id) {
+    var doc = editIfLoaded ? editIframe.contentDocument : null;
+    /* Clear previous selected highlight in iframe */
+    if (doc) {
+      SB_ELEMENTS.forEach(function(e) {
+        var el = doc.querySelector(e.id);
+        if (el) el.classList.remove('sb-selected');
+      });
+      var target = doc.querySelector(id);
+      if (target) target.classList.add('sb-selected');
+    }
+    /* Update left panel button */
+    Object.keys(editElemBtns).forEach(function(k) { editElemBtns[k].classList.remove('active'); });
+    if (editElemBtns[id]) editElemBtns[id].classList.add('active');
+    showEditControls(id);
+  };
+
+  window.sbEditDrag = function(id, left, top) {
+    if (!editValues[id]) editValues[id] = {};
+    if (left !== undefined) editValues[id].left = left;
+    if (top  !== undefined) editValues[id].top  = top;
+    applyToEditIframe();
+    /* Update panel inputs without rebuilding */
+    if (id === selectedElId) {
+      if (left !== undefined && editInputRefs.left) editInputRefs.left.value = left;
+      if (top  !== undefined && editInputRefs.top)  editInputRefs.top.value  = top;
+    }
+  };
+
+  /* ── Inject drag interaction into iframe ────────────────────── */
+  function injectEditInteraction() {
+    var doc = editIframe.contentDocument;
+    if (!doc || !doc.head) return;
+
+    /* Force scoreboard visible — it's hidden (opacity:0) with no live game */
+    var modeStyle = doc.createElement('style');
+    modeStyle.id = 'sb-edit-mode';
+    modeStyle.textContent = [
+      '#scoreboard-overlay{transform:none!important;opacity:1!important;transition:none!important;}',
+      '.sb-editable{pointer-events:all!important;cursor:move!important;',
+      '  outline:1px dashed rgba(80,100,255,0.35)!important;outline-offset:3px;}',
+      '.sb-editable:hover{outline:1px solid rgba(100,130,255,0.75)!important;}',
+      '.sb-editable.sb-selected{outline:2px solid #6677ff!important;outline-offset:3px;}',
+    ].join('');
+    doc.head.appendChild(modeStyle);
+
+    /* Keyboard handler inside iframe (fires when iframe has focus) */
+    doc.addEventListener('keydown', function(e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) {
+        e.preventDefault();
+        window.parent.sbEditUndo();
+        return;
+      }
+      var d = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      if (!e.repeat) window.parent.pushHistory();
+      var step = e.shiftKey ? 10 : 1;
+      window.parent.sbEditArrow(d[0] * step, d[1] * step);
+    });
+
+    /* Attach drag handler to each editable element */
+    SB_ELEMENTS.forEach(function(elem) {
+      var el = doc.querySelector(elem.id);
+      if (!el) return;
+      el.classList.add('sb-editable');
+
+      var hasLeft = 'left' in (SB_DEFAULTS[elem.id] || {});
+      var hasTop  = 'top'  in (SB_DEFAULTS[elem.id] || {});
+
+      el.addEventListener('mousedown', (function(id, hasL, hasT) {
+        return function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          window.parent.pushHistory();
+          window.parent.sbEditSelect(id);
+
+          var vals      = window.parent.getEditValues()[id] || {};
+          var defs      = window.parent.SB_DEFAULTS[id]    || {};
+          var startLeft = vals.left !== undefined ? vals.left : (defs.left || 0);
+          var startTop  = vals.top  !== undefined ? vals.top  : (defs.top  || 0);
+          var startX    = e.clientX;
+          var startY    = e.clientY;
+
+          function onMove(ev) {
+            var l = hasL ? Math.round((startLeft + ev.clientX - startX) * 10) / 10 : undefined;
+            var t = hasT ? Math.round((startTop  + ev.clientY - startY) * 10) / 10 : undefined;
+            window.parent.sbEditDrag(id, l, t);
+          }
+          function onUp() {
+            doc.removeEventListener('mousemove', onMove);
+            doc.removeEventListener('mouseup',   onUp);
+          }
+          doc.addEventListener('mousemove', onMove);
+          doc.addEventListener('mouseup',   onUp);
+        };
+      })(elem.id, hasLeft, hasTop));
+    });
+  }
+
+  /* ── Left panel controls ─────────────────────────────────────── */
+  function getElemName(id) {
+    for (var i = 0; i < SB_ELEMENTS.length; i++) {
+      if (SB_ELEMENTS[i].id === id) return SB_ELEMENTS[i].name;
+    }
+    return id;
+  }
+
+  var PROPS = [
+    { key: 'left',     label: 'X (left)',  step: 1 },
+    { key: 'top',      label: 'Y (top)',   step: 1 },
+    { key: 'fontSize', label: 'Font Size', step: 1 },
+  ];
+
+  function showEditControls(id) {
+    selectedElId  = id;
+    editInputRefs = {};
+    var vals = editValues[id] || {};
+    var defs = SB_DEFAULTS[id] || {};
+    var ctrl = document.getElementById('edit-controls');
+    ctrl.innerHTML = '';
+
+    var title = document.createElement('div');
+    title.className = 'edit-ctrl-title';
+    title.textContent = getElemName(id);
+    ctrl.appendChild(title);
+
+    PROPS.forEach(function(prop) {
+      if (!(prop.key in defs)) return;
+
+      var row = document.createElement('div');
+      row.className = 'edit-ctrl-row';
+
+      var lbl = document.createElement('div');
+      lbl.className = 'edit-ctrl-label';
+      lbl.textContent = prop.label;
+
+      var minus = document.createElement('button');
+      minus.className = 'edit-step-btn';
+      minus.textContent = '−';
+
+      var inp = document.createElement('input');
+      inp.type = 'number';
+      inp.className = 'edit-ctrl-input';
+      inp.step = prop.step;
+      inp.value = vals[prop.key] !== undefined ? vals[prop.key] : (defs[prop.key] || 0);
+      editInputRefs[prop.key] = inp;
+
+      var plus = document.createElement('button');
+      plus.className = 'edit-step-btn';
+      plus.textContent = '+';
+
+      var unit = document.createElement('div');
+      unit.className = 'edit-ctrl-unit';
+      unit.textContent = 'px';
+
+      function commit() {
+        var v = parseFloat(inp.value);
+        if (isNaN(v)) return;
+        if (!editValues[id]) editValues[id] = {};
+        editValues[id][prop.key] = v;
+        applyToEditIframe();
+        /* Sync selected highlight (in case font-size change re-flows) */
+        if (editIfLoaded) {
+          var doc = editIframe.contentDocument;
+          if (doc) {
+            SB_ELEMENTS.forEach(function(e) {
+              var el = doc.querySelector(e.id);
+              if (el) el.classList.remove('sb-selected');
+            });
+            var sel = doc.querySelector(id);
+            if (sel) sel.classList.add('sb-selected');
+          }
+        }
+      }
+
+      /* Push history when user starts editing the input, then live-update */
+      inp.addEventListener('focus',  function() { pushHistory(); });
+      inp.addEventListener('input',  commit);
+      minus.addEventListener('click', function() {
+        pushHistory();
+        inp.value = Math.round((parseFloat(inp.value) - prop.step) * 1000) / 1000;
+        commit();
+      });
+      plus.addEventListener('click', function() {
+        pushHistory();
+        inp.value = Math.round((parseFloat(inp.value) + prop.step) * 1000) / 1000;
+        commit();
+      });
+
+      row.appendChild(lbl);
+      row.appendChild(minus);
+      row.appendChild(inp);
+      row.appendChild(plus);
+      row.appendChild(unit);
+      ctrl.appendChild(row);
+    });
+  }
+
+  /* Build element list */
+  (function buildEditList() {
+    var container = document.getElementById('edit-elements');
+    var lastGroup = null;
+    SB_ELEMENTS.forEach(function(elem) {
+      if (elem.group !== lastGroup) {
+        var gl = document.createElement('div');
+        gl.className = 'edit-group-label';
+        gl.textContent = elem.group;
+        container.appendChild(gl);
+        lastGroup = elem.group;
+      }
+      var b = document.createElement('button');
+      b.className = 'edit-elem-btn';
+      b.textContent = elem.name;
+      b.addEventListener('click', (function(e) {
+        return function() { window.sbEditSelect(e.id); };
+      })(elem));
+      editElemBtns[elem.id] = b;
+      container.appendChild(b);
+    });
+  })();
+
+  document.getElementById('edit-btn-defaults').addEventListener('click', function() {
+    pushHistory();
+    var fresh = deepClone(SB_DEFAULTS);
+    /* Mutate in-place so iframe's getEditValues() ref stays valid */
+    Object.keys(editValues).forEach(function(k) { delete editValues[k]; });
+    Object.keys(fresh).forEach(function(k) { editValues[k] = fresh[k]; });
+    if (selectedElId) showEditControls(selectedElId);
+    applyToEditIframe();
+  });
+
+  document.getElementById('edit-btn-save').addEventListener('click', function() {
+    var statusEl = document.getElementById('edit-save-status');
+    var out = {};
+    Object.keys(editValues).forEach(function(sel) {
+      var v = editValues[sel];
+      out[sel] = {};
+      if (v.left     !== undefined) out[sel].left     = v.left     + 'px';
+      if (v.top      !== undefined) out[sel].top      = v.top      + 'px';
+      if (v.fontSize !== undefined) out[sel].fontSize = v.fontSize + 'px';
+    });
+    fetch('/api/overlay-styles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: 'mploverlay_v7', styles: out }),
+    }).then(function(r) { return r.json(); }).then(function() {
+      statusEl.textContent = 'Saved ✓';
+      statusEl.style.color = '#44cc88';
+      setTimeout(function() { statusEl.textContent = ''; }, 2000);
+    }).catch(function() {
+      statusEl.textContent = 'Error';
+      statusEl.style.color = '#ff4455';
+    });
+  });
+
+  /* Init: load iframe on first Edit tab click */
+  (function initEditPage() {
+    var editTabBtn  = document.querySelector('.tab-btn[data-page="edit"]');
+    var initialized = false;
+
+    function mergeSaved(saved) {
+      Object.keys(saved).forEach(function(sel) {
+        var s = saved[sel];
+        if (!editValues[sel]) editValues[sel] = {};
+        if (s.left     !== undefined) editValues[sel].left     = parseNum(s.left);
+        if (s.top      !== undefined) editValues[sel].top      = parseNum(s.top);
+        if (s.fontSize !== undefined) editValues[sel].fontSize = parseNum(s.fontSize);
+      });
+    }
+
+    function loadIframe() {
+      editIframe.src = '/html/mploverlay_v7.html?t=' + Date.now();
+      editIframe.addEventListener('load', function() {
+        editIfLoaded = true;
+        applyToEditIframe();
+        injectEditInteraction();
+        requestAnimationFrame(scaleEditIframe);
+      }, { once: true });
+    }
+
+    editTabBtn.addEventListener('click', function() {
+      if (initialized) { requestAnimationFrame(scaleEditIframe); return; }
+      initialized = true;
+      fetch('/api/overlay-styles?file=mploverlay_v7')
+        .then(function(r) { return r.json(); })
+        .then(function(saved) { mergeSaved(saved); loadIframe(); })
+        .catch(function() { loadIframe(); });
+    });
+  })();
+
+  /* Parent-level keyboard handler — fires when focus is outside the iframe */
+  document.addEventListener('keydown', function(e) {
+    if (!document.querySelector('.tab-btn[data-page="edit"]').classList.contains('active')) return;
+    if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); sbEditUndo(); return; }
+    var d = ARROW_MAP[e.key];
+    if (!d) return;
+    e.preventDefault();
+    if (!e.repeat) pushHistory();
+    var step = e.shiftKey ? 10 : 1;
+    sbEditArrow(d[0] * step, d[1] * step);
+  });
+
+  window.addEventListener('resize', function() {
+    if (document.querySelector('.tab-btn[data-page="edit"]').classList.contains('active')) {
+      scaleEditIframe();
+    }
+  });
+
+})();
+</script>
+</body>
+</html>

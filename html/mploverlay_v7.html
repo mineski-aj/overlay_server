@@ -1,0 +1,156 @@
+<base href="/">
+<link rel="stylesheet" href="html/mploverlay_v7.css">
+
+<div id="scene">
+
+  <!-- [FEATURE: scoreboard] built dynamically via overlay-scoreboard.js, always behind everything -->
+
+  <!-- [FEATURE: item-pickup-v2] built dynamically via buildItemOverlay(i) -->
+
+  <!-- [FEATURE: conceal-overlay] camp 1 left -->
+  <div id="conceal-overlay" class="overlay-container left" style="top:617px; transform:translateX(-300px); display:none">
+    <div class="conceal-hero-section">
+      <div class="conceal-circle"><img src="" alt="" /></div>
+    </div>
+    <div class="conceal-text-section">
+      <span class="conceal-word"><span class="conceal-word-inner">CONCEAL</span></span>
+      <span class="activated-word">ACTIVATED</span>
+    </div>
+  </div>
+
+  <!-- [FEATURE: conceal-overlay] camp 2 right -->
+  <div id="conceal-overlay-r" class="overlay-container right" style="top:617px; transform:translateX(300px); display:none">
+    <div class="conceal-hero-section">
+      <div class="conceal-circle"><img src="" alt="" /></div>
+    </div>
+    <div class="conceal-text-section">
+      <span class="conceal-word"><span class="conceal-word-inner">CONCEAL</span></span>
+      <span class="activated-word">ACTIVATED</span>
+    </div>
+  </div>
+
+
+  <!-- [FEATURE: kill-events] -->
+  <div id="kill-event-overlay">
+    <video id="kill-event-video" preload="auto" muted></video>
+  </div>
+
+  <!-- [FEATURE: fight-recap] -->
+  <div id="fight-overlay">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="fight-label">Fight Recap</div>
+      <div class="header-sep"></div>
+      <div class="fight-time" id="fight-time">—:—</div>
+      <div class="fight-duration" id="fight-dur"></div>
+    </div>
+
+    <!-- AWARDS BAR -->
+    <div class="awards-bar">
+      <div class="gold-block c1">
+        <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <circle cx="8" cy="8" r="7.5" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>
+          <circle cx="8" cy="8" r="5.2" fill="none" stroke="#fde68a" stroke-width="1.2"/>
+        </svg>
+        <span class="gold-amount" id="c1-gold">—</span>
+        <span class="gold-label">Gold Earned</span>
+      </div>
+      <div class="gold-sep">+</div>
+      <div class="gold-block c2">
+        <span class="gold-label">Gold Earned</span>
+        <span class="gold-amount" id="c2-gold">—</span>
+        <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <circle cx="8" cy="8" r="7.5" fill="#f59e0b" stroke="#d97706" stroke-width="0.5"/>
+          <circle cx="8" cy="8" r="5.2" fill="none" stroke="#fde68a" stroke-width="1.2"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- PLAYERS -->
+    <div class="players-area">
+      <div class="camp-col c1" id="camp1"></div>
+      <div class="camp-divider"></div>
+      <div class="camp-col c2" id="camp2"></div>
+    </div>
+
+  </div>
+
+  <div id="debug-area">
+    <div id="url-row">
+      <span class="debug-label">API URL</span>
+      <span id="api-url-display" style="font-family:monospace;font-size:11px;color:#94a3b8;"></span>
+      <span id="poll-status">● IDLE</span>
+    </div>
+
+    <div id="debug-tabs">
+      <button class="tab-btn active" data-tab="lvl15">LEVEL 15</button>
+      <button class="tab-btn"        data-tab="items">ITEM PICKUP</button>
+      <button class="tab-btn"        data-tab="conceal">CONCEAL</button>
+      <button class="tab-btn"        data-tab="trinity">TRINITY</button>
+      <button class="tab-btn"        data-tab="swap">SWAP</button>
+      <button class="tab-btn"        data-tab="killevents">KILL EVENTS</button>
+    </div>
+
+    <!-- Level 15 tab -->
+    <div id="tab-lvl15" class="tab-content visible">
+      <div class="debug-team" id="team-left"></div>
+      <div class="debug-team" id="team-right"></div>
+      <span id="debug-hint-lvl">game time pulled live from API on each trigger</span>
+    </div>
+
+    <!-- Item pickup tab -->
+    <div id="tab-items" class="tab-content">
+      <div class="section-note" style="margin-bottom:6px;">SELECT ITEM &nbsp;(click to select, then press a player button)</div>
+      <div id="t3-browser"></div>
+      <div style="margin-top:8px;display:flex;gap:12px;align-items:center;">
+        <div class="debug-team" id="item-team-left"></div>
+        <div class="debug-team" id="item-team-right"></div>
+      </div>
+    </div>
+
+    <!-- Trinity tab [FEATURE: trinity] -->
+    <div id="tab-trinity" class="tab-content">
+      <span class="section-note">TRIGGERS WHEN PLAYER REACHES 3 TIER 3 ITEMS — DEBUG USES 3 DEFAULT T3 ITEMS</span>
+      <div class="debug-team" id="trinity-team-left"></div>
+      <div class="debug-team" id="trinity-team-right"></div>
+    </div>
+
+    <!-- Swap tab [FEATURE: swap] -->
+    <div id="tab-swap" class="tab-content">
+      <span class="section-note">ITEM QUICK SWAP — ALL PLAYERS &nbsp;|&nbsp; DEBUG: SELLS ANY T3 → BUYS IMMORTALITY</span>
+      <div class="debug-team" id="swap-team-left"></div>
+      <div class="debug-team" id="swap-team-right"></div>
+    </div>
+
+    <!-- Kill events tab [FEATURE: kill-events] -->
+    <div id="tab-killevents" class="tab-content">
+      <span class="section-note">MANUALLY TRIGGER KILL EVENT VIDEOS</span>
+      <div class="debug-team" id="kill-event-btns" style="flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+    </div>
+
+    <!-- Conceal tab [FEATURE: conceal-overlay] -->
+    <div id="tab-conceal" class="tab-content">
+      <span class="section-note">CAMP 1 — LEFT</span>
+      <button class="debug-btn" id="conceal-trigger-btn">▶ TRIGGER (from API / P4)</button>
+      <div class="debug-team" id="conceal-cat-row"></div>
+      <hr class="section-rule" />
+      <span class="section-note">CAMP 2 — RIGHT</span>
+      <button class="debug-btn" id="conceal-trigger-btn-r">▶ TRIGGER (from API / P9)</button>
+      <div class="debug-team" id="conceal-cat-row-r"></div>
+    </div>
+
+
+  </div>
+</div>
+
+<script src="html/js/overlay-core.js"></script>
+<script src="html/js/overlay-scoreboard.js"></script>
+<script src="html/js/overlay-lvl15.js"></script>
+<script src="html/js/overlay-items.js"></script>
+<script src="html/js/overlay-trinity.js"></script>
+<script src="html/js/overlay-swap.js"></script>
+<script src="html/js/overlay-conceal.js"></script>
+<script src="html/js/overlay-killevents.js"></script>
+<script src="html/js/overlay-fights.js"></script>
+<script src="html/js/overlay-debug.js"></script>

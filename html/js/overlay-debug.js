@@ -1,0 +1,323 @@
+/* ── Level 15 debug buttons ── */
+for (let i = 1; i <= 10; i++) {
+  buildLvl15Overlay(i);
+  const btn = document.createElement('button');
+  btn.className = 'debug-btn'; btn.dataset.player = i; btn.textContent = `▶ P${i}`;
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    try {
+      const data    = lastData || await fetchData();
+      const r       = getPlayer(data, i);
+      const timeStr = r?.player?.level_eta || '--:--';
+      const heroId  = r?.player?.heroid;
+      triggerLvl15(i, timeStr, heroId);
+    }
+    catch { triggerLvl15(i, '--:--'); }
+  });
+  document.getElementById(i <= 5 ? 'team-left' : 'team-right').appendChild(btn);
+}
+
+/* ── T3 item browser ── */
+var t3BrowserBuilt = false;
+function buildT3Browser() {
+  if (t3BrowserBuilt) return;
+  t3BrowserBuilt = true;
+  const browser = document.getElementById('t3-browser');
+  const savedId = localStorage.getItem('selectedT3Id') || Object.keys(T3_RECIPES)[0];
+  Object.keys(T3_RECIPES).forEach(id => {
+    const cell = document.createElement('div');
+    cell.className = 't3-cell';
+    cell.dataset.id = id;
+    const img = document.createElement('img');
+    img.src = `Items/${id}.png`;
+    img.onerror = () => { img.onerror = null; img.src = `Items/99999.png`; };
+    const lbl = document.createElement('span');
+    lbl.textContent = id;
+    cell.appendChild(img);
+    cell.appendChild(lbl);
+    cell.addEventListener('click', () => {
+      if (selectedT3Cell) selectedT3Cell.classList.remove('selected');
+      selectedT3Cell = cell;
+      cell.classList.add('selected');
+      localStorage.setItem('selectedT3Id', id);
+    });
+    if (id === savedId) {
+      cell.classList.add('selected');
+      selectedT3Cell = cell;
+    }
+    browser.appendChild(cell);
+  });
+}
+
+for (let i = 1; i <= 10; i++) {
+  buildItemOverlay(i);
+  const btn = document.createElement('button');
+  btn.className = 'debug-btn item-debug-btn';
+  btn.dataset.player = i;
+  btn.textContent = `▶ P${i}`;
+  (function(pi) {
+    btn.addEventListener('click', async () => {
+      const seatNum = pi <= 5 ? pi : pi - 5;
+      const selId   = selectedT3Cell?.dataset.id || Object.keys(T3_RECIPES)[0];
+      let heroId    = String(pi);
+      let pName     = `PLAYER ${pi}`;
+      try {
+        const data = lastData || await fetchData();
+        const r    = getPlayer(data, pi);
+        if (r) { heroId = r.player.heroid || heroId; pName = r.player.name || pName; }
+      } catch(e) {}
+      triggerItem(pi, heroId, T3_RECIPES[selId] || [], selId, pName, seatNum);
+    });
+  })(i);
+  document.getElementById(i <= 5 ? 'item-team-left' : 'item-team-right').appendChild(btn);
+}
+
+/* ── Trinity debug buttons ── */
+const MARKSMAN_TRINITY_IDS = new Set(['2006', '2008', '2009']);
+function isMarksmanTrinity(t3ItemIds) {
+  const s = new Set(t3ItemIds);
+  return MARKSMAN_TRINITY_IDS.size === s.size && [...MARKSMAN_TRINITY_IDS].every(id => s.has(id));
+}
+function trinityLabel(seatNum, t3ItemIds) {
+  return (seatNum === 5 && isMarksmanTrinity(t3ItemIds)) ? 'MARKSMAN TRINITY' : 'CORE ITEMS';
+}
+
+const TRINITY_DEBUG_ITEMS = ['3001', '3101', '3201'];
+for (let i = 1; i <= 10; i++) {
+  buildTrinityOverlay(i);
+  const btn = document.createElement('button');
+  btn.className = 'debug-btn trinity-debug-btn';
+  btn.dataset.player = i;
+  btn.textContent = `▶ P${i}`;
+  (function(pi) {
+    btn.addEventListener('click', async () => {
+      const seatNum = pi <= 5 ? pi : pi - 5;
+      let heroId = String(pi);
+      let pName  = `PLAYER ${pi}`;
+      let items  = [...TRINITY_DEBUG_ITEMS];
+      try {
+        const data = lastData || await fetchData();
+        const r    = getPlayer(data, pi);
+        if (r) {
+          heroId = r.player.heroid || heroId;
+          pName  = (r.player.name  || pName).toUpperCase();
+          const actualT3 = r.equipIds.filter(id => TIER3_IDS.has(id));
+          if (actualT3.length > 0) items = [...actualT3, ...TRINITY_DEBUG_ITEMS].slice(0, 3);
+        }
+      } catch(e) {}
+      triggerTrinity(pi, heroId, items, pName, seatNum, trinityLabel(seatNum, items));
+    });
+  })(i);
+  document.getElementById(i <= 5 ? 'trinity-team-left' : 'trinity-team-right').appendChild(btn);
+}
+
+/* Load game API URL from server */
+fetch('/api/game-url').then(r => r.json()).then(d => {
+  if (d.url) {
+    currentApiUrl = d.url;
+    localStorage.setItem('overlayApiUrl', d.url);
+  }
+  document.getElementById('api-url-display').textContent = currentApiUrl;
+}).catch(() => {
+  document.getElementById('api-url-display').textContent = currentApiUrl;
+});
+
+/* ── Debug panel toggle (backtick key) ── */
+document.addEventListener('keydown', e => {
+  if (e.key === '`') document.getElementById('debug-area').classList.toggle('visible');
+});
+
+/* ── Tab switching ── */
+document.getElementById('debug-tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab-btn');
+  if (!btn) return;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('visible'));
+  btn.classList.add('active');
+  document.getElementById(`tab-${btn.dataset.tab}`).classList.add('visible');
+  if (btn.dataset.tab === 'items') buildT3Browser();
+});
+
+/* ── Conceal debug buttons ── */
+buildConcealDebugButtons(4, 'left');
+buildConcealDebugButtons(9, 'right');
+
+/* ── Swap debug buttons ── */
+const SWAP_DEBUG_BOUGHT = '3207';
+for (let pi = 1; pi <= 10; pi++) {
+  buildSwapOverlay(pi);
+  (function(idx) {
+    const btn = document.createElement('button');
+    btn.className      = 'debug-btn swap-debug-btn';
+    btn.dataset.player = idx;
+    btn.textContent    = `▶ P${idx}`;
+    btn.addEventListener('click', async () => {
+      let heroId = String(idx);
+      let pName  = `PLAYER ${idx}`;
+      let soldId = '3001';
+      try {
+        const data = lastData || await fetchData();
+        const r    = getPlayer(data, idx);
+        if (r) {
+          heroId = r.player.heroid || heroId;
+          pName  = (r.player.name  || pName).toUpperCase();
+          const t3s = r.equipIds.filter(id => TIER3_IDS.has(id));
+          if (t3s.length > 0) soldId = t3s[0];
+        }
+      } catch(e) {}
+      const seat = idx <= 5 ? idx : idx - 5;
+      triggerSwap(idx, heroId, soldId, SWAP_DEBUG_BOUGHT, pName, seat);
+    });
+    const teamDiv = idx <= 5 ? 'swap-team-left' : 'swap-team-right';
+    document.getElementById(teamDiv).appendChild(btn);
+  })(pi);
+}
+
+/* ── Unified poll handler ── */
+registerPollHandler(function(data) {
+  for (let pidx = 1; pidx <= 10; pidx++) {
+    const result = getPlayer(data, pidx);
+    if (!result) continue;
+    const { player, equipIds } = result;
+    const prev    = prevEquipState[pidx];
+    const pName   = (player.name || '').toUpperCase();
+    const seatNum = pidx <= 5 ? pidx : pidx - 5;
+
+    const dmg = parseInt(player.total_damage) || 0;
+    if (prevTotalDamage[pidx] !== undefined) {
+      const delta = dmg - prevTotalDamage[pidx];
+      if (!combatHistory[pidx]) combatHistory[pidx] = [];
+      combatHistory[pidx].push(delta > 0 ? delta : 0);
+      if (combatHistory[pidx].length > 3) combatHistory[pidx].shift();
+    }
+    prevTotalDamage[pidx] = dmg;
+
+    if (prev) {
+      const currentT3 = equipIds.filter(id => TIER3_IDS.has(id));
+      const prevT3    = prev.filter(id => TIER3_IDS.has(id));
+
+      if (featureEnabled.trinity && !trinityFired[pidx]) {
+        if (currentT3.length === 3 && prevT3.length === 2) {
+          trinityFired[pidx] = true;
+          const lbl = trinityLabel(seatNum, currentT3);
+          if (isAnyPlaying(pidx)) {
+            trinityQueue[pidx] = { heroId: player.heroid, t3ItemIds: currentT3, playerName: pName, seatNum, label: lbl };
+          } else {
+            triggerTrinity(pidx, player.heroid, currentT3, pName, seatNum, lbl);
+          }
+        } else if (featureEnabled.items && currentT3.length === 1 && prevT3.length === 0) {
+          for (let j = 0; j < 6; j++) {
+            if (equipIds[j] !== prev[j] && TIER3_IDS.has(equipIds[j])) {
+              const newItemId = equipIds[j];
+              const recipeIds = T3_RECIPES[newItemId] || [];
+              if (isAnyPlaying(pidx)) {
+                itemQueue[pidx] = { heroId: player.heroid, recipeIds, newItemId, playerName: pName, seatNum };
+              } else {
+                triggerItem(pidx, player.heroid, recipeIds, newItemId, pName, seatNum);
+              }
+              break;
+            }
+          }
+        }
+      }
+
+      const soldT3   = prevT3.filter(id => !currentT3.includes(id));
+      const boughtT3 = currentT3.filter(id => !prevT3.includes(id));
+      if (featureEnabled.swap && soldT3.length === 1 && boughtT3.length === 1) {
+        const inCombat = combatHistory[pidx] && combatHistory[pidx].some(d => d > 0);
+        if (inCombat) {
+          if (isAnyPlaying(pidx)) {
+            swapQueue[pidx] = { heroId: player.heroid, soldId: soldT3[0], boughtId: boughtT3[0], playerName: pName, seatNum };
+          } else {
+            triggerSwap(pidx, player.heroid, soldT3[0], boughtT3[0], pName, seatNum);
+          }
+        }
+      }
+    }
+    prevEquipState[pidx] = [...equipIds];
+  }
+
+  for (let pidx = 1; pidx <= 10; pidx++) {
+    const result = getPlayer(data, pidx);
+    if (!result) continue;
+    const { player } = result;
+    const lvl  = parseInt(player.level) || 0;
+    const prev = prevLevel[pidx];
+    if (featureEnabled.lvl15 && prev !== undefined && prev < 15 && lvl >= 15) {
+      const timeStr = formatTime(data.game_time || 0);
+      if (isAnyPlaying(pidx)) {
+        lvl15Queue[pidx] = { timeStr, heroId: player.heroid };
+      } else {
+        triggerLvl15(pidx, timeStr, player.heroid);
+      }
+    }
+    prevLevel[pidx] = lvl;
+  }
+
+  [{ campId: 1, side: 'left', playerIdx: 4 }, { campId: 2, side: 'right', playerIdx: 9 }].forEach(({ campId, side, playerIdx }) => {
+    const camp = (data.camp_list || []).find(c => c.campid === campId);
+    if (!camp) return;
+    const bg   = camp.blessing_gold || 0;
+    const prev = prevBlessingGold[side];
+    if (featureEnabled.conceal && prev !== undefined && prev < 1000 && bg >= 1000) {
+      const cat = getCampRoamingCategory(camp);
+      if (isAnyPlaying(playerIdx)) { concealQueue[side] = cat; }
+      else { triggerConceal(cat, side); }
+    }
+    prevBlessingGold[side] = bg;
+  });
+});
+
+/* ── Kill events debug buttons ── */
+const KILL_DEBUG_BTNS = [
+  { label: 'FIRST BLOOD',  video: 'firstblood.webm',  priority: 1 },
+  { label: 'DOUBLE KILL',  video: 'doublekill.webm',  priority: 2 },
+  { label: 'TRIPLE KILL',  video: 'triplekill.webm',  priority: 3 },
+  { label: 'MANIAC',       video: 'maniac.webm',      priority: 4 },
+  { label: 'SAVAGE',       video: 'savage.webm',      priority: 5 },
+  { label: 'LORD SLAIN',   video: 'lordslain.webm',   priority: 1 },
+  { label: 'TURTLE SLAIN', video: 'turtleslain.webm', priority: 1 },
+  { label: 'WIPE OUT',     video: 'wipedout.webm',    priority: 3 },
+];
+const killBtnRow = document.getElementById('kill-event-btns');
+KILL_DEBUG_BTNS.forEach(({ label, video, priority }) => {
+  const btn = document.createElement('button');
+  btn.className = 'debug-btn';
+  btn.textContent = `▶ ${label}`;
+  btn.addEventListener('click', () => enqueueKillEvent(video, priority, null, null));
+  killBtnRow.appendChild(btn);
+});
+
+/* ── Start polling ── */
+setInterval(masterPoll, 1000);
+masterPoll();
+
+/* ── SSE — fight show/hide (instant) + debugoff ── */
+(function() {
+  var sse = new EventSource('/overlay/events');
+  sse.addEventListener('fights', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (!featureEnabled.fights) return;
+      if (d.action === 'show') fightAnimateIn();
+      if (d.action === 'hide') fightAnimateOut();
+    } catch {}
+  });
+  sse.addEventListener('killevent', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.video) enqueueKillEvent(d.video, d.priority, d.playerIdx, d.playerName);
+    } catch {}
+  });
+  sse.addEventListener('featuretoggle', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.feature in featureEnabled) featureEnabled[d.feature] = !!d.enabled;
+      if (d.feature === 'scoreboard' && typeof sbHandleToggle === 'function') sbHandleToggle(!!d.enabled);
+    } catch {}
+  });
+  sse.addEventListener('debugoff', function() {
+    var area = document.getElementById('debug-area');
+    if (area) area.classList.remove('visible');
+  });
+})();
