@@ -927,13 +927,8 @@
       });
       var keTrigger = el('button', 'killevent-trigger', '▶ Trigger');
       keTrigger.addEventListener('click', function() {
-        var video    = keSelect.value;
-        var priority = KILL_PRIORITIES[video] || 1;
+        var video = keSelect.value;
         fetch('/overlay/killevent?video=' + encodeURIComponent(video)).catch(function(){});
-        try {
-          var iwin = previewIframe.contentWindow;
-          if (iwin) iwin.postMessage({ type: 'killevent', video: video, priority: priority }, '*');
-        } catch(e) {}
         body.classList.remove('flash-ok');
         void body.offsetWidth;
         body.classList.add('flash-ok');

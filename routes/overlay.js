@@ -37,6 +37,11 @@ router.get('/meter/:cmd', (req, res) => {
   }
 });
 
+// GET /api/draft-roles — returns server-locked player→role assignments for current battleid
+router.get('/api/draft-roles', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.draftRoles);
+});
+
 // GET /overlay/fights/show
 router.get('/overlay/fights/show', (req, res) => {
   state.fightsPendingAction = { action: "show", ts: Date.now() };

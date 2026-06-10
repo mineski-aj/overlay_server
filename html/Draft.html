@@ -321,7 +321,7 @@
       object-fit: contain;
       transform-origin: center;
       transform: scale(1);
-      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+      transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
       pointer-events: none;
       z-index: 2;
       filter: brightness(0) invert(1) brightness(0.086);
@@ -518,14 +518,35 @@
   /* Pick plate layout */
   var PLATE_W = 151, PLATE_H = 168, PLATE_TOP = 851, PLATE_GAP = 1;
   var NAME_TOP = 1028;
-  /* seat index 0-4 → role icon filename */
-  var ROLE_FILES = [
-    'role/EXP LANER.png',
-    'role/JUNGLER.png',
-    'role/MID LANER.png',
-    'role/ROAMER.png',
-    'role/GOLD LANER.png',
-  ];
+  /* role string → icon filename */
+  var ROLE_MAP = {
+    'exp_laner':  'role/EXP LANER.png',
+    'jungler':    'role/JUNGLER.png',
+    'mid_laner':  'role/MID LANER.png',
+    'roamer':     'role/ROAMER.png',
+    'gold_laner': 'role/GOLD LANER.png',
+  };
+  /* ordered list — seat index fallback when all roles missing */
+  var ALL_ROLES = ['exp_laner', 'jungler', 'mid_laner', 'roamer', 'gold_laner'];
+  /* ROLE_FILES[i] used only as initial placeholder before first poll */
+  var ROLE_FILES = ALL_ROLES.map(function(r) { return ROLE_MAP[r]; });
+
+  /* roleid → role string; fetched from server (locked per battleid, survives page reload) */
+  var playerRoles = {};
+
+  /* Fetch role assignments locked by the server for this battleid.
+     Retried every poll until server confirms matching battleid with non-empty roles. */
+  function fetchAndApplyRoles(bid) {
+    fetch('/api/draft-roles', { cache: 'no-store' })
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.battleid === bid && data.roles && Object.keys(data.roles).length > 0) {
+          playerRoles = data.roles;
+          Object.keys(prevPick).forEach(function(k) { prevPick[k].roleid = undefined; });
+        }
+      })
+      .catch(function() {});
+  }
 
   /* Ban plate layout — no gap between seats */
   var BAN_W = 91, BAN_H = 71, BAN_TOP = 780;
@@ -698,7 +719,7 @@
 
         var roleImg = document.createElement('img');
         roleImg.className = 'role-icon';
-        roleImg.src = ROLE_FILES[i]; roleImg.alt = '';
+        roleImg.alt = ''; roleImg.style.opacity = '0';
         plateContent.appendChild(roleImg);
 
         plate.appendChild(plateContent);
@@ -723,7 +744,8 @@
         };
         prevPick[key] = {
           heroid: undefined, picking: false, banning: false,
-          small: false, expanded: false, matteActive: false
+          small: false, expanded: false, matteActive: false,
+          roleid: undefined
         };
       }
     }
@@ -1039,6 +1061,18 @@
       e.bannerName.textContent = seat.hero_name[0];
     }
 
+    /* Role icon — follows the player (roleid), not the seat slot.
+       Updates whenever a different player occupies this slot (e.g. draft swap). */
+    var roleid = seat.roleid || 0;
+    if (roleid !== p.roleid) {
+      var assignedRole = playerRoles[roleid];
+      if (assignedRole && ROLE_MAP[assignedRole]) {
+        e.roleImg.src = ROLE_MAP[assignedRole];
+        e.roleImg.style.opacity = '';
+      }
+      p.roleid = roleid;
+    }
+
     if (heroid !== p.heroid) {
       if (heroid > 0) {
         /* Load and play the hero WebM */
@@ -1228,6 +1262,9 @@
   var currentBattleId = null;
 
   function resetAll() {
+    /* Clear cached roles — server holds the lock, client will re-fetch on next poll */
+    playerRoles = {};
+
     /* Pick seats */
     Object.keys(pickEls).forEach(function (key) {
       var e = pickEls[key];
@@ -1248,6 +1285,8 @@
       e.glowDiv.classList.remove('picked');
       e.banner.classList.remove('slide-in');
       e.bannerName.textContent = '';
+      e.roleImg.src = '';
+      e.roleImg.style.opacity = '0';
       e.roleImg.style.display = '';
       e.roleImg.style.transform = '';
       e.roleImg.classList.remove('pressing');
@@ -1259,7 +1298,8 @@
       /* Reset prev state */
       prevPick[key] = {
         heroid: undefined, picking: false, banning: false,
-        small: false, expanded: false, matteActive: false
+        small: false, expanded: false, matteActive: false,
+        roleid: undefined
       };
     });
 
@@ -1316,6 +1356,12 @@
 
         if (teamEls[1]) teamEls[1].textContent = (camp1 && camp1.team_simple_name) || '';
         if (teamEls[2]) teamEls[2].textContent = (camp2 && camp2.team_simple_name) || '';
+
+        /* Fetch server-locked roles once per battleid (retried each poll until confirmed) */
+        if (Object.keys(playerRoles).length === 0 && currentBattleId) {
+          fetchAndApplyRoles(currentBattleId);
+        }
+
         var allSeats = [];
 
         for (var i = 1; i <= 5; i++) {
