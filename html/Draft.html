@@ -466,6 +466,36 @@
     #team-c1 { left: 816.964px; transform: translateX(-50%); }
     #team-c2 { left: 1107.737px; transform: translateX(-50%); }
 
+    /* ── Team logos ────────────────────────────────────────────── */
+    .draft-team-logo {
+      position: absolute;
+      top: 929.849px;
+      width: 70px; height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+    #draft-logo-c1 { left: 810.964px; transform: translateX(-50%); }
+    #draft-logo-c2 { left: 1110.737px; transform: translateX(-50%); }
+    #draft-logo-c1 .draft-logo-fallback {
+      position: absolute;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: rgb(42, 0, 255);
+    }
+    #draft-logo-c2 .draft-logo-fallback {
+      position: absolute;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: rgb(210, 30, 30);
+    }
+    .draft-logo-img {
+      position: absolute;
+      width: 70px; height: 70px;
+      object-fit: contain;
+    }
+
     /* ── Sponsor loop ───────────────────────────────────────────── */
     #sponsor-loop {
       position: absolute;
@@ -561,12 +591,13 @@
   var apiUrl = DEFAULT_URL;
 
   /* ── Timer bar (smooth rAF countdown) ─────────────────────── */
-  var TIMER_MAX   = 50;   /* max seconds per pick/ban turn */
-  var timerEl     = null;
-  var tmSyncAt    = 0;    /* performance.now() at last API sync */
-  var tmSyncVal   = 0;    /* state_left_time at last sync */
-  var tmCampid    = 0;    /* 0 = hidden, 1/2 = active camp */
-  var tmRAF       = null;
+  var TIMER_MAX    = 50;   /* max seconds per pick/ban turn */
+  var timerEl      = null;
+  var tmSyncAt     = 0;    /* performance.now() when this turn's value was locked in */
+  var tmSyncVal    = 0;    /* leftTime locked in at the start of this turn */
+  var tmCampid     = 0;    /* 0 = hidden, 1/2 = active camp */
+  var tmRAF        = null;
+  var tmHasStart   = false; /* true once first value is locked for the current turn */
 
   function tmGetCurrent() {
     return Math.max(0, tmSyncVal - (performance.now() - tmSyncAt) / 1000);
@@ -576,7 +607,12 @@
     var t     = tmGetCurrent();
     var scale = Math.min(1, Math.max(0, t / TIMER_MAX));
     timerEl.style.transform = 'scaleX(' + scale + ')';
-    tmRAF = (t > 0) ? requestAnimationFrame(tmFrame) : null;
+    if (t > 0) {
+      tmRAF = requestAnimationFrame(tmFrame);
+    } else {
+      tmRAF = null;
+      tmHasStart = false; /* unlock so the next non-zero value starts a fresh turn */
+    }
   }
 
   function tmSync(campid, leftTime) {
@@ -584,21 +620,28 @@
     if (campid === 0 || leftTime <= 0) {
       timerEl.style.display = 'none';
       if (tmRAF) { cancelAnimationFrame(tmRAF); tmRAF = null; }
-      tmCampid = 0;
+      tmCampid   = 0;
+      tmHasStart = false;
       return;
     }
     timerEl.style.background = campid === 1 ? 'rgb(0,80,220)' : 'rgb(220,50,50)';
     timerEl.style.display    = 'block';
-    /* Resync when camp changes or API time drifts > 1.5s from our prediction */
+
+    /* Decide if this is a genuinely new turn:
+       - camp switched sides, OR
+       - no starting value locked yet for this turn, OR
+       - API reports significantly MORE time than our prediction (timer reset for new phase) */
     var predicted = tmGetCurrent();
-    if (campid !== tmCampid ||
-        leftTime > predicted + 1.5 ||
-        leftTime < predicted - 2.5) {
-      tmSyncAt  = performance.now();
-      tmSyncVal = leftTime;
-      tmCampid  = campid;
+    var isNewTurn = (campid !== tmCampid) || !tmHasStart || (leftTime > predicted + 5);
+
+    if (isNewTurn) {
+      tmSyncAt   = performance.now();
+      tmSyncVal  = leftTime;
+      tmCampid   = campid;
+      tmHasStart = true;
       if (!tmRAF) tmRAF = requestAnimationFrame(tmFrame);
     }
+    /* Otherwise: client countdown runs uninterrupted — API inconsistencies ignored */
   }
 
   function buildTimerBar() {
@@ -615,6 +658,7 @@
   var banEls   = {};  /* campid_i → { banplate, bhi } */
   var prevBan  = {};  /* campid_i → { ban_heroid, banning } */
   var teamEls  = {};  /* campid → div */
+  var logoEls  = {};  /* campid → { img, fb } */
 
   /* ── Update camp-level picker class ────────────────────────── */
   function updateCampPickerClass(campid) {
@@ -665,7 +709,7 @@
           ? 'assets/draft/motion/bluepickbg1.webm'
           : 'assets/draft/motion/redpickbg1.webm';
         vid.loop = true; vid.muted = true;
-        vid.playsInline = true; vid.preload = 'auto';
+        vid.playsInline = true; vid.preload = 'none';
         plate.appendChild(vid); /* direct child of plate so it scales with the full width */
 
         var pickGrad = document.createElement('div');
@@ -694,7 +738,7 @@
         var matteVid = document.createElement('video');
         matteVid.src = 'assets/draft/motion/s17_matte2.webm';
         matteVid.muted = true; matteVid.playsInline = true;
-        matteVid.preload = 'auto'; matteVid.style.display = 'none';
+        matteVid.preload = 'none'; matteVid.style.display = 'none';
         plateContent.appendChild(matteVid);
 
         var glowDiv = document.createElement('div');
@@ -810,8 +854,11 @@
       .then(function(r) { return r.json(); })
       .then(function(s) {
         var maxWins = Math.ceil(parseInt((s.series || 'BO3').replace('BO', '')) / 2);
-        var c1Team  = s.blueTeam === 'A' ? s.teamA : s.teamB;
-        var c2Team  = s.blueTeam === 'A' ? s.teamB : s.teamA;
+        var home    = s.home || s.teamA;
+        var away    = s.away || s.teamB;
+        var swapped = s.swapped !== undefined ? s.swapped : (s.blueTeam === 'B');
+        var c1Team  = swapped ? away : home;
+        var c2Team  = swapped ? home : away;
         renderBars(scoreEls[1], maxWins, c1Team.score, true);
         renderBars(scoreEls[2], maxWins, c2Team.score, false);
       })
@@ -825,6 +872,31 @@
       el.id = 'team-c' + c;
       scene.appendChild(el);
       teamEls[c] = el;
+    });
+  }
+
+  /* ── Build team logos ──────────────────────────────────────── */
+  function buildTeamLogos() {
+    [1, 2].forEach(function(c) {
+      var wrap = document.createElement('div');
+      wrap.id = 'draft-logo-c' + c;
+      wrap.className = 'draft-team-logo';
+
+      var fb = document.createElement('div');
+      fb.className = 'draft-logo-fallback';
+
+      var img = document.createElement('img');
+      img.className = 'draft-logo-img';
+      img.alt = '';
+      img.style.display = 'none';
+      img.onload  = function() { img.style.display = 'block'; fb.style.display = 'none'; };
+      img.onerror = function() { img.style.display = 'none';  fb.style.display = ''; };
+
+      wrap.appendChild(fb);
+      wrap.appendChild(img);
+      scene.appendChild(wrap);
+
+      logoEls[c] = { img: img, fb: fb };
     });
   }
 
@@ -928,7 +1000,8 @@
       gd.classList.add('picked');
       cvs.classList.add('brightening');
       heroVid.classList.add('brightening');
-      gd.addEventListener('animationend', function () {
+      /* picked-glow-gold runs 0.9s — use setTimeout instead of animationend */
+      setTimeout(function () {
         prevPick[e.key].expanded = false;
         e.seatUnit.classList.remove('picking-expand');
         updateCampPickerClass(campid);
@@ -939,7 +1012,7 @@
           e.banner.classList.add('slide-in');
         }
         e.seatUnit.addEventListener('transitionend', onCollapse);
-      }, { once: true });
+      }, 900);
     }
 
     function done() {
@@ -1038,11 +1111,12 @@
     bhi.classList.remove('ban-revealing');
     void bhi.offsetWidth;
     bhi.classList.add('ban-revealing');
-    bhi.addEventListener('animationend', function () {
+    /* ban-reveal runs 0.95s — use setTimeout instead of animationend */
+    setTimeout(function () {
       bhi.classList.remove('ban-revealing');
       bhi.style.transform = 'translateY(0)';
       bhi.style.filter    = 'grayscale(1) brightness(0.5)';
-    }, { once: true });
+    }, 950);
   }
 
   /* ── Update pick seat ──────────────────────────────────────── */
@@ -1147,7 +1221,8 @@
       ri.classList.remove('pressing', 'small');
       void ri.offsetWidth;
       ri.classList.add('pressing');
-      ri.addEventListener('animationend', function () {
+      /* role-press runs 0.55s — use setTimeout instead of animationend */
+      setTimeout(function () {
         ri.classList.remove('pressing');
         void ri.offsetWidth;
         /* Calculate corner translate using the live plate width.
@@ -1158,7 +1233,7 @@
         var pw = e.plate.offsetWidth;
         var tx = 17 - pw / 2;
         ri.style.transform = 'translate(' + tx + 'px, -67px) scale(0.343)';
-      }, { once: true });
+      }, 550);
     }
     /* Reset role icon to centre if the draft resets */
     if (heroid === 0 && p.heroid > 0) {
@@ -1320,9 +1395,17 @@
       prevBan[key] = { ban_heroid: undefined, banning: false };
     });
 
-    /* Team names */
+    /* Team names + logos */
     if (teamEls[1]) teamEls[1].textContent = '';
     if (teamEls[2]) teamEls[2].textContent = '';
+    [1, 2].forEach(function(c) {
+      var le = logoEls[c];
+      if (!le) return;
+      le.img.src = '';
+      le.img.style.display = 'none';
+      delete le.img.dataset.team;
+      le.fb.style.display = '';
+    });
 
     /* Status / countdown / triangles */
     document.getElementById('status-text').textContent  = '';
@@ -1331,6 +1414,7 @@
     document.getElementById('tri-camp2').classList.remove('active');
 
     /* Timer bar */
+    tmHasStart = false;
     tmSync(0, 0);
   }
 
@@ -1346,7 +1430,7 @@
         /* Detect new battle → reset everything before processing new data */
         var bid = json.data.battleid || null;
         if (bid && bid !== currentBattleId) {
-          if (currentBattleId !== null) resetAll();
+          if (currentBattleId !== null) { window.location.reload(); return; }
           currentBattleId = bid;
         }
 
@@ -1356,6 +1440,20 @@
 
         if (teamEls[1]) teamEls[1].textContent = (camp1 && camp1.team_simple_name) || '';
         if (teamEls[2]) teamEls[2].textContent = (camp2 && camp2.team_simple_name) || '';
+
+        /* Team logos — only reload when team name changes */
+        [1, 2].forEach(function(campid) {
+          var camp = campid === 1 ? camp1 : camp2;
+          var le   = logoEls[campid];
+          if (!le) return;
+          var name = ((camp && camp.team_simple_name) || '').toUpperCase();
+          if (name && le.img.dataset.team !== name) {
+            le.img.dataset.team  = name;
+            le.img.style.display = 'none';
+            le.fb.style.display  = '';
+            le.img.src           = '/logos/' + name + '.png';
+          }
+        });
 
         /* Fetch server-locked roles once per battleid (retried each poll until confirmed) */
         if (Object.keys(playerRoles).length === 0 && currentBattleId) {
@@ -1388,19 +1486,21 @@
       });
   }
 
-  /* SSE — listen for global debug hide */
-  (function() {
+  /* SSE — listen for global debug hide.
+     Opened after a short delay so Chrome's tab throbber settles on load. */
+  setTimeout(function() {
     var sse = new EventSource('/overlay/events');
     sse.addEventListener('debugoff', function() {
       var bar = document.getElementById('debug-bar');
       if (bar) bar.style.display = 'none';
     });
-  })();
+  }, 2000);
 
   buildPickPlates();
   buildBanPlates();
   buildScoreBoxes();
   buildTeamNames();
+  buildTeamLogos();
   buildStatusArea();
   buildTimerBar();
   startSponsorLoop();

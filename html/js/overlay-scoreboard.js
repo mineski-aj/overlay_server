@@ -309,7 +309,13 @@ function sbUpdateKill(id, newVal) {
 
   var container = document.getElementById(id);
   if (!container) return;
-  var current = container.querySelector('.sb-kval');
+
+  /* purge any stale spans left over from backgrounded-tab missed animationends */
+  var all = container.querySelectorAll('.sb-kval');
+  var current = all[all.length - 1] || null;
+  for (var i = 0; i < all.length - 1; i++) {
+    if (all[i].parentNode) all[i].parentNode.removeChild(all[i]);
+  }
   if (!current) return;
 
   /* entering digit — behind the exiting one */
@@ -323,9 +329,14 @@ function sbUpdateKill(id, newVal) {
   /* exiting digit — stays on top while it falls */
   current.style.zIndex = '2';
   current.style.animation = 'sb-k-out 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
-  current.addEventListener('animationend', function() {
+  var removed = false;
+  function removeOld() {
+    if (removed) return;
+    removed = true;
     if (current.parentNode) current.parentNode.removeChild(current);
-  }, { once: true });
+  }
+  current.addEventListener('animationend', removeOld, { once: true });
+  setTimeout(removeOld, 400);
 }
 
 /* ── Gold lead indicator ── */
@@ -391,8 +402,11 @@ function sbPollMatchState() {
     .then(function(r) { return r.json(); })
     .then(function(s) {
       var maxWins = Math.ceil(parseInt((s.series || 'BO3').replace('BO', '')) / 2);
-      var c1Team  = s.blueTeam === 'A' ? s.teamA : s.teamB;
-      var c2Team  = s.blueTeam === 'A' ? s.teamB : s.teamA;
+      var home    = s.home || s.teamA;
+      var away    = s.away || s.teamB;
+      var swapped = s.swapped !== undefined ? s.swapped : (s.blueTeam === 'B');
+      var c1Team  = swapped ? away : home;
+      var c2Team  = swapped ? home : away;
       sbRenderBars(document.getElementById('sb-score-c1'), maxWins, c1Team.score, true);
       sbRenderBars(document.getElementById('sb-score-c2'), maxWins, c2Team.score, false);
     })

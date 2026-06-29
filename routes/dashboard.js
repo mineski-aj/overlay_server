@@ -1,10 +1,17 @@
-// routes/dashboard.js — GET / (HTML dashboard)
+// routes/dashboard.js — root redirect + BPM status page
 const express = require('express');
 const router  = express.Router();
+const path    = require('path');
 const state   = require('../lib/state');
 const { buildVmix } = require('../lib/feeds');
 
+// Root → serve dashboard.html
 router.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../html/dashboard.html'));
+});
+
+// BPM heartbeat status (was previously at /)
+router.get('/bpm/status', (req, res) => {
   const rows = buildVmix().map((p) => `
     <tr>
       <td>${p.slot}</td>

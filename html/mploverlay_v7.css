@@ -712,11 +712,18 @@
 
   .camp-col.c2 .player-row { flex-direction: row-reverse; }
 
-  .hero-img {
-    width: 34px;
-    height: 34px;
-    object-fit: cover;
+  .hero-wrap {
+    position: relative;
+    overflow: hidden;
     border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .hero-img {
+    width: 41px;
+    height: 41px;
+    object-fit: cover;
+    border-radius: 0;
     flex-shrink: 0;
     display: block;
   }
@@ -724,7 +731,7 @@
   .hero-placeholder {
     width: 34px;
     height: 34px;
-    border-radius: 3px;
+    border-radius: 0;
     background: #e2e8f0;
     display: flex;
     align-items: center;
@@ -738,6 +745,103 @@
   .player-row.dead .hero-img,
   .player-row.dead .hero-placeholder {
     filter: grayscale(1) brightness(0.75);
+  }
+
+  /* ── gold reveal & flash ── */
+  .gold-amount {
+    transition: opacity 0.3s ease;
+  }
+  .gold-label {
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .gold-amount.gold-hidden {
+    opacity: 0;
+    transition: none;
+  }
+  .gold-label.gold-hidden {
+    opacity: 0;
+    transform: translateY(5px);
+    transition: none;
+  }
+
+  .gold-block {
+    position: relative;
+    z-index: 0;
+    border-radius: 4px;
+  }
+
+  .gold-block.c1::before,
+  .gold-block.c2::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .gold-block.c1::before {
+    left: -14px;
+    background: linear-gradient(to right, rgba(251,191,36,0.55) 0%, transparent 80%);
+  }
+  .gold-block.c2::before {
+    right: -14px;
+    background: linear-gradient(to left, rgba(251,191,36,0.55) 0%, transparent 80%);
+  }
+
+  @keyframes goldGlowFade {
+    0%   { opacity: 0; }
+    20%  { opacity: 1; }
+    100% { opacity: 1; }
+  }
+  .gold-block.flash-winner::before {
+    animation: goldGlowFade 2.4s ease forwards;
+  }
+
+  /* ── death slash & shake ── */
+  .hero-wrap::after {
+    content: '';
+    position: absolute;
+    top: -1.5px;
+    left: -2px;
+    width: 64px;
+    height: 3px;
+    background: linear-gradient(to right, rgba(255,255,255,0.7) 0%, #ff2828 25%, #cc1010 100%);
+    box-shadow: 0 0 6px 1px rgba(255, 40, 40, 0.65), 0 0 2px rgba(255,255,255,0.4);
+    border-radius: 1px;
+    transform-origin: 0 50%;
+    transform: rotate(45deg) scaleX(0);
+    pointer-events: none;
+  }
+
+  @keyframes slashDraw {
+    from { transform: rotate(45deg) scaleX(0); opacity: 1; }
+    to   { transform: rotate(45deg) scaleX(1); opacity: 1; }
+  }
+
+  @keyframes heroShake {
+    0%   { transform: translate(0,    0)    rotate(0deg);   }
+    12%  { transform: translate(-3px, 0.5px)  rotate(-1.5deg); }
+    25%  { transform: translate(2px,  -0.5px) rotate(0.8deg); }
+    40%  { transform: translate(-2px, 0.5px)  rotate(-0.6deg);  }
+    55%  { transform: translate(1px,  0)    rotate(0.3deg); }
+    70%  { transform: translate(-1px, 0)    rotate(-0.2deg); }
+    85%  { transform: translate(0.5px, 0)   rotate(0.1deg); }
+    100% { transform: translate(0,    0)    rotate(0deg);   }
+  }
+
+  .hero-wrap.slash-active::after {
+    animation: slashDraw 0.16s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  }
+
+  .hero-wrap.slash-active {
+    animation: heroShake 0.42s ease 0.14s both;
+  }
+
+  .camp-col.c1 .player-row.dead {
+    background: linear-gradient(to right, rgba(220,38,38,0.18) 0%, transparent 100%);
+  }
+  .camp-col.c2 .player-row.dead {
+    background: linear-gradient(to left, rgba(220,38,38,0.18) 0%, transparent 100%);
   }
 
   .p-name {

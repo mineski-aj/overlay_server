@@ -323,15 +323,28 @@ Allows visual drag-and-drop repositioning of overlay elements with live preview.
 - Changes are applied live via an injected `<style id="sb-live-edit">` tag inside the iframe
 - Saved positions are persisted to `overlay_styles.json` and auto-applied at runtime when the overlay loads
 
-**Controls:**
-- **Click** an element in the iframe → selects it, shows controls in the left panel
-- **Drag** an element → repositions it live
+**Individual element controls:**
+- **Click** an element button in the left panel, or click it directly in the iframe → selects it (blue outline), shows X / Y / Font Size inputs
+- **Drag** the element in the iframe → repositions it live
 - **Arrow keys** → 1px per tap; hold for continuous movement
 - **Shift + arrow** → 10px per step
 - **Cmd+Z / Ctrl+Z** → undo (up to 3 steps)
-- **+/− buttons or number inputs** in the left panel → fine-tune X, Y, font size
-- **Load Defaults** → resets all positions to the original CSS values
-- **Save** → persists to server (`overlay_styles.json`)
+- **+/− buttons or number inputs** → fine-tune X, Y, font size
+
+**Group editing:**
+- **Click a group header button** (e.g. "Logos") in the left panel → selects the whole group (orange outline on all members)
+- **Drag any group member** in the iframe → all members move together by the same delta
+- **Arrow keys / Shift+arrow** → moves all group members simultaneously
+- **X Offset / Y Offset inputs** in the left panel → show cumulative offset from `0` (resets to `0` each time the group is selected); type a value or use +/− to nudge
+- Clicking an individual element button or a different group deselects the current group
+
+**Saving and defaults:**
+
+| Button | Behavior |
+|--------|----------|
+| **Save** | Persists current positions to server (`overlay_styles.json`) — affects the live overlay immediately |
+| **Save as Default…** | Saves current positions to `localStorage` as the user default; requires confirmation (inline prompt, auto-dismisses after 6 s) |
+| **Load Defaults** | Loads user-saved default if one exists, otherwise loads the hardcoded factory values; status bar reports which was loaded |
 
 **API endpoints (routes/overlayStyles.js):**
 
@@ -346,7 +359,7 @@ Allows visual drag-and-drop repositioning of overlay elements with live preview.
 
 ### How to add a new element to the Edit page
 
-The editor is fully data-driven. Adding a new element only requires two changes in `dashboard.html`:
+The editor is fully data-driven. Adding a new element requires two changes in `dashboard.html`:
 
 **1. Add defaults to `SB_DEFAULTS`** (numeric px values, omit properties that don't apply):
 ```js
@@ -358,9 +371,13 @@ The editor is fully data-driven. Adding a new element only requires two changes 
 { group: 'My Group', id: '#my-element', name: 'My Element' },
 ```
 
-The drag handler, left panel controls, save/load, undo, and keyboard controls all pick it up automatically.
+All elements that share the same `group` string are automatically selectable and movable as a group — no extra code needed. The drag handler, left panel controls (individual and group), offset tracking, save/load, undo, and keyboard controls all pick them up automatically.
 
 **Prerequisite:** The element must exist in the overlay's DOM when the iframe loads. If it doesn't exist yet, add it to the overlay HTML/JS and its base CSS first.
+
+### How to add a new group to the Edit page
+
+No code beyond the two steps above. Any elements with a new `group` string that doesn't exist yet will automatically get their own clickable group header button in the left panel the next time the Edit tab is opened. The header button selects all members; group offset inputs reset to `0` on each selection.
 
 ---
 

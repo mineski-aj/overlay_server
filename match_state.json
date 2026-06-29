@@ -1,15 +1,153 @@
 {
-  "teamA": {
-    "name": "Team A",
-    "short": "TMA",
+  "home": {
+    "teamId": "11149",
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Kielvj",
+        "id": "774012304"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "JamesPangks",
+        "id": "1475950942"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Aqua",
+        "id": "1271650304"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Nova_",
+        "id": "1475950747"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "shizou",
+        "id": "1373808356"
+      }
+    ],
+    "name": "AP.BREN",
+    "short": "APBR",
     "score": 0
   },
-  "teamB": {
-    "name": "Team B",
-    "short": "TMB",
+  "away": {
+    "teamId": "10973",
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Flap",
+        "id": "1271650054"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "Kyle",
+        "id": "1582754321"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Hadji",
+        "id": "1271650087"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Owgwen",
+        "id": "1271650065"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "SuperMarco",
+        "id": "1155835108"
+      }
+    ],
+    "name": "Team Falcons",
+    "short": "FLCN",
     "score": 0
   },
   "series": "BO3",
   "game": 1,
-  "blueTeam": "A"
+  "swapped": true,
+  "official": true,
+  "week": 1,
+  "day": 2,
+  "patch": "Decisive Battle 420",
+  "hosts": [
+    "Odin",
+    "Thea",
+    "Denisse"
+  ],
+  "casters": [
+    "Hans",
+    "Athena",
+    "Renmar"
+  ],
+  "todayMatches": [
+    {
+      "team1Id": "11149",
+      "team2Id": "10973",
+      "score1": 0,
+      "score2": 0,
+      "time": "2:30 PM",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN"
+    },
+    {
+      "team1Id": "10845",
+      "team2Id": "10764",
+      "score1": 0,
+      "score2": 0,
+      "time": "5:00 PM",
+      "team1Name": "Aurora Gaming PH",
+      "team1Short": "RORA",
+      "team2Name": "ONIC PH",
+      "team2Short": "ONIC"
+    },
+    {
+      "team1Id": "10973",
+      "team2Id": "10764",
+      "score1": 0,
+      "score2": 0,
+      "time": "7:30 PM",
+      "team1Name": "Team Falcons",
+      "team1Short": "FLCN",
+      "team2Name": "ONIC PH",
+      "team2Short": "ONIC"
+    }
+  ],
+  "tomorrowMatches": [
+    {
+      "team1Id": "11149",
+      "team1Name": "AP.BREN",
+      "team1Short": "APBR",
+      "team2Id": "",
+      "team2Name": "",
+      "team2Short": "",
+      "vsDisplay": "VS",
+      "time": "2:30 PM"
+    },
+    {
+      "team1Id": "",
+      "team1Name": "",
+      "team1Short": "",
+      "team2Id": "",
+      "team2Name": "",
+      "team2Short": "",
+      "vsDisplay": "VS",
+      "time": "5:00 PM"
+    },
+    {
+      "team1Id": "",
+      "team1Name": "",
+      "team1Short": "",
+      "team2Id": "",
+      "team2Name": "",
+      "team2Short": "",
+      "vsDisplay": "VS",
+      "time": "7:30 PM"
+    }
+  ],
+  "countdownLabel": "SHOW STARTS IN",
+  "goodbyeLabel": "SEE YOU TOMORROW",
+  "match": 1
 }

@@ -65,24 +65,38 @@ router.get('/overlay/fights/pending', (req, res) => {
 
 // GET /overlay/post_hearts/show
 router.get('/overlay/post_hearts/show', (req, res) => {
-  state.overlayClients.forEach(c => { try { c.write('event: post_hearts\ndata: {"action":"show"}\n\n'); } catch {} });
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.middleboard = true;
+  state.mplfsScene.playerboard = true;
+  state.mplfsScene.activeFeature = 'hearts';
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"show"}\n\n');
+      c.write('event: middleboard\ndata: {"action":"show"}\n\n');
+      c.write('event: playerboard\ndata: {"action":"show"}\n\n');
+      c.write('event: post_hearts\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
 });
 
 // GET /overlay/post_hearts/hide
 router.get('/overlay/post_hearts/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: post_hearts\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
 // GET /overlay/post_richguy/show
 router.get('/overlay/post_richguy/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'richguy';
   state.overlayClients.forEach(c => { try { c.write('event: post_richguy\ndata: {"action":"show","data":{}}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
 });
 
 // GET /overlay/post_richguy/hide
 router.get('/overlay/post_richguy/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: post_richguy\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
@@ -93,10 +107,65 @@ router.get('/overlay/fs/debugoff', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true });
 });
 
+// GET /overlay/matchboard/show
+router.get('/overlay/matchboard/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.overlayClients.forEach(c => { try { c.write('event: matchboard\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/matchboard/hide
+router.get('/overlay/matchboard/hide', (req, res) => {
+  state.mplfsScene.matchboard = false;
+  state.overlayClients.forEach(c => { try { c.write('event: matchboard\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/playerboard/show
+router.get('/overlay/playerboard/show', (req, res) => {
+  state.mplfsScene.playerboard = true;
+  state.overlayClients.forEach(c => { try { c.write('event: playerboard\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/playerboard/hide
+router.get('/overlay/playerboard/hide', (req, res) => {
+  state.mplfsScene.playerboard = false;
+  state.overlayClients.forEach(c => { try { c.write('event: playerboard\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/middleboard/show
+router.get('/overlay/middleboard/show', (req, res) => {
+  state.mplfsScene.middleboard = true;
+  state.overlayClients.forEach(c => { try { c.write('event: middleboard\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/middleboard/hide
+router.get('/overlay/middleboard/hide', (req, res) => {
+  state.mplfsScene.middleboard = false;
+  state.overlayClients.forEach(c => { try { c.write('event: middleboard\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/fs/hide
 router.get('/overlay/fs/hide', (req, res) => {
-  state.overlayClients.forEach(c => { try { c.write('event: fs_hide\ndata: {}\n\n'); } catch {} });
+  state.mplfsScene = { matchboard: false, middleboard: false, playerboard: false, activeFeature: null };
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"hide"}\n\n');
+      c.write('event: middleboard\ndata: {"action":"hide"}\n\n');
+      c.write('event: playerboard\ndata: {"action":"hide"}\n\n');
+      c.write('event: fs_hide\ndata: {}\n\n');
+    } catch {}
+  });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true });
+});
+
+// GET /overlay/mplfs-scene — current mplfs display state for restore-on-load
+router.get('/overlay/mplfs-scene', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.mplfsScene);
 });
 
 // GET /overlay/post_itemline/itemin
@@ -113,13 +182,93 @@ router.get('/overlay/post_itemline/itemout', (req, res) => {
 
 // GET /overlay/post_itemline/show
 router.get('/overlay/post_itemline/show', (req, res) => {
-  state.overlayClients.forEach(c => { try { c.write('event: post_itemline\ndata: {"action":"show"}\n\n'); } catch {} });
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'itemline';
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"show"}\n\n');
+      c.write('event: post_itemline\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
 });
 
 // GET /overlay/post_itemline/hide
 router.get('/overlay/post_itemline/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: post_itemline\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/post_emblems/show
+router.get('/overlay/post_emblems/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.middleboard = true;
+  state.mplfsScene.playerboard = true;
+  state.mplfsScene.activeFeature = 'emblems';
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"show"}\n\n');
+      c.write('event: middleboard\ndata: {"action":"show"}\n\n');
+      c.write('event: playerboard\ndata: {"action":"show"}\n\n');
+      c.write('event: post_emblems\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_emblems/hide
+router.get('/overlay/post_emblems/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_emblems\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/post_items/show
+router.get('/overlay/post_items/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.middleboard = true;
+  state.mplfsScene.playerboard = true;
+  state.mplfsScene.activeFeature = 'items';
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"show"}\n\n');
+      c.write('event: middleboard\ndata: {"action":"show"}\n\n');
+      c.write('event: playerboard\ndata: {"action":"show"}\n\n');
+      c.write('event: post_items\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_items/hide
+router.get('/overlay/post_items/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_items\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/post_stats/show
+router.get('/overlay/post_stats/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.middleboard = true;
+  state.mplfsScene.playerboard = true;
+  state.mplfsScene.activeFeature = 'stats';
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: matchboard\ndata: {"action":"show"}\n\n');
+      c.write('event: middleboard\ndata: {"action":"show"}\n\n');
+      c.write('event: playerboard\ndata: {"action":"show"}\n\n');
+      c.write('event: post_stats\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_stats/hide
+router.get('/overlay/post_stats/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_stats\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 

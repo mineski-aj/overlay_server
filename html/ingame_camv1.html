@@ -29,181 +29,7 @@
     min-height: 100vh;
   }
 
-  /* ── Sidebar ── */
-  .sidebar {
-    width: 224px;
-    flex-shrink: 0;
-    background: rgba(12,12,12,0.96);
-    border-right: 1px solid rgba(80,80,80,0.35);
-    padding: 10px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 10px;
-  }
-  .sb-title {
-    font-size: 9px;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    color: rgba(255,255,255,0.3);
-  }
-  .sidebar label {
-    font-size: 9px;
-    color: rgba(255,255,255,0.45);
-    display: block;
-    margin-bottom: 2px;
-  }
-  .sidebar input[type="text"] {
-    background: #1e1e1e;
-    border: 1px solid #444;
-    color: #eee;
-    font-size: 10px;
-    padding: 3px 5px;
-    border-radius: 3px;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  .sidebar input[type="range"] {
-    flex: 1;
-    accent-color: #d2001e;
-  }
-  .sl-row {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-  }
-  .sl-val {
-    font-size: 10px;
-    color: #aaa;
-    min-width: 36px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .save-btn {
-    cursor: pointer;
-    padding: 4px 10px;
-    border-radius: 3px;
-    background: #d2001e;
-    color: #fff;
-    border: none;
-    font-size: 10px;
-    font-weight: bold;
-    width: 100%;
-  }
-  .sb-divider {
-    border: none;
-    border-top: 1px solid rgba(80,80,80,0.3);
-    margin: 0;
-  }
-  .player-ctrl {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    margin-bottom: 3px;
-  }
-  .player-ctrl .pid {
-    font-size: 9px;
-    color: #555;
-    width: 20px;
-    flex-shrink: 0;
-  }
-  .player-ctrl input[type="number"] {
-    width: 42px;
-    flex-shrink: 0;
-    background: #1e1e1e;
-    border: 1px solid #444;
-    color: #eee;
-    font-size: 10px;
-    padding: 2px 4px;
-    border-radius: 3px;
-  }
-  .tog {
-    cursor: pointer;
-    padding: 2px 5px;
-    border-radius: 3px;
-    background: #2a2a2a;
-    color: #777;
-    border: 1px solid #444;
-    font-size: 8px;
-    font-weight: bold;
-    white-space: nowrap;
-  }
-  .tog.active { background: #d2001e; color: #fff; border-color: #d2001e; }
-  #global-status { font-size: 10px; color: #555; }
-  .pp-label {
-    font-size: 9px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
 
-  /* ── HOME / SWAP buttons ── */
-  .mode-btns {
-    display: flex;
-    gap: 6px;
-  }
-  .mode-btn {
-    flex: 1;
-    cursor: pointer;
-    padding: 6px 4px;
-    border-radius: 4px;
-    font-size: 11px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    border: 2px solid transparent;
-    text-align: center;
-    transition: background 0.15s, border-color 0.15s, color 0.15s;
-  }
-  #btn-home {
-    background: #1a1a1a;
-    color: #555;
-    border-color: #333;
-  }
-  #btn-home.active {
-    background: #1e0004;
-    color: #d2001e;
-    border-color: #d2001e;
-  }
-  #btn-swap {
-    background: #1a1a1a;
-    color: #555;
-    border-color: #333;
-  }
-  #btn-swap.active {
-    background: #001a00;
-    color: #0a9200;
-    border-color: #0a9200;
-  }
-
-  /* ── Swap mode indicator ── */
-  .swap-indicator {
-    display: none;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 7px;
-    border-radius: 4px;
-    background: rgba(10,146,0,0.12);
-    border: 1px solid rgba(10,146,0,0.4);
-  }
-  .swap-indicator.visible { display: flex; }
-  .swap-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: #0a9200;
-    flex-shrink: 0;
-    animation: pulse-green 1.2s ease-in-out infinite;
-  }
-  @keyframes pulse-green {
-    0%, 100% { opacity: 1; }
-    50%       { opacity: 0.3; }
-  }
-  .swap-label {
-    font-size: 9px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    color: #0a9200;
-    font-weight: bold;
-  }
 
   /* ── Teams ── */
   .teams {
@@ -410,120 +236,11 @@
     animation: item-combine 0.48s ease-out forwards;
   }
 
-  /* ── Debug / Live mode toggle ── */
-  #btn-debug.active {
-    background: #1a1200; color: #ffcc00; border-color: #ffcc00;
-  }
-  #btn-live-mode.active {
-    background: #001a00; color: #0a9200; border-color: #0a9200;
-  }
-  #debug-section.locked {
-    opacity: 0.3; pointer-events: none;
-  }
-
-  /* ── HP Debug buttons ── */
-  .dbg-hp-btn {
-    cursor: pointer; padding: 4px 0; border-radius: 3px;
-    background: #2a2a2a; color: #ccc; border: 1px solid #444;
-    font-size: 10px; font-weight: bold; width: 100%;
-  }
-  .dbg-hp-btn:active { opacity: 0.7; }
 </style>
 </head>
 <body>
 
 <div class="outer">
-
-  <!-- ── SIDEBAR ── -->
-  <div class="sidebar">
-    <div class="sb-title">EKG Controls</div>
-
-    <div>
-      <label>Feed URL</label>
-      <input type="text" id="global-url" placeholder="http://172.16.10.50:3000/feed">
-    </div>
-    <button class="save-btn" id="global-save">SAVE URL</button>
-    <span id="global-status"></span>
-
-    <hr class="sb-divider">
-
-    <div>
-      <label>Sub Info URL</label>
-      <span id="main-info-url" style="font-size:9px;color:#555;word-break:break-all;display:block;"></span>
-    </div>
-
-    <hr class="sb-divider">
-
-    <!-- DEBUG / LIVE mode -->
-    <div class="mode-btns">
-      <div class="mode-btn" id="btn-debug">DEBUG</div>
-      <div class="mode-btn" id="btn-live-mode">LIVE</div>
-    </div>
-
-    <hr class="sb-divider">
-
-    <!-- HOME / SWAP -->
-    <div class="mode-btns">
-      <div class="mode-btn active" id="btn-home">HOME</div>
-      <div class="mode-btn"       id="btn-swap">SWAP</div>
-    </div>
-
-    <!-- Swap indicator -->
-    <div class="swap-indicator" id="swap-indicator">
-      <div class="swap-dot"></div>
-      <span class="swap-label">Swap mode active</span>
-    </div>
-
-    <hr class="sb-divider">
-
-    <!-- Hidden layout sliders kept for future use -->
-    <div style="display:none">
-      <input type="range" id="gap-slider"  min="0"  max="80"  value="41"  step="1"><span id="gap-val"></span>
-      <input type="range" id="ekgw-slider" min="80" max="500" value="307" step="1"><span id="ekgw-val"></span>
-      <input type="range" id="ekgg-slider" min="0"  max="80"  value="36"  step="1"><span id="ekgg-val"></span>
-    </div>
-
-    <div>
-      <label>EKG beat spread</label>
-      <div class="sl-row">
-        <input type="range" id="freq-slider" min="0.2" max="5" value="1" step="0.05">
-        <span class="sl-val" id="freq-val">1.00×</span>
-      </div>
-    </div>
-
-    <div>
-      <label>Line width</label>
-      <div class="sl-row">
-        <input type="range" id="lw-slider" min="0.5" max="8" value="3" step="0.5">
-        <span class="sl-val" id="lw-val">2.5px</span>
-      </div>
-    </div>
-
-    <hr class="sb-divider">
-    <div class="pp-label">Per Player</div>
-    <div id="player-ctrls"></div>
-
-    <hr class="sb-divider">
-    <div id="debug-section">
-      <div class="pp-label">HP Debug — P1</div>
-      <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
-        <button class="dbg-hp-btn" onclick="debugHP(0.05)">−5% HP</button>
-        <button class="dbg-hp-btn" onclick="debugHP(0.10)">−10% HP</button>
-        <button class="dbg-hp-btn" onclick="debugHP(0.25)">−25% HP</button>
-        <button class="dbg-hp-btn" onclick="debugHP(0.50)">−50% HP</button>
-        <button class="dbg-hp-btn" style="margin-top:2px; background:#0a1a0a; color:#00e375; border-color:#008452;" onclick="debugHPReset()">RESET HP</button>
-      </div>
-
-      <hr class="sb-divider" style="margin:6px 0;">
-
-      <div class="pp-label">Item Debug — P1</div>
-      <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
-        <button class="dbg-hp-btn" onclick="debugAddItem()">+ Add Next Item</button>
-        <button class="dbg-hp-btn" style="background:#1a1000; color:#ffcc1a; border-color:#a87800;" onclick="debugClearItems()">CLEAR ITEMS</button>
-      <button class="dbg-hp-btn" style="background:#12001a; color:#c87aff; border-color:#7a00cc;" onclick="debugCombineItem()">COMBINE (next filled)</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ── TEAMS ── -->
   <div class="teams">
@@ -561,7 +278,6 @@ const RIGHT_SLOTS_HOME = ['player10','player9','player8','player7','player6'];
 const POLL_MS = 1000;
 const team1El = document.getElementById('team1');
 const team2El = document.getElementById('team2');
-const ctrlsEl = document.getElementById('player-ctrls');
 const root    = document.documentElement;
 
 /* fixed CSS vars */
@@ -569,83 +285,53 @@ root.style.setProperty('--row-gap',       '41px');
 root.style.setProperty('--ekg-width',     '307px');
 root.style.setProperty('--ekg-heart-gap', '10px');
 
-/* ── Swap state ── */
-let isSwapped = localStorage.getItem('ekg_swapped') === '1';
+/* ── Swap state — driven by /match/state ── */
+let isSwapped = false;
 
-const btnHome      = document.getElementById('btn-home');
-const btnSwap      = document.getElementById('btn-swap');
-const swapIndicator= document.getElementById('swap-indicator');
-
-function applyModeUI() {
-  btnHome.classList.toggle('active', !isSwapped);
-  btnSwap.classList.toggle('active',  isSwapped);
-  swapIndicator.classList.toggle('visible', isSwapped);
+async function pollMatchState() {
+  try {
+    const res = await fetch('/match/state', { cache: 'no-store' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const newSwapped = !!data.swapped;
+    if (newSwapped !== isSwapped) {
+      isSwapped = newSwapped;
+      rebuildTeams();
+    }
+  } catch {}
 }
-applyModeUI();
-
-btnHome.onclick = () => { isSwapped = false; localStorage.setItem('ekg_swapped','0'); applyModeUI(); rebuildTeams(); };
-btnSwap.onclick = () => { isSwapped = true;  localStorage.setItem('ekg_swapped','1'); applyModeUI(); rebuildTeams(); };
+pollMatchState();
+setInterval(pollMatchState, 2000);
 
 /* ── Debug / Live mode ── */
-let isDebugMode = localStorage.getItem('ekg_debug') === '1'; /* default: live */
+let isDebugMode = localStorage.getItem('ekg_debug') === '1';
 
-const btnDebug    = document.getElementById('btn-debug');
-const btnLiveMode = document.getElementById('btn-live-mode');
-const debugSection = document.getElementById('debug-section');
+window.ekg_setDebugMode = function(val) {
+  isDebugMode = !!val;
+  localStorage.setItem('ekg_debug', isDebugMode ? '1' : '0');
+  if (!isDebugMode) pollMainInfo();
+};
 
-function applyDebugUI() {
-  btnDebug.classList.toggle('active',    isDebugMode);
-  btnLiveMode.classList.toggle('active', !isDebugMode);
-  if (debugSection) debugSection.classList.toggle('locked', !isDebugMode);
-}
-applyDebugUI();
-
-btnDebug.onclick    = () => { isDebugMode = true;  localStorage.setItem('ekg_debug','1'); applyDebugUI(); };
-btnLiveMode.onclick = () => { isDebugMode = false; localStorage.setItem('ekg_debug','0'); applyDebugUI(); pollMainInfo(); };
-
-/* ── Frequency slider ── */
+/* ── Frequency ── */
 let freqScale = parseFloat(localStorage.getItem('ekg_freq') || '3.95');
-const freqSlider = document.getElementById('freq-slider');
-const freqValEl  = document.getElementById('freq-val');
-freqSlider.value = freqScale;
-freqValEl.textContent = freqScale.toFixed(2) + '×';
-freqSlider.oninput = () => {
-  freqScale = parseFloat(freqSlider.value);
-  freqValEl.textContent = freqScale.toFixed(2) + '×';
+window.ekg_setFreqScale = function(val) {
+  freqScale = parseFloat(val) || freqScale;
   localStorage.setItem('ekg_freq', freqScale);
 };
 
-/* ── Line width slider ── */
+/* ── Line width ── */
 let lineWidth = parseFloat(localStorage.getItem('ekg_lw') || '1.5');
-const lwSlider = document.getElementById('lw-slider');
-const lwValEl  = document.getElementById('lw-val');
-lwSlider.value = lineWidth;
-lwValEl.textContent = lineWidth + 'px';
-lwSlider.oninput = () => {
-  lineWidth = parseFloat(lwSlider.value);
-  lwValEl.textContent = lineWidth + 'px';
+window.ekg_setLineWidth = function(val) {
+  lineWidth = parseFloat(val) || lineWidth;
   localStorage.setItem('ekg_lw', lineWidth);
 };
 
-/* ── Feed URL (BPM) ── */
-const globalSaved    = JSON.parse(localStorage.getItem('ekg_global')) || { url: window.location.origin + '/feed' };
-let feedUrl          = globalSaved.url;
-const globalUrlInput = document.getElementById('global-url');
-const globalStatusEl = document.getElementById('global-status');
-globalUrlInput.value = feedUrl;
-document.getElementById('global-save').onclick = () => {
-  feedUrl = globalUrlInput.value.trim();
-  localStorage.setItem('ekg_global', JSON.stringify({ url: feedUrl }));
-  globalStatusEl.textContent = 'saved';
-  setTimeout(() => globalStatusEl.textContent = '', 1500);
-  pollAll();
-};
+/* ── Feed URL (BPM) — always same origin ── */
+let feedUrl = window.location.origin + '/feed';
 
 /* ── Sub Info URL (HP / items) ── */
 const MAIN_INFO_DEFAULT = 'http://10.88.120.72:5001/api/sub-info/';
 let mainInfoUrl = localStorage.getItem('ekg_main_info_url') || MAIN_INFO_DEFAULT;
-const mainInfoUrlDisplay = document.getElementById('main-info-url');
-mainInfoUrlDisplay.textContent = mainInfoUrl;
 
 /* ── All 10 player data objects (keyed by slot) ── */
 const ALL_SLOTS   = ['player1','player2','player3','player4','player5',
@@ -667,7 +353,6 @@ ALL_SLOTS.forEach(slot => {
     revPoints: Array(200).fill(14),  /* pre-allocated reverse buffer */
     scrollBuffer: 0,
     pathEl: null, heartEl: null, valEl: null, dotEl: null, labelEl: null,
-    numInput: null, liveBtn: null, manBtn: null,
     side: null,   /* 'left' or 'right' — assigned on build */
     lastStroke: null, lastStrokeWidth: null, /* cached to skip redundant setAttribute */
     hpCurrent: 1.0, hpGhost: 1.0, ghostTimer: null,
@@ -696,28 +381,13 @@ COACH_SLOTS.forEach(slot => {
   };
 });
 
-/* ── Build sidebar per-player controls (static, never rebuilt) ── */
-ALL_SLOTS.forEach(slot => {
-  const p    = playerData[slot];
-  const saved= JSON.parse(localStorage.getItem(`ekg_p${p.id}`)) || { manualBpm:60, isManual:false };
-  const ctrl = document.createElement('div');
-  ctrl.className = 'player-ctrl';
-  ctrl.innerHTML = `
-    <span class="pid">P${p.id}</span>
-    <input type="number" id="num-${slot}" value="${saved.manualBpm}" min="0" max="220">
-    <button class="tog ${!saved.isManual?'active':''}" id="liveBtn-${slot}">LIVE</button>
-    <button class="tog ${saved.isManual?'active':''}"  id="manBtn-${slot}">MAN</button>
-  `;
-  ctrlsEl.appendChild(ctrl);
-  p.numInput = document.getElementById(`num-${slot}`);
-  p.liveBtn  = document.getElementById(`liveBtn-${slot}`);
-  p.manBtn   = document.getElementById(`manBtn-${slot}`);
-  p.manualBpm = parseInt(p.numInput.value) || 60;
-  p.liveBtn.onclick   = () => { p.isManual = false; syncT(p); saveP(p); };
-  p.manBtn.onclick    = () => { p.isManual = true;  syncT(p); saveP(p); };
-  p.numInput.oninput  = () => { p.manualBpm = parseInt(p.numInput.value) || 0; saveP(p); };
-  p.numInput.onchange = () => { p.manualBpm = parseInt(p.numInput.value) || 0; saveP(p); };
-});
+window.ekg_setPlayer = function(slot, isManual, bpm) {
+  const p = playerData[slot];
+  if (!p) return;
+  p.isManual  = !!isManual;
+  if (bpm !== undefined) p.manualBpm = parseInt(bpm) || p.manualBpm;
+  saveP(p);
+};
 
 /* ── Build/rebuild team columns ── */
 function buildRow(slot, side, coachSlot) {
@@ -894,13 +564,9 @@ function buildAllPlayerstats() {
 rebuildTeams();
 buildAllPlayerstats();
 
-function syncT(p) {
-  p.liveBtn.classList.toggle('active', !p.isManual);
-  p.manBtn.classList.toggle('active',   p.isManual);
-}
 function saveP(p) {
   localStorage.setItem(`ekg_p${p.id}`, JSON.stringify({
-    manualBpm: parseInt(p.numInput.value) || 60,
+    manualBpm: p.manualBpm,
     isManual: p.isManual
   }));
 }
@@ -1391,7 +1057,6 @@ setInterval(pollAll, POLL_MS);
 fetch('/api/game-url').then(r => r.json()).then(d => {
   if (d.url) {
     mainInfoUrl = d.url;
-    mainInfoUrlDisplay.textContent = d.url;
     localStorage.setItem('ekg_main_info_url', d.url);
   }
 }).catch(() => {});

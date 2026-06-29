@@ -313,8 +313,8 @@ async function masterPoll() {
     setPollStatus('live');
     const bid = data.battleid || data.roomname || null;
     if (bid && prevBattleId && bid !== prevBattleId) {
-      resetGameState();
-      heroImagesPreloaded = false;
+      window.location.reload();
+      return;
     }
     if (bid) prevBattleId = bid;
     preloadHeroImages(data);

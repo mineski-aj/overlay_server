@@ -34,14 +34,15 @@
       top: 0; left: 0; right: 0;
       background: #111;
       border-bottom: 1px solid #333;
-      padding: 0 12px;
-      display: flex;
+      padding: 6px 12px;
       flex-direction: column;
       font-family: monospace;
       font-size: 12px;
       color: #aaa;
       z-index: 9999;
+      gap: 2px;
     }
+    #config-bar.debug-open { display: flex; }
     .bar-row {
       display: flex;
       align-items: center;
@@ -84,6 +85,11 @@
     .dbg-btn.show:hover { background: #22c55e; color: #000; }
     .dbg-btn.hide { border-color: #ef4444; color: #ef4444; }
     .dbg-btn.hide:hover { background: #ef4444; color: #fff; }
+    .dbg-btn.preview { border-color: #d97706; color: #d97706; }
+    .dbg-btn.preview:hover, .dbg-btn.preview.active { background: #d97706; color: #000; border-color: #d97706; }
+    .feature-card { border-top: 1px solid #222; padding: 5px 0 4px; }
+    .feature-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 5px; }
+    .feature-card-btns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     #sse-dot {
       width: 7px; height: 7px;
       border-radius: 50%;
@@ -110,6 +116,26 @@
     }
     #canvas.bg-black { background: #000; }
 
+    /* ── BG VIDEO ── */
+    #bg-video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      object-fit: cover;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── POST EMBLEMS PAGE ── */
+    #post-emblems-page {
+      display: none;
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      z-index: 10;
+    }
+    #post-emblems-page.emb-on { display: block; }
+
     /* ── POST BACKER CONTAINERS ── */
     .postbacker {
       background-color: rgb(255, 255, 255);
@@ -120,6 +146,7 @@
       opacity: 0;
       transform: perspective(600px) rotateY(90deg);
       pointer-events: none;
+      will-change: transform, opacity;
     }
 
     /* home — left column */
@@ -130,11 +157,11 @@
     .postbacker_5  { left: 377px;  top: 869px; z-index: 3; }
 
     /* away — right column */
-    .postbacker_6  { left: 1153px; top: 249px; z-index: 4; }
-    .postbacker_7  { left: 1153px; top: 404px; z-index: 4; }
-    .postbacker_8  { left: 1153px; top: 559px; z-index: 4; }
-    .postbacker_9  { left: 1153px; top: 714px; z-index: 4; }
-    .postbacker_10 { left: 1153px; top: 869px; z-index: 4; }
+    .postbacker_6  { left: 1150px; top: 249px; z-index: 4; }
+    .postbacker_7  { left: 1150px; top: 404px; z-index: 4; }
+    .postbacker_8  { left: 1150px; top: 559px; z-index: 4; }
+    .postbacker_9  { left: 1150px; top: 714px; z-index: 4; }
+    .postbacker_10 { left: 1150px; top: 869px; z-index: 4; }
 
     /* visible resting state (after flip-in completes) */
     .postbacker.ph-visible {
@@ -175,6 +202,49 @@
     .ph-beating .bpm-number {
       animation: bpm-beat 1.8s ease-in-out infinite;
     }
+
+    /* ── EMBLEM CARD INTERNALS ── */
+    .emb-inner     { display:flex; align-items:center; justify-content:center; height:141px; padding:0 6px; gap:5px; box-sizing:border-box; }
+    .emb-main-rune { flex-shrink:0; width:85px; height:85px; object-fit:contain; }
+    .emb-subs      { display:flex; align-items:center; gap:5px; }
+    .emb-sub-rune  { width:59px; height:59px; object-fit:contain; }
+    .emb-mirrored .emb-inner { flex-direction:row-reverse; }
+    .emb-mirrored .emb-subs  { flex-direction:row-reverse; }
+    [id^="emb-card-"] { z-index: 20; }
+
+    /* ── POST ITEMS CARD ── */
+    .pib-inner    { display:flex; height:141px; box-sizing:border-box; overflow:hidden; }
+    .pib-stats    { flex:0 0 187px; display:flex; flex-direction:column; background:linear-gradient(to bottom, #ffffff, #cccdcc); }
+    .pib-stat-row { flex:1; display:flex; flex-direction:column; justify-content:center; padding:0 10px; overflow:hidden; }
+    .pib-stat-row + .pib-stat-row { border-top:1px solid rgba(0,0,0,0.18); }
+    .pib-label    { font-family:'General Sans',sans-serif; font-weight:700; font-size:11px; color:#444; letter-spacing:0.06em; line-height:1; }
+    .pib-value    { font-family:'General Sans',sans-serif; font-weight:800; font-size:35px; color:#111; line-height:1.1; white-space:nowrap; }
+    .pib-items    { flex:0 0 208px; display:grid; grid-template-columns:repeat(3,66px); grid-template-rows:repeat(2,66px); gap:2px; padding:3px; background:#1c1c1c; align-content:center; justify-content:center; box-sizing:border-box; }
+    .pib-item     { width:66px; height:66px; object-fit:cover; background:#2a2a3a; display:block; }
+    .pib-mirrored .pib-inner     { flex-direction:row-reverse; }
+    .pib-mirrored .pib-stat-row  { align-items:flex-end; text-align:right; }
+    .pib-mirrored .pib-items     { direction:rtl; }
+    [id^="pib-card-"] { z-index: 30; }
+
+    /* ── POST STATS CARD ── */
+    [id^="psb-card-"] { z-index: 40; }
+    .psb-inner     { display:flex; flex-direction:column; height:141px; padding:7px 8px 4px; box-sizing:border-box; gap:4px; }
+    .psb-label     { font-family:'General Sans',sans-serif; font-weight:800; font-size:13px; color:#111; letter-spacing:0.08em; text-transform:uppercase; line-height:14px; flex-shrink:0; }
+    .psb-bar-track { position:relative; flex:1; overflow:hidden; }
+    .psb-bar       { position:absolute; top:0; height:100%; width:0%; }
+    .psb-bar-taken { background:linear-gradient(to right,#1540d0,#2d6ef5); left:0; }
+    .psb-mirrored .psb-bar-taken { background:linear-gradient(to left,#a50820,#e02040); right:0; left:auto; }
+    .psb-bar-dealt { background:#111; left:0; }
+    .psb-mirrored .psb-bar-dealt { right:0; left:auto; }
+    .psb-num-dark, .psb-num-light {
+      position:absolute; inset:0; display:flex; align-items:center; padding-left:10px;
+      font-family:'General Sans',sans-serif; font-weight:800; font-size:30px; line-height:1;
+      pointer-events:none; white-space:nowrap; overflow:hidden;
+    }
+    .psb-num-dark  { color:#111; z-index:1; }
+    .psb-num-light { color:#fff; z-index:2; clip-path:inset(0 100% 0 0); }
+    .psb-mirrored .psb-num-dark, .psb-mirrored .psb-num-light { padding-left:0; padding-right:10px; justify-content:flex-end; }
+    .psb-mirrored .psb-num-light { clip-path:inset(0 0 0 100%); }
 
     /* ── BPM ROW LAYOUT ── */
     .bpm-row {
@@ -345,6 +415,109 @@
     .camp2-border .itl-portrait-name { color: #dc2626; }
     @keyframes coin-spin1 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     @keyframes coin-spin2 { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* ── MATCH BOARD ── */
+    #match-board  { position:absolute; top:0; left:0; width:1920px; height:1080px; pointer-events:none; z-index:150; display:none; }
+    /* ── MIDDLEBOARD ── */
+    #middleboard  { position:absolute; top:0; left:0; width:1920px; height:1080px; pointer-events:none; z-index:151; display:none; }
+    .mdb-box { position:absolute; left:805px; width:310px; height:59px; border-radius:1px; background:#fbfbfa; display:flex; align-items:center; justify-content:center; transform-origin:top center; backface-visibility:hidden; }
+    .mdb-box img { height:36px; width:auto; display:block; }
+    .mdb-num { position:absolute; top:0; height:100%; width:120px; display:flex; align-items:center; justify-content:center; font-family:'General Sans',sans-serif; font-size:28px; font-weight:700; }
+    .mdb-num-l { left:0;  color:rgb(0,86,215); }
+    .mdb-num-r { right:0; color:#e40000; }
+    .mdb-box:nth-child(1) { top:404px; z-index:28; }
+    .mdb-box:nth-child(2) { top:484px; z-index:35; }
+    .mdb-box:nth-child(3) { top:557px; z-index:42; }
+    .mdb-box:nth-child(4) { top:638px; z-index:49; }
+    .mdb-box:nth-child(5) { top:710px; z-index:56; }
+    .mdb-box:nth-child(6) { top:791px; z-index:63; height:58px; }
+    @keyframes mdb-flip-in  { from { transform:perspective(600px) rotateX(-90deg); opacity:0; } to { transform:perspective(600px) rotateX(0deg); opacity:1; } }
+    @keyframes mdb-flip-out { from { transform:perspective(600px) rotateX(0deg);   opacity:1; } to { transform:perspective(600px) rotateX(90deg); opacity:0; } }
+    @keyframes mdb-fade-in  { from { opacity:0; } to { opacity:1; } }
+    @keyframes mdb-fade-out { from { opacity:1; } to { opacity:0; } }
+    #middleboard.mdb-in  #mdb-game-time-label,
+    #middleboard.mdb-in  #mdb-game-time-value,
+    #middleboard.mdb-in  #mdb-game-label-bar  { animation: mdb-fade-in  300ms ease-out 0ms both; }
+    #middleboard.mdb-out #mdb-game-time-label,
+    #middleboard.mdb-out #mdb-game-time-value,
+    #middleboard.mdb-out #mdb-game-label-bar  { animation: mdb-fade-out 200ms ease-in  0ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(1) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1)   0ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(2) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1)  90ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(3) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1) 180ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(4) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1) 270ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(5) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1) 360ms both; }
+    #middleboard.mdb-in  .mdb-box:nth-child(6) { animation: mdb-flip-in  300ms cubic-bezier(0.22,1,0.36,1) 450ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(1) { animation: mdb-flip-out 300ms ease-in   0ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(2) { animation: mdb-flip-out 300ms ease-in  90ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(3) { animation: mdb-flip-out 300ms ease-in 180ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(4) { animation: mdb-flip-out 300ms ease-in 270ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(5) { animation: mdb-flip-out 300ms ease-in 360ms both; }
+    #middleboard.mdb-out .mdb-box:nth-child(6) { animation: mdb-flip-out 300ms ease-in 450ms both; }
+    #mdb-game-time-label { position:absolute; left:960px; top:257px; z-index:77; transform:translateX(-50%); font-family:'General Sans',sans-serif; font-size:23px; font-weight:700; color:rgb(0,0,0); text-transform:uppercase; white-space:nowrap; }
+    #mdb-game-time-value { position:absolute; left:960px; top:264px; z-index:78; transform:translateX(-50%); font-family:'General Sans',sans-serif; font-size:74px; font-weight:700; color:rgb(0,0,0); white-space:nowrap; }
+    #mdb-game-label-bar  { position:absolute; left:960px; top:351px; width:190px; height:31px; z-index:79; transform:translateX(-50%); background:rgb(0,0,0); display:flex; align-items:center; justify-content:center; }
+    #mdb-game-label-bar span { font-family:'General Sans',sans-serif; font-size:18px; font-weight:600; color:#fff; text-transform:uppercase; white-space:nowrap; }
+
+    /* ── PLAYERBOARD ── */
+    #playerboard { position:absolute; top:0; left:0; width:1920px; height:1080px; pointer-events:none; z-index:150; display:none; }
+    .pb-card { position:absolute; width:317px; height:139px; overflow:visible; will-change:transform,opacity; }
+    .pb-card-bg { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; }
+    .pb-hero  { position:absolute; left:0; top:0; width:185px; height:105px; z-index:1; object-fit:cover; }
+    .pb-level { position:absolute; left:6px; top:79px; width:23px; height:23px; z-index:13; display:flex; align-items:center; justify-content:center; font-family:'General Sans',sans-serif; font-weight:700; font-size:21px; color:#121212; }
+    .pb-role  { position:absolute; left:3px; top:109px; width:27px; height:27px; z-index:14; object-fit:contain; filter:brightness(0); }
+    .pb-name  { position:absolute; left:48px; top:107px; width:135px; height:30px; z-index:15; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    .pb-name span { font-family:'General Sans',sans-serif; font-weight:700; font-size:14px; color:#fff; white-space:nowrap; display:inline-block; transform-origin:center center; }
+    .pb-photo { position:absolute; left:145px; top:-25px; width:221px; height:226px; object-fit:cover; object-position:top center; clip-path:inset(0 49px 62px 40px); z-index:5; }
+    .pb-red .pb-photo { left:-39px; clip-path:inset(0 50px 62px 39px); }
+    /* Red inner overrides — mirror of blue */
+    .pb-red .pb-hero  { left:132px; }
+    .pb-red .pb-level { left:288px; }
+    .pb-red .pb-role  { left:287px; }
+    .pb-red .pb-name  { left:134px; }
+    .pb-b1 { left:60px;   top:249px; z-index:1; }
+    .pb-b2 { left:60px;   top:404px; z-index:2; }
+    .pb-b3 { left:60px;   top:559px; z-index:3; }
+    .pb-b4 { left:60px;   top:714px; z-index:4; }
+    .pb-b5 { left:60px;   top:869px; z-index:5; }
+    .pb-r1 { left:1543px; top:249px; z-index:1; }
+    .pb-r2 { left:1543px; top:404px; z-index:2; }
+    .pb-r3 { left:1543px; top:559px; z-index:3; }
+    .pb-r4 { left:1543px; top:714px; z-index:4; }
+    .pb-r5 { left:1543px; top:869px; z-index:5; }
+    /* Animations — 280ms per card, 105ms stagger → 700ms total */
+    @keyframes pb-enter-left  { from { transform:translateX(-16px); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    @keyframes pb-enter-right { from { transform:translateX(16px);  opacity:0; } to { transform:translateX(0); opacity:1; } }
+    @keyframes pb-exit-left   { from { transform:translateX(0); opacity:1; } to { transform:translateX(-16px); opacity:0; } }
+    @keyframes pb-exit-right  { from { transform:translateX(0); opacity:1; } to { transform:translateX(16px);  opacity:0; } }
+    #playerboard.pb-in .pb-b1 { animation:pb-enter-left  280ms ease-out   0ms both; }
+    #playerboard.pb-in .pb-b2 { animation:pb-enter-left  280ms ease-out  80ms both; }
+    #playerboard.pb-in .pb-b3 { animation:pb-enter-left  280ms ease-out 160ms both; }
+    #playerboard.pb-in .pb-b4 { animation:pb-enter-left  280ms ease-out 240ms both; }
+    #playerboard.pb-in .pb-b5 { animation:pb-enter-left  280ms ease-out 320ms both; }
+    #playerboard.pb-in .pb-r1 { animation:pb-enter-right 280ms ease-out   0ms both; }
+    #playerboard.pb-in .pb-r2 { animation:pb-enter-right 280ms ease-out  80ms both; }
+    #playerboard.pb-in .pb-r3 { animation:pb-enter-right 280ms ease-out 160ms both; }
+    #playerboard.pb-in .pb-r4 { animation:pb-enter-right 280ms ease-out 240ms both; }
+    #playerboard.pb-in .pb-r5 { animation:pb-enter-right 280ms ease-out 320ms both; }
+    #playerboard.pb-out .pb-b1 { animation:pb-exit-left  200ms ease-in   0ms both; }
+    #playerboard.pb-out .pb-b2 { animation:pb-exit-left  200ms ease-in  60ms both; }
+    #playerboard.pb-out .pb-b3 { animation:pb-exit-left  200ms ease-in 120ms both; }
+    #playerboard.pb-out .pb-b4 { animation:pb-exit-left  200ms ease-in 180ms both; }
+    #playerboard.pb-out .pb-b5 { animation:pb-exit-left  200ms ease-in 240ms both; }
+    #playerboard.pb-out .pb-r1 { animation:pb-exit-right 200ms ease-in   0ms both; }
+    #playerboard.pb-out .pb-r2 { animation:pb-exit-right 200ms ease-in  60ms both; }
+    #playerboard.pb-out .pb-r3 { animation:pb-exit-right 200ms ease-in 120ms both; }
+    #playerboard.pb-out .pb-r4 { animation:pb-exit-right 200ms ease-in 180ms both; }
+    #playerboard.pb-out .pb-r5 { animation:pb-exit-right 200ms ease-in 240ms both; }
+    #match-board.mb-on { display:block; }
+    #mb-camp1 { position:absolute; left:57px;   top:106px; width:713px; height:86px; overflow:visible; }
+    #mb-camp2 { position:absolute; left:1150px; top:106px; width:713px; height:86px; overflow:visible; }
+    #mb-tournament { position:absolute; left:851px; top:41px; width:218px; height:218px; background:url('/assets/postgame/mpl_logo.png') center/contain no-repeat; z-index:262; }
+    .mb-score-bar { width:14px; height:50px; background:#1a1a1a; flex-shrink:0; }
+    #mb-camp1 .mb-score-bar.scored { background:#1E64FF; }
+    #mb-camp2 .mb-score-bar.scored { background:#FF3232; }
+    @keyframes mb-in  { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes mb-out { from { opacity:1; transform:translateY(0); }     to { opacity:0; transform:translateY(-14px); } }
   </style>
 </head>
 <body>
@@ -352,44 +525,185 @@
   <!-- ── CONFIG BAR ── -->
   <div id="config-bar">
 
+    <!-- Server status row -->
     <div class="bar-row">
       <label>SERVER</label>
       <span id="server-url" style="font-family:monospace;font-size:12px;color:#94a3b8;"></span>
       <span id="sse-dot"></span>
       <span id="url-status">—</span>
-    </div>
-
-    <div class="bar-row">
-      <span class="dbg-label">POST_HEARTS</span>
-      <button class="dbg-btn show" onclick="debugShow()">▶ SHOW</button>
-      <button class="dbg-btn hide" onclick="debugHide()">■ HIDE</button>
       <span style="width:1px;background:#333;align-self:stretch;margin:0 4px"></span>
       <button class="dbg-btn" id="bg-toggle" onclick="toggleBg()">BG: transparent</button>
     </div>
 
-    <div class="bar-row">
-      <span class="dbg-label">POST_RICHGUY</span>
-      <label>API</label>
-      <input id="rg-api-url" type="text" value="theapi.dpdns.org" spellcheck="false" style="background:#1e1e1e;border:1px solid #444;color:#eee;padding:3px 8px;font-family:monospace;font-size:12px;width:200px;border-radius:3px">
-      <span id="rg-api-status" style="font-size:11px;color:#555">—</span>
-      <button class="dbg-btn show" onclick="fetchAndShowRichguy()">▶ FETCH & SHOW</button>
-      <button class="dbg-btn hide" onclick="hidePostRichguy()">■ HIDE</button>
+    <!-- POST HEARTS -->
+    <div class="feature-card">
+      <div class="feature-card-label">Post Hearts</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="debugShow()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="debugHide()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-hearts" onclick="toggleLocalPreview('hearts', this)">◈ PREVIEW</button>
+      </div>
     </div>
 
-    <div class="bar-row">
-      <span class="dbg-label">ITEM TIMELINE</span>
-      <button class="dbg-btn show" onclick="showItemTimeline()">▶ SHOW</button>
-      <button class="dbg-btn hide" onclick="hideItemTimeline()">■ HIDE</button>
-      <button class="dbg-btn" onclick="fetchItemTimeline()" style="margin-left:4px">↺ REFRESH</button>
+    <!-- RICH GUY -->
+    <div class="feature-card">
+      <div class="feature-card-label">Rich Guy</div>
+      <div class="feature-card-btns">
+        <span id="rg-api-status" style="font-size:11px;color:#555">—</span>
+        <button class="dbg-btn show" onclick="fetchAndShowRichguy()">▶ FETCH & SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostRichguy()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-richguy" onclick="toggleLocalPreview('richguy', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- POST TIMELINE -->
+    <div class="feature-card">
+      <div class="feature-card-label">Post Timeline</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showItemTimeline()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideItemTimeline()">■ HIDE</button>
+        <button class="dbg-btn" onclick="fetchItemTimeline()">↺ REFRESH</button>
+        <button class="dbg-btn preview" id="preview-timeline" onclick="toggleLocalPreview('timeline', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- POST EMBLEM -->
+    <div class="feature-card">
+      <div class="feature-card-label">Post Emblem</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostEmblems()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostEmblems()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-emblems" onclick="toggleLocalPreview('emblems', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card-label">Post Items</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostItems()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostItems()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-items" onclick="toggleLocalPreview('items', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card-label">Post Stats</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostStats()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostStats()">■ HIDE</button>
+      </div>
     </div>
 
   </div>
 
   <!-- ── BROADCAST CANVAS ── -->
   <div id="canvas">
+    <video id="bg-video" src="/assets/bgloop.webm" autoplay loop muted playsinline></video>
     <!-- post_hearts containers injected by JS -->
     <div id="post-richguy-page"></div>
     <div id="item-timeline-page"></div>
+    <div id="post-emblems-page"></div>
+    <div id="match-board">
+      <div id="mb-camp1"></div>
+      <div id="mb-camp2"></div>
+      <div id="mb-tournament"></div>
+    </div>
+    <div id="middleboard">
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-gold-l">0</span><img src="/assets/postgame/gold.png"       alt="gold"><span class="mdb-num mdb-num-r" id="mdb-gold-r">0</span></div>
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-tower-l">0</span><img src="/assets/postgame/tower.png"      alt="tower"><span class="mdb-num mdb-num-r" id="mdb-tower-r">0</span></div>
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-lord-l">0</span><img src="/assets/postgame/lord.png"       alt="lord"><span class="mdb-num mdb-num-r" id="mdb-lord-r">0</span></div>
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-turtle-l">0</span><img src="/assets/postgame/turtle.png"     alt="turtle"><span class="mdb-num mdb-num-r" id="mdb-turtle-r">0</span></div>
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-redbuff-l">0</span><img src="/assets/postgame/redbuff.png"    alt="redbuff"><span class="mdb-num mdb-num-r" id="mdb-redbuff-r">0</span></div>
+      <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-purplebuff-l">0</span><img src="/assets/postgame/purplebuff.png" alt="purplebuff"><span class="mdb-num mdb-num-r" id="mdb-purplebuff-r">0</span></div>
+      <div id="mdb-game-time-label">GAME TIME</div>
+      <div id="mdb-game-time-value">00:00</div>
+      <div id="mdb-game-label-bar"><span id="mdb-game-label-text">GAME 1 - MATCH 1</span></div>
+    </div>
+
+    <div id="playerboard">
+      <!-- Blue camp (camp1) -->
+      <div class="pb-card pb-b1" id="pb-b1">
+        <img class="pb-hero"    id="pb-b1-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/blue_player.png" alt="">
+        <img class="pb-photo"   id="pb-b1-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-b1-level"></div>
+        <img class="pb-role"    id="pb-b1-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-b1-name"></span></div>
+      </div>
+      <div class="pb-card pb-b2" id="pb-b2">
+        <img class="pb-hero"    id="pb-b2-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/blue_player.png" alt="">
+        <img class="pb-photo"   id="pb-b2-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-b2-level"></div>
+        <img class="pb-role"    id="pb-b2-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-b2-name"></span></div>
+      </div>
+      <div class="pb-card pb-b3" id="pb-b3">
+        <img class="pb-hero"    id="pb-b3-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/blue_player.png" alt="">
+        <img class="pb-photo"   id="pb-b3-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-b3-level"></div>
+        <img class="pb-role"    id="pb-b3-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-b3-name"></span></div>
+      </div>
+      <div class="pb-card pb-b4" id="pb-b4">
+        <img class="pb-hero"    id="pb-b4-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/blue_player.png" alt="">
+        <img class="pb-photo"   id="pb-b4-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-b4-level"></div>
+        <img class="pb-role"    id="pb-b4-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-b4-name"></span></div>
+      </div>
+      <div class="pb-card pb-b5" id="pb-b5">
+        <img class="pb-hero"    id="pb-b5-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/blue_player.png" alt="">
+        <img class="pb-photo"   id="pb-b5-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-b5-level"></div>
+        <img class="pb-role"    id="pb-b5-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-b5-name"></span></div>
+      </div>
+      <!-- Red camp (camp2) -->
+      <div class="pb-card pb-red pb-r1" id="pb-r1">
+        <img class="pb-hero"    id="pb-r1-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/red_player.png" alt="">
+        <img class="pb-photo"   id="pb-r1-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-r1-level"></div>
+        <img class="pb-role"    id="pb-r1-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-r1-name"></span></div>
+      </div>
+      <div class="pb-card pb-red pb-r2" id="pb-r2">
+        <img class="pb-hero"    id="pb-r2-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/red_player.png" alt="">
+        <img class="pb-photo"   id="pb-r2-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-r2-level"></div>
+        <img class="pb-role"    id="pb-r2-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-r2-name"></span></div>
+      </div>
+      <div class="pb-card pb-red pb-r3" id="pb-r3">
+        <img class="pb-hero"    id="pb-r3-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/red_player.png" alt="">
+        <img class="pb-photo"   id="pb-r3-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-r3-level"></div>
+        <img class="pb-role"    id="pb-r3-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-r3-name"></span></div>
+      </div>
+      <div class="pb-card pb-red pb-r4" id="pb-r4">
+        <img class="pb-hero"    id="pb-r4-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/red_player.png" alt="">
+        <img class="pb-photo"   id="pb-r4-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-r4-level"></div>
+        <img class="pb-role"    id="pb-r4-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-r4-name"></span></div>
+      </div>
+      <div class="pb-card pb-red pb-r5" id="pb-r5">
+        <img class="pb-hero"    id="pb-r5-hero"  src="" alt="">
+        <img class="pb-card-bg" src="/assets/postgame/red_player.png" alt="">
+        <img class="pb-photo"   id="pb-r5-photo" src="/photos/placeholder.png" alt="">
+        <div class="pb-level"   id="pb-r5-level"></div>
+        <img class="pb-role"    id="pb-r5-role"  src="" alt="">
+        <div class="pb-name"><span id="pb-r5-name"></span></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -406,14 +720,6 @@
     document.getElementById('server-url').textContent = window.location.origin;
 
 
-    /* richguy API URL — persisted separately */
-    const RG_URL_KEY  = 'mplfs_rg_api_url';
-    const rgUrlInput  = document.getElementById('rg-api-url');
-    rgUrlInput.value  = localStorage.getItem(RG_URL_KEY) || 'theapi.dpdns.org';
-    rgUrlInput.addEventListener('change', () => {
-      const v = rgUrlInput.value.trim();
-      if (v) localStorage.setItem(RG_URL_KEY, v);
-    });
 
     /* ════════════════════════════════════════════════
        POST_HEARTS — postgame BPM cards
@@ -476,7 +782,8 @@
 
     let phVisible = false;
 
-    function showPostHearts() {
+    async function showPostHearts() {
+      await transitionTo('hearts');
       phVisible = true;
       CONTAINERS.forEach(({ cls }, i) => {
         const el    = canvas.querySelector(`.${cls}`);
@@ -496,21 +803,26 @@
     }
 
     function hidePostHearts() {
-      if (!phVisible) return;
+      if (!phVisible) return Promise.resolve();
+      activeFeature = null;
       phVisible = false;
-      CONTAINERS.forEach(({ cls }, i) => {
-        const el    = canvas.querySelector(`.${cls}`);
-        const delay = (i % 5) * ROW_STAGGER_MS;
-        /* cancel any in-progress animation WITHOUT removing ph-visible —
-           keeping ph-visible prevents the snap-to-hidden flicker */
-        el.classList.remove('ph-in', 'ph-out', 'ph-beating');
-        el.style.animationDelay = `${delay}ms`;
-        void el.offsetWidth;
-        el.classList.add('ph-out');
-        el.addEventListener('animationend', () => {
-          el.classList.remove('ph-out', 'ph-visible');
-          el.style.animationDelay = '';
-        }, { once: true });
+      return new Promise(resolve => {
+        CONTAINERS.forEach(({ cls }, i) => {
+          const el    = canvas.querySelector(`.${cls}`);
+          const delay = (i % 5) * ROW_STAGGER_MS;
+          el.classList.remove('ph-in', 'ph-out', 'ph-beating');
+          el.style.animationDelay = `${delay}ms`;
+          void el.offsetWidth;
+          el.classList.add('ph-out');
+        });
+        setTimeout(() => {
+          CONTAINERS.forEach(({ cls }) => {
+            const el = canvas.querySelector(`.${cls}`);
+            el.classList.remove('ph-out', 'ph-visible');
+            el.style.animationDelay = '';
+          });
+          resolve();
+        }, 950);
       });
     }
 
@@ -604,31 +916,53 @@
       sseSource.addEventListener('post_hearts', (e) => {
         const msg = JSON.parse(e.data);
         if (msg.action === 'show') {
-          document.getElementById('config-bar').style.display = 'none';
+          document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showPostHearts, 100);
-        } else if (msg.action === 'hide') hidePostHearts();
+        } else if (msg.action === 'hide') hideActiveFeature();
       });
 
       sseSource.addEventListener('post_itemline', (e) => {
         const msg = JSON.parse(e.data);
         if (msg.action === 'show') {
-          document.getElementById('config-bar').style.display = 'none';
-          setTimeout(showPostItemline, 100);
-        } else if (msg.action === 'hide') hidePostItemline();
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showItemTimeline, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
       });
 
       sseSource.addEventListener('post_richguy', (e) => {
         const msg = JSON.parse(e.data);
         if (msg.action === 'show') {
-          document.getElementById('config-bar').style.display = 'none';
+          document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(fetchAndShowRichguy, 100);
-        } else if (msg.action === 'hide') hidePostRichguy();
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('post_emblems', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostEmblems, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('post_items', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostItems, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('post_stats', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostStats, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
       });
 
       sseSource.addEventListener('fs_hide', () => {
-        hidePostHearts();
-        hidePostItemline();
-        hidePostRichguy();
+        transitionTo(null);
       });
 
       sseSource.addEventListener('post_itemline_itemin', () => {
@@ -645,13 +979,31 @@
         });
       });
 
+      sseSource.addEventListener('matchboard', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') showMatchBoard();
+        else if (msg.action === 'hide') hideMatchBoard();
+      });
+
+      sseSource.addEventListener('middleboard', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') showMiddleBoard();
+        else if (msg.action === 'hide') hideMiddleBoard();
+      });
+
+      sseSource.addEventListener('playerboard', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') showPlayerBoard();
+        else if (msg.action === 'hide') hidePlayerBoard();
+      });
+
       sseSource.addEventListener('fs_debugoff', () => {
         const bar = document.getElementById('config-bar');
-        if (bar) bar.style.display = 'none';
+        if (bar) bar.classList.remove('debug-open');
       });
       sseSource.addEventListener('debugoff', () => {
         const bar = document.getElementById('config-bar');
-        if (bar) bar.style.display = 'none';
+        if (bar) bar.classList.remove('debug-open');
       });
     }
 
@@ -678,8 +1030,8 @@
 
     let itlOn = false;
 
-    function showItemTimeline() { itlOn = true;  showPostItemline(); }
-    function hideItemTimeline() { itlOn = false; hidePostItemline(); }
+    async function showItemTimeline() { await transitionTo('timeline'); itlOn = true; showPostItemline(); }
+    function hideItemTimeline() { activeFeature = null; itlOn = false; return hidePostItemline(); }
 
     function itlDurToSec(dur) {
       const [m, s] = dur.split(':').map(Number);
@@ -728,7 +1080,7 @@
       const hdr = document.createElement('div');
       hdr.style.cssText = `position:absolute;left:0;top:0;width:${CONT_W}px;height:${HDR_H}px;background:rgba(8,16,48,0.88);overflow:hidden`;
       const hdrLabel = document.createElement('div');
-      hdrLabel.textContent = 'ITEM TIMELINE';
+      hdrLabel.textContent = 'POST TIMELINE';
       hdrLabel.style.cssText = `position:absolute;left:${HERO_W + 10}px;top:0;height:${HDR_H}px;display:flex;align-items:center;font-family:'General Sans',sans-serif;font-weight:700;font-size:13px;color:rgba(255,255,255,0.85);letter-spacing:2px`;
       hdr.appendChild(hdrLabel);
       wrapper.appendChild(hdr);
@@ -894,12 +1246,15 @@
       const wrapper   = itlPage.querySelector('[data-itl-wrapper]');
       const roleIcons = [...itlPage.querySelectorAll('[data-itl-role]')];
       const targets   = [wrapper, ...roleIcons].filter(Boolean);
-      if (!targets.length) { itlPage.classList.remove('itl-on'); return; }
-      targets.forEach(el => { el.style.animation = 'itl-wrap-out 400ms ease-in both'; });
-      targets[0].addEventListener('animationend', () => {
-        itlPage.classList.remove('itl-on');
-        itlPage.innerHTML = '';
-      }, { once: true });
+      if (!targets.length) { itlPage.classList.remove('itl-on'); return Promise.resolve(); }
+      return new Promise(resolve => {
+        targets.forEach(el => { el.style.animation = 'itl-wrap-out 400ms ease-in both'; });
+        setTimeout(() => {
+          itlPage.classList.remove('itl-on');
+          itlPage.innerHTML = '';
+          resolve();
+        }, 450);
+      });
     }
 
     /* ═══════════════════════════════════════════════
@@ -1176,47 +1531,54 @@
       { label: 'ROAM EQUIP',    key: '5' },
     ];
 
-    async function fetchRichguyData(apiBase) {
-      const [rgRes, pgRes] = await Promise.all([
-        fetch(buildUrl(`/proxy/richguy?host=${encodeURIComponent(apiBase)}`)),
-        fetch(buildUrl('/postgame')),
-      ]);
-      if (!rgRes.ok) throw new Error(`proxy ${rgRes.status}`);
-      const rows   = await rgRes.json();
-      const pgData = pgRes.ok ? await pgRes.json() : null;
+    async function fetchRichguyData() {
+      const gr = await fetch(buildUrl('/api/gamedata-proxy'));
+      if (!gr.ok) throw new Error(`game API ${gr.status}`);
+      const gd = await gr.json();
+      const gameData = gd.data;
+      if (!gameData) throw new Error('no data');
 
-      const camp1Tricode = (pgData?.camp1_tricode || '').toUpperCase();
-      const camp2Tricode = (pgData?.camp2_tricode || '').toUpperCase();
+      const winCamp = gameData.win_camp;
+      if (!winCamp) throw new Error('no win_camp');
 
-      let best = null, bestGold = -1;
-      for (const entry of rows) {
-        const c1wins = entry.camp1.CampWin;
-        const winner = c1wins ? entry.camp1 : entry.camp2;
-        if (winner.gold > bestGold) {
-          bestGold = winner.gold;
-          best = { winner, loser: c1wins ? entry.camp2 : entry.camp1, winnerCamp: c1wins ? 1 : 2 };
-        }
+      const camps = (gameData.camp_list || []).filter(c => c.campid === 1 || c.campid === 2);
+      const winnerCampData = camps.find(c => c.campid === winCamp);
+      const loserCampData  = camps.find(c => c.campid !== winCamp);
+      if (!winnerCampData || !loserCampData) throw new Error('camps not found');
+
+      const SEATS = ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'];
+      let richguy = null, bestGold = -1, bestSeatKey = null;
+      for (const seatKey of SEATS) {
+        const p = winnerCampData[seatKey];
+        if (!p || p.judger) continue;
+        if (p.gold > bestGold) { bestGold = p.gold; richguy = p; bestSeatKey = seatKey; }
       }
-      if (!best) return null;
+      if (!richguy) throw new Error('richguy not found');
 
-      const { winner, loser, winnerCamp } = best;
-      const winnerTricode = winnerCamp === 1 ? camp1Tricode : camp2Tricode;
-      const loserTricode  = winnerCamp === 1 ? camp2Tricode : camp1Tricode;
+      const opp = loserCampData[bestSeatKey] || null;
 
       const containers = GOLD_LABELS.map(({ label, key }) => {
-        const wVal = winner.gold_map[key] || 0;
-        const lVal = loser.gold_map[key] || 0;
-        const diff  = wVal - lVal;
+        const wVal = richguy.gold_map?.[key] || 0;
+        const lVal = opp?.gold_map?.[key] || 0;
+        const diff = wVal - lVal;
         return { stat_label: label, value: String(wVal), delta: (diff >= 0 ? '+' : '') + diff };
       });
-      containers.push({ stat_label: 'TOTAL GOLD', value: String(winner.gold) });
-      containers.push({ stat_label: 'GPM',        value: String(winner.gpm)  });
+      containers.push({ stat_label: 'TOTAL GOLD', value: String(richguy.gold) });
+      containers.push({ stat_label: 'GPM',        value: String(richguy.extra_param?.gpm || 0) });
 
       return {
-        photo: `${winner.name}_FRONT.png`,
-        name: winner.name, role: winner.role, heroid: winner.heroid,
-        tricode: winnerTricode, winnerCamp,
-        opponent: { name: loser.name, role: loser.role, heroid: loser.heroid, tricode: loserTricode },
+        photo: `${richguy.name}_FRONT.png`,
+        name: richguy.name,
+        role: richguy.role || '',
+        heroid: richguy.heroid,
+        tricode: winnerCampData.team_simple_name || '',
+        winnerCamp: winCamp,
+        opponent: {
+          name: opp?.name || '',
+          role: opp?.role || '',
+          heroid: opp?.heroid || 0,
+          tricode: loserCampData.team_simple_name || '',
+        },
         containers,
       };
     }
@@ -1257,10 +1619,9 @@
     let rgPollTimer = null;
 
     async function pollRichguy() {
-      const apiBase = (document.getElementById('rg-api-url').value || 'theapi.dpdns.org').trim();
       const status = document.getElementById('rg-api-status');
       try {
-        const payload = await fetchRichguyData(apiBase);
+        const payload = await fetchRichguyData();
         if (payload) {
           rgCache = payload;
           if (status) { status.textContent = 'ok'; status.style.color = '#22c55e'; }
@@ -1277,8 +1638,16 @@
       rgPollTimer = setInterval(pollRichguy, 5000);
     }
 
-    function fetchAndShowRichguy() {
-      if (rgCache) showPostRichguy(rgCache);
+    async function fetchAndShowRichguy() {
+      try {
+        const payload = await fetchRichguyData();
+        if (payload) rgCache = payload;
+      } catch (e) {
+        console.warn('[richguy] fetch failed:', e.message);
+      }
+      if (!rgCache) return;
+      await transitionTo('richguy');
+      showPostRichguy(rgCache);
     }
 
     function showPostRichguy(data) {
@@ -1287,24 +1656,896 @@
     }
 
     function hidePostRichguy() {
+      activeFeature = null;
       const children = [...rgPage.children];
-      if (!children.length) { rgPage.classList.remove('rg-on'); return; }
+      if (!children.length) { rgPage.classList.remove('rg-on'); return Promise.resolve(); }
       children.forEach(el => { el.style.animation = 'rg-out 400ms ease-in both'; });
-      children[0].addEventListener('animationend', () => {
-        rgPage.classList.remove('rg-on');
-        rgPage.innerHTML = '';
-      }, { once: true });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          rgPage.classList.remove('rg-on');
+          rgPage.innerHTML = '';
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       FEATURE SWITCHER — only one feature live at a time
+    ════════════════════════════════════════════════ */
+    let activeFeature = null;
+
+    /* Add new Post scene names here — match board follows automatically */
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats']);
+
+    /* Central transition: manages match board + middleboard based on Post vs non-Post */
+    // Everything that must finish animating OUT before timeline animates IN.
+    // Add future boards/elements here.
+    function hideBeforeTimeline() {
+      return Promise.all([
+        hideMiddleBoard(),
+        hidePlayerBoard(),
+        hideActiveFeature(),
+      ]);
+    }
+
+    async function transitionTo(newFeature) {
+      if (POST_FEATURES.has(newFeature)) {
+        showMatchBoard();
+        if (newFeature === 'timeline') await hideBeforeTimeline();
+        else { showMiddleBoard(); showPlayerBoard(); }
+        if (newFeature !== 'timeline') await hideActiveFeature();
+      } else {
+        await Promise.all([hideMatchBoard(), hideMiddleBoard(), hidePlayerBoard(), hideActiveFeature()]);
+      }
+      activeFeature = newFeature;
+    }
+
+    function hideActiveFeature() {
+      if (!activeFeature) return Promise.resolve();
+      const prev = activeFeature;
+      activeFeature = null;
+      if (prev === 'hearts')   return hidePostHearts();
+      if (prev === 'richguy')  return hidePostRichguy();
+      if (prev === 'timeline') return hideItemTimeline();
+      if (prev === 'emblems')  return hidePostEmblems();
+      if (prev === 'items')    return hidePostItems();
+      if (prev === 'stats')    return hidePostStats();
+      return Promise.resolve();
+    }
+
+    /* ════════════════════════════════════════════════
+       POST_EMBLEMS
+    ════════════════════════════════════════════════ */
+
+    /* Build 10 emblem flip-cards (same positions as hearts, separate DOM elements) */
+    const EMB_CARD_CLASSES = [
+      'postbacker_1','postbacker_2','postbacker_3','postbacker_4','postbacker_5',
+      'postbacker_6','postbacker_7','postbacker_8','postbacker_9','postbacker_10',
+    ];
+
+    EMB_CARD_CLASSES.forEach((cls, n) => {
+      const id      = `emb-${n + 1}`;
+      const mirrored = n >= 5 ? ' emb-mirrored' : '';
+      const div     = document.createElement('div');
+      div.className = `postbacker ${cls}${mirrored}`;
+      div.id        = `emb-card-${n + 1}`;
+      div.innerHTML = `<div class="emb-inner">
+        <img class="emb-main-rune" id="${id}-main" src="" alt="">
+        <div class="emb-subs">
+          <img class="emb-sub-rune" id="${id}-s1" src="" alt="">
+          <img class="emb-sub-rune" id="${id}-s2" src="" alt="">
+          <img class="emb-sub-rune" id="${id}-s3" src="" alt="">
+        </div>
+      </div>`;
+      canvas.appendChild(div);
+    });
+
+    let embVisible = false;
+
+    function embRuneUrl(id) {
+      return buildUrl('/emblem/square_' + id + '_RUNES.png');
+    }
+
+    function embFillSeats(seats, startN) {
+      seats.forEach((s, i) => {
+        const id  = `emb-${startN + i}`;
+        const rm  = s.rune_map || {};
+        const s1  = s.rune_map_1 || rm['1'] || 0;
+        const s2  = s.rune_map_2 || rm['2'] || 0;
+        const s3  = s.rune_map_3 || rm['3'] || 0;
+        const mainEl = document.getElementById(`${id}-main`);
+        const s1El   = document.getElementById(`${id}-s1`);
+        const s2El   = document.getElementById(`${id}-s2`);
+        const s3El   = document.getElementById(`${id}-s3`);
+        if (mainEl && s.rune_id) mainEl.src = embRuneUrl(s.rune_id);
+        if (s1El && s1) s1El.src = embRuneUrl(s1);
+        if (s2El && s2) s2El.src = embRuneUrl(s2);
+        if (s3El && s3) s3El.src = embRuneUrl(s3);
+      });
+    }
+
+    async function fetchEmblemData() {
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        if (c1) {
+          const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+            .map(k => c1[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          embFillSeats(seats, 1);
+        }
+        if (c2) {
+          const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+            .map(k => c2[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          embFillSeats(seats, 6);
+        }
+      } catch {}
+    }
+
+    async function showPostEmblems() {
+      if (embVisible) return;
+      await transitionTo('emblems');
+      await fetchEmblemData();
+      embVisible = true;
+      EMB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`emb-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out', 'ph-visible');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-in');
+        setTimeout(() => {
+          if (embVisible) {
+            el.classList.remove('ph-in');
+            el.classList.add('ph-visible');
+            el.style.animationDelay = '';
+          }
+        }, 700 + delay);
+      });
+    }
+
+    function hidePostEmblems() {
+      if (!embVisible) return Promise.resolve();
+      embVisible = false;
+      EMB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`emb-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-out');
+      });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!embVisible) {
+            EMB_CARD_CLASSES.forEach((cls, i) => {
+              const el = document.getElementById(`emb-card-${i + 1}`);
+              el.classList.remove('ph-out', 'ph-visible');
+              el.style.animationDelay = '';
+            });
+          }
+          resolve();
+        }, 950);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       POST_ITEMS
+    ════════════════════════════════════════════════ */
+
+    const PIB_CARD_CLASSES = [
+      'postbacker_1','postbacker_2','postbacker_3','postbacker_4','postbacker_5',
+      'postbacker_6','postbacker_7','postbacker_8','postbacker_9','postbacker_10',
+    ];
+
+    PIB_CARD_CLASSES.forEach((cls, n) => {
+      const id       = `pib-${n + 1}`;
+      const mirrored = n >= 5 ? ' pib-mirrored' : '';
+      const div      = document.createElement('div');
+      div.className  = `postbacker ${cls}${mirrored}`;
+      div.id         = `pib-card-${n + 1}`;
+      const slots    = [0,1,2,3,4,5].map(i => `<img class="pib-item" id="${id}-i${i}" src="" alt="">`).join('');
+      div.innerHTML  = `<div class="pib-inner">
+        <div class="pib-stats">
+          <div class="pib-stat-row">
+            <span class="pib-label">KDA</span>
+            <span class="pib-value" id="${id}-kda">-/-/-</span>
+          </div>
+          <div class="pib-stat-row">
+            <span class="pib-label">GOLD</span>
+            <span class="pib-value" id="${id}-gold">-</span>
+          </div>
+        </div>
+        <div class="pib-items">${slots}</div>
+      </div>`;
+      canvas.appendChild(div);
+    });
+
+    let pibVisible = false;
+
+    function pibFillSeats(seats, startN) {
+      seats.forEach((s, i) => {
+        const id     = `pib-${startN + i}`;
+        const kdaEl  = document.getElementById(`${id}-kda`);
+        const goldEl = document.getElementById(`${id}-gold`);
+        if (kdaEl)  kdaEl.textContent  = `${s.kill_num}/${s.dead_num}/${s.assist_num}`;
+        if (goldEl) goldEl.textContent = s.extra_param ? s.extra_param.goldk.toUpperCase() : '-';
+        const items = s.equip_list || [];
+        for (let j = 0; j < 6; j++) {
+          const el = document.getElementById(`${id}-i${j}`);
+          if (!el) continue;
+          if (items[j] && items[j].value) {
+            el.src = buildUrl('/items/' + items[j].value + '.png');
+            el.style.visibility = '';
+          } else {
+            el.src = '';
+            el.style.visibility = 'hidden';
+          }
+        }
+      });
+    }
+
+    async function fetchItemsData() {
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        if (c1) {
+          const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+            .map(k => c1[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          pibFillSeats(seats, 1);
+        }
+        if (c2) {
+          const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+            .map(k => c2[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          pibFillSeats(seats, 6);
+        }
+      } catch {}
+    }
+
+    async function showPostItems() {
+      if (pibVisible) return;
+      await transitionTo('items');
+      await fetchItemsData();
+      pibVisible = true;
+      PIB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`pib-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out', 'ph-visible');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-in');
+        setTimeout(() => {
+          if (pibVisible) {
+            el.classList.remove('ph-in');
+            el.classList.add('ph-visible');
+            el.style.animationDelay = '';
+          }
+        }, 700 + delay);
+      });
+    }
+
+    function hidePostItems() {
+      if (!pibVisible) return Promise.resolve();
+      pibVisible = false;
+      PIB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`pib-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-out');
+      });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!pibVisible) {
+            PIB_CARD_CLASSES.forEach((cls, i) => {
+              const el = document.getElementById(`pib-card-${i + 1}`);
+              el.classList.remove('ph-out', 'ph-visible');
+              el.style.animationDelay = '';
+            });
+          }
+          resolve();
+        }, 950);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       POST_STATS
+    ════════════════════════════════════════════════ */
+
+    const PSB_CARD_CLASSES = [
+      'postbacker_1','postbacker_2','postbacker_3','postbacker_4','postbacker_5',
+      'postbacker_6','postbacker_7','postbacker_8','postbacker_9','postbacker_10',
+    ];
+
+    PSB_CARD_CLASSES.forEach((cls, n) => {
+      const id       = `psb-${n + 1}`;
+      const mirrored = n >= 5 ? ' psb-mirrored' : '';
+      const div      = document.createElement('div');
+      div.className  = `postbacker ${cls}${mirrored}`;
+      div.id         = `psb-card-${n + 1}`;
+      div.innerHTML  = `<div class="psb-inner">
+        <span class="psb-label">DAMAGE TAKEN</span>
+        <div class="psb-bar-track">
+          <div class="psb-bar psb-bar-taken" id="${id}-taken-bar"></div>
+          <div class="psb-num-dark"  id="${id}-taken-numD">0</div>
+          <div class="psb-num-light" id="${id}-taken-numL">0</div>
+        </div>
+        <div class="psb-bar-track">
+          <div class="psb-bar psb-bar-dealt" id="${id}-dealt-bar"></div>
+          <div class="psb-num-dark"  id="${id}-dealt-numD">0</div>
+          <div class="psb-num-light" id="${id}-dealt-numL">0</div>
+        </div>
+        <span class="psb-label">DAMAGE DEALT</span>
+      </div>`;
+      canvas.appendChild(div);
+    });
+
+    let psbVisible = false;
+    let psbData    = [];
+
+    function animatePsbCard(cardIdx, takenVal, takenPct, dealtVal, dealtPct) {
+      const id       = `psb-${cardIdx}`;
+      const mirrored = cardIdx > 5;
+      const DURATION = 1000;
+      const takenBar   = document.getElementById(`${id}-taken-bar`);
+      const takenDark  = document.getElementById(`${id}-taken-numD`);
+      const takenLight = document.getElementById(`${id}-taken-numL`);
+      const dealtBar   = document.getElementById(`${id}-dealt-bar`);
+      const dealtDark  = document.getElementById(`${id}-dealt-numD`);
+      const dealtLight = document.getElementById(`${id}-dealt-numL`);
+      if (!takenBar) return;
+      const start = performance.now();
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+      function tick(now) {
+        if (!psbVisible) return;
+        const t  = Math.min((now - start) / DURATION, 1);
+        const e  = easeOut(t);
+        const tp = takenPct * e;
+        const dp = dealtPct * e;
+        const tv = Math.round(takenVal * e);
+        const dv = Math.round(dealtVal * e);
+        takenBar.style.width = tp + '%';
+        dealtBar.style.width = dp + '%';
+        const ts = tv.toLocaleString();
+        const ds = dv.toLocaleString();
+        takenDark.textContent  = ts; takenLight.textContent = ts;
+        dealtDark.textContent  = ds; dealtLight.textContent = ds;
+        if (mirrored) {
+          takenLight.style.clipPath = `inset(0 0 0 ${100 - tp}%)`;
+          dealtLight.style.clipPath = `inset(0 0 0 ${100 - dp}%)`;
+        } else {
+          takenLight.style.clipPath = `inset(0 ${100 - tp}% 0 0)`;
+          dealtLight.style.clipPath = `inset(0 ${100 - dp}% 0 0)`;
+        }
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    async function fetchStatsData() {
+      psbData = Array(10).fill(null).map(() => ({ taken: 0, dealt: 0, takenPct: 0, dealtPct: 0 }));
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
+          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+        if (c1) extractSeats(c1).forEach((s, i) => {
+          psbData[i] = { taken: s.total_hurt || 0, dealt: s.total_damage || 0 };
+        });
+        if (c2) extractSeats(c2).forEach((s, i) => {
+          psbData[5 + i] = { taken: s.total_hurt || 0, dealt: s.total_damage || 0 };
+        });
+        const maxTaken = Math.max(...psbData.map(d => d.taken), 1);
+        const maxDealt = Math.max(...psbData.map(d => d.dealt), 1);
+        psbData = psbData.map(d => ({
+          ...d,
+          takenPct: (d.taken / maxTaken) * 100,
+          dealtPct: (d.dealt / maxDealt) * 100,
+        }));
+      } catch {}
+    }
+
+    async function showPostStats() {
+      if (psbVisible) return;
+      await transitionTo('stats');
+      await fetchStatsData();
+      psbVisible = true;
+      PSB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`psb-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out', 'ph-visible');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-in');
+        setTimeout(() => {
+          if (psbVisible) {
+            el.classList.remove('ph-in');
+            el.classList.add('ph-visible');
+            el.style.animationDelay = '';
+            const d = psbData[i];
+            setTimeout(() => { if (psbVisible && d) animatePsbCard(i + 1, d.taken, d.takenPct, d.dealt, d.dealtPct); }, 50);
+          }
+        }, 700 + delay);
+      });
+    }
+
+    function hidePostStats() {
+      if (!psbVisible) return Promise.resolve();
+      psbVisible = false;
+      PSB_CARD_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`psb-card-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-out');
+      });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!psbVisible) {
+            PSB_CARD_CLASSES.forEach((cls, i) => {
+              const el = document.getElementById(`psb-card-${i + 1}`);
+              el.classList.remove('ph-out', 'ph-visible');
+              el.style.animationDelay = '';
+              const id = `psb-${i + 1}`;
+              const tb = document.getElementById(`${id}-taken-bar`);
+              const db = document.getElementById(`${id}-dealt-bar`);
+              if (tb) tb.style.width = '0%';
+              if (db) db.style.width = '0%';
+            });
+          }
+          resolve();
+        }, 950);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       MATCH BOARD — persists across all Post features
+    ════════════════════════════════════════════════ */
+    let mbVisible = false;
+
+    function buildMbCamp(container, campNum) {
+      const L = campNum === 1; /* left side */
+
+      /* background */
+      const bg = document.createElement('img');
+      bg.style.cssText = `position:absolute;left:0;top:0;width:713px;height:86px;z-index:1;display:block`;
+      bg.src = L ? 'assets/postgame/postname_blue.png' : 'assets/postgame/postname_red.png';
+      container.appendChild(bg);
+
+      /* team logo — 70×70 wrapper + fallback circle + img (mirrors scoreboard pattern) */
+      const logoWrap = document.createElement('div');
+      logoWrap.style.cssText = `position:absolute;${L ? 'left:24px' : 'right:24px'};top:8px;width:70px;height:70px;z-index:3;display:flex;align-items:center;justify-content:center`;
+      const logoFb = document.createElement('div');
+      logoFb.id = `mb-logo-fb${campNum}`;
+      logoFb.style.cssText = `position:absolute;width:50px;height:50px;border-radius:50%;background:${L ? 'rgb(42,0,255)' : 'rgb(210,30,30)'}`;
+      const logo = document.createElement('img');
+      logo.id = `mb-logo${campNum}`;
+      logo.style.cssText = `position:absolute;width:70px;height:70px;object-fit:contain;display:none`;
+      logo.onload  = () => { logo.style.display = 'block'; logoFb.style.display = 'none'; };
+      logo.onerror = () => { logo.style.display = 'none';  logoFb.style.display = ''; };
+      logoWrap.appendChild(logoFb);
+      logoWrap.appendChild(logo);
+      container.appendChild(logoWrap);
+
+      /* tricode — 55px Anton, vertically + horizontally centered in fixed-width box */
+      const tri = document.createElement('div');
+      tri.id = `mb-tricode${campNum}`;
+      tri.style.cssText = `position:absolute;${L ? 'left:123px' : 'right:123px'};top:0;width:160px;height:86px;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:55px;color:#fff;text-transform:uppercase;text-align:center;z-index:5;white-space:nowrap`;
+      container.appendChild(tri);
+
+      /* victory/defeat indicator — 184×46, vertically centered */
+      const victor = document.createElement('img');
+      victor.id = `mb-victor${campNum}`;
+      victor.style.cssText = `position:absolute;${L ? 'left:406px' : 'right:406px'};top:50%;transform:translateY(-50%);width:184px;height:46px;z-index:6;display:none`;
+      container.appendChild(victor);
+
+      /* match score box — 50×50 */
+      const scoreBox = document.createElement('div');
+      scoreBox.id = `mb-score${campNum}`;
+      scoreBox.style.cssText = `position:absolute;${L ? 'left:317px' : 'right:317px'};top:18px;width:50px;height:50px;display:flex;align-items:center;justify-content:center;gap:4px;z-index:7`;
+      container.appendChild(scoreBox);
+
+      /* kill score — 53px Anton */
+      const kills = document.createElement('div');
+      kills.id = `mb-kills${campNum}`;
+      kills.style.cssText = `position:absolute;${L ? 'left:626px' : 'right:626px'};top:18px;width:70px;font-family:'Anton',sans-serif;font-size:53px;color:#fff;line-height:1;text-align:center;z-index:4;white-space:nowrap`;
+      kills.textContent = '0';
+      container.appendChild(kills);
+    }
+
+    (function initMatchBoard() {
+      buildMbCamp(document.getElementById('mb-camp1'), 1);
+      buildMbCamp(document.getElementById('mb-camp2'), 2);
+    })();
+
+    function showMatchBoard() {
+      if (mbVisible) return;
+      mbVisible = true;
+      fetchMatchBoardData();
+      const mb = document.getElementById('match-board');
+      mb.style.display = 'block';
+      ['mb-camp1', 'mb-camp2', 'mb-tournament'].forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.style.animation = '';
+        void el.offsetWidth;
+        el.style.animation = `mb-in 320ms cubic-bezier(0.22,1,0.36,1) ${i * 40}ms both`;
+      });
+    }
+
+    function hideMatchBoard() {
+      if (!mbVisible) return Promise.resolve();
+      mbVisible = false;
+      return new Promise(resolve => {
+        const els = ['mb-camp1', 'mb-camp2', 'mb-tournament'].map(id => document.getElementById(id));
+        els.forEach((el, i) => { el.style.animation = `mb-out 250ms ease-in ${i * 20}ms both`; });
+        setTimeout(() => {
+          if (!mbVisible) {
+            els.forEach(el => { el.style.animation = ''; });
+            document.getElementById('match-board').style.display = 'none';
+          }
+          resolve();
+        }, 310);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       MIDDLEBOARD — same show/hide rules as Matchboard
+    ════════════════════════════════════════════════ */
+    let mdbVisible = false;
+    let mdbPollTimer = null;
+
+    function fmtGold(v) {
+      if (!v) return '0';
+      return (v / 1000).toFixed(1) + 'k';
+    }
+
+    function fmtGameTime(secs) {
+      const s = secs || 0;
+      return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    async function fetchMiddleBoardData() {
+      try {
+        const [gameR, msR] = await Promise.allSettled([
+          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const gd = gameR.value?.data ?? null;
+        const ms = msR.value ?? null;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        if (gd) {
+          const camps = gd.camp_list || [];
+          const c1 = camps.find(c => c.campid === 1);
+          const c2 = camps.find(c => c.campid === 2);
+          if (c1 && c2) {
+            const sumBuff = (camp, key) => (camp.enemy_area_get || []).reduce((s, e) => s + (e[key] || 0), 0);
+            set('mdb-gold-l',       fmtGold(c1.total_money));
+            set('mdb-gold-r',       fmtGold(c2.total_money));
+            set('mdb-tower-l',      c1.kill_tower || 0);
+            set('mdb-tower-r',      c2.kill_tower || 0);
+            set('mdb-lord-l',       c1.kill_lord || 0);
+            set('mdb-lord-r',       c2.kill_lord || 0);
+            set('mdb-turtle-l',     c1.kill_tortoise || 0);
+            set('mdb-turtle-r',     c2.kill_tortoise || 0);
+            set('mdb-redbuff-l',    sumBuff(c1, 'orange_buffer_num'));
+            set('mdb-redbuff-r',    sumBuff(c2, 'orange_buffer_num'));
+            set('mdb-purplebuff-l', sumBuff(c1, 'purple_buffer_num'));
+            set('mdb-purplebuff-r', sumBuff(c2, 'purple_buffer_num'));
+          }
+          set('mdb-game-time-value', fmtGameTime(gd.game_time));
+        }
+        if (ms) {
+          const gameNum  = ms.game  || 1;
+          const matchNum = ms.match || 1;
+          set('mdb-game-label-text', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
+        }
+      } catch {}
+    }
+
+    function showMiddleBoard() {
+      if (mdbVisible) return;
+      mdbVisible = true;
+      fetchMiddleBoardData();
+      const el = document.getElementById('middleboard');
+      el.classList.remove('mdb-out');
+      el.style.display = 'block';
+      void el.offsetWidth;
+      el.classList.add('mdb-in');
+      mdbPollTimer = setInterval(fetchMiddleBoardData, 3000);
+    }
+
+    function hideMiddleBoard() {
+      if (!mdbVisible) return Promise.resolve();
+      mdbVisible = false;
+      clearInterval(mdbPollTimer);
+      mdbPollTimer = null;
+      const el = document.getElementById('middleboard');
+      el.classList.remove('mdb-in');
+      el.classList.add('mdb-out');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!mdbVisible) {
+            el.classList.remove('mdb-out');
+            el.style.display = 'none';
+          }
+          resolve();
+        }, 800);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       PLAYERBOARD
+    ════════════════════════════════════════════════ */
+    let pbVisible = false;
+    let pbPollTimer = null;
+    let pbPhotoManifest = null;
+    let pbLastPoseKey = '';
+
+    async function pbLoadManifest() {
+      try {
+        const r = await fetch(buildUrl('/api/photo-manifest'), { cache: 'no-store' });
+        if (r.ok) pbPhotoManifest = await r.json();
+      } catch {}
+    }
+
+    function pbPhotoUrl(name, pose) {
+      if (!pbPhotoManifest) return '/photos/placeholder.png';
+      const files = pbPhotoManifest[pose] || [];
+      if (!files.length) return '/photos/placeholder.png';
+      const exact = name + '_' + pose + '_resized.png';
+      if (files.includes(exact)) return '/photos/' + pose + '/' + exact;
+      // name not found — random fallback (debug mode)
+      return '/photos/' + pose + '/' + files[Math.floor(Math.random() * files.length)];
+    }
+
+    function pbFitName(spanEl) {
+      spanEl.style.transform = '';
+      const w = spanEl.parentElement.clientWidth;
+      if (w > 0 && spanEl.scrollWidth > w) {
+        spanEl.style.transform = 'scaleX(' + (w / spanEl.scrollWidth) + ')';
+      }
+    }
+
+    const PB_ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER'];
+
+    function pbApplySeats(camp, prefix, pose, updatePhotos) {
+      const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+        .map(k => camp[k]).filter(Boolean)
+        .sort((a, b) => a.pos - b.pos);
+      seats.forEach((s, i) => {
+        const n = i + 1;
+        const heroEl   = document.getElementById(prefix + n + '-hero');
+        const levelEl  = document.getElementById(prefix + n + '-level');
+        const roleEl   = document.getElementById(prefix + n + '-role');
+        const nameSpan = document.getElementById(prefix + n + '-name');
+        const photoEl  = document.getElementById(prefix + n + '-photo');
+        if (heroEl)   heroEl.src = buildUrl('/posthero/' + s.heroid + '_POST_HERO.png');
+        if (levelEl)  levelEl.textContent = s.level != null ? s.level : '';
+        if (roleEl) {
+          const roleName = PB_ROLES[i] || '';
+          if (roleName) { roleEl.src = buildUrl('/role/' + encodeURIComponent(roleName) + '.png'); roleEl.style.display = ''; }
+          else roleEl.style.display = 'none';
+        }
+        if (nameSpan) { nameSpan.textContent = s.name || ''; pbFitName(nameSpan); }
+        if (photoEl && updatePhotos) photoEl.src = buildUrl(pbPhotoUrl(s.name, pose));
+      });
+    }
+
+    async function fetchPlayerBoardData() {
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        const winCamp = gd.win_camp || 0;
+        const pose1 = winCamp === 0 ? 'VICTORY' : (winCamp === 1 ? 'VICTORY' : 'DEFEAT');
+        const pose2 = winCamp === 0 ? 'VICTORY' : (winCamp === 2 ? 'VICTORY' : 'DEFEAT');
+        const poseKey = pose1 + '|' + pose2;
+        const updatePhotos = poseKey !== pbLastPoseKey;
+        if (updatePhotos) pbLastPoseKey = poseKey;
+        if (c1) pbApplySeats(c1, 'pb-b', pose1, updatePhotos);
+        if (c2) pbApplySeats(c2, 'pb-r', pose2, updatePhotos);
+      } catch {}
+    }
+
+    function showPlayerBoard() {
+      if (pbVisible) return;
+      pbVisible = true;
+      pbLastPoseKey = '';
+      pbLoadManifest().then(fetchPlayerBoardData);
+      const el = document.getElementById('playerboard');
+      el.classList.remove('pb-out');
+      el.style.display = 'block';
+      void el.offsetWidth;
+      el.classList.add('pb-in');
+      pbPollTimer = setInterval(fetchPlayerBoardData, 5000);
+    }
+
+    function hidePlayerBoard() {
+      if (!pbVisible) return Promise.resolve();
+      pbVisible = false;
+      clearInterval(pbPollTimer);
+      pbPollTimer = null;
+      const el = document.getElementById('playerboard');
+      el.classList.remove('pb-in');
+      el.classList.add('pb-out');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!pbVisible) {
+            el.classList.remove('pb-out');
+            el.style.display = 'none';
+          }
+          resolve();
+        }, 750);
+      });
+    }
+
+    function mbRenderScoreBars(campNum, total, scored) {
+      const box = document.getElementById(`mb-score${campNum}`);
+      if (!box) return;
+      box.innerHTML = '';
+      const fromRight = campNum === 1;
+      for (let i = 0; i < total; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'mb-score-bar';
+        if (fromRight ? (i >= total - scored) : (i < scored)) bar.classList.add('scored');
+        box.appendChild(bar);
+      }
+    }
+
+    function applyMatchBoardData(gameData, ms) {
+      if (gameData) {
+        const camps = gameData.camp_list || [];
+        const gc1 = camps.find(c => c.campid === 1);
+        const gc2 = camps.find(c => c.campid === 2);
+
+        /* tricode + logo from team_simple_name */
+        const t1 = gc1?.team_simple_name || '';
+        const t2 = gc2?.team_simple_name || '';
+        const tri1  = document.getElementById('mb-tricode1');
+        const tri2  = document.getElementById('mb-tricode2');
+        const logo1 = document.getElementById('mb-logo1');
+        const logo2 = document.getElementById('mb-logo2');
+        if (tri1) tri1.textContent = t1;
+        if (tri2) tri2.textContent = t2;
+        if (logo1 && t1) {
+          logo1.style.display = 'none';
+          document.getElementById('mb-logo-fb1').style.display = '';
+          logo1.src = `logos/${t1}.png`;
+        }
+        if (logo2 && t2) {
+          logo2.style.display = 'none';
+          document.getElementById('mb-logo-fb2').style.display = '';
+          logo2.src = `logos/${t2}.png`;
+        }
+
+        /* kill score from camp.score */
+        const k1 = document.getElementById('mb-kills1');
+        const k2 = document.getElementById('mb-kills2');
+        if (k1) k1.textContent = gc1?.score ?? 0;
+        if (k2) k2.textContent = gc2?.score ?? 0;
+
+        /* victory/defeat from win_camp */
+        const wc = gameData.win_camp ?? null;
+        const v1 = document.getElementById('mb-victor1');
+        const v2 = document.getElementById('mb-victor2');
+        if (v1) {
+          if      (wc === 1) { v1.src = 'assets/postgame/blue_victory.png'; v1.style.display = ''; }
+          else if (wc === 2) { v1.src = 'assets/postgame/blue_defeat.png';  v1.style.display = ''; }
+          else               { v1.style.display = 'none'; }
+        }
+        if (v2) {
+          if      (wc === 2) { v2.src = 'assets/postgame/red_victory.png'; v2.style.display = ''; }
+          else if (wc === 1) { v2.src = 'assets/postgame/red_defeat.png';  v2.style.display = ''; }
+          else               { v2.style.display = 'none'; }
+        }
+      }
+      if (ms) {
+        const homeTeam  = ms.home  || ms.teamA;
+        const awayTeam  = ms.away  || ms.teamB;
+        const isSwapped = ms.swapped !== undefined ? ms.swapped : (ms.blueTeam === 'B');
+        const c1 = isSwapped ? awayTeam : homeTeam;
+        const c2 = isSwapped ? homeTeam : awayTeam;
+        const maxW = Math.ceil(parseInt((ms.series || 'BO3').replace('BO', '')) / 2);
+        mbRenderScoreBars(1, maxW, c1.score);
+        mbRenderScoreBars(2, maxW, c2.score);
+      }
+    }
+
+    async function fetchMatchBoardData() {
+      const [gameR, msR] = await Promise.allSettled([
+        fetch(buildUrl('/api/gamedata-proxy')).then(r => r.ok ? r.json() : null).catch(() => null),
+        fetch(buildUrl('/match/state')).then(r => r.ok ? r.json() : null).catch(() => null),
+      ]);
+      applyMatchBoardData((gameR.value?.data) ?? null, msR.value ?? null);
     }
 
     connectSSE();
     startRichguyPoll();
 
+    async function restoreScene() {
+      try {
+        const r = await fetch(buildUrl('/overlay/mplfs-scene'));
+        const scene = await r.json();
+        if      (scene.activeFeature === 'hearts')   showPostHearts();
+        else if (scene.activeFeature === 'itemline') showItemTimeline();
+        else if (scene.activeFeature === 'emblems')  showPostEmblems();
+        else if (scene.activeFeature === 'items')    showPostItems();
+        else if (scene.activeFeature === 'stats')    showPostStats();
+        else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
+        else if (scene.matchboard)                   showMatchBoard();
+        if (scene.middleboard)                       showMiddleBoard();
+        if (scene.playerboard)                       showPlayerBoard();
+      } catch {}
+    }
+    restoreScene();
+
     document.addEventListener('keydown', e => {
       if (e.key === '`') {
-        const bar = document.getElementById('config-bar');
-        bar.style.display = bar.style.display === 'none' ? '' : 'none';
+        document.getElementById('config-bar').classList.toggle('debug-open');
       }
     });
+
+    function toggleLocalPreview(feature, btn) {
+      const wasActive = btn.classList.contains('active');
+      document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
+      if (wasActive) {
+        hideActiveFeature();
+      } else {
+        btn.classList.add('active');
+        if (feature === 'hearts')   showPostHearts();
+        if (feature === 'richguy')  fetchAndShowRichguy();
+        if (feature === 'timeline') showItemTimeline();
+        if (feature === 'emblems')  showPostEmblems();
+      }
+    }
+
+    window.previewTrigger = function(event, action) {
+      document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
+      if (action === 'show') {
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items' };
+        const btn = document.getElementById(btnMap[event]);
+        if (btn) btn.classList.add('active');
+      }
+      if (action === 'show') {
+        if (event === 'post_hearts')   showPostHearts();
+        if (event === 'post_itemline') showItemTimeline();
+        if (event === 'post_richguy')  fetchAndShowRichguy();
+        if (event === 'post_emblems')  showPostEmblems();
+        if (event === 'post_items')    showPostItems();
+        if (event === 'matchboard')    showMatchBoard();
+        if (event === 'middleboard')   showMiddleBoard();
+        if (event === 'playerboard')   showPlayerBoard();
+      } else {
+        if (event === 'matchboard')  { hideMatchBoard(); return; }
+        if (event === 'middleboard') { hideMiddleBoard(); return; }
+        if (event === 'playerboard') { hidePlayerBoard(); return; }
+        hideActiveFeature();
+      }
+    };
 
   </script>
 

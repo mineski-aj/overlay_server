@@ -61,7 +61,7 @@ app.use(express.static(path.join(__dirname), {
   maxAge: '1d',
   index: false,
   setHeaders: function(res, filePath) {
-    if (filePath.endsWith('.html') || filePath.includes('/html/js/')) {
+    if (filePath.endsWith('.html') || filePath.includes('/html/js/') || filePath.endsWith('mainroster.json') || filePath.includes('/logos/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }

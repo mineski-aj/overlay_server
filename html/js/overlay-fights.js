@@ -5,26 +5,104 @@ var feedData   = null;
 var lastActionTs = 0;
 var fightPollTimer = null;
 
-var fightOverlay = document.getElementById('fight-overlay');
+var fightOverlay   = document.getElementById('fight-overlay');
+var _fightOutTimer = null;
+var _fightShouldShow = false;
+var _pendingGold   = null;
+
+function _fightCancelHide() {
+  if (_fightOutTimer) { clearTimeout(_fightOutTimer); _fightOutTimer = null; }
+}
+
+/* When tab comes back to foreground, enforce show state */
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState !== 'visible') return;
+  if (_fightShouldShow) {
+    _fightCancelHide();
+    fightOverlay.classList.remove('out');
+    fightOverlay.style.opacity    = '1';
+    fightOverlay.style.visibility = '';
+    fightOverlay.style.display    = 'flex';
+    fightOverlay.classList.add('in');
+  }
+});
+
+function countUp(el, target, duration) {
+  var start = performance.now();
+  function ease(t) { return 1 - Math.pow(1 - t, 3); }
+  (function frame(now) {
+    var t = Math.min((now - start) / duration, 1);
+    el.textContent = Math.round(ease(t) * target).toLocaleString();
+    if (t < 1) requestAnimationFrame(frame);
+  })(performance.now());
+}
+
+function triggerDeathAnimations() {
+  if (!_fightShouldShow) return;
+  fightOverlay.querySelectorAll('.player-row.dead .hero-wrap').forEach(function(wrap) {
+    wrap.classList.remove('slash-active');
+    void wrap.offsetWidth;
+    wrap.classList.add('slash-active');
+  });
+}
 
 function fightAnimateIn() {
-  fightOverlay.style.display = 'flex';
+  _fightShouldShow = true;
+  _fightCancelHide();
+  fightOverlay.style.display    = 'flex';
   fightOverlay.classList.remove('out');
   fightOverlay.style.opacity    = '';
   fightOverlay.style.visibility = '';
   void fightOverlay.offsetWidth;
   fightOverlay.classList.add('in');
+
+  /* gold count starts with overlay */
+  if (_pendingGold) {
+    var c1El = document.getElementById('c1-gold');
+    var c2El = document.getElementById('c2-gold');
+    c1El.classList.remove('gold-hidden');
+    c2El.classList.remove('gold-hidden');
+    countUp(c1El, _pendingGold.c1, 900);
+    countUp(c2El, _pendingGold.c2, 900);
+
+    /* after count: labels + winner flash */
+    var pg = _pendingGold;
+    setTimeout(function() {
+      if (!_fightShouldShow) return;
+      fightOverlay.querySelectorAll('.gold-label').forEach(function(l) {
+        l.classList.remove('gold-hidden');
+      });
+      if (pg.c1 !== pg.c2) {
+        var winner = pg.c1 > pg.c2 ? 'c1' : 'c2';
+        var winBlock = fightOverlay.querySelector('.gold-block.' + winner);
+        if (winBlock) winBlock.classList.add('flash-winner');
+      }
+    }, 920);
+  }
+
+  /* death slash + shake after rows have faded in */
+  setTimeout(triggerDeathAnimations, 820);
 }
 
 function fightAnimateOut() {
+  _fightShouldShow = false;
+  _fightCancelHide();
   fightOverlay.classList.remove('in');
   fightOverlay.classList.add('out');
-  fightOverlay.addEventListener('animationend', () => {
+  function doHide() {
+    _fightOutTimer = null;
     fightOverlay.classList.remove('out');
     fightOverlay.style.opacity    = '0';
     fightOverlay.style.visibility = 'hidden';
     fightOverlay.style.display    = 'none';
-  }, { once: true });
+  }
+  if (fightOverlay.style.display === 'none') { doHide(); return; }
+  /* No animationend — child animations bubble and cause false triggers.
+     Just wait slightly longer than the 0.35s out animation. */
+  _fightOutTimer = setTimeout(function() {
+    if (_fightShouldShow) return; /* show fired while waiting — don't hide */
+    doHide();
+  }, 450);
 }
 
 function fmtDmg(n) {
@@ -89,9 +167,10 @@ function renderFight(fight, feed) {
   function rowHTML(p) {
     var bar      = Math.round((p.dmg_dealt / maxDmg) * 100);
     var imgUrl   = fightHeroImgUrl(p.hero_id);
-    var heroEl   = imgUrl
+    var inner    = imgUrl
       ? `<img class="hero-img" src="${imgUrl}" alt="${p.hero || ''}">`
       : `<div class="hero-placeholder">${(p.hero || '?').charAt(0)}</div>`;
+    var heroEl   = `<div class="hero-wrap">${inner}</div>`;
     var name     = p.name || '—';
     var fontSize = calcNameSize(name);
     return `<div class="player-row${p.survived ? '' : ' dead'}">
@@ -111,8 +190,17 @@ function renderFight(fight, feed) {
 
   var c1gold = c1.reduce((sum, p) => sum + (p.gold_earned || 0), 0);
   var c2gold = c2.reduce((sum, p) => sum + (p.gold_earned || 0), 0);
-  document.getElementById('c1-gold').textContent = c1gold.toLocaleString();
-  document.getElementById('c2-gold').textContent = c2gold.toLocaleString();
+  _pendingGold = { c1: c1gold, c2: c2gold };
+
+  var c1goldEl = document.getElementById('c1-gold');
+  var c2goldEl = document.getElementById('c2-gold');
+  c1goldEl.textContent = '0';
+  c2goldEl.textContent = '0';
+  [c1goldEl, c2goldEl].forEach(function(el) { el.classList.add('gold-hidden'); });
+  fightOverlay.querySelectorAll('.gold-label').forEach(function(l) { l.classList.add('gold-hidden'); });
+  fightOverlay.querySelectorAll('.gold-block').forEach(function(b) {
+    b.classList.remove('flash-winner');
+  });
 }
 
 async function fightPoll() {
@@ -131,22 +219,6 @@ async function fightPoll() {
   } catch (e) {}
 }
 
-async function pollAction() {
-  try {
-    var r = await fetch('/overlay/fights/pending');
-    var { action, ts } = await r.json();
-    if (action && ts && ts !== lastActionTs) {
-      lastActionTs = ts;
-      if (action === 'show') {
-        if (allFights.length) { debugIdx = allFights.length - 1; renderFight(allFights[debugIdx], feedData); }
-        fightAnimateIn();
-      } else if (action === 'hide') {
-        fightAnimateOut();
-      }
-    }
-  } catch {}
-}
-
 function setMode(m) {
   clearInterval(fightPollTimer);
   allFights = [];
@@ -155,6 +227,4 @@ function setMode(m) {
   fightPollTimer = setInterval(fightPoll, 2000);
 }
 
-setInterval(pollAction, 500);
-pollAction();
 setMode('live');

@@ -173,6 +173,39 @@ for (let pi = 1; pi <= 10; pi++) {
   })(pi);
 }
 
+/* ── iframe test entry point (called by dashboard preview tester) ── */
+window.iframeTest = async function(playerIdx, feature) {
+  try {
+    const data = lastData || await fetchData();
+    if (!data) return;
+    const r = getPlayer(data, playerIdx);
+    if (!r) return;
+    const { player, equipIds } = r;
+    const pName   = (player.name || '').toUpperCase();
+    const seatNum = playerIdx <= 5 ? playerIdx : playerIdx - 5;
+    const t3s     = equipIds.filter(id => TIER3_IDS.has(id));
+
+    if (feature === 'lvl15') {
+      triggerLvl15(playerIdx, formatTime(data.game_time || 0), player.heroid);
+    } else if (feature === 'item') {
+      const itemId    = t3s.length > 0 ? t3s[0] : Object.keys(T3_RECIPES)[0];
+      const recipeIds = T3_RECIPES[itemId] || [];
+      triggerItem(playerIdx, player.heroid, recipeIds, itemId, pName, seatNum);
+    } else if (feature === 'trinity') {
+      const items = t3s.length >= 3 ? t3s.slice(0, 3) : [...TRINITY_DEBUG_ITEMS];
+      triggerTrinity(playerIdx, player.heroid, items, pName, seatNum, trinityLabel(seatNum, items));
+    } else if (feature === 'swap') {
+      const soldId = t3s.length > 0 ? t3s[0] : '3001';
+      triggerSwap(playerIdx, player.heroid, soldId, SWAP_DEBUG_BOUGHT, pName, seatNum);
+    } else if (feature === 'conceal') {
+      const campId = playerIdx <= 5 ? 1 : 2;
+      const side   = playerIdx <= 5 ? 'left' : 'right';
+      const camp   = (data.camp_list || []).find(function(c) { return c.campid === campId; });
+      triggerConceal(camp ? getCampRoamingCategory(camp) : 'default', side);
+    }
+  } catch(e) { console.warn('[iframeTest]', e); }
+};
+
 /* ── Unified poll handler ── */
 registerPollHandler(function(data) {
   for (let pidx = 1; pidx <= 10; pidx++) {
@@ -299,7 +332,10 @@ masterPoll();
     try {
       var d = JSON.parse(e.data);
       if (!featureEnabled.fights) return;
-      if (d.action === 'show') fightAnimateIn();
+      if (d.action === 'show') {
+        if (allFights.length) { debugIdx = allFights.length - 1; renderFight(allFights[debugIdx], feedData); }
+        fightAnimateIn();
+      }
       if (d.action === 'hide') fightAnimateOut();
     } catch {}
   });
