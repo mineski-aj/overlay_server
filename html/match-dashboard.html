@@ -151,11 +151,13 @@
 
     /* ── Score row ── */
     .score-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid #1a1a28; }
-    .score-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .score-side { display: flex; align-items: center; gap: 8px; }
+    .score-row { display: flex; align-items: center; justify-content: center; gap: 20px; }
+    .score-side { display: flex; align-items: center; gap: 14px; }
+    .score-ctrl { display: flex; flex-direction: column; align-items: center; gap: 4px; }
     .score-short { font-size: 13px; font-weight: 700; color: #888; width: 42px; text-align: center; }
-    .score-val { font-size: 40px; font-weight: 800; color: #fff; min-width: 52px; text-align: center; line-height: 1; }
+    .score-val { font-size: 48px; font-weight: 800; color: #fff; min-width: 52px; text-align: center; line-height: 1; }
     .score-sep { font-size: 16px; color: #333; padding: 0 4px; }
+    .btn-plus, .btn-minus { width: 52px; text-align: center; }
 
     .action-row { display: flex; justify-content: center; gap: 10px; margin-top: 14px; }
 
@@ -428,15 +430,19 @@
       <div class="score-row">
         <div class="score-side">
           <span id="home-short-disp" class="score-short">HME</span>
-          <button class="btn btn-minus" id="home-minus">−</button>
-          <div class="score-val" id="home-score-val">0</div>
-          <button class="btn btn-plus"  id="home-plus">+</button>
+          <div class="score-ctrl">
+            <button class="btn btn-plus"  id="home-plus">+</button>
+            <div class="score-val" id="home-score-val">0</div>
+            <button class="btn btn-minus" id="home-minus">−</button>
+          </div>
         </div>
         <div class="score-sep">vs</div>
         <div class="score-side">
-          <button class="btn btn-plus"  id="away-plus">+</button>
-          <div class="score-val" id="away-score-val">0</div>
-          <button class="btn btn-minus" id="away-minus">−</button>
+          <div class="score-ctrl">
+            <button class="btn btn-plus"  id="away-plus">+</button>
+            <div class="score-val" id="away-score-val">0</div>
+            <button class="btn btn-minus" id="away-minus">−</button>
+          </div>
           <span id="away-short-disp" class="score-short">AWY</span>
         </div>
       </div>

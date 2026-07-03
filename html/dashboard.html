@@ -656,6 +656,7 @@
 <nav id="tab-bar">
   <button class="tab-btn" data-page="matchboard">Match Board</button>
   <button class="tab-btn active" data-page="control">Control</button>
+  <button class="tab-btn" data-page="dynamic">Dynamic</button>
   <button class="tab-btn" data-page="edit">Edit</button>
   <button class="tab-btn" data-page="settings">Settings</button>
 </nav>
@@ -664,6 +665,14 @@
 <div id="page-matchboard" class="page">
   <iframe id="matchboard-iframe" src="/html/match-dashboard.html" allow="autoplay"
     style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Dynamic Content -->
+<div id="page-dynamic" class="page">
+  <div style="display:flex;align-items:center;justify-content:flex-end;padding-bottom:10px;flex-shrink:0;">
+    <a href="/html/dynamic.html" target="_blank" class="btn btn-open" style="font-size:12px;padding:5px 14px;text-decoration:none;">Open ↗</a>
+  </div>
+  <iframe src="/html/dynamic.html" style="width:100%;flex:1;border:none;min-height:0;"></iframe>
 </div>
 
 <!-- Page 1: Control -->

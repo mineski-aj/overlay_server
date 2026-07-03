@@ -1,38 +1,5 @@
 {
   "home": {
-    "teamId": "11149",
-    "lineup": [
-      {
-        "role": "EXP LANER",
-        "ign": "Kielvj",
-        "id": "774012304"
-      },
-      {
-        "role": "JUNGLER",
-        "ign": "JamesPangks",
-        "id": "1475950942"
-      },
-      {
-        "role": "MID LANER",
-        "ign": "Aqua",
-        "id": "1271650304"
-      },
-      {
-        "role": "ROAMER",
-        "ign": "Nova_",
-        "id": "1475950747"
-      },
-      {
-        "role": "GOLD LANER",
-        "ign": "shizou",
-        "id": "1373808356"
-      }
-    ],
-    "name": "AP.BREN",
-    "short": "APBR",
-    "score": 0
-  },
-  "away": {
     "teamId": "10973",
     "lineup": [
       {
@@ -65,12 +32,45 @@
     "short": "FLCN",
     "score": 0
   },
+  "away": {
+    "teamId": "11150",
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Jeymz",
+        "id": "1653525073"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "Raizen.",
+        "id": "1722728779"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Minguin",
+        "id": "1475950612"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Perkziva",
+        "id": "1271650325"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "Netskie",
+        "id": "1722728791"
+      }
+    ],
+    "name": "Smart Omega",
+    "short": "OMG",
+    "score": 0
+  },
   "series": "BO3",
   "game": 1,
-  "swapped": true,
+  "swapped": false,
   "official": true,
   "week": 1,
-  "day": 2,
+  "day": 1,
   "patch": "Decisive Battle 420",
   "hosts": [
     "Odin",
@@ -101,18 +101,19 @@
       "team1Name": "Aurora Gaming PH",
       "team1Short": "RORA",
       "team2Name": "ONIC PH",
-      "team2Short": "ONIC"
+      "team2Short": "ONIC",
+      "vsDisplay": "VS"
     },
     {
       "team1Id": "10973",
-      "team2Id": "10764",
+      "team2Id": "11150",
       "score1": 0,
       "score2": 0,
       "time": "7:30 PM",
       "team1Name": "Team Falcons",
       "team1Short": "FLCN",
-      "team2Name": "ONIC PH",
-      "team2Short": "ONIC"
+      "team2Name": "Smart Omega",
+      "team2Short": "OMG"
     }
   ],
   "tomorrowMatches": [
@@ -149,5 +150,5 @@
   ],
   "countdownLabel": "SHOW STARTS IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
-  "match": 1
+  "match": 3
 }

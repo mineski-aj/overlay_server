@@ -79,6 +79,30 @@ router.get('/api/photo-manifest', (req, res) => {
   }
 });
 
+// Dynamic content — GET to read, POST { ph_ticker, en_ticker, ph_headline, en_headline } to update
+const DYNAMIC_FILE = path.join(__dirname, '..', 'dynamic_content.json');
+const DYNAMIC_DEFAULTS = { ph_ticker: '', en_ticker: '', ph_headline: '', en_headline: '' };
+
+router.get('/api/dynamic-content', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(DYNAMIC_FILE, 'utf8')));
+  } catch {
+    res.set('Cache-Control', 'no-store').json(DYNAMIC_DEFAULTS);
+  }
+});
+
+router.post('/api/dynamic-content', (req, res) => {
+  const b = req.body || {};
+  const data = {
+    ph_ticker:   String(b.ph_ticker   || ''),
+    en_ticker:   String(b.en_ticker   || ''),
+    ph_headline: String(b.ph_headline || ''),
+    en_headline: String(b.en_headline || ''),
+  };
+  fs.writeFileSync(DYNAMIC_FILE, JSON.stringify(data, null, 2));
+  res.set('Cache-Control', 'no-store').json({ ok: true, data });
+});
+
 // Server-side proxy — fetches game API and returns JSON, avoids browser CORS issues
 router.get('/api/gamedata-proxy', async (req, res) => {
   try {

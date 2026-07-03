@@ -113,6 +113,7 @@
       background: transparent;
       overflow: hidden;
       position: relative;
+      contain: layout paint;
     }
     #canvas.bg-black { background: #000; }
 
@@ -146,7 +147,6 @@
       opacity: 0;
       transform: perspective(600px) rotateY(90deg);
       pointer-events: none;
-      will-change: transform, opacity;
     }
 
     /* home — left column */
@@ -243,6 +243,7 @@
     }
     .psb-num-dark  { color:#111; z-index:1; }
     .psb-num-light { color:#fff; z-index:2; clip-path:inset(0 100% 0 0); }
+    .psb-mirrored .psb-label    { text-align:right; }
     .psb-mirrored .psb-num-dark, .psb-mirrored .psb-num-light { padding-left:0; padding-right:10px; justify-content:flex-end; }
     .psb-mirrored .psb-num-light { clip-path:inset(0 0 0 100%); }
 
@@ -785,6 +786,7 @@
     async function showPostHearts() {
       await transitionTo('hearts');
       phVisible = true;
+      CONTAINERS.forEach(({ cls }) => { canvas.querySelector(`.${cls}`).style.willChange = 'transform, opacity'; });
       CONTAINERS.forEach(({ cls }, i) => {
         const el    = canvas.querySelector(`.${cls}`);
         const delay = (i % 5) * ROW_STAGGER_MS;
@@ -820,6 +822,7 @@
             const el = canvas.querySelector(`.${cls}`);
             el.classList.remove('ph-out', 'ph-visible');
             el.style.animationDelay = '';
+            el.style.willChange = '';
           });
           resolve();
         }, 950);
@@ -1794,6 +1797,7 @@
       embVisible = true;
       EMB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`emb-card-${i + 1}`);
+        el.style.willChange = 'transform, opacity';
         const delay = (i % 5) * ROW_STAGGER_MS;
         el.classList.remove('ph-in', 'ph-out', 'ph-visible');
         el.style.animationDelay = `${delay}ms`;
@@ -1827,6 +1831,7 @@
               const el = document.getElementById(`emb-card-${i + 1}`);
               el.classList.remove('ph-out', 'ph-visible');
               el.style.animationDelay = '';
+              el.style.willChange = '';
             });
           }
           resolve();
@@ -1920,6 +1925,7 @@
       pibVisible = true;
       PIB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`pib-card-${i + 1}`);
+        el.style.willChange = 'transform, opacity';
         const delay = (i % 5) * ROW_STAGGER_MS;
         el.classList.remove('ph-in', 'ph-out', 'ph-visible');
         el.style.animationDelay = `${delay}ms`;
@@ -1953,6 +1959,7 @@
               const el = document.getElementById(`pib-card-${i + 1}`);
               el.classList.remove('ph-out', 'ph-visible');
               el.style.animationDelay = '';
+              el.style.willChange = '';
             });
           }
           resolve();
@@ -2070,6 +2077,7 @@
       psbVisible = true;
       PSB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`psb-card-${i + 1}`);
+        el.style.willChange = 'transform, opacity';
         const delay = (i % 5) * ROW_STAGGER_MS;
         el.classList.remove('ph-in', 'ph-out', 'ph-visible');
         el.style.animationDelay = `${delay}ms`;
@@ -2105,6 +2113,7 @@
               const el = document.getElementById(`psb-card-${i + 1}`);
               el.classList.remove('ph-out', 'ph-visible');
               el.style.animationDelay = '';
+              el.style.willChange = '';
               const id = `psb-${i + 1}`;
               const tb = document.getElementById(`${id}-taken-bar`);
               const db = document.getElementById(`${id}-dealt-bar`);
@@ -2211,7 +2220,22 @@
        MIDDLEBOARD — same show/hide rules as Matchboard
     ════════════════════════════════════════════════ */
     let mdbVisible = false;
-    let mdbPollTimer = null;
+    let mdbPollTimer = null; /* kept for compat — unused after unified poll */
+
+    /* ── Unified poll: one setInterval drives both middleboard + playerboard ── */
+    let _unifiedPollTimer = null;
+    function _startUnifiedPoll() {
+      if (_unifiedPollTimer) return;
+      _unifiedPollTimer = setInterval(() => {
+        if (mdbVisible) fetchMiddleBoardData();
+        if (pbVisible)  fetchPlayerBoardData();
+      }, 3000);
+    }
+    function _stopUnifiedPoll() {
+      if (mdbVisible || pbVisible) return;
+      clearInterval(_unifiedPollTimer);
+      _unifiedPollTimer = null;
+    }
 
     function fmtGold(v) {
       if (!v) return '0';
@@ -2270,14 +2294,13 @@
       el.style.display = 'block';
       void el.offsetWidth;
       el.classList.add('mdb-in');
-      mdbPollTimer = setInterval(fetchMiddleBoardData, 3000);
+      _startUnifiedPoll();
     }
 
     function hideMiddleBoard() {
       if (!mdbVisible) return Promise.resolve();
       mdbVisible = false;
-      clearInterval(mdbPollTimer);
-      mdbPollTimer = null;
+      _stopUnifiedPoll();
       const el = document.getElementById('middleboard');
       el.classList.remove('mdb-in');
       el.classList.add('mdb-out');
@@ -2381,14 +2404,13 @@
       el.style.display = 'block';
       void el.offsetWidth;
       el.classList.add('pb-in');
-      pbPollTimer = setInterval(fetchPlayerBoardData, 5000);
+      _startUnifiedPoll();
     }
 
     function hidePlayerBoard() {
       if (!pbVisible) return Promise.resolve();
       pbVisible = false;
-      clearInterval(pbPollTimer);
-      pbPollTimer = null;
+      _stopUnifiedPoll();
       const el = document.getElementById('playerboard');
       el.classList.remove('pb-in');
       el.classList.add('pb-out');
