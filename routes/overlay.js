@@ -101,6 +101,20 @@ router.get('/overlay/post_richguy/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/waiting_tvc/show
+router.get('/overlay/waiting_tvc/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'waiting';
+  state.overlayClients.forEach(c => { try { c.write('event: waiting_tvc\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/waiting_tvc/hide
+router.get('/overlay/waiting_tvc/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: waiting_tvc\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/fs/debugoff
 router.get('/overlay/fs/debugoff', (req, res) => {
   state.overlayClients.forEach(c => { try { c.write('event: fs_debugoff\ndata: {}\n\n'); } catch {} });

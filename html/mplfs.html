@@ -284,6 +284,150 @@
       transition: color 0.6s;
     }
 
+    /* ── WAITING SCREEN TVC PAGE ── */
+    #waiting-screen-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #waiting-screen-page.ws-on { display: block; }
+    #waiting-screen-page.ws-visible { opacity: 1; }
+    #waiting-screen-page video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    #ws-header {
+      position: absolute;
+      left: 40px; top: 80px;
+      width: 967px; height: 150px;
+    }
+    #ws-header img { display: block; width: 967px; height: 150px; }
+    #ws-week-label {
+      position: absolute;
+      left: 714px; top: 106px;
+      width: 253px; height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 800;
+      font-size: 24px;
+      color: #fff;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
+    #ws-timer {
+      position: absolute;
+      top: 88px; right: 130px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-family: 'General Sans', sans-serif;
+      color: #0a0a0a;
+    }
+    #ws-timer-label {
+      font-weight: 800;
+      font-size: 23px;
+      line-height: 1.08;
+      text-align: right;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    #ws-timer-value {
+      font-weight: 800;
+      font-size: 130px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    /* ── WAITING SCREEN — TODAY'S MATCHES PANEL ── */
+    #ws-matches {
+      position: absolute;
+      left: 40px; top: 280px;
+      width: 571px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-family: 'General Sans', sans-serif;
+    }
+    #ws-matches .wsm-title { display: block; width: 571px; height: 61px; margin-bottom: 10px; }
+    .wsm-strip {
+      position: relative;
+      width: 571px; height: 39px;
+    }
+    .wsm-strip > img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .wsm-strip .wsm-strip-label,
+    .wsm-strip .wsm-strip-time,
+    .wsm-strip .wsm-strip-bo {
+      position: absolute; top: 0; height: 39px;
+      display: flex; align-items: center;
+      font-weight: 800; font-size: 19px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .wsm-strip .wsm-strip-label { left: 14px; }
+    .wsm-strip .wsm-strip-time  { left: 0; width: 100%; justify-content: center; }
+    .wsm-strip .wsm-strip-bo    { right: 14px; }
+    .wsm-strip .wsm-strip-cot   { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
+    .wsm-box {
+      position: relative;
+      width: 571px; height: 134px;
+    }
+    .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 134px; }
+    .wsm-box .wsm-slot {
+      position: absolute; top: 0; height: 134px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wsm-tri {
+      font-weight: 800; font-style: italic; font-size: 27px;
+      color: #fff; text-transform: uppercase; white-space: nowrap;
+    }
+    .wsm-tri-l { left: 0;    width: 94px; }
+    .wsm-tri-r { right: 0;   width: 94px; }
+    .wsm-logo-l { left: 94px;  width: 131px; }
+    .wsm-logo-r { left: 346px; width: 131px; }
+    .wsm-logo-l img, .wsm-logo-r img { width: 77px; height: 68px; object-fit: contain; }
+    .wsm-center { left: 225px; width: 121px; }
+    .wsm-center img.wsm-vs { width: 71px; height: 39px; }
+    .wsm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .wsm-score .wsm-score-l { font-weight: 800; font-size: 32px; color: #1656d5; }
+    .wsm-score .wsm-score-div { width: 34px; height: 3px; background: #0a0a0a; margin: 3px 0; }
+    .wsm-score .wsm-score-r { font-weight: 800; font-size: 32px; color: #d92027; }
+    .wsm-sponsor {
+      position: relative;
+      width: 340px; height: 94px;
+      margin: 10px auto 0;
+    }
+    .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    .wsm-sponsor-slot {
+      position: absolute; left: 140px; right: 8px; top: 8px; bottom: 8px;
+    }
+    .wsm-sponsor-slot img {
+      position: absolute; left: 0; top: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transition: opacity 600ms ease;
+    }
+    .wsm-sponsor-slot img.active { opacity: 1; }
+
+    /* Slide-in — applied per element with a staggered delay from JS */
+    @keyframes wsm-slide-in {
+      from { opacity: 0; transform: translateX(-660px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
     /* ── POST RICHGUY PAGE ── */
     #post-richguy-page {
       position: absolute;
@@ -557,6 +701,16 @@
       </div>
     </div>
 
+    <!-- WAITING SCREEN TVC -->
+    <div class="feature-card">
+      <div class="feature-card-label">Waiting Screen TVC</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showWaitingScreen()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideWaitingScreen()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-waiting" onclick="toggleLocalPreview('waiting', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- POST TIMELINE -->
     <div class="feature-card">
       <div class="feature-card-label">Post Timeline</div>
@@ -602,6 +756,18 @@
     <video id="bg-video" src="/assets/bgloop.webm" autoplay loop muted playsinline></video>
     <!-- post_hearts containers injected by JS -->
     <div id="post-richguy-page"></div>
+    <div id="waiting-screen-page">
+      <video id="ws-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
+      <div id="ws-header">
+        <img src="/assets/Waiting Screen/season 17 regular season.png" alt="MPL Philippines — Season 17 Regular Season">
+        <div id="ws-week-label">WEEK 8 DAY 3</div>
+      </div>
+      <div id="ws-matches"></div>
+      <div id="ws-timer">
+        <div id="ws-timer-label">SHOW<br>STARTS IN</div>
+        <div id="ws-timer-value">30:30</div>
+      </div>
+    </div>
     <div id="item-timeline-page"></div>
     <div id="post-emblems-page"></div>
     <div id="match-board">
@@ -937,6 +1103,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(fetchAndShowRichguy, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('waiting_tvc', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showWaitingScreen, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -1673,6 +1847,137 @@
     }
 
     /* ════════════════════════════════════════════════
+       WAITING SCREEN TVC
+    ════════════════════════════════════════════════ */
+    const wsPage  = document.getElementById('waiting-screen-page');
+    const wsVideo = document.getElementById('ws-video');
+
+    /* Today's Matches config — edit here (or feed from server later) */
+    const WS_ASSET    = '/assets/Waiting Screen/';
+    const WS_SPONSORS = [
+      'clear1.png', 'faiirrie1.png', 'infinix6.png', 'sip1.png',
+      'smart6.png', 'timezone4.png', 'ttracing4.png',
+    ].map(f => '/assets/sponsors/' + f);
+    const WS_MATCHES = [
+      { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', star: false,
+        left: { tri: 'ONIC' }, right: { tri: 'ONIC' }, score: { l: 2, r: 0 } },
+      { label: 'MATCH 2', time: '',              bo: 'B03', star: true,
+        left: { tri: 'ONIC' }, right: { tri: 'FLCN' } },
+      { label: 'MATCH 3', time: '18:30 GMT +8', bo: 'B03', star: false,
+        left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
+    ];
+
+    /* Countdown — starts from WS_TIMER_START every time the screen shows */
+    const WS_TIMER_START = 30 * 60 + 30; /* seconds */
+    const wsTimerValue = document.getElementById('ws-timer-value');
+    let wsTimerEnd = null, wsTimerInt = null;
+
+    function wsTimerRender(remain) {
+      const m = Math.floor(remain / 60), s = remain % 60;
+      wsTimerValue.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+
+    function startWsTimer() {
+      clearInterval(wsTimerInt);
+      wsTimerEnd = Date.now() + WS_TIMER_START * 1000;
+      wsTimerRender(WS_TIMER_START);
+      wsTimerInt = setInterval(() => {
+        const remain = Math.max(0, Math.round((wsTimerEnd - Date.now()) / 1000));
+        wsTimerRender(remain);
+        if (remain <= 0) clearInterval(wsTimerInt);
+      }, 250);
+    }
+
+    function stopWsTimer() {
+      clearInterval(wsTimerInt);
+      wsTimerInt = null;
+    }
+
+    function buildWsMatches() {
+      const root = document.getElementById('ws-matches');
+      const logo = (m, side) =>
+        `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" alt=""></div>`;
+      let html = `<img class="wsm-title" src="${WS_ASSET}TodayMatches.png" alt="Today's Matches">`;
+      WS_MATCHES.forEach(m => {
+        html += `<div class="wsm-strip"><img src="${WS_ASSET}MatchHeader.png" alt="">` +
+          `<span class="wsm-strip-label">${m.label}</span>` +
+          (m.star
+            ? `<img class="wsm-strip-cot" src="${WS_ASSET}Clash of Titans.png" alt="Clash of Titans">`
+            : `<span class="wsm-strip-time">${m.time}</span>`) +
+          `<span class="wsm-strip-bo">${m.bo}</span></div>`;
+        const center = m.score
+          ? `<div class="wsm-score"><span class="wsm-score-l">${m.score.l}</span><span class="wsm-score-div"></span><span class="wsm-score-r">${m.score.r}</span></div>`
+          : `<img class="wsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
+        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_ASSET}${m.star ? 'StarMatchBox' : 'MatchNormalBox'}.png" alt="">` +
+          `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
+          logo(m, 'l') +
+          `<div class="wsm-slot wsm-center">${center}</div>` +
+          logo(m, 'r') +
+          `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
+      });
+      html += `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor-slot">` +
+        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
+        `</div></div>`;
+      root.innerHTML = html;
+    }
+    buildWsMatches();
+
+    /* Sponsor carousel — cross-fades through WS_SPONSORS while the screen is up */
+    let wsSponsorInt = null, wsSponsorIdx = 0;
+    function startWsSponsors() {
+      clearInterval(wsSponsorInt);
+      const imgs = document.querySelectorAll('.wsm-sponsor-slot img');
+      if (imgs.length < 2) return;
+      wsSponsorIdx = 0;
+      imgs.forEach((im, i) => im.classList.toggle('active', i === 0));
+      wsSponsorInt = setInterval(() => {
+        imgs[wsSponsorIdx].classList.remove('active');
+        wsSponsorIdx = (wsSponsorIdx + 1) % imgs.length;
+        imgs[wsSponsorIdx].classList.add('active');
+      }, 4000);
+    }
+    function stopWsSponsors() {
+      clearInterval(wsSponsorInt);
+      wsSponsorInt = null;
+    }
+
+    /* Staggered slide-in — title first, then each row, left to right */
+    function wsMatchesSlideIn() {
+      [...document.getElementById('ws-matches').children].forEach((el, i) => {
+        el.style.animation = 'none';
+        void el.offsetWidth; /* restart the animation on every show */
+        el.style.animation = `wsm-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 140}ms both`;
+      });
+    }
+
+    async function showWaitingScreen() {
+      await transitionTo('waiting');
+      wsVideo.currentTime = 0;
+      wsVideo.play().catch(() => {});
+      startWsTimer();
+      startWsSponsors();
+      wsMatchesSlideIn();
+      wsPage.classList.add('ws-on');
+      void wsPage.offsetWidth; /* force reflow so the opacity transition runs */
+      wsPage.classList.add('ws-visible');
+    }
+
+    function hideWaitingScreen() {
+      activeFeature = null;
+      wsPage.classList.remove('ws-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          wsPage.classList.remove('ws-on');
+          wsVideo.pause();
+          stopWsTimer();
+          stopWsSponsors();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
        FEATURE SWITCHER — only one feature live at a time
     ════════════════════════════════════════════════ */
     let activeFeature = null;
@@ -1709,6 +2014,7 @@
       activeFeature = null;
       if (prev === 'hearts')   return hidePostHearts();
       if (prev === 'richguy')  return hidePostRichguy();
+      if (prev === 'waiting')  return hideWaitingScreen();
       if (prev === 'timeline') return hideItemTimeline();
       if (prev === 'emblems')  return hidePostEmblems();
       if (prev === 'items')    return hidePostItems();
@@ -2518,6 +2824,7 @@
         else if (scene.activeFeature === 'items')    showPostItems();
         else if (scene.activeFeature === 'stats')    showPostStats();
         else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
+        else if (scene.activeFeature === 'waiting')  showWaitingScreen();
         else if (scene.matchboard)                   showMatchBoard();
         if (scene.middleboard)                       showMiddleBoard();
         if (scene.playerboard)                       showPlayerBoard();
@@ -2540,6 +2847,7 @@
         btn.classList.add('active');
         if (feature === 'hearts')   showPostHearts();
         if (feature === 'richguy')  fetchAndShowRichguy();
+        if (feature === 'waiting')  showWaitingScreen();
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
       }
@@ -2548,7 +2856,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -2556,6 +2864,7 @@
         if (event === 'post_hearts')   showPostHearts();
         if (event === 'post_itemline') showItemTimeline();
         if (event === 'post_richguy')  fetchAndShowRichguy();
+        if (event === 'waiting_tvc')   showWaitingScreen();
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
         if (event === 'matchboard')    showMatchBoard();
