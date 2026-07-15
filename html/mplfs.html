@@ -303,6 +303,126 @@
       width: 100%; height: 100%;
       object-fit: cover;
     }
+    /* ── WAITING LOBBY PAGE ── */
+    #waiting-lobby-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #waiting-lobby-page.wl-on { display: block; }
+    #waiting-lobby-page.wl-visible { opacity: 1; }
+    #waiting-lobby-page video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    /* ── TODAY'S SCHEDULE PAGE ── */
+    #today-schedule-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #today-schedule-page.ts-on { display: block; }
+    #today-schedule-page.ts-visible { opacity: 1; }
+    #today-schedule-page video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    /* Today's Schedule — header over the matches column */
+    #ts-header {
+      position: absolute;
+      left: 170px; top: 98px;
+      width: 858px;
+      text-align: center;
+      font-family: 'General Sans', sans-serif;
+      color: #0a0a0a;
+    }
+    #ts-title img {
+      display: block;
+      width: 758px; height: 88px;
+      margin: 0 auto;
+    }
+    #ts-subline {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    #ts-season {
+      font-weight: 800;
+      font-size: 30px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    #ts-week {
+      width: 213px; height: 29px;
+      background: url("/assets/Today's Schedule/BlackBox.png") no-repeat center / 100% 100%;
+      color: #fff;
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    /* Today's Schedule — native 858px match rows (strip + box in one asset) */
+    #ts-matches {
+      position: absolute;
+      left: 170px; top: 255px;
+      width: 858px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: 'General Sans', sans-serif;
+    }
+    .tsm-row { position: relative; width: 858px; height: 232px; }
+    .tsm-row > img.tsm-bg { position: absolute; left: 0; top: 0; width: 858px; height: 232px; }
+    .tsm-label, .tsm-time, .tsm-bo {
+      position: absolute; top: 0; height: 48px;
+      display: flex; align-items: center;
+      font-weight: 800; font-size: 26px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .tsm-label { left: 22px; }
+    .tsm-time  { left: 0; width: 100%; justify-content: center; }
+    .tsm-bo    { right: 22px; }
+    .tsm-slot {
+      position: absolute; top: 48px; height: 184px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .tsm-tri {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400; font-size: 46px;
+      color: #fff; text-transform: uppercase; white-space: nowrap;
+    }
+    .tsm-tri-l  { left: 0;     width: 141px; }
+    .tsm-tri-r  { right: 0;    width: 141px; }
+    .tsm-logo-l { left: 141px; width: 196px; }
+    .tsm-logo-r { left: 521px; width: 196px; }
+    .tsm-logo-l img, .tsm-logo-r img { width: 116px; height: 102px; object-fit: contain; }
+    .tsm-center { left: 337px; width: 184px; }
+    .tsm-center img.tsm-vs { width: 107px; height: 59px; }
+    .tsm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .tsm-score .tsm-score-l   { font-weight: 800; font-size: 48px; color: #1656d5; }
+    .tsm-score .tsm-score-div { width: 50px; height: 4px; background: #0a0a0a; margin: 4px 0; }
+    .tsm-score .tsm-score-r   { font-weight: 800; font-size: 48px; color: #d92027; }
+
     #ws-header {
       position: absolute;
       left: 40px; top: 80px;
@@ -711,6 +831,26 @@
       </div>
     </div>
 
+    <!-- WAITING LOBBY -->
+    <div class="feature-card">
+      <div class="feature-card-label">Waiting Lobby</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showWaitingLobby()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideWaitingLobby()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-lobby" onclick="toggleLocalPreview('lobby', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- TODAY'S SCHEDULE -->
+    <div class="feature-card">
+      <div class="feature-card-label">Today's Schedule</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showTodaySchedule()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideTodaySchedule()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-schedule" onclick="toggleLocalPreview('schedule', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- POST TIMELINE -->
     <div class="feature-card">
       <div class="feature-card-label">Post Timeline</div>
@@ -767,6 +907,20 @@
         <div id="ws-timer-label">SHOW<br>STARTS IN</div>
         <div id="ws-timer-value">30:30</div>
       </div>
+    </div>
+    <div id="waiting-lobby-page">
+      <video id="wl-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
+    </div>
+    <div id="today-schedule-page">
+      <video id="ts-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
+      <div id="ts-header">
+        <div id="ts-title"><img src="/assets/Today's Schedule/TODAY&rsquo;S MATCHES.png" alt="Today's Matches"></div>
+        <div id="ts-subline">
+          <span id="ts-season">Season 17 Regular Season</span>
+          <div id="ts-week">Week 8 Day 3</div>
+        </div>
+      </div>
+      <div id="ts-matches"></div>
     </div>
     <div id="item-timeline-page"></div>
     <div id="post-emblems-page"></div>
@@ -1111,6 +1265,22 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showWaitingScreen, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('waiting_lobby', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showWaitingLobby, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('today_schedule', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showTodaySchedule, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -1867,6 +2037,16 @@
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
     ];
 
+    /* Today's Schedule config — edit here (or feed from server later) */
+    const TS_MATCHES = [
+      { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', star: false,
+        left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
+      { label: 'MATCH 2', time: '16:30 GMT +8', bo: 'B03', star: false,
+        left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
+      { label: 'MATCH 3', time: '18:30 GMT +8', bo: 'B03', star: false,
+        left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
+    ];
+
     /* Countdown — starts from WS_TIMER_START every time the screen shows */
     const WS_TIMER_START = 30 * 60 + 30; /* seconds */
     const wsTimerValue = document.getElementById('ws-timer-value');
@@ -1893,12 +2073,13 @@
       wsTimerInt = null;
     }
 
-    function buildWsMatches() {
-      const root = document.getElementById('ws-matches');
+    function buildWsMatches(rootId, matches, opts) {
+      opts = opts || {};
+      const root = document.getElementById(rootId);
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" alt=""></div>`;
-      let html = `<img class="wsm-title" src="${WS_ASSET}TodayMatches.png" alt="Today's Matches">`;
-      WS_MATCHES.forEach(m => {
+      let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_ASSET}TodayMatches.png" alt="Today's Matches">`;
+      matches.forEach(m => {
         html += `<div class="wsm-strip"><img src="${WS_ASSET}MatchHeader.png" alt="">` +
           `<span class="wsm-strip-label">${m.label}</span>` +
           (m.star
@@ -1915,19 +2096,70 @@
           logo(m, 'r') +
           `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
       });
-      html += `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
-        `<div class="wsm-sponsor-slot">` +
-        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
-        `</div></div>`;
+      if (opts.sponsor !== false) {
+        html += `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+          `<div class="wsm-sponsor-slot">` +
+          WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
+          `</div></div>`;
+      }
       root.innerHTML = html;
     }
-    buildWsMatches();
+    buildWsMatches('ws-matches', WS_MATCHES);
+
+    /* Today's Schedule rows — one Regular_Match_Box asset per match.
+       Bound to the Match Board state (todayMatches, tricodes only);
+       falls back to the TS_MATCHES placeholders when no state is available. */
+    const TS_ASSET = "/assets/Today's Schedule/";
+    function buildTsMatches(state) {
+      const root = document.getElementById('ts-matches');
+      const live = state && Array.isArray(state.todayMatches) && state.todayMatches.length;
+      const bo   = ((state && state.series) || 'BO3').toUpperCase();
+      const hId  = live && state.home ? state.home.teamId : null;
+      const aId  = live && state.away ? state.away.teamId : null;
+      const rows = live
+        ? state.todayMatches.map((m, i) => {
+            /* The row for the match currently on the Match Board follows the
+               live home/away score; other rows use their own card scores. */
+            let s1 = m.score1 || 0, s2 = m.score2 || 0;
+            if (hId && aId && m.team1Id && m.team2Id) {
+              if      (m.team1Id === hId && m.team2Id === aId) { s1 = state.home.score || 0; s2 = state.away.score || 0; }
+              else if (m.team1Id === aId && m.team2Id === hId) { s1 = state.away.score || 0; s2 = state.home.score || 0; }
+            }
+            return {
+              label: 'MATCH ' + (i + 1),
+              time:  m.time || '',
+              bo,
+              left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
+              right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
+              score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
+            };
+          })
+        : TS_MATCHES;
+      const logo = (m, side) =>
+        `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
+        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
+      root.innerHTML = rows.map(m => {
+        const center = m.score
+          ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
+          : `<img class="tsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
+        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}Regular_Match_Box.png" alt="">` +
+          `<span class="tsm-label">${m.label}</span>` +
+          `<span class="tsm-time">${m.time}</span>` +
+          `<span class="tsm-bo">${m.bo}</span>` +
+          `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
+          logo(m, 'l') +
+          `<div class="tsm-slot tsm-center">${center}</div>` +
+          logo(m, 'r') +
+          `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
+      }).join('');
+    }
+    buildTsMatches();
 
     /* Sponsor carousel — cross-fades through WS_SPONSORS while the screen is up */
     let wsSponsorInt = null, wsSponsorIdx = 0;
-    function startWsSponsors() {
+    function startWsSponsors(rootId) {
       clearInterval(wsSponsorInt);
-      const imgs = document.querySelectorAll('.wsm-sponsor-slot img');
+      const imgs = document.querySelectorAll('#' + rootId + ' .wsm-sponsor-slot img');
       if (imgs.length < 2) return;
       wsSponsorIdx = 0;
       imgs.forEach((im, i) => im.classList.toggle('active', i === 0));
@@ -1943,8 +2175,8 @@
     }
 
     /* Staggered slide-in — title first, then each row, left to right */
-    function wsMatchesSlideIn() {
-      [...document.getElementById('ws-matches').children].forEach((el, i) => {
+    function wsMatchesSlideIn(rootId) {
+      [...document.getElementById(rootId).children].forEach((el, i) => {
         el.style.animation = 'none';
         void el.offsetWidth; /* restart the animation on every show */
         el.style.animation = `wsm-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 140}ms both`;
@@ -1956,8 +2188,8 @@
       wsVideo.currentTime = 0;
       wsVideo.play().catch(() => {});
       startWsTimer();
-      startWsSponsors();
-      wsMatchesSlideIn();
+      startWsSponsors('ws-matches');
+      wsMatchesSlideIn('ws-matches');
       wsPage.classList.add('ws-on');
       void wsPage.offsetWidth; /* force reflow so the opacity transition runs */
       wsPage.classList.add('ws-visible');
@@ -1976,6 +2208,88 @@
         }, 420);
       });
     }
+
+    /* ════════════════════════════════════════════════
+       WAITING LOBBY
+    ════════════════════════════════════════════════ */
+    const wlPage  = document.getElementById('waiting-lobby-page');
+    const wlVideo = document.getElementById('wl-video');
+
+    async function showWaitingLobby() {
+      await transitionTo('lobby');
+      wlVideo.currentTime = 0;
+      wlVideo.play().catch(() => {});
+      wlPage.classList.add('wl-on');
+      void wlPage.offsetWidth; /* force reflow so the opacity transition runs */
+      wlPage.classList.add('wl-visible');
+    }
+
+    function hideWaitingLobby() {
+      activeFeature = null;
+      wlPage.classList.remove('wl-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          wlPage.classList.remove('wl-on');
+          wlVideo.pause();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       TODAY'S SCHEDULE
+    ════════════════════════════════════════════════ */
+    const tsPage  = document.getElementById('today-schedule-page');
+    const tsVideo = document.getElementById('ts-video');
+
+    async function showTodaySchedule() {
+      /* Week/Day chip + match rows follow the Match Board state */
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo('schedule');
+      const ms = await msPromise;
+      if (ms) {
+        if (ms.week != null && ms.day != null) {
+          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+        }
+        buildTsMatches(ms);
+      }
+      tsVideo.currentTime = 0;
+      tsVideo.play().catch(() => {});
+      wsMatchesSlideIn('ts-matches');
+      tsPage.classList.add('ts-on');
+      void tsPage.offsetWidth; /* force reflow so the opacity transition runs */
+      tsPage.classList.add('ts-visible');
+    }
+
+    function hideTodaySchedule() {
+      activeFeature = null;
+      tsPage.classList.remove('ts-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          tsPage.classList.remove('ts-on');
+          tsVideo.pause();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* Live match-state updates — any Match Board change refreshes everything
+       bound to it that is currently on air, as soon as it is saved */
+    const matchStateEvents = new EventSource(buildUrl('/match/events'));
+    matchStateEvents.onmessage = (e) => {
+      let ms = null;
+      try { ms = JSON.parse(e.data); } catch { return; }
+      /* Match Board overlay (tricodes, logos, series score) */
+      if (mbVisible) fetchMatchBoardData();
+      /* Today's Schedule rows + week/day chip */
+      if (activeFeature === 'schedule') {
+        if (ms.week != null && ms.day != null) {
+          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+        }
+        buildTsMatches(ms);
+      }
+    };
 
     /* ════════════════════════════════════════════════
        FEATURE SWITCHER — only one feature live at a time
@@ -2015,6 +2329,8 @@
       if (prev === 'hearts')   return hidePostHearts();
       if (prev === 'richguy')  return hidePostRichguy();
       if (prev === 'waiting')  return hideWaitingScreen();
+      if (prev === 'lobby')    return hideWaitingLobby();
+      if (prev === 'schedule') return hideTodaySchedule();
       if (prev === 'timeline') return hideItemTimeline();
       if (prev === 'emblems')  return hidePostEmblems();
       if (prev === 'items')    return hidePostItems();
@@ -2825,6 +3141,8 @@
         else if (scene.activeFeature === 'stats')    showPostStats();
         else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
         else if (scene.activeFeature === 'waiting')  showWaitingScreen();
+        else if (scene.activeFeature === 'lobby')    showWaitingLobby();
+        else if (scene.activeFeature === 'schedule') showTodaySchedule();
         else if (scene.matchboard)                   showMatchBoard();
         if (scene.middleboard)                       showMiddleBoard();
         if (scene.playerboard)                       showPlayerBoard();
@@ -2848,6 +3166,8 @@
         if (feature === 'hearts')   showPostHearts();
         if (feature === 'richguy')  fetchAndShowRichguy();
         if (feature === 'waiting')  showWaitingScreen();
+        if (feature === 'lobby')    showWaitingLobby();
+        if (feature === 'schedule') showTodaySchedule();
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
       }
@@ -2856,7 +3176,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -2865,6 +3185,8 @@
         if (event === 'post_itemline') showItemTimeline();
         if (event === 'post_richguy')  fetchAndShowRichguy();
         if (event === 'waiting_tvc')   showWaitingScreen();
+        if (event === 'waiting_lobby') showWaitingLobby();
+        if (event === 'today_schedule') showTodaySchedule();
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
         if (event === 'matchboard')    showMatchBoard();

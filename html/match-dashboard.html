@@ -211,9 +211,30 @@
     .spinner-row { display: flex; align-items: center; gap: 4px; }
     .spinner-val { min-width: 36px; text-align: center; font-size: 14px; font-weight: 600; color: #aabbff; background: #0f0f18; border: 1px solid #2a2a3a; border-radius: 6px; padding: 6px 10px; }
     .btn-spin { background: #1a1a2a; border-color: #2a2a3a; color: #8899cc; font-size: 16px; padding: 2px 9px; line-height: 1.4; }
+
+    /* ── Saved toast ── */
+    #saved-toast {
+      position: fixed;
+      right: 18px; bottom: 18px;
+      background: #16a34a;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 200ms ease, transform 200ms ease;
+      pointer-events: none;
+      z-index: 999;
+    }
+    #saved-toast.show { opacity: 1; transform: translateY(0); }
   </style>
 </head>
 <body>
+
+<div id="saved-toast">Changes Saved</div>
 
 <!-- ── Login ── -->
 <div id="login-wrap">
@@ -796,6 +817,14 @@
   }
 
   /* ── PUSH ── */
+  var _toastTimer = null;
+  function showSavedToast() {
+    var t = document.getElementById('saved-toast');
+    t.classList.add('show');
+    clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(function () { t.classList.remove('show'); }, 1600);
+  }
+
   function push(patch) {
     fetch('/match/state', {
       method: 'POST',
@@ -803,6 +832,7 @@
       body: JSON.stringify(Object.assign({ token: token }, patch)),
     }).then(function (r) {
       setSyncStatus(r.ok);
+      if (r.ok) showSavedToast();
       if (r.status === 401) { token = ''; sessionStorage.removeItem('match_token'); showLogin(); }
     }).catch(function () { setSyncStatus(false); });
   }

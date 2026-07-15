@@ -115,6 +115,34 @@ router.get('/overlay/waiting_tvc/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/waiting_lobby/show
+router.get('/overlay/waiting_lobby/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'lobby';
+  state.overlayClients.forEach(c => { try { c.write('event: waiting_lobby\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/waiting_lobby/hide
+router.get('/overlay/waiting_lobby/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: waiting_lobby\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/today_schedule/show
+router.get('/overlay/today_schedule/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'schedule';
+  state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/today_schedule/hide
+router.get('/overlay/today_schedule/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/fs/debugoff
 router.get('/overlay/fs/debugoff', (req, res) => {
   state.overlayClients.forEach(c => { try { c.write('event: fs_debugoff\ndata: {}\n\n'); } catch {} });
