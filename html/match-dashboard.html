@@ -184,7 +184,12 @@
     .match-slots { display: flex; flex-direction: column; gap: 8px; }
     .match-card { background: #0f0f18; border: 1px solid #1e1e2e; border-radius: 8px; padding: 10px 12px; transition: opacity .2s; }
     .match-card.disabled { opacity: 0.28; pointer-events: none; }
+    .match-card.star { border-color: #8a6d1a; }
     .match-card-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+    .star-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #555; user-select: none; transition: color .15s; }
+    .star-toggle:hover { color: #888; }
+    .star-toggle.on { color: #e6b422; }
+    .star-toggle input { accent-color: #e6b422; margin: 0; cursor: pointer; }
     .match-num-lbl { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #555; text-transform: uppercase; }
     .match-time-inp { width: 76px; font-size: 12px; text-align: center; }
     .match-body { display: flex; align-items: center; gap: 6px; }
@@ -864,8 +869,7 @@
 
   document.getElementById('match-picker').addEventListener('change', function () {
     var idx = parseInt(this.value);
-    var isDay2 = (localState.day || 1) === 2;
-    var tmIdx = isDay2 ? idx : idx + 1;
+    var tmIdx = idx;
     var matchNum = idx + 1;
     localState.match = matchNum;
     push({ match: matchNum });
@@ -1015,9 +1019,9 @@
     var matches = getMatches();
 
     matches.forEach(function (m, i) {
-      var disabled = (i === 0 && !isDay2);
+      var disabled = (i === 2 && !isDay2);
       var card = document.createElement('div');
-      card.className = 'match-card' + (disabled ? ' disabled' : '');
+      card.className = 'match-card' + (disabled ? ' disabled' : '') + (m.star ? ' star' : '');
 
       /* header */
       var hdr = document.createElement('div');
@@ -1036,6 +1040,24 @@
       }; })(i, timeInp));
       timeInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') timeInp.blur(); });
       hdr.appendChild(timeInp);
+
+      /* star match toggle */
+      var starWrap = document.createElement('label');
+      starWrap.className = 'star-toggle' + (m.star ? ' on' : '');
+      var starCb = document.createElement('input');
+      starCb.type = 'checkbox';
+      starCb.checked = !!m.star;
+      var starTxt = document.createElement('span');
+      starTxt.textContent = '★ Star match';
+      starWrap.appendChild(starCb); starWrap.appendChild(starTxt);
+      starCb.addEventListener('change', function () {
+        var tm = getMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { star: starCb.checked });
+        saveMatches(tm);
+        starWrap.classList.toggle('on', starCb.checked);
+        card.classList.toggle('star', starCb.checked);
+      });
+      hdr.appendChild(starWrap);
       card.appendChild(hdr);
 
       /* body */

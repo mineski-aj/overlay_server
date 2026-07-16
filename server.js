@@ -56,6 +56,37 @@ app.post('/match/state', function (req, res) {
   res.json({ ok: true, state: matchState.get() });
 });
 
+// Standings state — same dashboard password as match state
+const standingsState = require('./lib/standingsState');
+
+app.get('/standings/state', function (req, res) {
+  res.json(standingsState.get());
+});
+
+app.get('/standings/events', function (req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  standingsState.addClient(res);
+  req.on('close', function () { standingsState.removeClient(res); });
+});
+
+app.post('/standings/auth', function (req, res) {
+  var token = (req.body || {}).token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ ok: false });
+  res.json({ ok: true });
+});
+
+app.post('/standings/state', function (req, res) {
+  var body  = req.body || {};
+  var token = body.token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  delete body.token;
+  standingsState.set(body);
+  res.json({ ok: true, state: standingsState.get() });
+});
+
 // Static assets — HTML files served fresh, other assets cached for 1 day
 app.use(express.static(path.join(__dirname), {
   maxAge: '1d',

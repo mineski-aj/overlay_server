@@ -341,6 +341,136 @@
       width: 100%; height: 100%;
       object-fit: cover;
     }
+    /* ── STANDINGS PAGE ── */
+    #standings-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: #000;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #standings-page.st-on { display: block; }
+    #standings-page.st-visible { opacity: 1; }
+    #standings-page video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    /* Standings — title block (asset bakes season text + blank week/day chip) */
+    #st-header {
+      position: absolute;
+      left: 230px; top: 82px;
+      width: 845px;
+    }
+    #st-header > img { display: block; width: 845px; }
+    #st-weekday {
+      position: absolute;
+      left: 559px; top: 100px;
+      width: 249px; height: 33px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 800;
+      font-size: 23px;
+      color: #fff;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    /* Standings — stats column header bar */
+    #st-colheader {
+      position: absolute;
+      left: 922px; top: 303px;
+      width: 885px; height: 44px;
+    }
+    .st-col-label {
+      position: absolute;
+      top: 303px;
+      width: 234px; height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .st-l1 { left: 910px; }
+    .st-l2 { left: 1143px; }
+    .st-l3 { left: 1373px; }
+    .st-l4 { left: 1605px; }
+    /* Standings — team rows */
+    #st-rows { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; }
+    .st-row {
+      position: absolute;
+      left: 118px;
+      width: 1682px; height: 71px;
+      font-family: 'General Sans', sans-serif;
+    }
+    .st-row .str-bg { position: absolute; top: 0; left: 0; width: 1682px; height: 71px; }
+    .str-move {
+      position: absolute;
+      left: 30px; top: 4px;
+      width: 36px; height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .str-rank {
+      position: absolute;
+      left: 84px; top: 4px;
+      width: 40px; height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 30px;
+      color: #0e0e0e;
+    }
+    .str-logo {
+      position: absolute;
+      left: 182px; top: 5px;
+      width: 54px; height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .str-logo img { max-width: 54px; max-height: 54px; }
+    .str-tri {
+      position: absolute;
+      left: 294px; top: 4px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      font-weight: 800;
+      font-size: 30px;
+      color: #0e0e0e;
+      letter-spacing: 0.02em;
+    }
+    .str-status { position: absolute; left: 572px; top: 14px; width: 194px; height: 37px; }
+    .str-stat {
+      position: absolute;
+      top: 4px;
+      width: 234px; height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 30px;
+      color: #0e0e0e;
+    }
+    .str-c1 { left: 792px; }
+    .str-c2 { left: 1025px; }
+    .str-c3 { left: 1255px; }
+    .str-c4 { left: 1487px; }
     /* Today's Schedule — header over the matches column */
     #ts-header {
       position: absolute;
@@ -851,6 +981,16 @@
       </div>
     </div>
 
+    <!-- STANDINGS -->
+    <div class="feature-card">
+      <div class="feature-card-label">Standings</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showStandings()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideStandings()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-standings" onclick="toggleLocalPreview('standings', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- POST TIMELINE -->
     <div class="feature-card">
       <div class="feature-card-label">Post Timeline</div>
@@ -921,6 +1061,19 @@
         </div>
       </div>
       <div id="ts-matches"></div>
+    </div>
+    <div id="standings-page">
+      <video id="st-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
+      <div id="st-header">
+        <img src="/assets/Standings/Infinix Standing.png" alt="Infinix Standings — Season 18 Regular Season">
+        <div id="st-weekday">WEEK 1 - DAY 1</div>
+      </div>
+      <img id="st-colheader" src="/assets/Standings/Standing_Header.png" alt="">
+      <span class="st-col-label st-l1">MATCH POINT</span>
+      <span class="st-col-label st-l2">MATCH W/L</span>
+      <span class="st-col-label st-l3">GAME W/L</span>
+      <span class="st-col-label st-l4">NET GAME WIN</span>
+      <div id="st-rows"></div>
     </div>
     <div id="item-timeline-page"></div>
     <div id="post-emblems-page"></div>
@@ -1281,6 +1434,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showTodaySchedule, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('standings', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showStandings, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -2116,8 +2277,10 @@
       const bo   = ((state && state.series) || 'BO3').toUpperCase();
       const hId  = live && state.home ? state.home.teamId : null;
       const aId  = live && state.away ? state.away.teamId : null;
+      /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
+      const isDay2 = ((state && state.day) || 1) === 2;
       const rows = live
-        ? state.todayMatches.map((m, i) => {
+        ? state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
             /* The row for the match currently on the Match Board follows the
                live home/away score; other rows use their own card scores. */
             let s1 = m.score1 || 0, s2 = m.score2 || 0;
@@ -2129,6 +2292,7 @@
               label: 'MATCH ' + (i + 1),
               time:  m.time || '',
               bo,
+              star:  !!m.star,
               left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
               right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
               score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
@@ -2142,7 +2306,7 @@
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
           : `<img class="tsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
-        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}Regular_Match_Box.png" alt="">` +
+        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}${m.star ? 'StarMatch_Match_Box' : 'Regular_Match_Box'}.png" alt="">` +
           `<span class="tsm-label">${m.label}</span>` +
           `<span class="tsm-time">${m.time}</span>` +
           `<span class="tsm-bo">${m.bo}</span>` +
@@ -2274,6 +2438,101 @@
       });
     }
 
+    /* ════════════════════════════════════════════════
+       STANDINGS
+    ════════════════════════════════════════════════ */
+    const stPage  = document.getElementById('standings-page');
+    const stVideo = document.getElementById('st-video');
+
+    /* Standings table — driven by the Standings tab on the dashboard
+       (GET /standings/state + SSE /standings/events). ST_TEAMS is only the
+       fallback when the server has no standings state yet.
+       move:   'up' | 'down' | 'neutral'   (rank movement arrow)
+       status: null | 'secured' | 'eliminated' (playoffs chip on the team box) */
+    const ST_ASSET = '/assets/Standings/';
+    const ST_TEAMS = [
+      { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'ONIC', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'RORA', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'APBR', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'TWIS', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+    ];
+    const ST_ROW_TOP = 354, ST_ROW_PITCH = 79.3;
+    let stTeams = ST_TEAMS;
+
+    function buildStandings() {
+      const root = document.getElementById('st-rows');
+      const moveImg   = { up: 'Standing_Up.png', down: 'Standing_Down.png', neutral: 'Standing_Neutral.png' };
+      const statusImg = { secured: 'Indicator_Secured.png', eliminated: 'Indicator_Eliminated.png' };
+      root.innerHTML = stTeams.map((t, i) => {
+        const status = statusImg[t.status]
+          ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
+        return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
+          `<img class="str-bg" src="${ST_ASSET}Team_Box.png" alt="">` +
+          `<div class="str-move"><img src="${ST_ASSET}${moveImg[t.move] || moveImg.neutral}" alt=""></div>` +
+          `<div class="str-rank">${i + 1}</div>` +
+          `<div class="str-logo"><img src="/logos/${encodeURIComponent(t.tri)}.png" onerror="this.style.display='none'" alt=""></div>` +
+          `<div class="str-tri">${t.tri}</div>` + status +
+          `<div class="str-stat str-c1">${t.mp}</div>` +
+          `<div class="str-stat str-c2">${t.mwl}</div>` +
+          `<div class="str-stat str-c3">${t.gwl}</div>` +
+          `<div class="str-stat str-c4">${t.ngw}</div>` +
+          `</div>`;
+      }).join('');
+    }
+    buildStandings();
+
+    function stApplyTeams(s) {
+      if (s && Array.isArray(s.teams) && s.teams.length) stTeams = s.teams;
+    }
+
+    /* Live standings updates from the dashboard's Standings tab */
+    const standingsEvents = new EventSource(buildUrl('/standings/events'));
+    standingsEvents.onmessage = (e) => {
+      try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
+      if (activeFeature === 'standings') buildStandings();
+    };
+
+    function stApplyWeekDay(ms) {
+      if (ms && ms.week != null && ms.day != null) {
+        document.getElementById('st-weekday').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+      }
+    }
+
+    async function showStandings() {
+      /* Week/Day chip follows the Match Board state; table follows the
+         dashboard's Standings tab */
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      const stPromise = fetch(buildUrl('/standings/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo('standings');
+      stApplyWeekDay(await msPromise);
+      stApplyTeams(await stPromise);
+      buildStandings();
+      stVideo.currentTime = 0;
+      stVideo.play().catch(() => {});
+      wsMatchesSlideIn('st-rows');
+      stPage.classList.add('st-on');
+      void stPage.offsetWidth; /* force reflow so the opacity transition runs */
+      stPage.classList.add('st-visible');
+    }
+
+    function hideStandings() {
+      activeFeature = null;
+      stPage.classList.remove('st-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          stPage.classList.remove('st-on');
+          stVideo.pause();
+          resolve();
+        }, 420);
+      });
+    }
+
     /* Live match-state updates — any Match Board change refreshes everything
        bound to it that is currently on air, as soon as it is saved */
     const matchStateEvents = new EventSource(buildUrl('/match/events'));
@@ -2289,6 +2548,8 @@
         }
         buildTsMatches(ms);
       }
+      /* Standings week/day chip */
+      if (activeFeature === 'standings') stApplyWeekDay(ms);
     };
 
     /* ════════════════════════════════════════════════
@@ -2331,6 +2592,7 @@
       if (prev === 'waiting')  return hideWaitingScreen();
       if (prev === 'lobby')    return hideWaitingLobby();
       if (prev === 'schedule') return hideTodaySchedule();
+      if (prev === 'standings') return hideStandings();
       if (prev === 'timeline') return hideItemTimeline();
       if (prev === 'emblems')  return hidePostEmblems();
       if (prev === 'items')    return hidePostItems();
@@ -3143,6 +3405,7 @@
         else if (scene.activeFeature === 'waiting')  showWaitingScreen();
         else if (scene.activeFeature === 'lobby')    showWaitingLobby();
         else if (scene.activeFeature === 'schedule') showTodaySchedule();
+        else if (scene.activeFeature === 'standings') showStandings();
         else if (scene.matchboard)                   showMatchBoard();
         if (scene.middleboard)                       showMiddleBoard();
         if (scene.playerboard)                       showPlayerBoard();
@@ -3168,6 +3431,7 @@
         if (feature === 'waiting')  showWaitingScreen();
         if (feature === 'lobby')    showWaitingLobby();
         if (feature === 'schedule') showTodaySchedule();
+        if (feature === 'standings') showStandings();
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
       }
@@ -3176,7 +3440,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -3187,6 +3451,7 @@
         if (event === 'waiting_tvc')   showWaitingScreen();
         if (event === 'waiting_lobby') showWaitingLobby();
         if (event === 'today_schedule') showTodaySchedule();
+        if (event === 'standings')     showStandings();
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
         if (event === 'matchboard')    showMatchBoard();

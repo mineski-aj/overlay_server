@@ -655,6 +655,7 @@
 
 <nav id="tab-bar">
   <button class="tab-btn" data-page="matchboard">Match Board</button>
+  <button class="tab-btn" data-page="standings">Standings</button>
   <button class="tab-btn active" data-page="control">Control</button>
   <button class="tab-btn" data-page="dynamic">Dynamic</button>
   <button class="tab-btn" data-page="edit">Edit</button>
@@ -664,6 +665,12 @@
 <!-- Page 0: Match Board -->
 <div id="page-matchboard" class="page">
   <iframe id="matchboard-iframe" src="/html/match-dashboard.html" allow="autoplay"
+    style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Standings -->
+<div id="page-standings" class="page">
+  <iframe id="standings-iframe" src="/html/standings-dashboard.html" allow="autoplay"
     style="width:100%;flex:1;border:none;min-height:0;"></iframe>
 </div>
 
@@ -858,6 +865,7 @@
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
         { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide' },
+        { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
       ],
       extraActions: [
         { label: 'Item In',   action: '/overlay/post_itemline/itemin'  },
