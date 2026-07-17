@@ -630,6 +630,20 @@
     .wsm-strip .wsm-strip-time  { left: 0; width: 100%; justify-content: center; }
     .wsm-strip .wsm-strip-bo    { right: 14px; }
     .wsm-strip .wsm-strip-cot   { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
+    /* Star match strip — Clash of Titans banner fades in/out continuously,
+       cross-fading with the match time so the strip is never empty */
+    .wsm-strip .wsm-strip-cot        { animation: wsm-cot-pulse 3s ease-in-out infinite; }
+    .wsm-strip .wsm-strip-time.star  { animation: wsm-cot-pulse-inv 3s ease-in-out infinite; }
+    @keyframes wsm-cot-pulse {
+      0%, 40%  { opacity: 1; }
+      50%, 90% { opacity: 0; }
+      100%     { opacity: 1; }
+    }
+    @keyframes wsm-cot-pulse-inv {
+      0%, 40%  { opacity: 0; }
+      50%, 90% { opacity: 1; }
+      100%     { opacity: 0; }
+    }
     .wsm-box {
       position: relative;
       width: 571px; height: 134px;
@@ -655,9 +669,11 @@
     .wsm-score .wsm-score-div { width: 34px; height: 3px; background: #0a0a0a; margin: 3px 0; }
     .wsm-score .wsm-score-r { font-weight: 800; font-size: 32px; color: #d92027; }
     .wsm-sponsor {
-      position: relative;
+      /* Pinned to the 3-match (day 2) position so it does not ride up
+         on 2-match days */
+      position: absolute;
+      top: 635px; left: 115px;
       width: 340px; height: 94px;
-      margin: 10px auto 0;
     }
     .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
     .wsm-sponsor-slot {
@@ -2234,17 +2250,49 @@
       wsTimerInt = null;
     }
 
+    /* Match Board state → match rows (shared by Waiting Screen TVC and
+       Today's Schedule). Returns null when no state is available so callers
+       can fall back to their placeholder configs. */
+    function msToMatchRows(state) {
+      if (!state || !Array.isArray(state.todayMatches) || !state.todayMatches.length) return null;
+      const bo  = (state.series || 'BO3').toUpperCase();
+      const hId = state.home ? state.home.teamId : null;
+      const aId = state.away ? state.away.teamId : null;
+      /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
+      const isDay2 = (state.day || 1) === 2;
+      return state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
+        /* The row for the match currently on the Match Board follows the
+           live home/away score; other rows use their own card scores. */
+        let s1 = m.score1 || 0, s2 = m.score2 || 0;
+        if (hId && aId && m.team1Id && m.team2Id) {
+          if      (m.team1Id === hId && m.team2Id === aId) { s1 = state.home.score || 0; s2 = state.away.score || 0; }
+          else if (m.team1Id === aId && m.team2Id === hId) { s1 = state.away.score || 0; s2 = state.home.score || 0; }
+        }
+        return {
+          label: 'MATCH ' + (i + 1),
+          time:  m.time || '',
+          bo,
+          star:  !!m.star,
+          left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
+          right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
+          score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
+        };
+      });
+    }
+
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
       const logo = (m, side) =>
-        `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" alt=""></div>`;
+        `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
+        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_ASSET}TodayMatches.png" alt="Today's Matches">`;
       matches.forEach(m => {
         html += `<div class="wsm-strip"><img src="${WS_ASSET}MatchHeader.png" alt="">` +
           `<span class="wsm-strip-label">${m.label}</span>` +
           (m.star
-            ? `<img class="wsm-strip-cot" src="${WS_ASSET}Clash of Titans.png" alt="Clash of Titans">`
+            ? `<span class="wsm-strip-time star">${m.time}</span>` +
+              `<img class="wsm-strip-cot" src="${WS_ASSET}Clash of Titans.png" alt="Clash of Titans">`
             : `<span class="wsm-strip-time">${m.time}</span>`) +
           `<span class="wsm-strip-bo">${m.bo}</span></div>`;
         const center = m.score
@@ -2273,32 +2321,7 @@
     const TS_ASSET = "/assets/Today's Schedule/";
     function buildTsMatches(state) {
       const root = document.getElementById('ts-matches');
-      const live = state && Array.isArray(state.todayMatches) && state.todayMatches.length;
-      const bo   = ((state && state.series) || 'BO3').toUpperCase();
-      const hId  = live && state.home ? state.home.teamId : null;
-      const aId  = live && state.away ? state.away.teamId : null;
-      /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
-      const isDay2 = ((state && state.day) || 1) === 2;
-      const rows = live
-        ? state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
-            /* The row for the match currently on the Match Board follows the
-               live home/away score; other rows use their own card scores. */
-            let s1 = m.score1 || 0, s2 = m.score2 || 0;
-            if (hId && aId && m.team1Id && m.team2Id) {
-              if      (m.team1Id === hId && m.team2Id === aId) { s1 = state.home.score || 0; s2 = state.away.score || 0; }
-              else if (m.team1Id === aId && m.team2Id === hId) { s1 = state.away.score || 0; s2 = state.home.score || 0; }
-            }
-            return {
-              label: 'MATCH ' + (i + 1),
-              time:  m.time || '',
-              bo,
-              star:  !!m.star,
-              left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
-              right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
-              score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
-            };
-          })
-        : TS_MATCHES;
+      const rows = msToMatchRows(state) || TS_MATCHES;
       const logo = (m, side) =>
         `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
@@ -2327,10 +2350,13 @@
       if (imgs.length < 2) return;
       wsSponsorIdx = 0;
       imgs.forEach((im, i) => im.classList.toggle('active', i === 0));
+      /* Query the DOM each tick — the slot is recreated whenever the match
+         rows are rebuilt from a live Match Board update */
       wsSponsorInt = setInterval(() => {
-        imgs[wsSponsorIdx].classList.remove('active');
-        wsSponsorIdx = (wsSponsorIdx + 1) % imgs.length;
-        imgs[wsSponsorIdx].classList.add('active');
+        const cur = document.querySelectorAll('#' + rootId + ' .wsm-sponsor-slot img');
+        if (cur.length < 2) return;
+        wsSponsorIdx = (wsSponsorIdx + 1) % cur.length;
+        cur.forEach((im, i) => im.classList.toggle('active', i === wsSponsorIdx));
       }, 4000);
     }
     function stopWsSponsors() {
@@ -2347,8 +2373,20 @@
       });
     }
 
+    /* Week/day chip + match rows follow the Match Board state */
+    function updateWsFromState(ms) {
+      if (!ms) return;
+      if (ms.week != null && ms.day != null) {
+        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+      }
+      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
+    }
+
     async function showWaitingScreen() {
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('waiting');
+      updateWsFromState(await msPromise);
       wsVideo.currentTime = 0;
       wsVideo.play().catch(() => {});
       startWsTimer();
@@ -2541,6 +2579,8 @@
       try { ms = JSON.parse(e.data); } catch { return; }
       /* Match Board overlay (tricodes, logos, series score) */
       if (mbVisible) fetchMatchBoardData();
+      /* Waiting Screen TVC rows + week/day chip */
+      if (activeFeature === 'waiting') updateWsFromState(ms);
       /* Today's Schedule rows + week/day chip */
       if (activeFeature === 'schedule') {
         if (ms.week != null && ms.day != null) {
