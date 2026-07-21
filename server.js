@@ -92,7 +92,8 @@ app.use(express.static(path.join(__dirname), {
   maxAge: '1d',
   index: false,
   setHeaders: function(res, filePath) {
-    if (filePath.endsWith('.html') || filePath.includes('/html/js/') || filePath.endsWith('mainroster.json') || filePath.includes('/logos/')) {
+    const p = filePath.split(path.sep).join('/'); // normalize Windows backslashes for the checks below
+    if (p.endsWith('.html') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }

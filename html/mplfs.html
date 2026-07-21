@@ -586,20 +586,24 @@
       color: #0a0a0a;
     }
     #ws-timer-label {
-      font-weight: 800;
-      font-size: 23px;
-      line-height: 1.08;
-      text-align: right;
-      text-transform: uppercase;
-      white-space: nowrap;
+      width: 160px; height: 47px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    #ws-timer-label img {
+      max-width: 100%; max-height: 100%;
+      object-fit: contain;
     }
     #ws-timer-value {
+      width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
       font-weight: 800;
       font-size: 130px;
       line-height: 1;
       letter-spacing: -0.02em;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
+      text-align: left;
     }
 
     /* ── WAITING SCREEN — TODAY'S MATCHES PANEL ── */
@@ -654,7 +658,8 @@
       display: flex; align-items: center; justify-content: center;
     }
     .wsm-tri {
-      font-weight: 800; font-style: italic; font-size: 27px;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400; font-size: 34px;
       color: #fff; text-transform: uppercase; white-space: nowrap;
     }
     .wsm-tri-l { left: 0;    width: 94px; }
@@ -668,6 +673,9 @@
     .wsm-score .wsm-score-l { font-weight: 800; font-size: 32px; color: #1656d5; }
     .wsm-score .wsm-score-div { width: 34px; height: 3px; background: #0a0a0a; margin: 3px 0; }
     .wsm-score .wsm-score-r { font-weight: 800; font-size: 32px; color: #d92027; }
+    /* Positioning frame only — sits outside the Matches/Hosts/Casters
+       carousel so the sponsor box never transitions with those panels. */
+    #ws-sponsor { position: absolute; left: 40px; top: 280px; width: 571px; height: 600px; pointer-events: none; }
     .wsm-sponsor {
       /* Pinned to the 3-match (day 2) position so it does not ride up
          on 2-match days */
@@ -684,15 +692,87 @@
       width: 100%; height: 100%;
       object-fit: contain;
       opacity: 0;
-      transition: opacity 600ms ease;
     }
     .wsm-sponsor-slot img.active { opacity: 1; }
+    .wsm-sponsor-slot img.sponsor-in  { animation: wsm-sponsor-in  550ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+    .wsm-sponsor-slot img.sponsor-out { animation: wsm-sponsor-out 220ms ease-in both; }
+    @keyframes wsm-sponsor-in {
+      from { opacity: 0; transform: translateX(-50px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes wsm-sponsor-out {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(50px); }
+    }
 
     /* Slide-in — applied per element with a staggered delay from JS */
     @keyframes wsm-slide-in {
       from { opacity: 0; transform: translateX(-660px); }
       to   { opacity: 1; transform: translateX(0); }
     }
+
+    /* ── WAITING SCREEN — TALENT PANELS (Hosts / Casters — alternate with
+       Today's Matches every 6s). Shared layout: title bar baked into the bg
+       image, a photo row, and a name bar at the bottom. ── */
+    .ws-talent-box {
+      position: absolute;
+      left: 40px; top: 280px;
+      width: 571px; height: 600px;
+      font-family: 'General Sans', sans-serif;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .ws-talent-box .ws-talent-bg { position: absolute; left: 0; top: 0; width: 571px; height: 600px; }
+    .ws-talent-photos {
+      position: absolute; left: 0; top: 61px; width: 571px; height: 478px;
+      overflow: hidden; /* clip whatever pokes past the box's own edges */
+    }
+    .ws-talent-photo-slot img { height: 100%; width: auto; object-fit: contain; }
+
+    /* 2 talents — simple side-by-side, both up front */
+    /* 1 talent — centered alone */
+    .ws-talent-photos.ws-talent-count-1 { display: flex; align-items: flex-end; justify-content: center; }
+    .ws-talent-photos.ws-talent-count-1 .ws-talent-photo-slot { height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+
+    .ws-talent-photos.ws-talent-count-2 { display: flex; align-items: flex-end; justify-content: center; }
+    .ws-talent-photos.ws-talent-count-2 .ws-talent-photo-slot { height: 100%; display: flex; align-items: flex-end; justify-content: center; }
+    .ws-talent-photos.ws-talent-count-2 .ws-talent-photo-slot:nth-child(2) { margin-left: -30px; }
+
+    /* 3 talents — the middle one stands in front (taller, higher z-index);
+       the outer two tuck in behind it, peeking out on each side */
+    .ws-talent-photos.ws-talent-count-3 .ws-talent-photo-slot {
+      position: absolute; bottom: 0; display: flex;
+    }
+    .ws-talent-photos.ws-talent-count-3 .ws-talent-photo-slot:nth-child(1) {
+      left: 0; width: 62%; height: 97%; justify-content: flex-start; z-index: 1;
+    }
+    .ws-talent-photos.ws-talent-count-3 .ws-talent-photo-slot:nth-child(2) {
+      left: 50%; width: 56%; height: 100%; transform: translateX(-50%);
+      justify-content: center; z-index: 2;
+    }
+    .ws-talent-photos.ws-talent-count-3 .ws-talent-photo-slot:nth-child(3) {
+      right: 0; width: 62%; height: 97%; justify-content: flex-end; z-index: 1;
+    }
+    .ws-talent-namebar { position: absolute; left: 0; top: 539px; width: 571px; height: 61px; }
+    .ws-talent-namebar > img { position: absolute; left: 0; top: 0; width: 571px; height: 61px; }
+    .ws-talent-names { position: absolute; left: 0; top: 0; width: 571px; height: 61px; display: flex; }
+    .ws-talent-name {
+      flex: 1; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 27px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    }
+
+    /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
+    @keyframes ws-panel-in {
+      from { opacity: 0; transform: translateX(-40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes ws-panel-out {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(-40px); }
+    }
+    .ws-panel-out { animation: ws-panel-out 300ms ease-in both; }
+    .ws-panel-in  { animation: ws-panel-in  400ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 
     /* ── POST RICHGUY PAGE ── */
     #post-richguy-page {
@@ -1059,8 +1139,11 @@
         <div id="ws-week-label">WEEK 8 DAY 3</div>
       </div>
       <div id="ws-matches"></div>
+      <div id="ws-hosts" class="ws-talent-box"></div>
+      <div id="ws-casters" class="ws-talent-box"></div>
+      <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label">SHOW<br>STARTS IN</div>
+        <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Screen/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
     </div>
@@ -2224,8 +2307,9 @@
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
     ];
 
-    /* Countdown — starts from WS_TIMER_START every time the screen shows */
-    const WS_TIMER_START = 30 * 60 + 30; /* seconds */
+    /* Countdown — starts from the Match Board's Timer setting every time the screen shows */
+    const WS_TIMER_DEFAULT = 30 * 60 + 30; /* seconds, fallback if match state has no countdownDuration */
+    let wsTimerDuration = WS_TIMER_DEFAULT;
     const wsTimerValue = document.getElementById('ws-timer-value');
     let wsTimerEnd = null, wsTimerInt = null;
 
@@ -2236,8 +2320,8 @@
 
     function startWsTimer() {
       clearInterval(wsTimerInt);
-      wsTimerEnd = Date.now() + WS_TIMER_START * 1000;
-      wsTimerRender(WS_TIMER_START);
+      wsTimerEnd = Date.now() + wsTimerDuration * 1000;
+      wsTimerRender(wsTimerDuration);
       wsTimerInt = setInterval(() => {
         const remain = Math.max(0, Math.round((wsTimerEnd - Date.now()) / 1000));
         wsTimerRender(remain);
@@ -2305,15 +2389,162 @@
           logo(m, 'r') +
           `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
       });
-      if (opts.sponsor !== false) {
-        html += `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
-          `<div class="wsm-sponsor-slot">` +
-          WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
-          `</div></div>`;
-      }
       root.innerHTML = html;
     }
     buildWsMatches('ws-matches', WS_MATCHES);
+
+    /* Sponsor box — lives outside the Matches/Hosts/Casters carousel so it
+       stays on screen the whole time instead of transitioning with whichever
+       panel happens to be showing. */
+    function buildWsSponsor() {
+      document.getElementById('ws-sponsor').innerHTML =
+        `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor-slot">` +
+        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
+        `</div></div>`;
+    }
+    buildWsSponsor();
+
+    /* Hosts / Casters panels — alternate with Today's Matches every 6s. Each
+       talent's cutout photo lives at /photos/TALENTS/<Position>/<name>.png,
+       but the position (Right/Mid/Left) it was cropped for — and even the
+       filename convention used — isn't consistent (e.g. "ODIN_Right.png" vs
+       "HANS.LEFT.png"), so each photo tries every known naming variant across
+       all three positions and hides itself if none exist yet (the name still
+       shows in the bar below). */
+    const TALENT_POS_ORDER = ['Right', 'Mid', 'Left'];
+    function talentPhotoCandidates(name) {
+      const upper = name.toUpperCase();
+      const cands = [];
+      TALENT_POS_ORDER.forEach(pos => {
+        cands.push(`/photos/TALENTS/${pos}/${upper}_${pos}.png`);
+        cands.push(`/photos/TALENTS/${pos}/${upper}.${pos.toUpperCase()}.png`);
+      });
+      return cands;
+    }
+    function wsTalentPhotoFallback(img) {
+      const cands = JSON.parse(img.dataset.cands);
+      const idx = parseInt(img.dataset.tryIdx || '0', 10) + 1;
+      if (idx >= cands.length) { img.onerror = null; img.style.display = 'none'; return; }
+      img.dataset.tryIdx = String(idx);
+      img.src = cands[idx];
+    }
+    function talentPhotoTag(name) {
+      const cands = talentPhotoCandidates(name);
+      const candsAttr = JSON.stringify(cands).replace(/"/g, '&quot;');
+      return `<div class="ws-talent-photo-slot"><img class="ws-talent-photo" data-try-idx="0" data-cands="${candsAttr}" ` +
+        `src="${cands[0]}" onerror="wsTalentPhotoFallback(this)" alt="${name}"></div>`;
+    }
+    /* Builds one talent box's innerHTML (Hosts or Casters); returns how many
+       names were actually shown so the carousel can skip empty panels. */
+    function populateWsTalentBox(rootId, list, bgAsset) {
+      const names = ((list) || []).filter(n => n && n !== 'None').slice(0, 3);
+      const root = document.getElementById(rootId);
+      if (names.length < 1) { root.innerHTML = ''; return 0; }
+      /* 3-up gets crowded with the dashed 3Namebox — the blank 1Namebox frame
+         gives long names room to breathe (the auto-fit pass below still
+         shrinks them further if needed). */
+      const namebarImg = names.length === 2 ? '2Namebox.png' : '1Namebox.png';
+      const photosHtml = names.map(talentPhotoTag).join('');
+      const namesHtml = names.map(n => `<div class="ws-talent-name">${n.toUpperCase()}</div>`).join('');
+      root.innerHTML =
+        `<img class="ws-talent-bg" src="${WS_ASSET}${bgAsset}" alt="">` +
+        `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
+        `<div class="ws-talent-namebar"><img src="${WS_ASSET}${namebarImg}" alt="">` +
+        `<div class="ws-talent-names">${namesHtml}</div></div>`;
+      wsAutoFitTalentNames(root);
+      return names.length;
+    }
+    /* Shrinks each name to fit its column (classic scrollWidth/clientWidth
+       auto-fit), then unifies every name in the box to the smallest size
+       found so they don't look mismatched next to each other. */
+    function wsAutoFitTalentNames(root) {
+      const MAX_SIZE = 27, MIN_SIZE = 13;
+      const els = root.querySelectorAll('.ws-talent-name');
+      if (!els.length) return;
+      let smallest = MAX_SIZE;
+      els.forEach(el => {
+        let size = MAX_SIZE;
+        el.style.fontSize = size + 'px';
+        while (el.scrollWidth > el.clientWidth && size > MIN_SIZE) {
+          size -= 1;
+          el.style.fontSize = size + 'px';
+        }
+        smallest = Math.min(smallest, size);
+      });
+      els.forEach(el => { el.style.fontSize = smallest + 'px'; });
+    }
+
+    let wsHostsCount = 0, wsHostsLastKey = null;
+    function populateWsHosts(ms) {
+      const hosts = ((ms && ms.hosts) || []).filter(h => h && h !== 'None').slice(0, 3);
+      const key = hosts.join('|');
+      if (key === wsHostsLastKey) return; /* unchanged — don't disturb a panel mid-display */
+      wsHostsLastKey = key;
+      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'Host_Box.png');
+      if (wsHostsCount < 1) wsPanelDropIfShowing(WS_HOSTS_IDX);
+    }
+    let wsCastersCount = 0, wsCastersLastKey = null;
+    function populateWsCasters(ms) {
+      const casters = ((ms && ms.casters) || []).filter(c => c && c !== 'None').slice(0, 3);
+      const key = casters.join('|');
+      if (key === wsCastersLastKey) return;
+      wsCastersLastKey = key;
+      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'Casters_Box.png');
+      if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
+    }
+
+    /* Matches ⇄ Hosts ⇄ Casters carousel — flips every 6s while the waiting
+       screen is up, automatically skipping any panel with fewer than 2
+       talents configured (Today's Matches always has content). */
+    const WS_PANEL_IDS = ['ws-matches', 'ws-hosts', 'ws-casters'];
+    const WS_MATCHES_IDX = 0, WS_HOSTS_IDX = 1, WS_CASTERS_IDX = 2;
+    let wsPanelInt = null, wsPanelCurrent = WS_MATCHES_IDX;
+    function wsPanelHasContent(idx) {
+      if (idx === WS_HOSTS_IDX) return wsHostsCount >= 1;
+      if (idx === WS_CASTERS_IDX) return wsCastersCount >= 1;
+      return true;
+    }
+    function wsNextPanelIndex(from) {
+      for (let step = 1; step <= WS_PANEL_IDS.length; step++) {
+        const idx = (from + step) % WS_PANEL_IDS.length;
+        if (wsPanelHasContent(idx)) return idx;
+      }
+      return from;
+    }
+    function wsSwapPanel(fromIdx, toIdx) {
+      if (fromIdx === toIdx) return;
+      const outEl = document.getElementById(WS_PANEL_IDS[fromIdx]);
+      const inEl  = document.getElementById(WS_PANEL_IDS[toIdx]);
+      outEl.classList.remove('ws-panel-in');
+      outEl.classList.add('ws-panel-out');
+      setTimeout(() => {
+        inEl.classList.remove('ws-panel-out');
+        inEl.classList.add('ws-panel-in');
+      }, 300);
+      wsPanelCurrent = toIdx;
+    }
+    /* If a panel that's currently on screen just lost enough talents to show
+       (e.g. edited down to 1 host while its box was up), cut back to matches
+       immediately instead of waiting for the next 6s tick. */
+    function wsPanelDropIfShowing(idx) {
+      if (wsPanelCurrent === idx) wsSwapPanel(idx, WS_MATCHES_IDX);
+    }
+    function startWsPanelCycle() {
+      clearInterval(wsPanelInt);
+      wsPanelCurrent = WS_MATCHES_IDX;
+      WS_PANEL_IDS.forEach(id => document.getElementById(id).classList.remove('ws-panel-out', 'ws-panel-in'));
+      wsPanelInt = setInterval(() => {
+        const next = wsNextPanelIndex(wsPanelCurrent);
+        wsSwapPanel(wsPanelCurrent, next);
+      }, 6000);
+    }
+    function stopWsPanelCycle() {
+      clearInterval(wsPanelInt);
+      wsPanelInt = null;
+      wsPanelCurrent = WS_MATCHES_IDX;
+      WS_PANEL_IDS.forEach(id => document.getElementById(id).classList.remove('ws-panel-out', 'ws-panel-in'));
+    }
 
     /* Today's Schedule rows — one Regular_Match_Box asset per match.
        Bound to the Match Board state (todayMatches, tricodes only);
@@ -2350,14 +2581,27 @@
       if (imgs.length < 2) return;
       wsSponsorIdx = 0;
       imgs.forEach((im, i) => im.classList.toggle('active', i === 0));
-      /* Query the DOM each tick — the slot is recreated whenever the match
-         rows are rebuilt from a live Match Board update */
+      /* Query the DOM each tick and re-derive the current index from the DOM
+         itself (instead of trusting the stored wsSponsorIdx) so a rebuild
+         of this slot can never leave two images marked active at once. */
       wsSponsorInt = setInterval(() => {
         const cur = document.querySelectorAll('#' + rootId + ' .wsm-sponsor-slot img');
         if (cur.length < 2) return;
-        wsSponsorIdx = (wsSponsorIdx + 1) % cur.length;
-        cur.forEach((im, i) => im.classList.toggle('active', i === wsSponsorIdx));
-      }, 4000);
+        let prevIdx = [...cur].findIndex(im => im.classList.contains('active'));
+        if (prevIdx === -1) prevIdx = Math.min(wsSponsorIdx, cur.length - 1);
+        wsSponsorIdx = (prevIdx + 1) % cur.length;
+        cur.forEach((im, i) => {
+          if (i === prevIdx) {
+            im.classList.remove('active', 'sponsor-in');
+            im.classList.add('sponsor-out');
+          } else if (i === wsSponsorIdx) {
+            im.classList.remove('sponsor-out');
+            im.classList.add('active', 'sponsor-in');
+          } else {
+            im.classList.remove('active', 'sponsor-in', 'sponsor-out');
+          }
+        });
+      }, 3000);
     }
     function stopWsSponsors() {
       clearInterval(wsSponsorInt);
@@ -2373,13 +2617,20 @@
       });
     }
 
-    /* Week/day chip + match rows follow the Match Board state */
+    /* Week/day chip + match rows + countdown label follow the Match Board state */
     function updateWsFromState(ms) {
       if (!ms) return;
       if (ms.week != null && ms.day != null) {
         document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
       }
       buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
+      populateWsHosts(ms);
+      populateWsCasters(ms);
+      const labelImg = document.getElementById('ws-timer-label-img');
+      const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
+      const labelSrc = WS_ASSET + label + '.png';
+      if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
+      wsTimerDuration = (ms.countdownDuration != null) ? ms.countdownDuration : WS_TIMER_DEFAULT;
     }
 
     async function showWaitingScreen() {
@@ -2390,7 +2641,8 @@
       wsVideo.currentTime = 0;
       wsVideo.play().catch(() => {});
       startWsTimer();
-      startWsSponsors('ws-matches');
+      startWsSponsors('ws-sponsor');
+      startWsPanelCycle();
       wsMatchesSlideIn('ws-matches');
       wsPage.classList.add('ws-on');
       void wsPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -2406,6 +2658,7 @@
           wsVideo.pause();
           stopWsTimer();
           stopWsSponsors();
+          stopWsPanelCycle();
           resolve();
         }, 420);
       });

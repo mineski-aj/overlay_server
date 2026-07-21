@@ -73,14 +73,14 @@
   "day": 1,
   "patch": "Decisive Battle 420",
   "hosts": [
-    "Odin",
-    "Thea",
-    "Denisse"
+    "Hans",
+    "None",
+    "None"
   ],
   "casters": [
-    "Hans",
-    "Athena",
-    "Renmar"
+    "Renmar",
+    "Joshycakes",
+    "Rookhart"
   ],
   "todayMatches": [
     {
@@ -99,14 +99,14 @@
     {
       "team1Id": "10845",
       "team2Id": "10764",
-      "score1": 2,
-      "score2": 1,
+      "score1": 0,
+      "score2": 0,
       "time": "5:00 PM",
       "team1Name": "Aurora Gaming PH",
       "team1Short": "RORA",
       "team2Name": "ONIC PH",
       "team2Short": "ONIC",
-      "vsDisplay": "2 - 1",
+      "vsDisplay": "VS",
       "star": false
     },
     {
@@ -157,5 +157,7 @@
   ],
   "countdownLabel": "SHOW RESUMES IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
-  "match": 3
+  "match": 3,
+  "countdownLabelAuto": true,
+  "countdownDuration": 1800
 }

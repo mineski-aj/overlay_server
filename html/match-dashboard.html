@@ -211,6 +211,16 @@
     .show-label-wrap { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #1e1e2e; }
     .show-label-key { font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
     .show-label-val { flex: 1; background: #0a0a14; border: 1px solid #2a2a3a; border-radius: 6px; color: #aabbff; font-size: 11px; font-weight: 700; padding: 6px 10px; text-align: center; letter-spacing: .08em; cursor: default; outline: none; }
+    select.show-label-val { cursor: pointer; appearance: auto; }
+    select.show-label-val:disabled { cursor: default; opacity: .55; }
+    .timer-input-wrap { flex: 1; display: flex; align-items: flex-start; justify-content: center; gap: 6px; }
+    .timer-input-group { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .timer-input { width: 52px; background: #0a0a14; border: 1px solid #2a2a3a; border-radius: 6px; color: #aabbff; font-size: 13px; font-weight: 700; padding: 6px 4px; text-align: center; letter-spacing: .04em; outline: none; -moz-appearance: textfield; }
+    .timer-input::-webkit-outer-spin-button, .timer-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .timer-input:focus { border-color: #4a5aff; }
+    .timer-input-sep { color: #444; font-weight: 700; padding-top: 6px; }
+    .timer-input-label { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: .06em; }
+    #show-label-manual-wrap { flex-shrink: 0; }
 
     /* ── Spinners ── */
     .spinner-row { display: flex; align-items: center; gap: 4px; }
@@ -396,7 +406,28 @@
       <div class="match-slots" id="today-matches-list"></div>
       <div class="show-label-wrap">
         <span class="show-label-key">Countdown label</span>
-        <input type="text" class="show-label-val" id="show-label-val" readonly value="SHOW STARTS IN">
+        <select class="show-label-val" id="show-label-val">
+          <option value="SHOW STARTS IN">SHOW STARTS IN</option>
+          <option value="SHOW RESUMES IN">SHOW RESUMES IN</option>
+        </select>
+        <label class="star-toggle" id="show-label-manual-wrap" for="show-label-manual-cb">
+          <input type="checkbox" id="show-label-manual-cb">
+          <span>Manual</span>
+        </label>
+      </div>
+      <div class="show-label-wrap">
+        <span class="show-label-key">Timer</span>
+        <div class="timer-input-wrap">
+          <div class="timer-input-group">
+            <input type="number" class="timer-input" id="countdown-min" min="0" max="99" value="30">
+            <span class="timer-input-label">Minutes</span>
+          </div>
+          <span class="timer-input-sep">:</span>
+          <div class="timer-input-group">
+            <input type="number" class="timer-input" id="countdown-sec" min="0" max="59" value="30">
+            <span class="timer-input-label">Seconds</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -914,6 +945,31 @@
     push({ series: this.value });
   });
 
+  /* ── COUNTDOWN LABEL ── */
+  document.getElementById('show-label-val').addEventListener('change', function () {
+    if (localState.countdownLabelAuto !== false) return; /* auto mode — dropdown is disabled anyway */
+    localState.countdownLabel = this.value;
+    push({ countdownLabel: this.value });
+  });
+  document.getElementById('show-label-manual-cb').addEventListener('change', function () {
+    localState.countdownLabelAuto = !this.checked;
+    push({ countdownLabelAuto: localState.countdownLabelAuto });
+    updateShowLabel();
+  });
+
+  /* ── COUNTDOWN TIMER (MM:SS) ── */
+  function pushCountdownDuration() {
+    var min = Math.max(0, Math.min(99, parseInt(document.getElementById('countdown-min').value, 10) || 0));
+    var sec = Math.max(0, Math.min(59, parseInt(document.getElementById('countdown-sec').value, 10) || 0));
+    document.getElementById('countdown-min').value = min;
+    document.getElementById('countdown-sec').value = sec;
+    var total = min * 60 + sec;
+    localState.countdownDuration = total;
+    push({ countdownDuration: total });
+  }
+  document.getElementById('countdown-min').addEventListener('change', pushCountdownDuration);
+  document.getElementById('countdown-sec').addEventListener('change', pushCountdownDuration);
+
   /* ── RESET ── */
   function resetScores() {
     localState.home.score = 0;
@@ -1176,15 +1232,35 @@
     return (day === 3) ? 'SEE YOU NEXT WEEK' : 'SEE YOU TOMORROW';
   }
 
+  function computeAutoShowLabel() {
+    var hasScore = getMatches().some(function (m) { return (m.score1 || 0) > 0 || (m.score2 || 0) > 0; });
+    return hasScore ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
+  }
+
   function updateShowLabel() {
     var el = document.getElementById('show-label-val');
-    if (!el) return;
-    var hasScore = getMatches().some(function (m) { return (m.score1 || 0) > 0 || (m.score2 || 0) > 0; });
-    var newVal = hasScore ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
-    el.value = newVal;
-    if (localState.countdownLabel !== newVal) {
-      localState.countdownLabel = newVal;
-      push({ countdownLabel: newVal });
+    var cb = document.getElementById('show-label-manual-cb');
+    if (!el || !cb) return;
+    var manual = localState.countdownLabelAuto === false;
+    cb.checked = manual;
+    document.getElementById('show-label-manual-wrap').classList.toggle('on', manual);
+    el.disabled = !manual;
+    if (manual) {
+      el.value = localState.countdownLabel || 'SHOW STARTS IN';
+    } else {
+      var autoVal = computeAutoShowLabel();
+      el.value = autoVal;
+      if (localState.countdownLabel !== autoVal) {
+        localState.countdownLabel = autoVal;
+        push({ countdownLabel: autoVal });
+      }
+    }
+    var total = (localState.countdownDuration != null) ? localState.countdownDuration : (30 * 60 + 30);
+    var minEl = document.getElementById('countdown-min');
+    var secEl = document.getElementById('countdown-sec');
+    if (minEl && secEl && document.activeElement !== minEl && document.activeElement !== secEl) {
+      minEl.value = Math.floor(total / 60);
+      secEl.value = total % 60;
     }
   }
 
