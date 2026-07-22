@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <base href="/">
+  <script src="html/js/cache-bust.js"></script>
   <title>MPLFS Overlay</title>
   <style>
     @font-face {
@@ -322,6 +323,125 @@
       width: 100%; height: 100%;
       object-fit: cover;
     }
+    #wl-header {
+      position: absolute;
+      left: 40px; top: 80px;
+      width: 967px; height: 150px;
+    }
+    #wl-header img { display: block; width: 967px; height: 150px; }
+    #wl-week-label {
+      position: absolute;
+      left: 714px; top: 106px;
+      width: 253px; height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 800; font-size: 26px;
+      color: #fff; letter-spacing: 0.02em;
+    }
+    #wl-match {
+      position: absolute;
+      left: 40px; top: 390px;
+      width: 786px; height: 240px;
+      font-family: 'General Sans', sans-serif;
+    }
+    .wlm-box { position: relative; width: 786px; height: 240px; }
+    .wlm-box > img.wlm-box-bg { position: absolute; left: 0; top: 0; width: 786px; height: 240px; }
+    .wlm-label, .wlm-time, .wlm-bo {
+      position: absolute; top: 0; height: 55px;
+      display: flex; align-items: center;
+      font-weight: 800; font-size: 22px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .wlm-label { left: 24px; }
+    .wlm-time  { left: 0; width: 100%; justify-content: center; }
+    .wlm-bo    { right: 24px; }
+    .wlm-slot { position: absolute; top: 55px; height: 185px; display: flex; align-items: center; justify-content: center; }
+    .wlm-tri {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400; font-size: 46px;
+      color: #fff; text-transform: uppercase; white-space: nowrap;
+    }
+    .wlm-tri-l { left: 0;   width: 128px; }
+    .wlm-tri-r { right: 0;  width: 128px; }
+    .wlm-logo-l { left: 128px; width: 180px; }
+    .wlm-logo-r { left: 478px; width: 180px; }
+    .wlm-logo-l img, .wlm-logo-r img { width: 132px; height: 116px; object-fit: contain; }
+    .wlm-center { left: 308px; width: 170px; }
+    .wlm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .wlm-score .wlm-score-l { font-weight: 800; font-size: 44px; color: #1656d5; }
+    .wlm-score .wlm-score-div { width: 46px; height: 4px; background: #0a0a0a; margin: 4px 0; }
+    .wlm-score .wlm-score-r { font-weight: 800; font-size: 44px; color: #d92027; }
+    #wl-sponsor {
+      position: absolute;
+      left: 40px; top: 705px;
+      width: 340px; height: 94px;
+    }
+    #wl-sponsor img.wl-sponsor-bg { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    #wl-timer {
+      position: absolute;
+      left: 40px; top: 862px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-family: 'General Sans', sans-serif;
+      color: #0a0a0a;
+    }
+    #wl-timer-label { width: 160px; height: 47px; display: flex; align-items: center; justify-content: flex-start; }
+    #wl-timer-label img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    #wl-timer-value {
+      width: 355px;
+      font-weight: 800;
+      font-size: 130px;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      text-align: left;
+    }
+    /* Source cutouts are plain 300x300 square headshots shown whole (no
+       crop/zoom) — stacked nameboxes > left/blue photo > right/red photo. */
+    .wl-player {
+      position: absolute;
+    }
+    .wl-player-blue { left: 1035px; top: 90px; width: 500px; height: 800px; z-index: 2; }
+    .wl-player-red  { left: 1420px; top: 40px; width: 500px; height: 800px; z-index: 1; }
+    .wl-player-photo {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      object-position: 50% 0%;
+      display: block;
+    }
+    .wl-namebox {
+      position: absolute;
+      width: 347px; height: 62px;
+      font-family: 'Anton', sans-serif;
+      z-index: 3;
+    }
+    .wl-namebox-blue { left: 860px;  top: 830px; }
+    .wl-namebox-red  { left: 1580px; top: 715px; }
+    .wl-namebox img.wl-namebox-bg { position: absolute; left: 0; top: 0; width: 347px; height: 62px; }
+    .wl-namebox-logo {
+      position: absolute; top: 0; width: 62px; height: 62px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wl-namebox-blue .wl-namebox-logo { left: 0; }
+    .wl-namebox-red  .wl-namebox-logo { right: 0; }
+    .wl-namebox-logo img { width: 40px; height: 40px; object-fit: contain; }
+    .wl-namebox-name {
+      position: absolute; top: 0; width: 285px; height: 62px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 34px; color: #fff;
+      text-transform: uppercase; white-space: nowrap;
+      text-align: center;
+    }
+    .wl-namebox-blue .wl-namebox-name { left: 62px; }
+    .wl-namebox-red  .wl-namebox-name { left: 0; }
+    .wl-namebox.wl-fade-out { opacity: 0; transition: opacity 200ms ease; }
+    .wl-namebox.wl-fade-in  { opacity: 1; transition: opacity 200ms ease; }
+    .wl-player-photo.wl-fade-out { opacity: 0; transition: opacity 200ms ease; }
+    .wl-player-photo.wl-fade-in  { opacity: 1; transition: opacity 200ms ease; }
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
       position: absolute;
@@ -1149,6 +1269,32 @@
     </div>
     <div id="waiting-lobby-page">
       <video id="wl-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
+      <div id="wl-header">
+        <img src="/assets/Waiting Lobby/MPL Header.png" alt="MPL Philippines">
+        <div id="wl-week-label">WEEK 8 DAY 3</div>
+      </div>
+      <div id="wl-match"></div>
+      <div id="wl-sponsor"></div>
+      <div id="wl-timer">
+        <div id="wl-timer-label"><img id="wl-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="wl-timer-value">30:30</div>
+      </div>
+      <div class="wl-player wl-player-blue">
+        <img class="wl-player-photo" id="wl-blue-photo" src="" alt="">
+      </div>
+      <div class="wl-player wl-player-red">
+        <img class="wl-player-photo" id="wl-red-photo" src="" alt="">
+      </div>
+      <div class="wl-namebox wl-namebox-blue">
+        <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
+        <div class="wl-namebox-logo"><img id="wl-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="wl-namebox-name" id="wl-blue-name"></div>
+      </div>
+      <div class="wl-namebox wl-namebox-red">
+        <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Red_NameBox.png" alt="">
+        <div class="wl-namebox-logo"><img id="wl-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="wl-namebox-name" id="wl-red-name"></div>
+      </div>
     </div>
     <div id="today-schedule-page">
       <video id="ts-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
@@ -2669,11 +2815,178 @@
     ════════════════════════════════════════════════ */
     const wlPage  = document.getElementById('waiting-lobby-page');
     const wlVideo = document.getElementById('wl-video');
+    const WL_ASSET = '/assets/Waiting Lobby/';
+
+    /* Current/next match — the single card the Waiting Lobby spotlights,
+       driven by ms.match (the same "which match is live" index the
+       middleboard's GAME/MATCH label uses) against ms.home/ms.away. */
+    function wlBuildMatch(state) {
+      if (!state) return null;
+      const matchNum = state.match || 1;
+      const tm = (state.todayMatches || [])[matchNum - 1] || {};
+      const seriesRaw = (state.series || 'BO3').toUpperCase();
+      const boMatch = seriesRaw.match(/^BO(\d+)$/);
+      const bo = boMatch ? 'BEST OF ' + boMatch[1] : seriesRaw;
+      const home = state.home || {}, away = state.away || {};
+      const s1 = home.score || tm.score1 || 0, s2 = away.score || tm.score2 || 0;
+      return {
+        label: 'MATCH ' + matchNum,
+        time: tm.time || '',
+        bo,
+        left:  { tri: home.short || tm.team1Short || '', logo: (home.short || tm.team1Short) ? '/logos/' + encodeURIComponent(home.short || tm.team1Short) + '.png' : null },
+        right: { tri: away.short || tm.team2Short || '', logo: (away.short || tm.team2Short) ? '/logos/' + encodeURIComponent(away.short || tm.team2Short) + '.png' : null },
+        score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
+      };
+    }
+
+    function buildWlMatch(state) {
+      const root = document.getElementById('wl-match');
+      const m = wlBuildMatch(state);
+      if (!m) { root.innerHTML = ''; return; }
+      const logo = (side) =>
+        `<div class="wlm-slot wlm-logo-${side}"><img src="${(side === 'l' ? m.left.logo : m.right.logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
+        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
+      const center = m.score
+        ? `<div class="wlm-score"><span class="wlm-score-l">${m.score.l}</span><span class="wlm-score-div"></span><span class="wlm-score-r">${m.score.r}</span></div>`
+        : '';
+      root.innerHTML =
+        `<div class="wlm-box"><img class="wlm-box-bg" src="${WL_ASSET}${m.score ? 'MatchBox1' : 'MatchBox3'}.png" alt="">` +
+        `<span class="wlm-label">${m.label}</span>` +
+        `<span class="wlm-time">${m.time}</span>` +
+        `<span class="wlm-bo">${m.bo}</span>` +
+        `<div class="wlm-slot wlm-tri wlm-tri-l">${m.left.tri}</div>` +
+        logo('l') +
+        `<div class="wlm-slot wlm-center">${center}</div>` +
+        logo('r') +
+        `<div class="wlm-slot wlm-tri wlm-tri-r">${m.right.tri}</div></div>`;
+    }
+
+    /* Sponsor box — same WS_SPONSORS list and slide/crossfade loop as the
+       Waiting Screen TVC sponsor box (startWsSponsors/stopWsSponsors,
+       .wsm-sponsor-slot classes), just reused against #wl-sponsor. */
+    function buildWlSponsor() {
+      document.getElementById('wl-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor-slot">` +
+        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
+        `</div>`;
+    }
+    buildWlSponsor();
+
+    /* Countdown timer — same ms.countdownDuration/countdownLabel binding as
+       the Waiting Screen TVC, using this scene's own label art. */
+    const WL_TIMER_DEFAULT = 30 * 60 + 30;
+    let wlTimerDuration = WL_TIMER_DEFAULT;
+    const wlTimerValue = document.getElementById('wl-timer-value');
+    let wlTimerEnd = null, wlTimerInt = null;
+
+    function wlTimerRender(remain) {
+      const m = Math.floor(remain / 60), s = remain % 60;
+      wlTimerValue.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    }
+    function startWlTimer() {
+      clearInterval(wlTimerInt);
+      wlTimerEnd = Date.now() + wlTimerDuration * 1000;
+      wlTimerRender(wlTimerDuration);
+      wlTimerInt = setInterval(() => {
+        const remain = Math.max(0, Math.round((wlTimerEnd - Date.now()) / 1000));
+        wlTimerRender(remain);
+        if (remain <= 0) clearInterval(wlTimerInt);
+      }, 250);
+    }
+    function stopWlTimer() {
+      clearInterval(wlTimerInt);
+      wlTimerInt = null;
+    }
+
+    /* Player spotlight — rotates through each side's 5-man lineup, blue side
+       photos from assets/Waiting Lobby/Player Photo/BLUE, red side from
+       .../RED, filename convention: <ign>_LEFT.png / <ign>_RIGHT.png. */
+    let wlLineupBlue = [], wlLineupRed = [];
+    let wlPlayerIdx = 0, wlPlayerInt = null;
+    const WL_PHOTO_DIR = WL_ASSET + 'Player Photo/';
+
+    function wlPhotoUrl(ign, side) {
+      const folder = side === 'blue' ? 'BLUE' : 'RED';
+      const suffix = side === 'blue' ? 'LEFT' : 'RIGHT';
+      return WL_PHOTO_DIR + folder + '/' + encodeURIComponent(ign + '_' + suffix + '.png');
+    }
+
+    function wlApplyPlayer(side, ign) {
+      const photoEl = document.getElementById('wl-' + side + '-photo');
+      const nameEl  = document.getElementById('wl-' + side + '-name');
+      const logoEl  = document.getElementById('wl-' + side + '-logo');
+      const nameBox = document.querySelector('.wl-namebox-' + side);
+      photoEl.classList.add('wl-fade-out');
+      nameBox.classList.add('wl-fade-out');
+      setTimeout(() => {
+        photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = '/photos/placeholder.png'; };
+        photoEl.src = ign ? wlPhotoUrl(ign, side) : '/photos/placeholder.png';
+        nameEl.textContent = ign || '';
+        photoEl.classList.remove('wl-fade-out');
+        nameBox.classList.remove('wl-fade-out');
+        photoEl.classList.add('wl-fade-in');
+        nameBox.classList.add('wl-fade-in');
+      }, 200);
+    }
+
+    function wlApplyLogo(side, tri) {
+      const logoEl = document.getElementById('wl-' + side + '-logo');
+      logoEl.onerror = () => { logoEl.style.display = 'none'; };
+      logoEl.style.display = '';
+      logoEl.src = tri ? '/logos/' + encodeURIComponent(tri) + '.png' : '';
+    }
+
+    function wlShowPlayers(idx) {
+      const blue = wlLineupBlue[idx % (wlLineupBlue.length || 1)];
+      const red  = wlLineupRed[idx % (wlLineupRed.length || 1)];
+      wlApplyPlayer('blue', blue && blue.ign);
+      wlApplyPlayer('red', red && red.ign);
+    }
+
+    function startWlPlayerCycle(state) {
+      clearInterval(wlPlayerInt);
+      wlLineupBlue = (state && state.home && state.home.lineup) || [];
+      wlLineupRed  = (state && state.away && state.away.lineup) || [];
+      wlApplyLogo('blue', state && state.home && state.home.short);
+      wlApplyLogo('red', state && state.away && state.away.short);
+      wlPlayerIdx = 0;
+      wlShowPlayers(wlPlayerIdx);
+      if (wlLineupBlue.length > 1 || wlLineupRed.length > 1) {
+        wlPlayerInt = setInterval(() => {
+          wlPlayerIdx += 1;
+          wlShowPlayers(wlPlayerIdx);
+        }, 4000);
+      }
+    }
+    function stopWlPlayerCycle() {
+      clearInterval(wlPlayerInt);
+      wlPlayerInt = null;
+    }
+
+    function updateWlFromState(ms) {
+      if (!ms) return;
+      if (ms.week != null && ms.day != null) {
+        document.getElementById('wl-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+      }
+      buildWlMatch(ms);
+      const labelImg = document.getElementById('wl-timer-label-img');
+      const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
+      const labelSrc = WL_ASSET + label + '.png';
+      if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
+      wlTimerDuration = (ms.countdownDuration != null) ? ms.countdownDuration : WL_TIMER_DEFAULT;
+      startWlPlayerCycle(ms);
+    }
 
     async function showWaitingLobby() {
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('lobby');
+      updateWlFromState(await msPromise);
       wlVideo.currentTime = 0;
       wlVideo.play().catch(() => {});
+      startWlTimer();
+      startWsSponsors('wl-sponsor');
       wlPage.classList.add('wl-on');
       void wlPage.offsetWidth; /* force reflow so the opacity transition runs */
       wlPage.classList.add('wl-visible');
@@ -2686,6 +2999,9 @@
         setTimeout(() => {
           wlPage.classList.remove('wl-on');
           wlVideo.pause();
+          stopWlTimer();
+          stopWsSponsors();
+          stopWlPlayerCycle();
           resolve();
         }, 420);
       });
