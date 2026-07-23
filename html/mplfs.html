@@ -4074,6 +4074,28 @@
       }
     };
 
+    /* ── Load saved position/size overrides from dashboard editor ── */
+    (function loadMplfsOverrides() {
+      fetch(buildUrl('/api/overlay-styles?file=mplfs'))
+        .then(function(r) { return r.json(); })
+        .then(function(styles) {
+          if (!styles || !Object.keys(styles).length) return;
+          var css = Object.keys(styles).map(function(sel) {
+            var props = styles[sel];
+            var decls = Object.keys(props).map(function(prop) {
+              var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+              return cssProp + ':' + props[prop] + ' !important';
+            }).join(';');
+            return sel + '{' + decls + '}';
+          }).join('\n');
+          var style = document.createElement('style');
+          style.id = 'mplfs-overrides';
+          style.textContent = css;
+          document.head.appendChild(style);
+        })
+        .catch(function() {});
+    })();
+
   </script>
 
 </body>
