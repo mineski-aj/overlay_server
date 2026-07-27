@@ -2783,7 +2783,9 @@
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('waiting');
-      updateWsFromState(await msPromise);
+      const ms = await msPromise;
+      if (activeFeature !== 'waiting') return; /* superseded while awaiting match state */
+      updateWsFromState(ms);
       wsVideo.currentTime = 0;
       wsVideo.play().catch(() => {});
       startWsTimer();
@@ -2982,7 +2984,9 @@
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('lobby');
-      updateWlFromState(await msPromise);
+      const ms = await msPromise;
+      if (activeFeature !== 'lobby') return; /* superseded while awaiting match state */
+      updateWlFromState(ms);
       wlVideo.currentTime = 0;
       wlVideo.play().catch(() => {});
       startWlTimer();
@@ -3019,6 +3023,7 @@
         .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('schedule');
       const ms = await msPromise;
+      if (activeFeature !== 'schedule') return; /* superseded while awaiting match state */
       if (ms) {
         if (ms.week != null && ms.day != null) {
           document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
@@ -3096,12 +3101,18 @@
       if (s && Array.isArray(s.teams) && s.teams.length) stTeams = s.teams;
     }
 
-    /* Live standings updates from the dashboard's Standings tab */
-    const standingsEvents = new EventSource(buildUrl('/standings/events'));
-    standingsEvents.onmessage = (e) => {
-      try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
-      if (activeFeature === 'standings') buildStandings();
-    };
+    /* Live standings updates from the dashboard's Standings tab.
+       Connected lazily — see the tab leader election near the bottom of
+       this script — only the elected leader tab holds this open. */
+    let standingsEvents = null;
+    function connectStandingsEvents() {
+      if (standingsEvents) return;
+      standingsEvents = new EventSource(buildUrl('/standings/events'));
+      standingsEvents.onmessage = (e) => {
+        try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
+        if (activeFeature === 'standings') buildStandings();
+      };
+    }
 
     function stApplyWeekDay(ms) {
       if (ms && ms.week != null && ms.day != null) {
@@ -3117,8 +3128,10 @@
       const stPromise = fetch(buildUrl('/standings/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('standings');
-      stApplyWeekDay(await msPromise);
-      stApplyTeams(await stPromise);
+      const ms = await msPromise, st = await stPromise;
+      if (activeFeature !== 'standings') return; /* superseded while awaiting state */
+      stApplyWeekDay(ms);
+      stApplyTeams(st);
       buildStandings();
       stVideo.currentTime = 0;
       stVideo.play().catch(() => {});
@@ -3141,25 +3154,31 @@
     }
 
     /* Live match-state updates — any Match Board change refreshes everything
-       bound to it that is currently on air, as soon as it is saved */
-    const matchStateEvents = new EventSource(buildUrl('/match/events'));
-    matchStateEvents.onmessage = (e) => {
-      let ms = null;
-      try { ms = JSON.parse(e.data); } catch { return; }
-      /* Match Board overlay (tricodes, logos, series score) */
-      if (mbVisible) fetchMatchBoardData();
-      /* Waiting Screen TVC rows + week/day chip */
-      if (activeFeature === 'waiting') updateWsFromState(ms);
-      /* Today's Schedule rows + week/day chip */
-      if (activeFeature === 'schedule') {
-        if (ms.week != null && ms.day != null) {
-          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+       bound to it that is currently on air, as soon as it is saved.
+       Connected lazily — see the tab leader election near the bottom of
+       this script — only the elected leader tab holds this open. */
+    let matchStateEvents = null;
+    function connectMatchEvents() {
+      if (matchStateEvents) return;
+      matchStateEvents = new EventSource(buildUrl('/match/events'));
+      matchStateEvents.onmessage = (e) => {
+        let ms = null;
+        try { ms = JSON.parse(e.data); } catch { return; }
+        /* Match Board overlay (tricodes, logos, series score) */
+        if (mbVisible) fetchMatchBoardData();
+        /* Waiting Screen TVC rows + week/day chip */
+        if (activeFeature === 'waiting') updateWsFromState(ms);
+        /* Today's Schedule rows + week/day chip */
+        if (activeFeature === 'schedule') {
+          if (ms.week != null && ms.day != null) {
+            document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+          }
+          buildTsMatches(ms);
         }
-        buildTsMatches(ms);
-      }
-      /* Standings week/day chip */
-      if (activeFeature === 'standings') stApplyWeekDay(ms);
-    };
+        /* Standings week/day chip */
+        if (activeFeature === 'standings') stApplyWeekDay(ms);
+      };
+    }
 
     /* ════════════════════════════════════════════════
        FEATURE SWITCHER — only one feature live at a time
@@ -3180,7 +3199,22 @@
       ]);
     }
 
-    async function transitionTo(newFeature) {
+    /* Serialize transitions: two show*() calls fired back-to-back (double
+       click, or a click landing while the previous transition's own
+       fetch/animation is still pending) used to run transitionTo()
+       concurrently. Each call read activeFeature before the other had
+       finished writing it, so the "hide the old scene" step could be
+       skipped — leaving stale scenes stuck visible or the new one never
+       appearing. Chaining onto transitionChain forces every transition to
+       fully finish (including its hideActiveFeature) before the next one
+       starts reading state. */
+    let transitionChain = Promise.resolve();
+
+    function transitionTo(newFeature) {
+      return transitionChain = transitionChain.then(() => transitionToImpl(newFeature));
+    }
+
+    async function transitionToImpl(newFeature) {
       if (POST_FEATURES.has(newFeature)) {
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
@@ -3287,6 +3321,7 @@
       if (embVisible) return;
       await transitionTo('emblems');
       await fetchEmblemData();
+      if (activeFeature !== 'emblems') return; /* superseded while awaiting data */
       embVisible = true;
       EMB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`emb-card-${i + 1}`);
@@ -3415,6 +3450,7 @@
       if (pibVisible) return;
       await transitionTo('items');
       await fetchItemsData();
+      if (activeFeature !== 'items') return; /* superseded while awaiting data */
       pibVisible = true;
       PIB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`pib-card-${i + 1}`);
@@ -3567,6 +3603,7 @@
       if (psbVisible) return;
       await transitionTo('stats');
       await fetchStatsData();
+      if (activeFeature !== 'stats') return; /* superseded while awaiting data */
       psbVisible = true;
       PSB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`psb-card-${i + 1}`);
@@ -3998,7 +4035,52 @@
       applyMatchBoardData((gameR.value?.data) ?? null, msR.value ?? null);
     }
 
-    connectSSE();
+    /* ── Tab leader election ──
+       This page holds 3 persistent SSE connections open (overlay events,
+       match-state events, standings events). Chrome caps HTTP/1.1
+       connections per origin at 6, shared across every tab of that origin —
+       so just two tabs of this same page exhaust the entire pool between
+       them, and every other request (button-triggered fetches, image
+       loads) on either tab hangs indefinitely until one tab is closed.
+       Elect a single "leader" tab (via a localStorage heartbeat) to hold
+       those 3 connections; other tabs stay fully interactive for local
+       button presses but skip the live SSE feeds until they're promoted
+       (e.g. the current leader tab is closed). */
+    const LEADER_KEY = 'mplfs-leader-heartbeat';
+    const LEADER_TIMEOUT_MS = 4000;
+    const LEADER_CHECK_MS = 1500;
+    const tabInstanceId = Math.random().toString(36).slice(2);
+    let isSseLeader = false;
+
+    function tryClaimLeadership() {
+      let claimable = true;
+      try {
+        const raw = localStorage.getItem(LEADER_KEY);
+        if (raw) {
+          const { id, ts } = JSON.parse(raw);
+          if (id !== tabInstanceId && Date.now() - ts < LEADER_TIMEOUT_MS) claimable = false;
+        }
+      } catch {}
+      if (!claimable) return;
+      try { localStorage.setItem(LEADER_KEY, JSON.stringify({ id: tabInstanceId, ts: Date.now() })); } catch {}
+      if (!isSseLeader) {
+        isSseLeader = true;
+        sseDot.title = 'Live feed leader (this tab)';
+        connectSSE();
+        connectMatchEvents();
+        connectStandingsEvents();
+      }
+    }
+    setInterval(() => {
+      if (isSseLeader) {
+        try { localStorage.setItem(LEADER_KEY, JSON.stringify({ id: tabInstanceId, ts: Date.now() })); } catch {}
+      } else {
+        tryClaimLeadership();
+      }
+    }, LEADER_CHECK_MS);
+    sseDot.title = 'Waiting to become live-feed leader…';
+    tryClaimLeadership();
+
     startRichguyPoll();
 
     async function restoreScene() {
