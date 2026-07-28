@@ -1358,7 +1358,16 @@
       var row = el('div', 'btn-row');
       if (ov.show)       row.appendChild(btn('Show',     'btn-show', function () { hit(ov.show, body); }));
       if (ov.hide)       row.appendChild(btn('Hide',     'btn-hide', function () { hit(ov.hide, body); }));
-      if (ov.globalHide) row.appendChild(btn('Hide All', 'btn-hide', function () { hit(ov.globalHide, body); }));
+      if (ov.globalHide) {
+        row.appendChild(btn('Hide All', 'btn-hide', function () { hit(ov.globalHide, body); }));
+        var ghCb = document.createElement('button');
+        ghCb.className = 'btn btn-copy';
+        ghCb.innerHTML = '<span class="copy-icon">⧉</span>';
+        (function (path, b) {
+          b.addEventListener('click', function () { copyRoute(path, 'Hide All route', b); });
+        })(ov.globalHide, ghCb);
+        row.appendChild(ghCb);
+      }
       body.appendChild(row);
     }
 
