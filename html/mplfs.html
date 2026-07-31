@@ -676,12 +676,14 @@
     #ws-header {
       position: absolute;
       left: 40px; top: 80px;
-      width: 967px; height: 150px;
+      width: 1028px; height: 150px;
     }
-    #ws-header img { display: block; width: 967px; height: 150px; }
+    #ws-header img { display: block; width: 1028px; height: 150px; }
+    /* The black date chip is already baked into S18_Header.png — this just
+       overlays the "WEEK n DAY n" text on top of it, in place. */
     #ws-week-label {
       position: absolute;
-      left: 714px; top: 106px;
+      left: 712px; top: 116px;
       width: 253px; height: 34px;
       display: flex;
       align-items: center;
@@ -693,6 +695,14 @@
       letter-spacing: 0.02em;
       text-transform: uppercase;
       white-space: nowrap;
+    }
+    /* Full-canvas decorative frame (season tickers in the corners) — mostly
+       transparent, sits above every panel */
+    #ws-hud {
+      position: absolute;
+      left: 29px; top: 25px;
+      width: 1862px; height: 1031px;
+      pointer-events: none;
     }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
@@ -737,27 +747,30 @@
       font-family: 'General Sans', sans-serif;
     }
     #ws-matches .wsm-title { display: block; width: 571px; height: 61px; margin-bottom: 10px; }
-    .wsm-strip {
+    /* Match row — header band (label/time/BO) and box are baked into one
+       571×173 asset now, so the band text/blinker overlay the box's own
+       top 39px instead of a separate strip element */
+    .wsm-box {
       position: relative;
-      width: 571px; height: 39px;
+      width: 571px; height: 173px;
     }
-    .wsm-strip > img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-    .wsm-strip .wsm-strip-label,
-    .wsm-strip .wsm-strip-time,
-    .wsm-strip .wsm-strip-bo {
+    .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 173px; }
+    .wsm-box .wsm-band-label,
+    .wsm-box .wsm-band-time,
+    .wsm-box .wsm-band-bo {
       position: absolute; top: 0; height: 39px;
       display: flex; align-items: center;
       font-weight: 800; font-size: 19px; color: #0a0a0a;
       text-transform: uppercase; white-space: nowrap;
     }
-    .wsm-strip .wsm-strip-label { left: 14px; }
-    .wsm-strip .wsm-strip-time  { left: 0; width: 100%; justify-content: center; }
-    .wsm-strip .wsm-strip-bo    { right: 14px; }
-    .wsm-strip .wsm-strip-cot   { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
-    /* Star match strip — Clash of Titans banner fades in/out continuously,
-       cross-fading with the match time so the strip is never empty */
-    .wsm-strip .wsm-strip-cot        { animation: wsm-cot-pulse 3s ease-in-out infinite; }
-    .wsm-strip .wsm-strip-time.star  { animation: wsm-cot-pulse-inv 3s ease-in-out infinite; }
+    .wsm-box .wsm-band-label { left: 14px; }
+    .wsm-box .wsm-band-time  { left: 0; width: 100%; justify-content: center; }
+    .wsm-box .wsm-band-bo    { right: 14px; }
+    .wsm-box .wsm-band-cot   { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
+    /* Star match band — Clash of Titans banner fades in/out continuously,
+       cross-fading with the match time so the band is never empty */
+    .wsm-box .wsm-band-cot        { animation: wsm-cot-pulse 3s ease-in-out infinite; }
+    .wsm-box .wsm-band-time.star  { animation: wsm-cot-pulse-inv 3s ease-in-out infinite; }
     @keyframes wsm-cot-pulse {
       0%, 40%  { opacity: 1; }
       50%, 90% { opacity: 0; }
@@ -768,13 +781,8 @@
       50%, 90% { opacity: 1; }
       100%     { opacity: 0; }
     }
-    .wsm-box {
-      position: relative;
-      width: 571px; height: 134px;
-    }
-    .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 134px; }
     .wsm-box .wsm-slot {
-      position: absolute; top: 0; height: 134px;
+      position: absolute; top: 39px; height: 134px;
       display: flex; align-items: center; justify-content: center;
     }
     .wsm-tri {
@@ -800,7 +808,7 @@
       /* Pinned to the 3-match (day 2) position so it does not ride up
          on 2-match days */
       position: absolute;
-      top: 635px; left: 115px;
+      top: 620px; left: 115px;
       width: 340px; height: 94px;
     }
     .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
@@ -1255,7 +1263,7 @@
     <div id="waiting-screen-page">
       <video id="ws-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
       <div id="ws-header">
-        <img src="/assets/Waiting Screen/season 17 regular season.png" alt="MPL Philippines — Season 17 Regular Season">
+        <img src="/assets/Waiting Screen TVC/S18_Header.png" alt="MPL Philippines — Season 18 Regular Season">
         <div id="ws-week-label">WEEK 8 DAY 3</div>
       </div>
       <div id="ws-matches"></div>
@@ -1266,6 +1274,7 @@
         <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Screen/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
+      <img id="ws-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
     </div>
     <div id="waiting-lobby-page">
       <video id="wl-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
@@ -2430,18 +2439,28 @@
 
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
+    const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
     const WS_SPONSORS = [
       'clear1.png', 'faiirrie1.png', 'infinix6.png', 'sip1.png',
       'smart6.png', 'timezone4.png', 'ttracing4.png',
     ].map(f => '/assets/sponsors/' + f);
     const WS_MATCHES = [
-      { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', star: false,
+      { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', matchType: 'regular',
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' }, score: { l: 2, r: 0 } },
-      { label: 'MATCH 2', time: '',              bo: 'B03', star: true,
+      { label: 'MATCH 2', time: '',              bo: 'B03', matchType: 'clash',
         left: { tri: 'ONIC' }, right: { tri: 'FLCN' } },
-      { label: 'MATCH 3', time: '18:30 GMT +8', bo: 'B03', star: false,
+      { label: 'MATCH 3', time: '18:30 GMT +8', bo: 'B03', matchType: 'regular',
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
     ];
+    /* Match type → Waiting Screen TVC box art + pulsing rivalry banner.
+       Keys match the Match Board's match-type dropdown values. */
+    const WS_MATCH_TYPE_ASSETS = {
+      regular:       { box: 'MatchBox_REGULAR MATCH',    blinker: null },
+      epic:          { box: 'MatchBox_EPIC RIVALRY',      blinker: 'EPIC RIVALRY BLINKER' },
+      international: { box: 'MatchBox_INTERNATIONAL',     blinker: 'INTERNATIONAL RIVALRY BLINKER' },
+      golden:        { box: 'MatchBox_GOLDEN RIVALRY',    blinker: 'GOLDEN RIVALRY BLINKER' },
+      clash:         { box: 'MatchBox_CLASH OF TITANS',   blinker: 'CLASH OF TITANS BLINKER' },
+    };
 
     /* Today's Schedule config — edit here (or feed from server later) */
     const TS_MATCHES = [
@@ -2503,6 +2522,7 @@
           time:  m.time || '',
           bo,
           star:  !!m.star,
+          matchType: m.matchType || (m.star ? 'clash' : 'regular'),
           left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
           right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
           score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
@@ -2516,19 +2536,19 @@
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_ASSET}TodayMatches.png" alt="Today's Matches">`;
+      let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_TVC_ASSET}TodayMatches.png" alt="Today's Matches">`;
       matches.forEach(m => {
-        html += `<div class="wsm-strip"><img src="${WS_ASSET}MatchHeader.png" alt="">` +
-          `<span class="wsm-strip-label">${m.label}</span>` +
-          (m.star
-            ? `<span class="wsm-strip-time star">${m.time}</span>` +
-              `<img class="wsm-strip-cot" src="${WS_ASSET}Clash of Titans.png" alt="Clash of Titans">`
-            : `<span class="wsm-strip-time">${m.time}</span>`) +
-          `<span class="wsm-strip-bo">${m.bo}</span></div>`;
+        const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
           ? `<div class="wsm-score"><span class="wsm-score-l">${m.score.l}</span><span class="wsm-score-div"></span><span class="wsm-score-r">${m.score.r}</span></div>`
           : `<img class="wsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
-        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_ASSET}${m.star ? 'StarMatchBox' : 'MatchNormalBox'}.png" alt="">` +
+        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+          `<span class="wsm-band-label">${m.label}</span>` +
+          (typeAssets.blinker
+            ? `<span class="wsm-band-time star">${m.time}</span>` +
+              `<img class="wsm-band-cot" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}">`
+            : `<span class="wsm-band-time">${m.time}</span>`) +
+          `<span class="wsm-band-bo">${m.bo}</span>` +
           `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
           logo(m, 'l') +
           `<div class="wsm-slot wsm-center">${center}</div>` +
@@ -2544,7 +2564,7 @@
        panel happens to be showing. */
     function buildWsSponsor() {
       document.getElementById('ws-sponsor').innerHTML =
-        `<div class="wsm-sponsor"><img src="${WS_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
         `<div class="wsm-sponsor-slot">` +
         WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
         `</div></div>`;
@@ -2587,16 +2607,16 @@
       const names = ((list) || []).filter(n => n && n !== 'None').slice(0, 3);
       const root = document.getElementById(rootId);
       if (names.length < 1) { root.innerHTML = ''; return 0; }
-      /* 3-up gets crowded with the dashed 3Namebox — the blank 1Namebox frame
+      /* 3-up gets crowded with a dashed divider — the blank NAMEBOX frame
          gives long names room to breathe (the auto-fit pass below still
          shrinks them further if needed). */
-      const namebarImg = names.length === 2 ? '2Namebox.png' : '1Namebox.png';
+      const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
       const photosHtml = names.map(talentPhotoTag).join('');
       const namesHtml = names.map(n => `<div class="ws-talent-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
-        `<img class="ws-talent-bg" src="${WS_ASSET}${bgAsset}" alt="">` +
+        `<img class="ws-talent-bg" src="${WS_TVC_ASSET}${bgAsset}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
-        `<div class="ws-talent-namebar"><img src="${WS_ASSET}${namebarImg}" alt="">` +
+        `<div class="ws-talent-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
         `<div class="ws-talent-names">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
@@ -2627,7 +2647,7 @@
       const key = hosts.join('|');
       if (key === wsHostsLastKey) return; /* unchanged — don't disturb a panel mid-display */
       wsHostsLastKey = key;
-      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'Host_Box.png');
+      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'HOST_BOXv1.png');
       if (wsHostsCount < 1) wsPanelDropIfShowing(WS_HOSTS_IDX);
     }
     let wsCastersCount = 0, wsCastersLastKey = null;
@@ -2636,7 +2656,7 @@
       const key = casters.join('|');
       if (key === wsCastersLastKey) return;
       wsCastersLastKey = key;
-      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'Casters_Box.png');
+      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png');
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 

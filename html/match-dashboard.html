@@ -185,12 +185,11 @@
     .match-slots { display: flex; flex-direction: column; gap: 8px; }
     .match-card { background: #0f0f18; border: 1px solid #1e1e2e; border-radius: 8px; padding: 10px 12px; transition: opacity .2s; }
     .match-card.disabled { opacity: 0.28; pointer-events: none; }
-    .match-card.star { border-color: #8a6d1a; }
+    .match-card.rivalry { border-color: #8a6d1a; }
     .match-card-hdr { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-    .star-toggle { margin-left: auto; display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #555; user-select: none; transition: color .15s; }
-    .star-toggle:hover { color: #888; }
-    .star-toggle.on { color: #e6b422; }
-    .star-toggle input { accent-color: #e6b422; margin: 0; cursor: pointer; }
+    .match-type-sel { margin-left: auto; background: #0a0a14; border: 1px solid #2a2a3a; border-radius: 6px; color: #666; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 4px 6px; cursor: pointer; outline: none; transition: color .15s, border-color .15s; }
+    .match-type-sel:hover { color: #888; }
+    .match-type-sel.on { color: #e6b422; border-color: #8a6d1a; }
     .match-num-lbl { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #555; text-transform: uppercase; }
     .match-time-inp { width: 76px; font-size: 12px; text-align: center; }
     .match-body { display: flex; align-items: center; gap: 6px; }
@@ -1051,6 +1050,14 @@
 
   /* ── TODAY'S MATCHES ── */
   var DEFAULT_TIMES = ['2:30 PM', '5:00 PM', '7:30 PM'];
+  var MATCH_TYPES = [
+    { value: 'regular',       label: 'Regular Match' },
+    { value: 'epic',          label: 'Epic Rivalry' },
+    { value: 'international', label: 'International Rivalry' },
+    { value: 'golden',        label: 'Golden Rivalry' },
+    { value: 'clash',         label: 'Clash of Titans' },
+  ];
+  function matchTypeOf(m) { return m.matchType || (m.star ? 'clash' : 'regular'); }
 
   function getMatches() {
     return localState.todayMatches || DEFAULT_TIMES.map(function (t) {
@@ -1077,8 +1084,9 @@
 
     matches.forEach(function (m, i) {
       var disabled = (i === 2 && !isDay2);
+      var mt = matchTypeOf(m);
       var card = document.createElement('div');
-      card.className = 'match-card' + (disabled ? ' disabled' : '') + (m.star ? ' star' : '');
+      card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');
 
       /* header */
       var hdr = document.createElement('div');
@@ -1098,23 +1106,23 @@
       timeInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') timeInp.blur(); });
       hdr.appendChild(timeInp);
 
-      /* star match toggle */
-      var starWrap = document.createElement('label');
-      starWrap.className = 'star-toggle' + (m.star ? ' on' : '');
-      var starCb = document.createElement('input');
-      starCb.type = 'checkbox';
-      starCb.checked = !!m.star;
-      var starTxt = document.createElement('span');
-      starTxt.textContent = '★ Star match';
-      starWrap.appendChild(starCb); starWrap.appendChild(starTxt);
-      starCb.addEventListener('change', function () {
-        var tm = getMatches().slice();
-        tm[i] = Object.assign({}, tm[i], { star: starCb.checked });
-        saveMatches(tm);
-        starWrap.classList.toggle('on', starCb.checked);
-        card.classList.toggle('star', starCb.checked);
+      /* match type selector — picks the Waiting Screen TVC match box art */
+      var typeSel = document.createElement('select');
+      typeSel.className = 'match-type-sel' + (mt !== 'regular' ? ' on' : '');
+      MATCH_TYPES.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value; o.textContent = opt.label;
+        if (opt.value === mt) o.selected = true;
+        typeSel.appendChild(o);
       });
-      hdr.appendChild(starWrap);
+      typeSel.addEventListener('change', function () {
+        var tm = getMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { matchType: typeSel.value, star: typeSel.value !== 'regular' });
+        saveMatches(tm);
+        typeSel.classList.toggle('on', typeSel.value !== 'regular');
+        card.classList.toggle('rivalry', typeSel.value !== 'regular');
+      });
+      hdr.appendChild(typeSel);
       card.appendChild(hdr);
 
       /* body */
