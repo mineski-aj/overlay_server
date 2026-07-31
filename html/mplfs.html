@@ -797,6 +797,7 @@
     .wsm-logo-l img, .wsm-logo-r img { width: 77px; height: 68px; object-fit: contain; }
     .wsm-center { left: 225px; width: 121px; }
     .wsm-center img.wsm-vs { width: 71px; height: 39px; }
+    .wsm-center img.wsm-score-img { width: 35px; height: 94px; object-fit: contain; }
     .wsm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
     .wsm-score .wsm-score-l { font-weight: 800; font-size: 32px; color: #1656d5; }
     .wsm-score .wsm-score-div { width: 34px; height: 3px; background: #0a0a0a; margin: 3px 0; }
@@ -2510,10 +2511,14 @@
       /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
       const isDay2 = (state.day || 1) === 2;
       return state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
-        /* The row for the match currently on the Match Board follows the
-           live home/away score; other rows use their own card scores. */
+        /* Once the currently-active match's live score has actually started
+           moving, follow that instead of the card's own score1/score2 — but
+           an untouched 0-0 live score must never stomp a score already set
+           on the card (team IDs match trivially whenever the same team faces
+           itself in the placeholder data, which isn't "the game is 0-0"). */
         let s1 = m.score1 || 0, s2 = m.score2 || 0;
-        if (hId && aId && m.team1Id && m.team2Id) {
+        const liveStarted = !!(state.home && state.away && ((state.home.score || 0) || (state.away.score || 0)));
+        if (liveStarted && hId && aId && m.team1Id && m.team2Id) {
           if      (m.team1Id === hId && m.team2Id === aId) { s1 = state.home.score || 0; s2 = state.away.score || 0; }
           else if (m.team1Id === aId && m.team2Id === hId) { s1 = state.away.score || 0; s2 = state.home.score || 0; }
         }
@@ -2540,8 +2545,10 @@
       matches.forEach(m => {
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
-          ? `<div class="wsm-score"><span class="wsm-score-l">${m.score.l}</span><span class="wsm-score-div"></span><span class="wsm-score-r">${m.score.r}</span></div>`
-          : `<img class="wsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
+          ? `<img class="wsm-score-img" src="${WS_TVC_ASSET}SCORES/${m.score.l}-${m.score.r}.png" ` +
+            `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" ` +
+            `alt="${m.score.l}-${m.score.r}">`
+          : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
         html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
