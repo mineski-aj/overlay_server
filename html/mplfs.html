@@ -365,7 +365,7 @@
     }
     .wlm-tri-l { left: 0;   width: 128px; }
     .wlm-tri-r { right: 0;  width: 128px; }
-    .wlm-logo-l { left: 128px; width: 180px; }
+    .wlm-logo-l { left: 146px; width: 180px; }
     .wlm-logo-r { left: 478px; width: 180px; }
     .wlm-logo-l img, .wlm-logo-r img { width: 132px; height: 116px; object-fit: contain; }
     .wlm-center { left: 308px; width: 170px; }
@@ -379,6 +379,25 @@
       width: 340px; height: 94px;
     }
     #wl-sponsor img.wl-sponsor-bg { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    /* Draft/in-game style sponsor loop — same slot region the old crossfade
+       slide used, but a single image sliding in from the left (decelerating
+       into place) then out to the right (accelerating away), matching
+       Draft.html's #sponsor-loop exactly (same easing + durations). */
+    .wl-sponsor-loop { position: absolute; left: 140px; right: 8px; top: 8px; bottom: 8px; overflow: hidden; }
+    .wl-sponsor-loop img {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      transform: translateX(-110%);
+    }
+    .wl-sponsor-loop img.spon-in {
+      transform: translateX(0);
+      transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1.0);
+    }
+    .wl-sponsor-loop img.spon-out {
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
+    }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -405,13 +424,17 @@
     .wl-player {
       position: absolute;
     }
-    .wl-player-blue { left: 1035px; top: 90px; width: 500px; height: 800px; z-index: 2; }
-    .wl-player-red  { left: 1420px; top: 40px; width: 500px; height: 800px; z-index: 1; }
+    .wl-player-blue { left: 635px !important; top: 130px !important; width: 1080px !important; height: 1080px !important; z-index: 2; }
+    .wl-player-red  { left: 1190px !important; top: 130px !important; width: 1080px !important; height: 1080px !important; z-index: 1; }
+    /* Two stacked layers per side (see wlApplyPlayer) — opacity/transform
+       for the cross-fade are driven entirely from JS with inline styles. */
     .wl-player-photo {
+      position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: contain;
       object-position: 50% 0%;
       display: block;
+      opacity: 0;
     }
     .wl-namebox {
       position: absolute;
@@ -426,22 +449,27 @@
       position: absolute; top: 0; width: 62px; height: 62px;
       display: flex; align-items: center; justify-content: center;
     }
-    .wl-namebox-blue .wl-namebox-logo { left: 0; }
-    .wl-namebox-red  .wl-namebox-logo { right: 0; }
+    .wl-namebox-blue .wl-namebox-logo { left: 6px; }
+    .wl-namebox-red  .wl-namebox-logo { right: 6px; }
     .wl-namebox-logo img { width: 40px; height: 40px; object-fit: contain; }
     .wl-namebox-name {
       position: absolute; top: 0; width: 285px; height: 62px;
       display: flex; align-items: center; justify-content: center;
-      font-size: 34px; color: #fff;
+      font-family: 'General Sans', sans-serif; font-weight: 700;
+      font-size: 28px; color: #fff;
       text-transform: uppercase; white-space: nowrap;
       text-align: center;
     }
     .wl-namebox-blue .wl-namebox-name { left: 62px; }
     .wl-namebox-red  .wl-namebox-name { left: 0; }
-    .wl-namebox.wl-fade-out { opacity: 0; transition: opacity 200ms ease; }
-    .wl-namebox.wl-fade-in  { opacity: 1; transition: opacity 200ms ease; }
-    .wl-player-photo.wl-fade-out { opacity: 0; transition: opacity 200ms ease; }
-    .wl-player-photo.wl-fade-in  { opacity: 1; transition: opacity 200ms ease; }
+    /* Scoreboard-style rotation: outgoing name/logo/photo slides down while
+       fading out, incoming starts above (translateY negative) and slides
+       down into place while fading in — same direction for both halves of
+       the swap, like a flip-scoreboard tile. */
+    .wl-slide-el { transition: opacity 260ms ease, transform 260ms ease; }
+    .wl-slide-el.wl-slide-out { opacity: 0; transform: translateY(28px); }
+    .wl-slide-el.wl-slide-in  { opacity: 0; transform: translateY(-28px); }
+    .wl-slide-el.wl-no-transition { transition: none !important; }
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
       position: absolute;
@@ -766,19 +794,47 @@
     .wsm-box .wsm-band-label { left: 14px; }
     .wsm-box .wsm-band-time  { left: 0; width: 100%; justify-content: center; }
     .wsm-box .wsm-band-bo    { right: 14px; }
-    .wsm-box .wsm-band-cot   { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
-    /* Star match band — Clash of Titans banner fades in/out continuously,
-       cross-fading with the match time so the band is never empty */
-    .wsm-box .wsm-band-cot        { animation: wsm-cot-pulse 3s ease-in-out infinite; }
-    .wsm-box .wsm-band-time.star  { animation: wsm-cot-pulse-inv 3s ease-in-out infinite; }
-    @keyframes wsm-cot-pulse {
-      0%, 40%  { opacity: 1; }
-      50%, 90% { opacity: 0; }
-      100%     { opacity: 1; }
+    .wsm-box .wsm-band-cot     { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; }
+    .wsm-box .wsm-band-cot-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    /* Star match band — rivalry banner masks in, does a metal-shine sweep,
+       holds, does a second sweep right before it exits, then masks out; the
+       match time cross-fades in for the rest of the 9s cycle so the band
+       is never empty.
+       Timeline (of the 9s cycle, all phases scaled down from the original
+       10s): 0.0–0.9s mask in, 0.9–1.6s shine sweep, 1.7–3.6s hold,
+       3.6–4.3s second shine sweep, 4.3–5.2s mask out, 5.3–9s match time
+       shows. */
+    .wsm-box .wsm-band-cot        { animation: wsm-cot-mask 9s ease-in-out infinite; }
+    .wsm-box .wsm-band-time.star  { animation: wsm-cot-pulse-inv 9s ease-in-out infinite; }
+    @keyframes wsm-cot-mask {
+      0%     { clip-path: inset(0 100% 0 0); }
+      10%    { clip-path: inset(0 0% 0 0); animation-timing-function: linear; }
+      48%    { clip-path: inset(0 0% 0 0); animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0); }
+      58%    { clip-path: inset(0 0 0 100%); }
+      58.5%  { clip-path: inset(0 100% 0 0); }
+      100%   { clip-path: inset(0 100% 0 0); }
+    }
+    .wsm-box .wsm-band-cot::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%);
+      background-size: 300% 100%;
+      background-position: 150% 0;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      animation: wsm-cot-shine 9s linear infinite;
+    }
+    @keyframes wsm-cot-shine {
+      0%, 10% { background-position: 150% 0; }
+      18%     { background-position: -50% 0; }
+      18.5%   { background-position: 150% 0; }
+      40%     { background-position: 150% 0; }
+      48%     { background-position: -50% 0; }
+      100%    { background-position: -50% 0; }
     }
     @keyframes wsm-cot-pulse-inv {
-      0%, 40%  { opacity: 0; }
-      50%, 90% { opacity: 1; }
+      0%, 55%  { opacity: 0; }
+      62%, 96% { opacity: 1; }
       100%     { opacity: 0; }
     }
     .wsm-box .wsm-slot {
@@ -813,25 +869,24 @@
       width: 340px; height: 94px;
     }
     .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
-    .wsm-sponsor-slot {
-      position: absolute; left: 140px; right: 8px; top: 8px; bottom: 8px;
-    }
-    .wsm-sponsor-slot img {
-      position: absolute; left: 0; top: 0;
+    /* Draft/in-game style sponsor loop — same slot region the old crossfade
+       slide used, but a single image sliding in from the left (decelerating
+       into place) then out to the right (accelerating away), matching
+       Draft.html's #sponsor-loop and the Waiting Lobby's sponsor box. */
+    .ws-sponsor-loop { position: absolute; left: 140px; right: 8px; top: 8px; bottom: 8px; overflow: hidden; }
+    .ws-sponsor-loop img {
+      position: absolute; top: 0; left: 0;
       width: 100%; height: 100%;
       object-fit: contain;
-      opacity: 0;
+      transform: translateX(-110%);
     }
-    .wsm-sponsor-slot img.active { opacity: 1; }
-    .wsm-sponsor-slot img.sponsor-in  { animation: wsm-sponsor-in  550ms cubic-bezier(0.22, 1, 0.36, 1) both; }
-    .wsm-sponsor-slot img.sponsor-out { animation: wsm-sponsor-out 220ms ease-in both; }
-    @keyframes wsm-sponsor-in {
-      from { opacity: 0; transform: translateX(-50px); }
-      to   { opacity: 1; transform: translateX(0); }
+    .ws-sponsor-loop img.spon-in {
+      transform: translateX(0);
+      transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1.0);
     }
-    @keyframes wsm-sponsor-out {
-      from { opacity: 1; transform: translateX(0); }
-      to   { opacity: 0; transform: translateX(50px); }
+    .ws-sponsor-loop img.spon-out {
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
     }
 
     /* Slide-in — applied per element with a staggered delay from JS */
@@ -1272,7 +1327,7 @@
       <div id="ws-casters" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Screen/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
       <img id="ws-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
@@ -1290,20 +1345,22 @@
         <div id="wl-timer-value">30:30</div>
       </div>
       <div class="wl-player wl-player-blue">
-        <img class="wl-player-photo" id="wl-blue-photo" src="" alt="">
+        <img class="wl-player-photo" id="wl-blue-photo-0" src="" alt="">
+        <img class="wl-player-photo" id="wl-blue-photo-1" src="" alt="">
       </div>
       <div class="wl-player wl-player-red">
-        <img class="wl-player-photo" id="wl-red-photo" src="" alt="">
+        <img class="wl-player-photo" id="wl-red-photo-0" src="" alt="">
+        <img class="wl-player-photo" id="wl-red-photo-1" src="" alt="">
       </div>
       <div class="wl-namebox wl-namebox-blue">
         <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
-        <div class="wl-namebox-logo"><img id="wl-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
-        <div class="wl-namebox-name" id="wl-blue-name"></div>
+        <div class="wl-namebox-logo"><img class="wl-slide-el" id="wl-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="wl-namebox-name wl-slide-el" id="wl-blue-name"></div>
       </div>
       <div class="wl-namebox wl-namebox-red">
         <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Red_NameBox.png" alt="">
-        <div class="wl-namebox-logo"><img id="wl-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
-        <div class="wl-namebox-name" id="wl-red-name"></div>
+        <div class="wl-namebox-logo"><img class="wl-slide-el" id="wl-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="wl-namebox-name wl-slide-el" id="wl-red-name"></div>
       </div>
     </div>
     <div id="today-schedule-page">
@@ -1767,6 +1824,32 @@
       sseSource.addEventListener('debugoff', () => {
         const bar = document.getElementById('config-bar');
         if (bar) bar.classList.remove('debug-open');
+      });
+      sseSource.addEventListener('featuretoggle', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.feature === 'debugphotos') {
+            pbDebugPhotos = !!d.enabled;
+            // Re-render whatever's currently on screen right now, instead of
+            // waiting for the next poll tick — force past the poseKey cache
+            // so every seat's photo is re-resolved under the new mode.
+            if (pbVisible) { pbLastPoseKey = ''; fetchPlayerBoardData(); }
+          }
+        } catch {}
+      });
+
+      /* Match Board + Standings live updates — fanned out over this same
+         connection (named "match"/"standings" events) instead of each
+         opening its own EventSource, so this page holds only 1 persistent
+         connection instead of 3. See onMatchEvent/onStandingsEvent below. */
+      sseSource.addEventListener('match', (e) => {
+        let ms = null;
+        try { ms = JSON.parse(e.data); } catch { return; }
+        onMatchEvent(ms);
+      });
+      sseSource.addEventListener('standings', (e) => {
+        try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
+        if (activeFeature === 'standings') buildStandings();
       });
     }
 
@@ -2441,10 +2524,6 @@
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
-    const WS_SPONSORS = [
-      'clear1.png', 'faiirrie1.png', 'infinix6.png', 'sip1.png',
-      'smart6.png', 'timezone4.png', 'ttracing4.png',
-    ].map(f => '/assets/sponsors/' + f);
     const WS_MATCHES = [
       { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', matchType: 'regular',
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' }, score: { l: 2, r: 0 } },
@@ -2473,26 +2552,28 @@
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' } },
     ];
 
-    /* Countdown — starts from the Match Board's Timer setting every time the screen shows */
-    const WS_TIMER_DEFAULT = 30 * 60 + 30; /* seconds, fallback if match state has no countdownDuration */
-    let wsTimerDuration = WS_TIMER_DEFAULT;
+    /* Countdown — server-authoritative (see /match/timer + ms.timer). endAt
+       is an absolute epoch-ms timestamp set by the Match Board, so a refresh
+       of this page (or a full server restart) just picks the clock back up
+       instead of restarting it; setInterval only re-renders the local
+       display, it never owns the count. */
+    const WS_TIMER_DEFAULT = { running: false, endAt: null, remaining: 30 * 60 + 30 };
+    let wsTimerState = WS_TIMER_DEFAULT;
     const wsTimerValue = document.getElementById('ws-timer-value');
-    let wsTimerEnd = null, wsTimerInt = null;
+    let wsTimerInt = null;
 
-    function wsTimerRender(remain) {
+    function renderTimerFromState(el, t) {
+      const remain = (t && t.running && t.endAt)
+        ? Math.max(0, Math.round((t.endAt - Date.now()) / 1000))
+        : Math.max(0, (t && t.remaining) || 0);
       const m = Math.floor(remain / 60), s = remain % 60;
-      wsTimerValue.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
     }
 
     function startWsTimer() {
       clearInterval(wsTimerInt);
-      wsTimerEnd = Date.now() + wsTimerDuration * 1000;
-      wsTimerRender(wsTimerDuration);
-      wsTimerInt = setInterval(() => {
-        const remain = Math.max(0, Math.round((wsTimerEnd - Date.now()) / 1000));
-        wsTimerRender(remain);
-        if (remain <= 0) clearInterval(wsTimerInt);
-      }, 250);
+      renderTimerFromState(wsTimerValue, wsTimerState);
+      wsTimerInt = setInterval(() => renderTimerFromState(wsTimerValue, wsTimerState), 250);
     }
 
     function stopWsTimer() {
@@ -2553,7 +2634,7 @@
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
             ? `<span class="wsm-band-time star">${m.time}</span>` +
-              `<img class="wsm-band-cot" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}">`
+              `<div class="wsm-band-cot"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
             : `<span class="wsm-band-time">${m.time}</span>`) +
           `<span class="wsm-band-bo">${m.bo}</span>` +
           `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
@@ -2568,15 +2649,69 @@
 
     /* Sponsor box — lives outside the Matches/Hosts/Casters carousel so it
        stays on screen the whole time instead of transitioning with whichever
-       panel happens to be showing. */
+       panel happens to be showing. Draft/in-game style loop (see
+       startWsSponsorLoop below) — same /api/sponsors source, per-sponsor
+       duration, and slide timing as Draft.html's #sponsor-loop and the
+       Waiting Lobby's sponsor box, instead of the old fixed 3s crossfade. */
     function buildWsSponsor() {
       document.getElementById('ws-sponsor').innerHTML =
         `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
-        `<div class="wsm-sponsor-slot">` +
-        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
-        `</div></div>`;
+        `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>`;
     }
     buildWsSponsor();
+
+    let wsSponsors = [], wsSponsorIdx = 0, wsSponsorActive = false;
+    let wsSponsorInHandler = null, wsSponsorOutHandler = null, wsSponsorHoldTimer = null;
+
+    function startWsSponsorLoop() {
+      wsSponsorActive = true;
+      fetch('/api/sponsors').then(r => r.json()).then(list => {
+        if (!wsSponsorActive || !list || !list.length) return;
+        wsSponsors = list;
+        wsSponsorIdx = 0;
+        runWsSponsorLoop();
+      }).catch(() => {});
+    }
+
+    function runWsSponsorLoop() {
+      if (!wsSponsorActive) return;
+      const img = document.getElementById('ws-sponsor-img');
+      if (!img) return;
+      const s = wsSponsors[wsSponsorIdx];
+      img.className = '';
+      img.src = s.src;
+      void img.offsetWidth;
+      img.classList.add('spon-in');
+
+      wsSponsorInHandler = (ev) => {
+        if (ev.propertyName !== 'transform') return;
+        img.removeEventListener('transitionend', wsSponsorInHandler);
+        wsSponsorHoldTimer = setTimeout(() => {
+          if (!wsSponsorActive) return;
+          img.classList.remove('spon-in');
+          img.classList.add('spon-out');
+          wsSponsorOutHandler = (ev2) => {
+            if (ev2.propertyName !== 'transform') return;
+            img.removeEventListener('transitionend', wsSponsorOutHandler);
+            if (!wsSponsorActive) return;
+            wsSponsorIdx = (wsSponsorIdx + 1) % wsSponsors.length;
+            runWsSponsorLoop();
+          };
+          img.addEventListener('transitionend', wsSponsorOutHandler);
+        }, s.dur);
+      };
+      img.addEventListener('transitionend', wsSponsorInHandler);
+    }
+
+    function stopWsSponsorLoop() {
+      wsSponsorActive = false;
+      clearTimeout(wsSponsorHoldTimer);
+      const img = document.getElementById('ws-sponsor-img');
+      if (img) {
+        img.removeEventListener('transitionend', wsSponsorInHandler);
+        img.removeEventListener('transitionend', wsSponsorOutHandler);
+      }
+    }
 
     /* Hosts / Casters panels — alternate with Today's Matches every 6s. Each
        talent's cutout photo lives at /photos/TALENTS/<Position>/<name>.png,
@@ -2746,40 +2881,6 @@
     }
     buildTsMatches();
 
-    /* Sponsor carousel — cross-fades through WS_SPONSORS while the screen is up */
-    let wsSponsorInt = null, wsSponsorIdx = 0;
-    function startWsSponsors(rootId) {
-      clearInterval(wsSponsorInt);
-      const imgs = document.querySelectorAll('#' + rootId + ' .wsm-sponsor-slot img');
-      if (imgs.length < 2) return;
-      wsSponsorIdx = 0;
-      imgs.forEach((im, i) => im.classList.toggle('active', i === 0));
-      /* Query the DOM each tick and re-derive the current index from the DOM
-         itself (instead of trusting the stored wsSponsorIdx) so a rebuild
-         of this slot can never leave two images marked active at once. */
-      wsSponsorInt = setInterval(() => {
-        const cur = document.querySelectorAll('#' + rootId + ' .wsm-sponsor-slot img');
-        if (cur.length < 2) return;
-        let prevIdx = [...cur].findIndex(im => im.classList.contains('active'));
-        if (prevIdx === -1) prevIdx = Math.min(wsSponsorIdx, cur.length - 1);
-        wsSponsorIdx = (prevIdx + 1) % cur.length;
-        cur.forEach((im, i) => {
-          if (i === prevIdx) {
-            im.classList.remove('active', 'sponsor-in');
-            im.classList.add('sponsor-out');
-          } else if (i === wsSponsorIdx) {
-            im.classList.remove('sponsor-out');
-            im.classList.add('active', 'sponsor-in');
-          } else {
-            im.classList.remove('active', 'sponsor-in', 'sponsor-out');
-          }
-        });
-      }, 3000);
-    }
-    function stopWsSponsors() {
-      clearInterval(wsSponsorInt);
-      wsSponsorInt = null;
-    }
 
     /* Staggered slide-in — title first, then each row, left to right */
     function wsMatchesSlideIn(rootId) {
@@ -2801,9 +2902,11 @@
       populateWsCasters(ms);
       const labelImg = document.getElementById('ws-timer-label-img');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
-      const labelSrc = WS_ASSET + label + '.png';
+      /* These only exist under the Waiting Lobby asset folder (there is no
+         "Waiting Screen" folder on disk) — same art, shared with that scene. */
+      const labelSrc = '/assets/Waiting Lobby/' + label + '.png';
       if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
-      wsTimerDuration = (ms.countdownDuration != null) ? ms.countdownDuration : WS_TIMER_DEFAULT;
+      wsTimerState = ms.timer || WS_TIMER_DEFAULT;
     }
 
     async function showWaitingScreen() {
@@ -2816,7 +2919,7 @@
       wsVideo.currentTime = 0;
       wsVideo.play().catch(() => {});
       startWsTimer();
-      startWsSponsors('ws-sponsor');
+      startWsSponsorLoop();
       startWsPanelCycle();
       wsMatchesSlideIn('ws-matches');
       wsPage.classList.add('ws-on');
@@ -2832,7 +2935,7 @@
           wsPage.classList.remove('ws-on');
           wsVideo.pause();
           stopWsTimer();
-          stopWsSponsors();
+          stopWsSponsorLoop();
           stopWsPanelCycle();
           resolve();
         }, 420);
@@ -2890,73 +2993,157 @@
         `<div class="wlm-slot wlm-tri wlm-tri-r">${m.right.tri}</div></div>`;
     }
 
-    /* Sponsor box — same WS_SPONSORS list and slide/crossfade loop as the
-       Waiting Screen TVC sponsor box (startWsSponsors/stopWsSponsors,
-       .wsm-sponsor-slot classes), just reused against #wl-sponsor. */
+    /* Sponsor box — Draft/in-game style loop (see startWlSponsorLoop below):
+       same /api/sponsors source, per-sponsor duration, and slide timing as
+       Draft.html's #sponsor-loop, instead of the Waiting Screen TVC's fixed
+       3s crossfade. */
     function buildWlSponsor() {
       document.getElementById('wl-sponsor').innerHTML =
         `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
-        `<div class="wsm-sponsor-slot">` +
-        WS_SPONSORS.map((s, i) => `<img src="${s}" alt="" class="${i === 0 ? 'active' : ''}">`).join('') +
-        `</div>`;
+        `<div class="wl-sponsor-loop"><img id="wl-sponsor-img" src="" alt=""></div>`;
     }
     buildWlSponsor();
 
-    /* Countdown timer — same ms.countdownDuration/countdownLabel binding as
-       the Waiting Screen TVC, using this scene's own label art. */
-    const WL_TIMER_DEFAULT = 30 * 60 + 30;
-    let wlTimerDuration = WL_TIMER_DEFAULT;
-    const wlTimerValue = document.getElementById('wl-timer-value');
-    let wlTimerEnd = null, wlTimerInt = null;
+    let wlSponsors = [], wlSponsorIdx = 0, wlSponsorActive = false;
+    let wlSponsorInHandler = null, wlSponsorOutHandler = null, wlSponsorHoldTimer = null;
 
-    function wlTimerRender(remain) {
-      const m = Math.floor(remain / 60), s = remain % 60;
-      wlTimerValue.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    function startWlSponsorLoop() {
+      wlSponsorActive = true;
+      fetch('/api/sponsors').then(r => r.json()).then(list => {
+        if (!wlSponsorActive || !list || !list.length) return;
+        wlSponsors = list;
+        wlSponsorIdx = 0;
+        runWlSponsorLoop();
+      }).catch(() => {});
     }
+
+    function runWlSponsorLoop() {
+      if (!wlSponsorActive) return;
+      const img = document.getElementById('wl-sponsor-img');
+      if (!img) return;
+      const s = wlSponsors[wlSponsorIdx];
+      img.className = '';
+      img.src = s.src;
+      void img.offsetWidth;
+      img.classList.add('spon-in');
+
+      wlSponsorInHandler = (ev) => {
+        if (ev.propertyName !== 'transform') return;
+        img.removeEventListener('transitionend', wlSponsorInHandler);
+        wlSponsorHoldTimer = setTimeout(() => {
+          if (!wlSponsorActive) return;
+          img.classList.remove('spon-in');
+          img.classList.add('spon-out');
+          wlSponsorOutHandler = (ev2) => {
+            if (ev2.propertyName !== 'transform') return;
+            img.removeEventListener('transitionend', wlSponsorOutHandler);
+            if (!wlSponsorActive) return;
+            wlSponsorIdx = (wlSponsorIdx + 1) % wlSponsors.length;
+            runWlSponsorLoop();
+          };
+          img.addEventListener('transitionend', wlSponsorOutHandler);
+        }, s.dur);
+      };
+      img.addEventListener('transitionend', wlSponsorInHandler);
+    }
+
+    function stopWlSponsorLoop() {
+      wlSponsorActive = false;
+      clearTimeout(wlSponsorHoldTimer);
+      const img = document.getElementById('wl-sponsor-img');
+      if (img) {
+        img.removeEventListener('transitionend', wlSponsorInHandler);
+        img.removeEventListener('transitionend', wlSponsorOutHandler);
+      }
+    }
+
+    /* Countdown timer — server-authoritative, same ms.timer/countdownLabel
+       binding as the Waiting Screen TVC (see renderTimerFromState above),
+       using this scene's own label art. */
+    let wlTimerState = WS_TIMER_DEFAULT;
+    const wlTimerValue = document.getElementById('wl-timer-value');
+    let wlTimerInt = null;
+
     function startWlTimer() {
       clearInterval(wlTimerInt);
-      wlTimerEnd = Date.now() + wlTimerDuration * 1000;
-      wlTimerRender(wlTimerDuration);
-      wlTimerInt = setInterval(() => {
-        const remain = Math.max(0, Math.round((wlTimerEnd - Date.now()) / 1000));
-        wlTimerRender(remain);
-        if (remain <= 0) clearInterval(wlTimerInt);
-      }, 250);
+      renderTimerFromState(wlTimerValue, wlTimerState);
+      wlTimerInt = setInterval(() => renderTimerFromState(wlTimerValue, wlTimerState), 250);
     }
     function stopWlTimer() {
       clearInterval(wlTimerInt);
       wlTimerInt = null;
     }
 
-    /* Player spotlight — rotates through each side's 5-man lineup, blue side
-       photos from assets/Waiting Lobby/Player Photo/BLUE, red side from
-       .../RED, filename convention: <ign>_LEFT.png / <ign>_RIGHT.png. */
+    /* Player spotlight — rotates through each side's 5-man lineup, home side
+       (blue) photos from /photos/LEFT, away side (red) from /photos/RIGHT.
+
+       Photo cross-fade: two stacked <img> layers per side. The outgoing
+       layer fades out completely first (WL_PHOTO_FADE_OUT_MS) — only once
+       it's fully gone does the incoming layer start, fading in
+       (WL_PHOTO_FADE_IN_MS) while gliding horizontally into place
+       (WL_PHOTO_MOVE_IN_MS, blue from the left, red from the right) with a
+       decelerating ease, then simply holds at rest. */
+    const WL_PLAYER_HOLD      = 4200 + 250; // ms on screen per player (rotation interval)
+    const WL_PHOTO_FADE_IN_MS  = 450; // ms — opacity only, unchanged from the original
+    const WL_PHOTO_MOVE_IN_MS  = 750; // ms — transform glide, now longer than the fade
+    const WL_PHOTO_FADE_OUT_MS = 350; // ms — outgoing layer's fade, runs before the next one starts
     let wlLineupBlue = [], wlLineupRed = [];
     let wlPlayerIdx = 0, wlPlayerInt = null;
-    const WL_PHOTO_DIR = WL_ASSET + 'Player Photo/';
+    let wlPhotoLayer = { blue: 0, red: 0 };
 
+    /* /hires/LEFT/<ign>_LEFT.png for the home side, /hires/RIGHT/<ign>_RIGHT.png
+       for the away side (blue = home, red = away). */
     function wlPhotoUrl(ign, side) {
-      const folder = side === 'blue' ? 'BLUE' : 'RED';
-      const suffix = side === 'blue' ? 'LEFT' : 'RIGHT';
-      return WL_PHOTO_DIR + folder + '/' + encodeURIComponent(ign + '_' + suffix + '.png');
+      const folder = side === 'blue' ? 'LEFT' : 'RIGHT';
+      return '/hires/' + folder + '/' + encodeURIComponent(ign + '_' + folder + '.png');
     }
 
     function wlApplyPlayer(side, ign) {
-      const photoEl = document.getElementById('wl-' + side + '-photo');
       const nameEl  = document.getElementById('wl-' + side + '-name');
       const logoEl  = document.getElementById('wl-' + side + '-logo');
-      const nameBox = document.querySelector('.wl-namebox-' + side);
-      photoEl.classList.add('wl-fade-out');
-      nameBox.classList.add('wl-fade-out');
+      const nameEls = [nameEl, logoEl];
+
+      // Name/logo: scoreboard-style — out slides down + fades, in starts
+      // above and slides down + fades in.
+      nameEls.forEach(el => el.classList.add('wl-slide-out'));
       setTimeout(() => {
-        photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = '/photos/placeholder.png'; };
-        photoEl.src = ign ? wlPhotoUrl(ign, side) : '/photos/placeholder.png';
         nameEl.textContent = ign || '';
-        photoEl.classList.remove('wl-fade-out');
-        nameBox.classList.remove('wl-fade-out');
-        photoEl.classList.add('wl-fade-in');
-        nameBox.classList.add('wl-fade-in');
-      }, 200);
+        nameEls.forEach(el => { el.classList.add('wl-no-transition'); el.classList.remove('wl-slide-out'); el.classList.add('wl-slide-in'); });
+        void nameEl.offsetWidth; // force reflow so the jump is applied before we transition back
+        nameEls.forEach(el => el.classList.remove('wl-no-transition', 'wl-slide-in'));
+      }, 260);
+
+      // Photo: cross-fade the two layers — no fallback image on a missing
+      // file, it just stays blank (no broken-image icon).
+      const cur    = wlPhotoLayer[side];
+      const next   = 1 - cur;
+      const curEl  = document.getElementById('wl-' + side + '-photo-' + cur);
+      const nextEl = document.getElementById('wl-' + side + '-photo-' + next);
+      const startX = side === 'blue' ? -60 : 60;
+
+      // Prep the incoming layer's hidden start state now (invisible, so
+      // harmless) — its actual entrance is deferred below.
+      nextEl.onerror = () => { nextEl.onerror = null; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+      nextEl.style.transition = 'none';
+      nextEl.style.opacity = '0';
+      nextEl.style.transform = `translateX(${startX}px)`;
+      if (ign) nextEl.src = wlPhotoUrl(ign, side);
+      else nextEl.removeAttribute('src');
+      void nextEl.offsetWidth; // force reflow so the jump above applies before the transition below
+
+      // Outgoing layer fades out first — the incoming layer doesn't start
+      // until it's completely gone, so there's a clean beat between photos.
+      curEl.style.transition = `opacity ${WL_PHOTO_FADE_OUT_MS}ms ease`;
+      curEl.style.opacity = '0';
+
+      setTimeout(() => {
+        if (!ign) return;
+        nextEl.style.transition = `opacity ${WL_PHOTO_FADE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${WL_PHOTO_MOVE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+        nextEl.style.opacity = '1';
+        nextEl.style.transform = 'translateX(0)';
+      }, WL_PHOTO_FADE_OUT_MS);
+
+      wlPhotoLayer[side] = next;
     }
 
     function wlApplyLogo(side, tri) {
@@ -2985,7 +3172,7 @@
         wlPlayerInt = setInterval(() => {
           wlPlayerIdx += 1;
           wlShowPlayers(wlPlayerIdx);
-        }, 4000);
+        }, WL_PLAYER_HOLD);
       }
     }
     function stopWlPlayerCycle() {
@@ -3003,7 +3190,7 @@
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
       const labelSrc = WL_ASSET + label + '.png';
       if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
-      wlTimerDuration = (ms.countdownDuration != null) ? ms.countdownDuration : WL_TIMER_DEFAULT;
+      wlTimerState = ms.timer || WS_TIMER_DEFAULT;
       startWlPlayerCycle(ms);
     }
 
@@ -3017,7 +3204,7 @@
       wlVideo.currentTime = 0;
       wlVideo.play().catch(() => {});
       startWlTimer();
-      startWsSponsors('wl-sponsor');
+      startWlSponsorLoop();
       wlPage.classList.add('wl-on');
       void wlPage.offsetWidth; /* force reflow so the opacity transition runs */
       wlPage.classList.add('wl-visible');
@@ -3031,7 +3218,7 @@
           wlPage.classList.remove('wl-on');
           wlVideo.pause();
           stopWlTimer();
-          stopWsSponsors();
+          stopWlSponsorLoop();
           stopWlPlayerCycle();
           resolve();
         }, 420);
@@ -3128,19 +3315,6 @@
       if (s && Array.isArray(s.teams) && s.teams.length) stTeams = s.teams;
     }
 
-    /* Live standings updates from the dashboard's Standings tab.
-       Connected lazily — see the tab leader election near the bottom of
-       this script — only the elected leader tab holds this open. */
-    let standingsEvents = null;
-    function connectStandingsEvents() {
-      if (standingsEvents) return;
-      standingsEvents = new EventSource(buildUrl('/standings/events'));
-      standingsEvents.onmessage = (e) => {
-        try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
-        if (activeFeature === 'standings') buildStandings();
-      };
-    }
-
     function stApplyWeekDay(ms) {
       if (ms && ms.week != null && ms.day != null) {
         document.getElementById('st-weekday').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
@@ -3181,30 +3355,24 @@
     }
 
     /* Live match-state updates — any Match Board change refreshes everything
-       bound to it that is currently on air, as soon as it is saved.
-       Connected lazily — see the tab leader election near the bottom of
-       this script — only the elected leader tab holds this open. */
-    let matchStateEvents = null;
-    function connectMatchEvents() {
-      if (matchStateEvents) return;
-      matchStateEvents = new EventSource(buildUrl('/match/events'));
-      matchStateEvents.onmessage = (e) => {
-        let ms = null;
-        try { ms = JSON.parse(e.data); } catch { return; }
-        /* Match Board overlay (tricodes, logos, series score) */
-        if (mbVisible) fetchMatchBoardData();
-        /* Waiting Screen TVC rows + week/day chip */
-        if (activeFeature === 'waiting') updateWsFromState(ms);
-        /* Today's Schedule rows + week/day chip */
-        if (activeFeature === 'schedule') {
-          if (ms.week != null && ms.day != null) {
-            document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
-          }
-          buildTsMatches(ms);
+       bound to it that is currently on air, as soon as it is saved. Called
+       from the 'match' listener registered inside connectSSE() above. */
+    function onMatchEvent(ms) {
+      /* Match Board overlay (tricodes, logos, series score) */
+      if (mbVisible) fetchMatchBoardData();
+      /* Waiting Screen TVC rows + week/day chip */
+      if (activeFeature === 'waiting') updateWsFromState(ms);
+      /* Waiting Lobby match card + week/day chip + timer */
+      if (activeFeature === 'lobby') updateWlFromState(ms);
+      /* Today's Schedule rows + week/day chip */
+      if (activeFeature === 'schedule') {
+        if (ms.week != null && ms.day != null) {
+          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
         }
-        /* Standings week/day chip */
-        if (activeFeature === 'standings') stApplyWeekDay(ms);
-      };
+        buildTsMatches(ms);
+      }
+      /* Standings week/day chip */
+      if (activeFeature === 'standings') stApplyWeekDay(ms);
     }
 
     /* ════════════════════════════════════════════════
@@ -3880,6 +4048,15 @@
     let pbPhotoManifest = null;
     let pbLastPoseKey = '';
 
+    // Debug Photos toggle (dashboard: MPL Full Screen → Debug Photos).
+    // Off (default, remembered server-side) = live photos matched by name.
+    // On = random photos from the pose's directory, for testing.
+    let pbDebugPhotos = false;
+    fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => { pbDebugPhotos = !!(d && d.debugphotos); })
+      .catch(() => {});
+
     async function pbLoadManifest() {
       try {
         const r = await fetch(buildUrl('/api/photo-manifest'), { cache: 'no-store' });
@@ -3887,14 +4064,25 @@
       } catch {}
     }
 
+    // Returns null when there's nothing to show — callers must clear the
+    // <img> src in that case rather than pointing at a placeholder file, so
+    // a missing photo renders blank instead of a broken-image icon.
     function pbPhotoUrl(name, pose) {
-      if (!pbPhotoManifest) return '/photos/placeholder.png';
+      if (!pbPhotoManifest) return null;
       const files = pbPhotoManifest[pose] || [];
-      if (!files.length) return '/photos/placeholder.png';
+      if (!files.length) return null;
+      if (pbDebugPhotos) return '/photos/' + pose + '/' + files[Math.floor(Math.random() * files.length)];
       const exact = name + '_' + pose + '_resized.png';
-      if (files.includes(exact)) return '/photos/' + pose + '/' + exact;
-      // name not found — random fallback (debug mode)
-      return '/photos/' + pose + '/' + files[Math.floor(Math.random() * files.length)];
+      return files.includes(exact) ? '/photos/' + pose + '/' + exact : null;
+    }
+
+    // Sets an img's photo, clearing it (no broken-image icon) if there's no
+    // URL, or if the resolved URL fails to actually load.
+    function pbSetPhoto(photoEl, name, pose) {
+      const url = pbPhotoUrl(name, pose);
+      photoEl.onerror = () => { photoEl.onerror = null; photoEl.removeAttribute('src'); };
+      if (url) photoEl.src = buildUrl(url);
+      else photoEl.removeAttribute('src');
     }
 
     function pbFitName(spanEl) {
@@ -3926,7 +4114,7 @@
           else roleEl.style.display = 'none';
         }
         if (nameSpan) { nameSpan.textContent = s.name || ''; pbFitName(nameSpan); }
-        if (photoEl && updatePhotos) photoEl.src = buildUrl(pbPhotoUrl(s.name, pose));
+        if (photoEl && updatePhotos) pbSetPhoto(photoEl, s.name, pose);
       });
     }
 
@@ -4063,16 +4251,18 @@
     }
 
     /* ── Tab leader election ──
-       This page holds 3 persistent SSE connections open (overlay events,
-       match-state events, standings events). Chrome caps HTTP/1.1
-       connections per origin at 6, shared across every tab of that origin —
-       so just two tabs of this same page exhaust the entire pool between
-       them, and every other request (button-triggered fetches, image
-       loads) on either tab hangs indefinitely until one tab is closed.
+       This page holds 1 persistent SSE connection open (/overlay/events —
+       match-state and standings updates are fanned out over it too, as
+       named events, rather than each getting their own connection; see
+       connectSSE()). Chrome still caps HTTP/1.1 connections per origin at
+       6, shared across every tab of that origin, so several tabs of this
+       same page (or other pages hitting this origin) can still exhaust the
+       pool between them — every other request (button-triggered fetches,
+       image loads) on any of them then hangs indefinitely until one closes.
        Elect a single "leader" tab (via a localStorage heartbeat) to hold
-       those 3 connections; other tabs stay fully interactive for local
-       button presses but skip the live SSE feeds until they're promoted
-       (e.g. the current leader tab is closed). */
+       that connection; other tabs stay fully interactive for local button
+       presses but skip the live SSE feed until they're promoted (e.g. the
+       current leader tab is closed). */
     const LEADER_KEY = 'mplfs-leader-heartbeat';
     const LEADER_TIMEOUT_MS = 4000;
     const LEADER_CHECK_MS = 1500;
@@ -4093,9 +4283,7 @@
       if (!isSseLeader) {
         isSseLeader = true;
         sseDot.title = 'Live feed leader (this tab)';
-        connectSSE();
-        connectMatchEvents();
-        connectStandingsEvents();
+        connectSSE(); // match + standings updates are fanned out over this same connection
       }
     }
     setInterval(() => {

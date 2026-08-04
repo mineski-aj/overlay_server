@@ -132,6 +132,50 @@
       100% { transform: translateX(-4px); }
     }
 
+    /* ── Card idle triangles — shown only before a seat's picking turn
+       starts. Anchored right at the card's top/bottom edge; plate-content's
+       overflow:hidden clips whichever part of the hover bob exceeds the
+       card bounds. Apex always points toward the card's vertical centre. */
+    .card-tri {
+      position: absolute;
+      left: 50%;
+      width: 42px; height: 20px;
+      pointer-events: none;
+      z-index: 2;
+      display: none;
+    }
+    /* Outer glow (not a directional shadow) — colored to match each camp,
+       stacked drop-shadows (tight core + soft halo) since filter is the
+       only way to glow a clip-path shape rather than its rectangular box.
+       Symmetric, so it's unaffected by which edge the triangle sits against. */
+    .card-tri.camp1 { background: #1E64FF; filter: drop-shadow(0 0 3px #1E64FF) drop-shadow(0 0 8px #1E64FF); }
+    .card-tri.camp2 { background: #FF3232; filter: drop-shadow(0 0 3px #FF3232) drop-shadow(0 0 8px #FF3232); }
+    .card-tri-top {
+      top: 0;
+      /* Matches the animation's 0%/100% keyframe exactly — otherwise, during
+         its staggered animation-delay, the element has no transform at all
+         (not even the translateX(-50%) centering, since that only exists
+         inside the keyframes), so it sits uncentered until the delay ends
+         and visibly snaps into place. */
+      transform: translateX(-50%) translateY(-3px);
+      clip-path: polygon(0 0, 42px 0, 21px 20px); /* apex down, toward centre */
+      animation: card-tri-bob-top 2.2s ease-in-out infinite;
+    }
+    .card-tri-bottom {
+      bottom: 0;
+      transform: translateX(-50%) translateY(3px);
+      clip-path: polygon(21px 0, 42px 20px, 0 20px); /* apex up, toward centre */
+      animation: card-tri-bob-bottom 2.2s ease-in-out infinite;
+    }
+    @keyframes card-tri-bob-top {
+      0%, 100% { transform: translateX(-50%) translateY(-3px); }
+      50%      { transform: translateX(-50%) translateY(-7px); }
+    }
+    @keyframes card-tri-bob-bottom {
+      0%, 100% { transform: translateX(-50%) translateY(3px); }
+      50%      { transform: translateX(-50%) translateY(7px); }
+    }
+
     /* ── Pick plate flex layout ────────────────────────────────── */
     .plates-camp {
       position: absolute;
@@ -390,7 +434,12 @@
       top: 0; left: 0; right: 0; bottom: 0;
       pointer-events: none;
       display: none;
+      z-index: 2; /* must render over the player photo (z-index: 1) */
       animation: grad-pulse 1.4s ease-in-out infinite;
+      /* screen (not normal) blending — lightens/brightens the photo
+         underneath by its own color instead of just tinting over it, so it
+         reads as the photo glowing rather than being covered by a wash */
+      mix-blend-mode: screen;
     }
     .pick-gradient.camp1 {
       background: linear-gradient(to top, rgba(30,100,255,0.85) 0%, transparent 70%);
@@ -401,6 +450,51 @@
     @keyframes grad-pulse {
       0%, 100% { opacity: 0.25; }
       50%       { opacity: 0.9;  }
+    }
+
+    /* ── Player photo (FRONT → VICTORY sequence during picking) ──── */
+    .player-photo {
+      position: absolute;
+      left: 50%; top: 7px;
+      transform: translateX(-50%) translateY(30px);
+      width: 333px; /* 168px card frame × 2.2, scaled down 10% */
+      height: auto;
+      opacity: 0;
+      z-index: 1;
+      pointer-events: none;
+      display: none;
+    }
+    @keyframes photo-ease-up-in {
+      from { opacity: 0; transform: translateX(-50%) translateY(30px); }
+      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    @keyframes photo-quick-fadeout {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+    @keyframes photo-bounce-in {
+      0%   { opacity: 0; transform: translateX(-50%) scale(0.7); }
+      60%  { opacity: 1; transform: translateX(-50%) scale(1.06); }
+      100% { opacity: 1; transform: translateX(-50%) scale(1); }
+    }
+    .player-photo.photo-entering  { animation: photo-ease-up-in     0.6s  cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+    .player-photo.photo-quick-out { animation: photo-quick-fadeout  0.15s ease-in forwards; }
+    .player-photo.photo-bounce-in { animation: photo-bounce-in      0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+    /* FRONT renders visually larger than VICTORY at the same box width
+       (source-image framing), so FRONT gets an extra 10% reduction */
+    .player-photo.photo-front-size { width: 300px; }
+
+    /* Erase canvas — mirrors player-photo positioning; driven by the same
+       matte mask (s17_matte2.webm) that reveals the hero video */
+    .photo-canvas {
+      position: absolute;
+      left: 50%; top: 7px;
+      transform: translateX(-50%);
+      width: 333px;
+      z-index: 1;
+      opacity: 0;
+      pointer-events: none;
     }
 
     /* ── Pick background video + matte canvas (inside each plate) ── */
@@ -415,6 +509,20 @@
       pointer-events: none;
       z-index: 0;
     }
+
+    /* Layers on top of .plate-pick-video (later in the same untiered
+       stacking group — see DOM order in buildPickPlates), but still under
+       the player photo, which has an explicit z-index. */
+    .plate-pick-anim {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+      object-fit: fill;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      pointer-events: none;
+    }
+    .plate-pick-anim.pick-anim-visible { opacity: 1; }
 
 
     /* ── Timer bar ─────────────────────────────────────────────── */
@@ -545,6 +653,28 @@
   fetch('/api/game-url').then(function(r){ return r.json(); }).then(function(d){
     if (d.url) apiUrl = d.url;
   }).catch(function(){});
+
+  /* Player photo names (basenames with both FRONT + VICTORY variants). */
+  var PLAYER_PHOTO_NAMES  = [];
+  var PLAYER_PHOTO_LOOKUP = {}; /* lowercased name → canonical name */
+  fetch('/api/player-photos', { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      PLAYER_PHOTO_NAMES = d.names || [];
+      PLAYER_PHOTO_NAMES.forEach(function(n) { PLAYER_PHOTO_LOOKUP[n.toLowerCase()] = n; });
+    })
+    .catch(function(){});
+
+  /* 'live' = match the seat's real player name to a photo; 'random' = test mode.
+     Server defaults to 'live' on every restart; dashboard can flip it at runtime. */
+  var draftPhotoMode = 'live';
+  fetch('/overlay/draft-photo-mode', { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d.mode) draftPhotoMode = d.mode; })
+    .catch(function(){});
+
+  /* Player photo layout — matches .player-photo / .photo-canvas CSS width */
+  var PHOTO_W = 333;
 
   /* Pick plate layout */
   var PLATE_W = 151, PLATE_H = 168, PLATE_TOP = 851, PLATE_GAP = 1;
@@ -717,6 +847,19 @@
         pickGrad.className = 'pick-gradient ' + (campid === 1 ? 'camp1' : 'camp2');
         plate.appendChild(pickGrad);
 
+        /* New picking animation — layered on top of the original pick
+           background video/gradient (no z-index needed: it just comes
+           later in the same untiered stacking group), but still behind the
+           player photo, which has an explicit higher z-index. */
+        var pickAnim = document.createElement('video');
+        pickAnim.className = 'plate-pick-anim';
+        pickAnim.src = campid === 1
+          ? 'assets/motion/pickingblue.webm'
+          : 'assets/motion/pickingred.webm';
+        pickAnim.loop = true; pickAnim.muted = true;
+        pickAnim.playsInline = true; pickAnim.preload = 'none';
+        plate.appendChild(pickAnim);
+
         var heroVid = document.createElement('video');
         heroVid.className   = 'hero-video';
         heroVid.loop        = true;
@@ -731,6 +874,24 @@
         cvs.width = 168; cvs.height = 168;
         plateContent.appendChild(cvs);
         var ctx2d = cvs.getContext('2d', { willReadFrequently: true });
+
+        /* Player photo (FRONT → VICTORY) + its erase canvas */
+        var photoImg = document.createElement('img');
+        photoImg.className = 'player-photo';
+        photoImg.alt = '';
+        plateContent.appendChild(photoImg);
+
+        var photoCanvas = document.createElement('canvas');
+        photoCanvas.className = 'photo-canvas';
+        photoCanvas.width = PHOTO_W; photoCanvas.height = PHOTO_W;
+        plateContent.appendChild(photoCanvas);
+        var photoCtx = photoCanvas.getContext('2d', { willReadFrequently: true });
+
+        /* Offscreen buffer — samples the matte mask at the photo's own
+           (larger) resolution so the erase aligns with the photo's size */
+        var photoMatteCanv = document.createElement('canvas');
+        photoMatteCanv.width = PHOTO_W; photoMatteCanv.height = PHOTO_W;
+        var photoMatteCtx = photoMatteCanv.getContext('2d', { willReadFrequently: true });
 
         var matteCanv = document.createElement('canvas');
         matteCanv.width = 168; matteCanv.height = 168;
@@ -767,6 +928,24 @@
         roleImg.alt = ''; roleImg.style.opacity = '0';
         plateContent.appendChild(roleImg);
 
+        /* Idle "not picking yet" edge triangles — blue for camp1, red for camp2.
+           Staggered by seat index so the bob reads as a wave. Camp1's flex
+           container runs seat index left→right, so increasing delay with i
+           sweeps left→right; camp2's is row-reverse (index 0 = rightmost),
+           so the same i-based delay sweeps right→left there — no
+           campid-specific math needed. */
+        var triCampClass = campid === 1 ? 'camp1' : 'camp2';
+        var triDelay = (i * 0.3) + 's';
+        var triTop = document.createElement('div');
+        triTop.className = 'card-tri card-tri-top ' + triCampClass;
+        triTop.style.animationDelay = triDelay;
+        plateContent.appendChild(triTop);
+
+        var triBottom = document.createElement('div');
+        triBottom.className = 'card-tri card-tri-bottom ' + triCampClass;
+        triBottom.style.animationDelay = triDelay;
+        plateContent.appendChild(triBottom);
+
         plate.appendChild(plateContent);
 
         /* Player name sits below, centred in the seat-unit */
@@ -780,17 +959,23 @@
 
         pickEls[key] = {
           key: key, campid: campid,
-          seatUnit: seatUnit, plate: plate, pickVid: vid,
+          seatUnit: seatUnit, plate: plate, pickVid: vid, pickAnim: pickAnim,
           heroVid: heroVid, pickGrad: pickGrad,
           canvasEl: cvs, ctx2d: ctx2d,
           matteCtx: matteCtx, matteVid: matteVid,
           glowDiv: glowDiv, banner: banner, bannerName: bannerName,
-          roleImg: roleImg, nameEl: nameEl
+          roleImg: roleImg, nameEl: nameEl,
+          triTop: triTop, triBottom: triBottom,
+          photoImg: photoImg, photoCanvas: photoCanvas, photoCtx: photoCtx,
+          photoMatteCtx: photoMatteCtx, photoOrigAlpha: null, photoH: null
         };
         prevPick[key] = {
           heroid: undefined, picking: false, banning: false,
           small: false, expanded: false, matteActive: false,
-          roleid: undefined
+          roleid: undefined,
+          photoName: undefined, photoPhase: 'none', photoErasing: false,
+          photoTimer0: null, photoTimer1: null, photoTimer2: null,
+          pickAnimTimer: null
         };
       }
     }
@@ -983,8 +1168,183 @@
     })();
   }
 
+  /* ── Player photo sequence (FRONT → VICTORY) ───────────────── */
+  function clearPhotoTimers(p) {
+    if (p.photoTimer0) { clearTimeout(p.photoTimer0); p.photoTimer0 = null; }
+    if (p.photoTimer1) { clearTimeout(p.photoTimer1); p.photoTimer1 = null; }
+    if (p.photoTimer2) { clearTimeout(p.photoTimer2); p.photoTimer2 = null; }
+  }
+
+  function resetPlayerPhoto(e, p) {
+    clearPhotoTimers(p);
+    e.photoImg.className   = 'player-photo';
+    e.photoImg.style.display = 'none';
+    e.photoImg.style.opacity = '0';
+    e.photoImg.style.transform = '';
+    e.photoImg.src = '';
+    e.photoCanvas.style.opacity = '0';
+    e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
+    e.photoOrigAlpha = null;
+    e.photoH = null;
+    p.photoName    = undefined;
+    p.photoPhase   = 'none';
+    p.photoErasing = false;
+  }
+
+  var PHOTO_FRONT_EASE_MS = 600; /* matches .photo-entering CSS duration */
+  var PHOTO_FRONT_HOLD_MS = 500;
+  var PHOTO_QUICKOUT_MS   = 150; /* matches .photo-quick-out CSS duration */
+
+  /* Role icon takes 550ms to press + 900ms to fly to its corner (see the
+     'pressing' setTimeout below) — hold the photo off-screen until it has
+     mostly cleared the centre so the two don't overlap. Trimmed 550ms off
+     the full 1450ms clear time to keep the entrance snappier. */
+  var ROLE_ICON_DEPART_MS = 550 + 900 - 300 - 250;
+
+  /* Picking animation (pickingblue/red.webm) — same "wait for the role icon
+     to clear" delay as the player photo, then a plain opacity fade in
+     rather than popping straight to visible. */
+  function showPickAnimDelayed(e, p) {
+    clearTimeout(p.pickAnimTimer);
+    p.pickAnimTimer = setTimeout(function () {
+      e.pickAnim.currentTime = 0;
+      e.pickAnim.play().catch(function () {});
+      e.pickAnim.classList.add('pick-anim-visible');
+    }, ROLE_ICON_DEPART_MS);
+  }
+
+  function hidePickAnim(e, p) {
+    clearTimeout(p.pickAnimTimer);
+    p.pickAnimTimer = null;
+    e.pickAnim.classList.remove('pick-anim-visible');
+    e.pickAnim.pause();
+  }
+
+  /* Waits for the role icon to clear, then: FRONT fades+eases up → holds
+     0.5s → quick fade-out → VICTORY bounces in. 'live' mode matches the
+     seat's real player name to a photo (skips if no match yet); 'random'
+     mode picks any available name — for testing only. */
+  function startPlayerPhotoSequence(e, p, playerName) {
+    var name;
+    if (draftPhotoMode === 'random') {
+      if (!PLAYER_PHOTO_NAMES.length) return;
+      name = PLAYER_PHOTO_NAMES[Math.floor(Math.random() * PLAYER_PHOTO_NAMES.length)];
+    } else {
+      name = PLAYER_PHOTO_LOOKUP[(playerName || '').trim().toLowerCase()];
+      if (!name) return;
+    }
+    resetPlayerPhoto(e, p);
+    p.photoName = name;
+
+    p.photoTimer0 = setTimeout(function () {
+      beginPhotoFrontPhase(e, p, name);
+    }, ROLE_ICON_DEPART_MS);
+  }
+
+  function beginPhotoFrontPhase(e, p, name) {
+    p.photoPhase = 'front';
+
+    var img = e.photoImg;
+    img.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    img.style.display = 'block';
+    img.style.opacity = '0';
+    img.className = 'player-photo photo-front-size';
+    void img.offsetWidth;
+    img.classList.add('photo-entering');
+
+    p.photoTimer1 = setTimeout(function () {
+      img.classList.remove('photo-entering');
+      /* Removing 'photo-entering' drops its animation-driven transform,
+         which would otherwise snap back to the base (pre-entrance, lower)
+         translateY — pin it at the settled position so the fade-out doesn't
+         visibly jump before it starts. */
+      img.style.transform = 'translateX(-50%) translateY(0)';
+      img.classList.add('photo-quick-out');
+      p.photoTimer2 = setTimeout(function () {
+        img.src = 'photos/VICTORY/' + name + '_VICTORY_resized.png';
+        img.className = 'player-photo';
+        img.style.opacity = '0';
+        void img.offsetWidth;
+        img.classList.add('photo-bounce-in');
+        p.photoPhase = 'victory';
+      }, PHOTO_QUICKOUT_MS);
+    }, PHOTO_FRONT_EASE_MS + PHOTO_FRONT_HOLD_MS);
+  }
+
+  /* Draws the currently-visible photo into the erase canvas (at the photo's
+     own — larger — resolution) and shows it in place of the <img>, so
+     per-frame alpha updates can take over. */
+  function preparePhotoErase(e, p) {
+    if (!p.photoName || p.photoPhase === 'none') {
+      /* Hero was picked before the delayed front-phase ever showed anything
+         (faster than ROLE_ICON_DEPART_MS) — cancel the pending timer instead
+         of erasing a photo that was never drawn. */
+      resetPlayerPhoto(e, p);
+      return;
+    }
+    p.photoErasing = true;
+
+    var natW = e.photoImg.naturalWidth  || PHOTO_W;
+    var natH = e.photoImg.naturalHeight || Math.round(PHOTO_W * 1.6);
+    var Hp   = Math.round(natH * PHOTO_W / natW);
+
+    e.photoH = Hp;
+    e.photoCanvas.width  = PHOTO_W;
+    e.photoCanvas.height = Hp;
+    e.photoCanvas.style.height = Hp + 'px';
+    e.photoMatteCtx.canvas.width  = PHOTO_W;
+    e.photoMatteCtx.canvas.height = Hp;
+
+    e.photoCtx.clearRect(0, 0, PHOTO_W, Hp);
+    e.photoCtx.drawImage(e.photoImg, 0, 0, PHOTO_W, Hp);
+    var src = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp).data;
+    var orig = new Uint8ClampedArray(src.length / 4);
+    for (var i = 3, ai = 0; i < src.length; i += 4, ai++) orig[ai] = src[i];
+    e.photoOrigAlpha = orig;
+    e.photoCanvas.style.opacity = '1';
+    e.photoImg.style.opacity = '0';
+  }
+
+  /* Erases the photo using the SAME matte mask that reveals the hero video —
+     resampled at the photo's own resolution so the wipe aligns with its size.
+     Wherever the mask reveals the hero, the photo fades by the complement. */
+  function updatePhotoErase(e, matteVid) {
+    if (!e.photoOrigAlpha) return;
+    var Hp = e.photoH;
+
+    e.photoMatteCtx.clearRect(0, 0, PHOTO_W, Hp);
+    e.photoMatteCtx.drawImage(matteVid, 0, 0, PHOTO_W, Hp);
+    var m = e.photoMatteCtx.getImageData(0, 0, PHOTO_W, Hp).data;
+
+    var pd = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp);
+    var pdata = pd.data;
+    for (var i = 3, ai = 0; i < pdata.length; i += 4, ai++) {
+      pdata[i] = Math.min(e.photoOrigAlpha[ai], 255 - matteAlphaAt(m, i));
+    }
+    e.photoCtx.putImageData(pd, 0, 0);
+  }
+
+  function finishPhotoErase(e, p) {
+    p.photoErasing = false;
+    e.photoH = null;
+    e.photoCanvas.style.opacity = '0';
+    e.photoImg.style.display = 'none';
+    e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
+    e.photoOrigAlpha = null;
+    p.photoName  = undefined;
+    p.photoPhase = 'none';
+  }
+
   /* ── Matte reveal over hero video ──────────────────────────── */
-  function startMatteReveal(e, campid) {
+  /* Per-pixel alpha derived from a matte-video sample at index i (RGBA offset).
+     Shared by the hero reveal and the photo erase so both read the same mask. */
+  function matteAlphaAt(m, i) {
+    return m[i + 3] < 254
+      ? 255 - m[i + 3]
+      : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
+  }
+
+  function startMatteReveal(e, campid, p) {
     var cvs      = e.canvasEl;
     var ctx      = e.ctx2d;
     var mCtx     = e.matteCtx;
@@ -1024,28 +1384,31 @@
       /* Stop pick video now that reveal is complete */
       e.pickVid.style.display = 'none';
       e.pickVid.pause();
+      hidePickAnim(e, p);
       /* Hero video was hidden — show it now that matte has revealed it */
       heroVid.style.display = 'block';
+      if (p.photoErasing) finishPhotoErase(e, p);
       fireGlow();
+    }
+
+    function compositeFrame(H) {
+      ctx.clearRect(0, 0, 168, H);
+      ctx.drawImage(heroVid, 0, 0, 168, H);
+      var hd = ctx.getImageData(0, 0, 168, H);
+      mCtx.clearRect(0, 0, 168, H);
+      mCtx.drawImage(matteVid, 0, 0, 168, H);
+      var md = mCtx.getImageData(0, 0, 168, H);
+      var h = hd.data, m = md.data;
+      for (var i = 0; i < h.length; i += 4) {
+        h[i + 3] = matteAlphaAt(m, i);
+      }
+      ctx.putImageData(hd, 0, 0);
+      if (p.photoErasing) updatePhotoErase(e, matteVid);
     }
 
     function composite(H) {
       if (matteVid.ended) { done(); return; }
-      try {
-        ctx.clearRect(0, 0, 168, H);
-        ctx.drawImage(heroVid, 0, 0, 168, H);
-        var hd = ctx.getImageData(0, 0, 168, H);
-        mCtx.clearRect(0, 0, 168, H);
-        mCtx.drawImage(matteVid, 0, 0, 168, H);
-        var md = mCtx.getImageData(0, 0, 168, H);
-        var h = hd.data, m = md.data;
-        for (var i = 0; i < h.length; i += 4) {
-          h[i + 3] = m[i + 3] < 254
-            ? 255 - m[i + 3]
-            : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
-        }
-        ctx.putImageData(hd, 0, 0);
-      } catch (err) { done(); return; }
+      try { compositeFrame(H); } catch (err) { done(); return; }
       rafId = requestAnimationFrame(function () { composite(H); });
     }
 
@@ -1061,26 +1424,14 @@
       matteVid.currentTime = 0;
       matteVid.addEventListener('ended', done, { once: true });
 
+      preparePhotoErase(e, p);
+
       matteVid.play()
         .then(function () {
           if ('requestVideoFrameCallback' in matteVid) {
             (function onVF() {
               if (matteVid.ended) return;
-              try {
-                ctx.clearRect(0, 0, 168, H);
-                ctx.drawImage(heroVid, 0, 0, 168, H);
-                var hd = ctx.getImageData(0, 0, 168, H);
-                mCtx.clearRect(0, 0, 168, H);
-                mCtx.drawImage(matteVid, 0, 0, 168, H);
-                var md = mCtx.getImageData(0, 0, 168, H);
-                var h = hd.data, m = md.data;
-                for (var i = 0; i < h.length; i += 4) {
-                  h[i + 3] = m[i + 3] < 254
-                    ? 255 - m[i + 3]
-                    : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
-                }
-                ctx.putImageData(hd, 0, 0);
-              } catch (err) { done(); return; }
+              try { compositeFrame(H); } catch (err) { done(); return; }
               matteVid.requestVideoFrameCallback(onVF);
             }());
           } else {
@@ -1131,6 +1482,13 @@
 
     e.nameEl.textContent = seat.name || '';
 
+    /* Idle edge triangles — only before this seat's own picking turn */
+    if (e.triTop) {
+      var showTri = heroid === 0 && !pick;
+      e.triTop.style.display    = showTri ? 'block' : 'none';
+      e.triBottom.style.display = showTri ? 'block' : 'none';
+    }
+
     /* Keep banner name in sync */
     if ((seat.hero_name && seat.hero_name[0]) && e.bannerName.textContent !== seat.hero_name[0]) {
       e.bannerName.textContent = seat.hero_name[0];
@@ -1158,7 +1516,7 @@
           /* Live pick: matte reveal drives play() and display */
           e.heroVid.style.display = 'none'; /* hidden until canvas reveals it */
           p.matteActive = true;
-          startMatteReveal(e, campid);
+          startMatteReveal(e, campid, p);
         } else {
           /* First load: show video directly, no matte, banner instant */
           e.heroVid.style.display = 'block';
@@ -1188,6 +1546,7 @@
         e.seatUnit.classList.remove('picking-expand');
         updateCampPickerClass(campid);
         e.roleImg.style.display = '';
+        resetPlayerPhoto(e, p);
       }
       p.heroid = heroid;
     }
@@ -1199,19 +1558,25 @@
       updateCampPickerClass(campid);
     }
 
-    /* Pick background video + gradient */
+    /* Pick background video + anim + gradient */
     if (pick && !p.picking) {
       e.pickVid.currentTime = 0;
       e.pickVid.style.display = 'block';
       e.pickVid.play().catch(function () {});
+      showPickAnimDelayed(e, p);
       e.pickGrad.style.display = 'block';
+      startPlayerPhotoSequence(e, p, seat.name);
     } else if (!pick && p.picking) {
       e.pickGrad.style.display = 'none';
       if (!p.matteActive) {
         e.pickVid.style.display = 'none';
         e.pickVid.pause();
+        hidePickAnim(e, p);
       }
       /* if matteActive, done() in startMatteReveal will stop it */
+      /* Turn ended without a pick (e.g. timeout/auto-pick edge case) — don't
+         leave the photo sequence orphaned on screen */
+      if (heroid === 0) resetPlayerPhoto(e, p);
     }
 
 
@@ -1350,6 +1715,7 @@
       e.heroVid.pause(); e.heroVid.src = ''; e.heroVid.style.display = 'none';
       e.heroVid.classList.remove('brightening');
       e.pickVid.pause(); e.pickVid.style.display = 'none';
+      hidePickAnim(e, p);
       e.pickGrad.style.display = 'none';
 
       /* Canvas */
@@ -1371,11 +1737,20 @@
       e.seatUnit.classList.remove('picking-expand');
       e.nameEl.textContent = '';
 
+      /* Idle edge triangles */
+      if (e.triTop) { e.triTop.style.display = 'none'; e.triBottom.style.display = 'none'; }
+
+      /* Player photo */
+      resetPlayerPhoto(e, p);
+
       /* Reset prev state */
       prevPick[key] = {
         heroid: undefined, picking: false, banning: false,
         small: false, expanded: false, matteActive: false,
-        roleid: undefined
+        roleid: undefined,
+        photoName: undefined, photoPhase: 'none', photoErasing: false,
+        photoTimer0: null, photoTimer1: null, photoTimer2: null,
+        pickAnimTimer: null
       };
     });
 
@@ -1494,6 +1869,12 @@
     sse.addEventListener('debugoff', function() {
       var bar = document.getElementById('debug-bar');
       if (bar) bar.style.display = 'none';
+    });
+    sse.addEventListener('draftphotomode', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        if (d.mode) draftPhotoMode = d.mode;
+      } catch (e) {}
     });
   }, 2000);
 

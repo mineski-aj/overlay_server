@@ -56,6 +56,19 @@ app.post('/match/state', function (req, res) {
   res.json({ ok: true, state: matchState.get() });
 });
 
+// Waiting Screen TVC / Waiting Lobby countdown — server-authoritative so it
+// keeps running (or stays paused) across overlay refreshes and reconnects.
+app.post('/match/timer', function (req, res) {
+  var body  = req.body || {};
+  var token = body.token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  if      (body.action === 'start') matchState.startTimer();
+  else if (body.action === 'pause') matchState.pauseTimer();
+  else if (body.action === 'set')   matchState.setTimerRemaining(body.seconds);
+  else return res.status(400).json({ error: 'Unknown action' });
+  res.json({ ok: true, state: matchState.get() });
+});
+
 // Standings state — same dashboard password as match state
 const standingsState = require('./lib/standingsState');
 
@@ -153,6 +166,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  Match      → GET  http://localhost:${PORT}/match/state`);
   console.log(`             → POST http://localhost:${PORT}/match/state  (auth)`);
   console.log(`             → GET  http://localhost:${PORT}/match/events  (SSE)`);
+  console.log(`  Timer      → POST http://localhost:${PORT}/match/timer  { action: start|pause|set, seconds }`);
   console.log(`  Sponsors   → GET  http://localhost:${PORT}/api/sponsors`);
   console.log(`  Game API   → GET  http://localhost:${PORT}/api/game-url`);
   console.log(`             → POST http://localhost:${PORT}/api/game-url  { url }`)

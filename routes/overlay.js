@@ -1,10 +1,51 @@
 // routes/overlay.js — SSE + all /overlay/* + /meter/*
 const express = require('express');
+const fs      = require('fs');
+const path    = require('path');
 const router  = express.Router();
 const state   = require('../lib/state');
 
 // Local state for draftpredict commands
 const _draftpredictCmds = [];
+
+// GET /api/player-photos — basenames with both FRONT and VICTORY photos available
+const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
+let _playerPhotoNames = null;
+router.get('/api/player-photos', (req, res) => {
+  if (!_playerPhotoNames) {
+    try {
+      const front = fs.readdirSync(path.join(PHOTOS_DIR, 'FRONT'))
+        .filter(f => f.endsWith('_FRONT_resized.png'))
+        .map(f => f.slice(0, -'_FRONT_resized.png'.length));
+      const victorySet = new Set(
+        fs.readdirSync(path.join(PHOTOS_DIR, 'VICTORY'))
+          .filter(f => f.endsWith('_VICTORY_resized.png'))
+          .map(f => f.slice(0, -'_VICTORY_resized.png'.length))
+      );
+      _playerPhotoNames = front.filter(n => victorySet.has(n));
+    } catch (e) {
+      _playerPhotoNames = [];
+    }
+  }
+  res.set({ 'Cache-Control': 'no-store' }).json({ names: _playerPhotoNames });
+});
+
+// GET /overlay/draft-photo-mode — current player-photo source ('live' | 'random')
+router.get('/overlay/draft-photo-mode', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json({ mode: state.draftPhotoMode });
+});
+
+// GET /overlay/draft-photo-mode/:mode — set mode, broadcast to connected overlays
+router.get('/overlay/draft-photo-mode/:mode', (req, res) => {
+  const mode = req.params.mode;
+  if (mode !== 'live' && mode !== 'random') {
+    return res.status(400).json({ ok: false, error: 'unknown mode' });
+  }
+  state.draftPhotoMode = mode;
+  const payload = JSON.stringify({ mode });
+  state.overlayClients.forEach(c => { try { c.write(`event: draftphotomode\ndata: ${payload}\n\n`); } catch {} });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, mode });
+});
 
 // SSE heartbeat
 setInterval(() => {
@@ -356,7 +397,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['scoreboard','killevents','items','trinity','swap','lvl15','conceal','fights'];
+const VALID_FEATURES = ['scoreboard','killevents','items','trinity','swap','lvl15','conceal','fights','debugphotos'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

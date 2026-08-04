@@ -866,6 +866,7 @@
       id: 'draft',
       name: 'Draft Overlay',
       file: 'Draft.html',
+      photoModeToggle: true,
     },
     {
       id: 'mplfs',
@@ -892,6 +893,7 @@
         { label: 'Item Out',  action: '/overlay/post_itemline/itemout' },
         { label: 'Debug Off', action: '/overlay/fs/debugoff'           },
       ],
+      debugPhotosToggle: true,
     },
     {
       id: 'mploverlay7',
@@ -1345,6 +1347,71 @@
   }
 
   /* ── Build sidebar + control body ────────────────────────── */
+  /* ── Draft photo mode (live API match vs. random test) ────── */
+  function buildDraftPhotoModeControl(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Player Photo Source'));
+
+    var row = el('div', 'btn-row');
+    var btnLive   = el('button', 'btn btn-action', 'Live API');
+    var btnRandom = el('button', 'btn btn-action', 'Random Test');
+
+    function applyStyle(mode) {
+      btnLive.style.cssText   = mode === 'live'   ? 'background:#001a00;color:#0a9200;border-color:#0a9200;' : '';
+      btnRandom.style.cssText = mode === 'random' ? 'background:#1a1200;color:#ffcc00;border-color:#ffcc00;' : '';
+    }
+
+    fetch('/overlay/draft-photo-mode').then(function(r){ return r.json(); }).then(function(d) {
+      applyStyle(d.mode || 'live');
+    }).catch(function(){});
+
+    btnLive.addEventListener('click', function() {
+      applyStyle('live');
+      fetch('/overlay/draft-photo-mode/live').catch(function(){});
+    });
+    btnRandom.addEventListener('click', function() {
+      applyStyle('random');
+      fetch('/overlay/draft-photo-mode/random').catch(function(){});
+    });
+
+    row.appendChild(btnLive);
+    row.appendChild(btnRandom);
+    body.appendChild(row);
+  }
+
+  /* ── MPL Full Screen playerboard photo source (same 'debugphotos' feature
+     toggle underneath, styled the same as the Draft Overlay control above) ── */
+  function buildDebugPhotosControl(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Player Photo Source'));
+
+    var row = el('div', 'btn-row');
+    var btnLive   = el('button', 'btn btn-action', 'Live API');
+    var btnRandom = el('button', 'btn btn-action', 'Random Test');
+
+    function applyStyle(enabled) {
+      btnLive.style.cssText   = !enabled ? 'background:#001a00;color:#0a9200;border-color:#0a9200;' : '';
+      btnRandom.style.cssText =  enabled ? 'background:#1a1200;color:#ffcc00;border-color:#ffcc00;' : '';
+    }
+
+    fetch('/overlay/features').then(function(r){ return r.json(); }).then(function(d) {
+      applyStyle(!!(d && d.debugphotos));
+    }).catch(function(){});
+
+    btnLive.addEventListener('click', function() {
+      applyStyle(false);
+      fetch('/overlay/feature/debugphotos/disable').catch(function(){});
+    });
+    btnRandom.addEventListener('click', function() {
+      applyStyle(true);
+      fetch('/overlay/feature/debugphotos/enable').catch(function(){});
+    });
+
+    row.appendChild(btnLive);
+    row.appendChild(btnRandom);
+    body.appendChild(row);
+  }
+
   function buildControlBody(ov) {
     if (_hrmSwapTimer) { clearInterval(_hrmSwapTimer); _hrmSwapTimer = null; }
     var body = controlPanelBody;
@@ -1543,6 +1610,16 @@
         fr.appendChild(tb);
         body.appendChild(fr);
       });
+    }
+
+    /* Draft photo source toggle */
+    if (ov.photoModeToggle) {
+      buildDraftPhotoModeControl(body);
+    }
+
+    /* MPL Full Screen playerboard photo source toggle */
+    if (ov.debugPhotosToggle) {
+      buildDebugPhotosControl(body);
     }
 
     /* Placeholder if no controls */
