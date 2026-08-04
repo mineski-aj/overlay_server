@@ -357,6 +357,22 @@
     .wlm-label { left: 24px; }
     .wlm-time  { left: 0; width: 100%; justify-content: center; }
     .wlm-bo    { right: 24px; }
+    /* Rivalry blinker band — same masked-shine loop as the Waiting Screen
+       TVC's .wsm-band-cot (see @keyframes wsm-cot-*), just resized/recentered
+       to this box's 786×240 band instead of duplicating the animation. */
+    .wlm-box .wlm-band-cot     { position: absolute; left: 228px; top: 0; width: 330px; height: 55px; animation: wsm-cot-mask 9s ease-in-out infinite; }
+    .wlm-box .wlm-band-cot-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .wlm-box .wlm-band-cot::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%);
+      background-size: 300% 100%;
+      background-position: 150% 0;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      animation: wsm-cot-shine 9s linear infinite;
+    }
+    .wlm-time.star { animation: wsm-cot-pulse-inv 9s ease-in-out infinite; }
     .wlm-slot { position: absolute; top: 55px; height: 185px; display: flex; align-items: center; justify-content: center; }
     .wlm-tri {
       font-family: 'Anton', sans-serif;
@@ -369,6 +385,7 @@
     .wlm-logo-r { left: 478px; width: 180px; }
     .wlm-logo-l img, .wlm-logo-r img { width: 132px; height: 116px; object-fit: contain; }
     .wlm-center { left: 308px; width: 170px; }
+    .wlm-center img.wlm-vs { width: 98px; height: 54px; object-fit: contain; }
     .wlm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
     .wlm-score .wlm-score-l { font-weight: 800; font-size: 44px; color: #1656d5; }
     .wlm-score .wlm-score-div { width: 46px; height: 4px; background: #0a0a0a; margin: 4px 0; }
@@ -2949,6 +2966,13 @@
     const wlVideo = document.getElementById('wl-video');
     const WL_ASSET = '/assets/Waiting Lobby/';
 
+    /* Match type → box art + pulsing rivalry banner, both sourced straight
+       from the Waiting Screen TVC folder (WS_MATCH_TYPE_ASSETS, defined
+       above) and resized via CSS to this box's 786×240 / band's 330×55
+       instead of keeping separate resized copies in the Waiting Lobby
+       folder. Box art no longer bakes in a VS graphic, so the no-score case
+       overlays the same SCORES/vs.png the Waiting Screen TVC uses. */
+
     /* Current/next match — the single card the Waiting Lobby spotlights,
        driven by ms.match (the same "which match is live" index the
        middleboard's GAME/MATCH label uses) against ms.home/ms.away. */
@@ -2965,6 +2989,7 @@
         label: 'MATCH ' + matchNum,
         time: tm.time || '',
         bo,
+        matchType: tm.matchType || (tm.star ? 'clash' : 'regular'),
         left:  { tri: home.short || tm.team1Short || '', logo: (home.short || tm.team1Short) ? '/logos/' + encodeURIComponent(home.short || tm.team1Short) + '.png' : null },
         right: { tri: away.short || tm.team2Short || '', logo: (away.short || tm.team2Short) ? '/logos/' + encodeURIComponent(away.short || tm.team2Short) + '.png' : null },
         score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
@@ -2980,11 +3005,15 @@
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       const center = m.score
         ? `<div class="wlm-score"><span class="wlm-score-l">${m.score.l}</span><span class="wlm-score-div"></span><span class="wlm-score-r">${m.score.r}</span></div>`
-        : '';
+        : `<img class="wlm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
+      const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
       root.innerHTML =
-        `<div class="wlm-box"><img class="wlm-box-bg" src="${WL_ASSET}${m.score ? 'MatchBox1' : 'MatchBox3'}.png" alt="">` +
+        `<div class="wlm-box"><img class="wlm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
         `<span class="wlm-label">${m.label}</span>` +
-        `<span class="wlm-time">${m.time}</span>` +
+        (typeAssets.blinker
+          ? `<span class="wlm-time star">${m.time}</span>` +
+            `<div class="wlm-band-cot"><img class="wlm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+          : `<span class="wlm-time">${m.time}</span>`) +
         `<span class="wlm-bo">${m.bo}</span>` +
         `<div class="wlm-slot wlm-tri wlm-tri-l">${m.left.tri}</div>` +
         logo('l') +

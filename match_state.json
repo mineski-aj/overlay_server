@@ -1,38 +1,5 @@
 {
   "home": {
-    "teamId": "10845",
-    "lineup": [
-      {
-        "role": "EXP LANER",
-        "ign": "Edward",
-        "id": "1271650071"
-      },
-      {
-        "role": "JUNGLER",
-        "ign": "Demonkite",
-        "id": "1025593425"
-      },
-      {
-        "role": "MID LANER",
-        "ign": "Yue",
-        "id": "1373200860"
-      },
-      {
-        "role": "ROAMER",
-        "ign": "Light",
-        "id": "1478121262"
-      },
-      {
-        "role": "GOLD LANER",
-        "ign": "Domengkite",
-        "id": "1373200918"
-      }
-    ],
-    "name": "Aurora Gaming PH",
-    "short": "RORA",
-    "score": 0
-  },
-  "away": {
     "teamId": "10764",
     "lineup": [
       {
@@ -57,12 +24,45 @@
       },
       {
         "role": "GOLD LANER",
-        "ign": "Savero",
-        "id": "1722728882"
+        "ign": ".BLUFFZY",
+        "id": "1722728857"
       }
     ],
     "name": "ONIC PH",
     "short": "ONIC",
+    "score": 0
+  },
+  "away": {
+    "teamId": "10973",
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Flap",
+        "id": "1271650054"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "Kyle",
+        "id": "1582754321"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Hadji",
+        "id": "1271650087"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Owgwen",
+        "id": "1271650065"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "SuperMarco",
+        "id": "1155835108"
+      }
+    ],
+    "name": "Team Falcons",
+    "short": "FLCN",
     "score": 0
   },
   "series": "BO3",
@@ -70,7 +70,7 @@
   "swapped": false,
   "official": true,
   "week": 1,
-  "day": 3,
+  "day": 2,
   "patch": "Decisive Battle 420",
   "hosts": [
     "Hans",
@@ -84,45 +84,46 @@
   ],
   "todayMatches": [
     {
-      "team1Id": "10764",
-      "team2Id": "10764",
+      "team1Id": "11149",
+      "team2Id": "10845",
       "score1": 0,
       "score2": 0,
       "time": "2:30 PM",
-      "team2Name": "ONIC PH",
-      "team2Short": "ONIC",
+      "team2Name": "Aurora Gaming PH",
+      "team2Short": "RORA",
       "vsDisplay": "VS",
-      "team1Name": "ONIC PH",
-      "team1Short": "ONIC",
-      "star": true,
-      "matchType": "epic"
+      "team1Name": "AP.BREN",
+      "team1Short": "APBR",
+      "star": false,
+      "matchType": "regular"
     },
     {
-      "team1Id": "10845",
-      "team2Id": "10764",
+      "team1Id": "10764",
+      "team2Id": "10973",
       "score1": 0,
       "score2": 0,
       "time": "5:00 PM",
-      "team1Name": "Aurora Gaming PH",
-      "team1Short": "RORA",
-      "team2Name": "ONIC PH",
-      "team2Short": "ONIC",
+      "team1Name": "ONIC PH",
+      "team1Short": "ONIC",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN",
       "vsDisplay": "VS",
       "star": true,
       "matchType": "international"
     },
     {
-      "team1Id": "10973",
+      "team1Id": "10765",
       "team2Id": "11150",
       "score1": 0,
       "score2": 0,
       "time": "7:30 PM",
-      "team1Name": "Team Falcons",
-      "team1Short": "FLCN",
+      "team1Name": "TNC Pro Team PH",
+      "team1Short": "TNC",
       "team2Name": "Smart Omega",
       "team2Short": "OMG",
       "vsDisplay": "VS",
-      "star": false
+      "star": true,
+      "matchType": "clash"
     }
   ],
   "tomorrowMatches": [
@@ -158,12 +159,12 @@
     }
   ],
   "countdownLabel": "SHOW RESUMES IN",
-  "goodbyeLabel": "SEE YOU NEXT WEEK",
+  "goodbyeLabel": "SEE YOU TOMORROW",
   "match": 2,
   "countdownLabelAuto": true,
   "timer": {
     "running": true,
-    "endAt": 1785744411452,
-    "remaining": 1620
+    "endAt": 1785856844965,
+    "remaining": 360
   }
 }
