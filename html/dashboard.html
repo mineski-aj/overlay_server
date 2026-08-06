@@ -860,6 +860,33 @@
     fetch('/overlay/feature/' + encodeURIComponent(feature) + '/' + action).catch(function(){});
   }
 
+  /* ── Check-overlay toggle state (item/emblem/gold-diff check) ──
+     Same on/off button as feature toggles, but backed by the
+     show/hide SSE routes instead of the enable/disable ones, and
+     restored from server state on load so the toggle reflects
+     whatever's actually showing right now, not a guess. */
+  var checkOverlayStates = {};
+  var checkToggleBtns    = {};
+
+  function applyCheckToggleBtn(key, shown) {
+    var b = checkToggleBtns[key];
+    if (!b) return;
+    b.textContent = shown ? '● Showing' : '○ Hidden';
+    b.className   = 'btn btn-toggle ' + (shown ? 'btn-toggle-on' : 'btn-toggle-off');
+  }
+
+  fetch('/overlay/check-overlays').then(function(r){ return r.json(); }).then(function(d) {
+    checkOverlayStates = d || {};
+    Object.keys(checkOverlayStates).forEach(function(k) { applyCheckToggleBtn(k, checkOverlayStates[k]); });
+  }).catch(function(){});
+
+  function toggleCheckOverlay(key) {
+    var shown = !checkOverlayStates[key];
+    checkOverlayStates[key] = shown;
+    applyCheckToggleBtn(key, shown);
+    fetch('/overlay/' + encodeURIComponent(key) + '/' + (shown ? 'show' : 'hide')).catch(function(){});
+  }
+
   /* ── Overlay definitions ──────────────────────────────────── */
   var OVERLAYS = [
     {
@@ -905,6 +932,15 @@
         { label: 'Recap Show', action: '/overlay/fights/show' },
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
       ],
+      checkToggles: [
+        { name: 'Item Check',        key: 'itemcheck'        },
+        { name: 'Emblem Check',      key: 'emblemcheck'      },
+        { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
+        { name: 'Side EXP Check',    key: 'sideexpcheck'     },
+        { name: 'Side Taken Check',  key: 'sidetakencheck'   },
+        { name: 'Side Damage Check', key: 'sidedamagecheck'  },
+        { name: 'Side Gold Check',   key: 'sidegoldcheck'    },
+      ],
       featureToggles: [
         { name: 'Scoreboard',  feature: 'scoreboard' },
         { name: 'Kill Events', feature: 'killevents' },
@@ -914,6 +950,7 @@
         { name: 'Level 15',    feature: 'lvl15'      },
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
+        { name: 'Player UI',   feature: 'playerui'   },
       ],
     },
     {
@@ -1452,6 +1489,42 @@
         arow.appendChild(cb);
       });
       body.appendChild(arow);
+    }
+
+    /* Check-overlay toggles (item/emblem/gold-diff check) — a single
+       on/off switch backed by server state, plus copy-icon buttons
+       for the raw show/hide route URLs (still handy for OBS setups
+       that fire these directly instead of through this dashboard). */
+    if (ov.checkToggles && ov.checkToggles.length) {
+      if (body.children.length) body.appendChild(el('div', 'divider'));
+      body.appendChild(el('div', 'features-label', 'Check Overlays'));
+      ov.checkToggles.forEach(function (ct) {
+        var fr = el('div', 'feature-row');
+        fr.appendChild(el('div', 'feature-name', ct.name));
+
+        var btnGroup = el('div', 'feature-btns');
+        var tb = el('button', 'btn btn-toggle btn-toggle-off', '○ Hidden');
+        tb.addEventListener('click', (function (k) { return function () { toggleCheckOverlay(k); }; })(ct.key));
+        checkToggleBtns[ct.key] = tb;
+        applyCheckToggleBtn(ct.key, !!checkOverlayStates[ct.key]);
+        btnGroup.appendChild(tb);
+
+        [['show', 'Show'], ['hide', 'Hide']].forEach(function (pair) {
+          var path  = '/overlay/' + ct.key + '/' + pair[0];
+          var label = ct.name + ' ' + pair[1];
+          var cb = document.createElement('button');
+          cb.className = 'btn btn-copy';
+          cb.title = 'Copy ' + label + ' route';
+          cb.innerHTML = '<span class="copy-icon">⧉</span>';
+          (function (p, l, b) {
+            b.addEventListener('click', function () { copyRoute(p, l + ' route', b); });
+          })(path, label, cb);
+          btnGroup.appendChild(cb);
+        });
+
+        fr.appendChild(btnGroup);
+        body.appendChild(fr);
+      });
     }
 
     /* Preview debug tester */

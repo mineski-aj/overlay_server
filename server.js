@@ -106,7 +106,7 @@ app.use(express.static(path.join(__dirname), {
   index: false,
   setHeaders: function(res, filePath) {
     const p = filePath.split(path.sep).join('/'); // normalize Windows backslashes for the checks below
-    if (p.endsWith('.html') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/')) {
+    if (p.endsWith('.html') || p.endsWith('.css') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }

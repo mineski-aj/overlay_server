@@ -208,6 +208,24 @@ function getPlayer(data, idx) {
   const equipIds = (player.equip_list || []).slice(0, 6).map(e => normalizeId(e?.value));
   return { player, equipIds };
 }
+/* seat_1..seat_5 are NOT guaranteed to be in lane order — confirmed
+   against a live feed sample where seat_1 held the jungler and
+   seat_2 held the exp laner. Slot 1-5 here is resolved by the seat's
+   own `role` string instead, so slot 1 is always EXP, slot 5 is
+   always GOLD, regardless of seat_N order. Falls back to plain
+   seat_N when a feed leaves `role` blank (some do). */
+const ROLE_ORDER = ['exp_laner', 'jungler', 'mid_laner', 'roamer', 'gold_laner'];
+function getPlayerByRole(data, campId, slotIdx) {
+  const camp = data.camp_list?.find(c => c.campid === campId);
+  if (!camp) return null;
+  const role = ROLE_ORDER[slotIdx - 1];
+  for (let s = 1; s <= 5; s++) {
+    const seat = camp[`seat_${s}`];
+    if (seat && seat.role === role) return seat;
+  }
+  return camp[`seat_${slotIdx}`] || null;
+}
+
 function registerPollHandler(fn) { pollHandlers.push(fn); }
 function setAllSlotTriggers(disabled) {
   document.querySelectorAll('.slot-trigger-btn').forEach(b => b.disabled = disabled);
@@ -271,6 +289,7 @@ const featureEnabled = {
   lvl15:      true,
   conceal:    true,
   fights:     true,
+  playerui:   true,
 };
 fetch('/overlay/features').then(r => r.json()).then(d => {
   if (d && typeof d === 'object') Object.assign(featureEnabled, d);

@@ -77,6 +77,48 @@
 
   </div>
 
+  <!-- [FEATURE: item-check] built dynamically via icBuildPanel().
+       item-check-clip is fixed in place and clips at its own bounds
+       (which sit fully inside the 1920×1080 scene); item-check-overlay is
+       the part that actually slides, inside that fixed clip window. -->
+  <div id="item-check-clip">
+    <div id="item-check-overlay"></div>
+  </div>
+
+  <!-- [FEATURE: emblem-check] built dynamically via eccBuildPanel().
+       Same fixed-clip / sliding-inner pattern as item-check. -->
+  <div id="emblem-check-clip">
+    <div id="emblem-check-overlay"></div>
+  </div>
+
+  <!-- [FEATURE: golddiff-check] built dynamically via gdcBuildPanel().
+       Same fixed-clip / sliding-inner pattern as item-check; the
+       golddiffsmart chip rides inside the same sliding element so it
+       moves in with everything else. -->
+  <div id="golddiff-check-clip">
+    <div id="golddiff-check-overlay"></div>
+  </div>
+
+  <!-- [FEATURE: side-check family] built dynamically via
+       createSideCheck() in overlay-sidecheck-core.js. Same fixed-clip
+       / sliding-inner pattern as item-check, but slides in from the
+       right (translateX) instead of from the bottom (translateY). -->
+  <div id="sideexp-check-clip" class="sidecheck-clip">
+    <div id="sideexp-check-overlay" class="sidecheck-overlay"></div>
+  </div>
+  <div id="sidetaken-check-clip" class="sidecheck-clip">
+    <div id="sidetaken-check-overlay" class="sidecheck-overlay"></div>
+  </div>
+  <div id="sidedamage-check-clip" class="sidecheck-clip">
+    <div id="sidedamage-check-overlay" class="sidecheck-overlay"></div>
+  </div>
+  <div id="sidegold-check-clip" class="sidecheck-clip">
+    <div id="sidegold-check-overlay" class="sidecheck-overlay"></div>
+  </div>
+
+  <!-- [FEATURE: player-ui] built dynamically via puiBuildPanel() -->
+  <div id="player-ui-overlay"></div>
+
   <div id="debug-area">
     <div id="url-row">
       <span class="debug-label">API URL</span>
@@ -154,4 +196,13 @@
 <script src="html/js/overlay-conceal.js"></script>
 <script src="html/js/overlay-killevents.js"></script>
 <script src="html/js/overlay-fights.js"></script>
+<script src="html/js/overlay-itemcheck.js"></script>
+<script src="html/js/overlay-emblemcheck.js"></script>
+<script src="html/js/overlay-golddiffcheck.js"></script>
+<script src="html/js/overlay-sidecheck-core.js"></script>
+<script src="html/js/overlay-sideexpcheck.js"></script>
+<script src="html/js/overlay-sidetakencheck.js"></script>
+<script src="html/js/overlay-sidedamagecheck.js"></script>
+<script src="html/js/overlay-sidegoldcheck.js"></script>
+<script src="html/js/overlay-playerui.js"></script>
 <script src="html/js/overlay-debug.js"></script>

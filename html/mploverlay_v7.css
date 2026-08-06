@@ -1,5 +1,6 @@
 @font-face { font-family: 'General Sans'; font-weight: 500; font-display: block; src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype'); }
 @font-face { font-family: 'General Sans'; font-weight: 700; font-display: block; src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype'); }
+@font-face { font-family: 'General Sans'; font-weight: 600; font-display: block; src: local('GeneralSans-Semibold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype'); }
 @font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype'); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1142,7 +1143,7 @@
   }
   #sb-goldlead-c1 {
     position: absolute;
-    left: 790.894px;
+    left: 645px;
     top: 58px;
     transform: translate(-100%, -50%);
     font-family: 'General Sans', sans-serif;
@@ -1157,7 +1158,7 @@
   }
   #sb-goldlead-c2 {
     position: absolute;
-    left: 1137.393px;
+    left: 1230px;
     top: 58px;
     transform: translateY(-50%);
     font-family: 'General Sans', sans-serif;
@@ -1188,7 +1189,7 @@
   }
   #sb-score-c1 {
     position: absolute;
-    left: 645px;
+    left: 790.894px;
     top: 40px;
     width: 46px;
     height: 37px;
@@ -1200,7 +1201,7 @@
   }
   #sb-score-c2 {
     position: absolute;
-    left: 1230px;
+    left: 1137.393px;
     top: 40px;
     width: 46px;
     height: 37px;
@@ -1218,6 +1219,96 @@
   }
   #sb-score-c1 .sb-score-bar.filled { background: #1E64FF; }
   #sb-score-c2 .sb-score-bar.filled { background: #FF3232; }
+  /* Match info box — regular season / week-day / match-game, sits
+     immediately left of the sponsor loop, same top/height so the two
+     line up as one visual group in the top-right corner. */
+  #sb-matchinfo {
+    position: absolute;
+    left: 1499px;
+    top: 0px;
+    width: 200px;
+    height: 107px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    pointer-events: none;
+  }
+  #sb-mi-label {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    color: #6b6b6b;
+    white-space: nowrap;
+  }
+  #sb-mi-week {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 17px;
+    color: #121212;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  #sb-mi-match {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #6b6b6b;
+    white-space: nowrap;
+    line-height: 1;
+  }
+  /* Patch + casters — transparent, coordinates measured directly off
+     the guide's .Rectangle_6 layers. */
+  #sb-mi-patch {
+    position: absolute;
+    left: 1508px;
+    top: 108px;
+    width: 133px;
+    height: 19px;
+    box-sizing: border-box;
+    padding: 0 9px; /* ~ width of a "D" at 13px, for breathing room */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: #1a1a1a;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  /* Sits over the dark bar already baked into ingamepng.png at this
+     exact spot (confirmed: art transitions to near-black right at
+     x=1642, one pixel past this box's left edge) — white text/icon,
+     no CSS background needed. */
+  #sb-mi-casters {
+    position: absolute;
+    left: 1641px;
+    top: 108px;
+    width: 279px;
+    height: 19px;
+    box-sizing: border-box;
+    padding: 0 9px; /* ~ width of a "D" at 13px, for breathing room */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .sb-mi-mic {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
   #sb-sponsor-loop {
     position: absolute;
     left: 1689px;
@@ -1332,3 +1423,520 @@
     width: 100%; height: 100%;
     display: block;
   }
+
+  /* ── [FEATURE: item-check] ──────────────────────────────────────
+     Panel is a 1:1 render of assets/ingame/ingameitemback.png
+     (1072×286) — all child coordinates below are measured directly
+     off that asset (see ingameitemguide.png's green/red guide boxes).
+     Row tops: 11, 66, 122, 177, 232 — box size 43-44px.
+     Home portrait x=373, away portrait x=656 (43×44).
+     Home items (index 0→5, closest→furthest from portrait):
+       241, 194, 147, 101, 54, 7 (44×44 each).
+     Away items (index 0→5): 787, 834, 881, 927, 974, 1021.
+     Gold gap: home x=284–373 (89px wide), away x=698–787. */
+  /* Fixed, never-animated clip window — sits fully inside the 1920×1080
+     scene (bottom edge flush with y=1080) and clips at its own bounds, so
+     the sliding element inside it never paints outside the scene, no
+     matter what any ancestor's overflow does. */
+  #item-check-clip {
+    position: absolute;
+    left: 424px; top: 794px; /* horizontally centered; bottom flush with the 1080px-tall scene */
+    width: 1072px; height: 286px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #item-check-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 1072px; height: 286px;
+    /* Hidden state pushes the panel down by its own full height (286px) —
+       clipped away entirely by item-check-clip's overflow:hidden, so it's
+       invisible without ever leaving the clip window's (in-scene) bounds. */
+    transform: translateY(286px);
+    /* The transition that applies when TRANSITIONING TO this state (i.e.
+       exiting, since removing .ic-in reverts here) — ease-in per request. */
+    transition: transform 350ms ease-in;
+  }
+  #item-check-overlay.ic-in {
+    /* The transition that applies when transitioning TO .ic-in (entrance) —
+       a stronger ease-out curve than the plain keyword. */
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .ic-bg {
+    position: absolute; left: 0; top: 0;
+    width: 1072px; height: 286px;
+  }
+  .ic-middle {
+    position: absolute;
+    left: 428px; top: 0;
+    width: 216px; height: 286px;
+  }
+  @keyframes ic-middle-bounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.06); }
+    70%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+  .ic-middle.ic-bounce { animation: ic-middle-bounce 400ms ease-out; }
+
+  .ic-portrait {
+    position: absolute;
+    width: 43px; height: 44px;
+    object-fit: cover;
+  }
+  .ic-item-slot {
+    position: absolute;
+    width: 44px; height: 44px;
+    object-fit: contain;
+  }
+  /* No icon element — the background art already has the gold icon baked in
+     per row (home: x 344-359, away: x 712-728, both y = rowTop+14..+30).
+     These boxes cover only the remaining gap space, right up against that
+     icon, text-aligned to sit flush against it. */
+  .ic-gold {
+    position: absolute;
+    height: 44px;
+    display: flex; align-items: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 19px;
+    color: #111;
+    white-space: nowrap;
+  }
+  .ic-gold.ic-gold-home { left: 284px; width: 57px; justify-content: flex-end; }
+  .ic-gold.ic-gold-away { left: 731px; width: 56px; justify-content: flex-start; }
+
+  /* ── [FEATURE: emblem-check] ──────────────────────────────────────
+     Same fixed-clip / sliding-inner pattern as item-check, but the
+     background (assets/ingame/emblemback.png) is a single full-width
+     (1920×286) image — coordinates below are measured directly off
+     that asset (see emblemguide.png).
+     5 cards per side, portrait width 150px, step 160.5px between
+     cards. Home player 1 (furthest from middle) starts at left=27;
+     away player 1 (furthest from middle) starts at left=1749, going
+     inward as player number increases — mirror of home.
+     Per-card local layout (offset from that card's own portrait left
+     edge, portrait width 150):
+       portrait     x0,   y29,  150×88
+       name/role    y118, height 26 — home: role tab x-17 w17, name x33 w117
+                                       away (mirrored): name x0 w117, role tab x150 w17
+       main rune    x50,  y160, 52×52 (centered, same both sides)
+       sub runes    x8/55/102, y223, 40×40 each (centered row, same both sides) */
+  #emblem-check-clip {
+    position: absolute;
+    left: 0; top: 794px; /* full width; bottom flush with the 1080px-tall scene */
+    width: 1920px; height: 286px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #emblem-check-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 1920px; height: 286px;
+    transform: translateY(286px);
+    transition: transform 350ms ease-in;
+  }
+  #emblem-check-overlay.ecc-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .ecc-bg {
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 286px;
+  }
+  .ecc-middle {
+    position: absolute;
+    left: 852px; top: 0;
+    width: 216px; height: 286px;
+  }
+  @keyframes ecc-middle-bounce {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.06); }
+    70%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+  .ecc-middle.ecc-bounce { animation: ecc-middle-bounce 400ms ease-out; }
+
+  .ecc-portrait {
+    position: absolute;
+    width: 150px; height: 88px;
+    object-fit: cover;
+  }
+  .ecc-role-icon {
+    position: absolute;
+    width: 17px; height: 26px;
+    object-fit: contain;
+    filter: brightness(0); /* role/*.png icons are taupe by default — force solid black */
+  }
+  .ecc-name {
+    position: absolute;
+    width: 117px; height: 26px;
+    display: flex;
+    align-items: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .ecc-name.ecc-name-home { justify-content: flex-start; padding-left: 6px; }
+  .ecc-name.ecc-name-away { justify-content: flex-end;   padding-right: 6px; }
+  .ecc-mainrune {
+    position: absolute;
+    width: 52px; height: 52px;
+    object-fit: cover;
+  }
+  .ecc-subrune {
+    position: absolute;
+    width: 40px; height: 40px;
+    object-fit: cover;
+  }
+
+  /* ── [FEATURE: golddiff-check] ──────────────────────────────────────
+     Same fixed-clip / sliding-inner pattern as item-check. Coordinates
+     measured directly off assets/ingame/golddiffback.png (858×286) and
+     golddiffguide.png (for the golddiffsmart chip's position, which
+     sits just above the panel, sharing the same slide so it moves in
+     with everything else). Clip is 858×346 (61px chip + 286px panel,
+     1px overlap) bottom-flush with the 1080px-tall scene, horizontally
+     centered (left 531 = (1920-858)/2).
+     Per row (row tops relative to the panel bg, +60 for chip offset):
+     30,82,133,185,236 (height 32) — same step as emblem-check's
+     portrait rows conceptually, just 5 rows (one per lane) instead
+     of 10 (one per player).
+       home portrait   x63,  w25
+       home bar track  x89,  w271  (fill anchored left, grows toward center)
+       diff zone       x360, w140
+       away bar track  x500, w270  (fill anchored right, grows toward center)
+       away portrait   x770, w25
+     Bar-fill % is each side's share of (home+away) gold — the leading
+     side's bar approaches full width, the trailing side's shrinks
+     toward empty, visualizing the comparison rather than an absolute
+     amount. */
+  #golddiff-check-clip {
+    position: absolute;
+    left: 531px; top: 734px;
+    width: 858px; height: 346px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #golddiff-check-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 858px; height: 346px;
+    transform: translateY(346px);
+    transition: transform 350ms ease-in;
+  }
+  #golddiff-check-overlay.gdc-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .gdc-bg {
+    position: absolute; left: 0; top: 60px;
+    width: 858px; height: 286px;
+  }
+  .gdc-smart {
+    position: absolute;
+    left: 231px; top: 0;
+    width: 396px; height: 61px;
+    overflow: hidden;
+    border-radius: 8px;
+  }
+  .gdc-smart-img {
+    position: absolute; left: 0; top: 0;
+    width: 396px; height: 61px;
+  }
+  .gdc-smart-sheen {
+    position: absolute;
+    top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  @keyframes gdc-sheen-sweep {
+    from { left: -60%; }
+    to   { left: 120%; }
+  }
+  .gdc-smart.gdc-sheen-play .gdc-smart-sheen {
+    animation: gdc-sheen-sweep 650ms ease-out;
+  }
+  @keyframes gdc-smart-bounce {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(0.90); }
+    65%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .gdc-smart.gdc-bounce-play {
+    animation: gdc-smart-bounce 350ms ease-out;
+  }
+
+  .gdc-portrait {
+    position: absolute;
+    width: 25px; height: 32px;
+    object-fit: cover;
+  }
+  .gdc-bar-track {
+    position: absolute;
+    height: 32px;
+    background: #3a3a3a;
+    overflow: hidden;
+  }
+  .gdc-bar-fill {
+    position: absolute;
+    top: 0; height: 100%;
+    width: 0;
+    transition: width 700ms ease-out;
+  }
+  /* Anchored at the diff-zone (center) side, growing outward toward
+     the portrait as the fill increases. */
+  .gdc-bar-fill.gdc-fill-home { right: 0; background: #1E64FF; }
+  .gdc-bar-fill.gdc-fill-away { left: 0;  background: #FF3232; }
+  .gdc-bar-text {
+    position: absolute;
+    top: 0; height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    z-index: 2;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .gdc-bar-text.gdc-text-home { left: 8px; }
+  .gdc-bar-text.gdc-text-away { right: 8px; flex-direction: row-reverse; }
+  .gdc-gold-icon { width: 14px; height: 13px; flex-shrink: 0; }
+
+  .gdc-diffzone {
+    position: absolute;
+    left: 360px; width: 140px; height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #141414;
+    pointer-events: none;
+  }
+  .gdc-tri {
+    font-size: 18.2px; /* 13px + 40% */
+    line-height: 1;
+    opacity: 0;
+    transition: opacity 150ms ease-out;
+  }
+  .gdc-tri.gdc-tri-home { color: #1E64FF; }
+  .gdc-tri.gdc-tri-away { color: #FF3232; }
+  .gdc-tri.gdc-tri-on   { opacity: 1; }
+
+  /* ── [FEATURE: side-check family] ──────────────────────────────────
+     Shared layout for every "side *check" ranking panel (exp, damage
+     taken, and future ones) — same fixed-clip / sliding-inner pattern
+     as item-check, except the slide is horizontal (translateX from
+     the right) instead of vertical. Coordinates measured directly off
+     assets/ingame/sidestatback.png (277×573) and sidestatguide.png.
+     Header band: y0-48, title in Anton, centered.
+     10 rows, ranked as ONE list across all 10 players by whichever
+     stat that panel tracks (not per-team) — home rows stay blue, away
+     rows stay red, but any row can land in any of the 10 slots. Each
+     row is ONE positioned container so it can slide to a new slot
+     (FLIP-animated) when its rank changes, instead of being torn down
+     and rebuilt:
+       portrait    x17, y8,  43×38
+       role icon   x63, y9,  11×11 (black, brightness(0) filter)
+       name        x77, y8,  107×13 (General Sans Bold)
+       bar track (black) x64, y24, 197×22
+       bar fill (color, gradient) + stat text (Anton) inside the track
+     Row top (of the row container, y0 above) for rank 0-9: 60, 110,
+     161, 211, 261, 312, 362, 412, 463, 513 (bar tops 84/134/185/235/
+     285/336/386/436/487/537 minus the 24px portrait offset). */
+  .sidecheck-clip {
+    position: absolute;
+    left: 1643px; top: 218px;
+    width: 277px; height: 573px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  .sidecheck-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 277px; height: 573px;
+    transform: translateX(277px);
+    transition: transform 350ms ease-in;
+  }
+  .sidecheck-overlay.sidecheck-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(0);
+  }
+  .sidecheck-bg {
+    position: absolute; left: 0; top: 0;
+    width: 277px; height: 573px;
+  }
+  .sidecheck-header {
+    position: absolute;
+    left: 0; top: 0;
+    width: 277px; height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 24px;
+    letter-spacing: 0.5px;
+    color: #141414;
+  }
+  .sidecheck-row {
+    position: absolute;
+    left: 0; width: 277px; height: 49px;
+  }
+  .sidecheck-portrait {
+    position: absolute;
+    left: 17px; top: 8px;
+    width: 43px; height: 38px;
+    object-fit: cover;
+  }
+  .sidecheck-role-icon {
+    position: absolute;
+    left: 63px; top: 9px;
+    width: 11px; height: 11px;
+    object-fit: contain;
+    filter: brightness(0);
+  }
+  .sidecheck-name {
+    position: absolute;
+    left: 77px; top: 8px;
+    width: 107px; height: 13px;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+    color: #141414;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  /* Black track (full row width) with a colored fill on top — width
+     is that seat's stat value as a share of the highest value among
+     all 10 players, so it reads as "how far ahead/behind everyone
+     else", not an absolute amount. Fill has a subtle top-to-bottom
+     gradient (darker at the top) for depth. */
+  .sidecheck-bar-track {
+    position: absolute;
+    left: 64px; top: 24px;
+    width: 197px; height: 22px;
+    background: #000;
+    overflow: hidden;
+  }
+  .sidecheck-bar-fill {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    width: 0;
+    transition: width 500ms ease;
+  }
+  .sidecheck-bar-fill.sidecheck-bar-home { background: linear-gradient(to bottom, #0e3d99 0%, #1E64FF 100%); }
+  .sidecheck-bar-fill.sidecheck-bar-away { background: linear-gradient(to bottom, #99201f 0%, #FF3232 100%); }
+  .sidecheck-stat-text {
+    position: absolute;
+    top: 0; right: 6px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    z-index: 2;
+  }
+
+  /* ── [FEATURE: player-ui] ──────────────────────────────────────
+     Per-player card, 1:1 render of assets/ingame/ui/uiblue.png /
+     uired.png (180×89 each) — coordinates measured directly off
+     those assets (see uiguide.png). 5 cards per side, stacked
+     downward with no gap (card height 89px). Away side is the same
+     180-wide local layout mirrored (mirror(x) = 180 - x - width),
+     matching uired.png's pre-mirrored background art. The portrait
+     circle and the thin bar beneath it are intentionally left
+     empty/transparent — no element renders there. */
+  #player-ui-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 1080px;
+    pointer-events: none;
+    z-index: 30;
+    display: none;
+  }
+  .pui-card {
+    position: absolute;
+    width: 180px; height: 89px;
+  }
+  .pui-card.pui-home { left: 0; }
+  .pui-card.pui-away { right: 0; }
+  .pui-bg {
+    position: absolute; left: 0; top: 0;
+    width: 180px; height: 89px;
+  }
+  .pui-level {
+    position: absolute;
+    top: 0; width: 32px; height: 19px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #fff;
+  }
+  .pui-card.pui-home .pui-level { left: 2px; }
+  .pui-card.pui-away .pui-level { left: 146px; }
+  .pui-name {
+    position: absolute;
+    top: 0; width: 130px; height: 19px;
+    display: flex; align-items: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: #fff;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .pui-card.pui-home .pui-name { left: 44px; justify-content: flex-start; padding-left: 4px; }
+  .pui-card.pui-away .pui-name { left: 6px;  justify-content: flex-end;   padding-right: 4px; }
+  .pui-kda {
+    position: absolute;
+    top: 33px; width: 90px; height: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    color: #141414;
+    white-space: nowrap;
+  }
+  .pui-card.pui-home .pui-kda { left: 90px; }
+  .pui-card.pui-away .pui-kda { left: 0; }
+  .pui-gold {
+    position: absolute;
+    top: 57px; width: 90px; height: 16px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #141414;
+    white-space: nowrap;
+  }
+  .pui-card.pui-home .pui-gold { left: 90px; }
+  .pui-card.pui-away .pui-gold { left: 0; }
+  .pui-gold-icon { width: 17px; height: 16px; flex-shrink: 0; }

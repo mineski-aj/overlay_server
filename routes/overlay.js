@@ -97,6 +97,77 @@ router.get('/overlay/fights/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/check-overlays — current shown/hidden state of the
+// sliding "check" overlays, so the dashboard toggle can restore its
+// position on load instead of guessing.
+router.get('/overlay/check-overlays', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.checkOverlays);
+});
+
+// GET /overlay/itemcheck/show
+router.get('/overlay/itemcheck/show', (req, res) => {
+  state.checkOverlays.itemcheck = true;
+  state.overlayClients.forEach(c => { try { c.write('event: itemcheck\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/itemcheck/hide
+router.get('/overlay/itemcheck/hide', (req, res) => {
+  state.checkOverlays.itemcheck = false;
+  state.overlayClients.forEach(c => { try { c.write('event: itemcheck\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/emblemcheck/show
+router.get('/overlay/emblemcheck/show', (req, res) => {
+  state.checkOverlays.emblemcheck = true;
+  state.overlayClients.forEach(c => { try { c.write('event: emblemcheck\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/emblemcheck/hide
+router.get('/overlay/emblemcheck/hide', (req, res) => {
+  state.checkOverlays.emblemcheck = false;
+  state.overlayClients.forEach(c => { try { c.write('event: emblemcheck\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/golddiffcheck/show
+router.get('/overlay/golddiffcheck/show', (req, res) => {
+  state.checkOverlays.golddiffcheck = true;
+  state.overlayClients.forEach(c => { try { c.write('event: golddiffcheck\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/golddiffcheck/hide
+router.get('/overlay/golddiffcheck/hide', (req, res) => {
+  state.checkOverlays.golddiffcheck = false;
+  state.overlayClients.forEach(c => { try { c.write('event: golddiffcheck\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// "Side *check" ranking panels (exp, damage taken, and future ones)
+// all broadcast over ONE shared SSE event — 'sidecheck' — with a
+// `check` field identifying which panel, instead of a separate named
+// event per panel. Keeps the client down to one listener and keeps
+// adding a new side-check down to one array entry.
+const SIDE_CHECK_KEYS = ['sideexpcheck', 'sidetakencheck', 'sidedamagecheck', 'sidegoldcheck'];
+SIDE_CHECK_KEYS.forEach((key) => {
+  router.get(`/overlay/${key}/show`, (req, res) => {
+    state.checkOverlays[key] = true;
+    const payload = JSON.stringify({ check: key, action: 'show' });
+    state.overlayClients.forEach(c => { try { c.write(`event: sidecheck\ndata: ${payload}\n\n`); } catch {} });
+    res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+  });
+
+  router.get(`/overlay/${key}/hide`, (req, res) => {
+    state.checkOverlays[key] = false;
+    const payload = JSON.stringify({ check: key, action: 'hide' });
+    state.overlayClients.forEach(c => { try { c.write(`event: sidecheck\ndata: ${payload}\n\n`); } catch {} });
+    res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+  });
+});
+
 // GET /overlay/fights/pending
 router.get('/overlay/fights/pending', (req, res) => {
   const p = state.fightsPendingAction;
@@ -397,7 +468,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['scoreboard','killevents','items','trinity','swap','lvl15','conceal','fights','debugphotos'];
+const VALID_FEATURES = ['scoreboard','killevents','items','trinity','swap','lvl15','conceal','fights','debugphotos','playerui'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

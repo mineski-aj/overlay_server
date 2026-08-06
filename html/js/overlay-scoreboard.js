@@ -93,6 +93,38 @@
   ms2.id = 'sb-score-c2';
   overlay.appendChild(ms2);
 
+  /* Match info box — regular season / week-day / match-game, pulled from
+     the match board (/match/state), sits just left of the sponsor loop. */
+  var mi = document.createElement('div');
+  mi.id = 'sb-matchinfo';
+  var miLabel = document.createElement('div');
+  miLabel.id = 'sb-mi-label';
+  miLabel.textContent = 'REGULAR SEASON';
+  var miWeek = document.createElement('div');
+  miWeek.id = 'sb-mi-week';
+  var miMatch = document.createElement('div');
+  miMatch.id = 'sb-mi-match';
+  mi.appendChild(miLabel);
+  mi.appendChild(miWeek);
+  mi.appendChild(miMatch);
+  overlay.appendChild(mi);
+
+  /* Patch + casters — transparent, sit directly on the scoreboard art.
+     Patch comes from the match board; casters render as
+     "<mic icon> CASTER1 | CASTER2 | CASTER3". */
+  var miPatch = document.createElement('div');
+  miPatch.id = 'sb-mi-patch';
+  miPatch.innerHTML = '<span class="sb-mi-patch-text"></span>';
+  overlay.appendChild(miPatch);
+
+  var miCasters = document.createElement('div');
+  miCasters.id = 'sb-mi-casters';
+  miCasters.innerHTML = '<svg class="sb-mi-mic" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="currentColor">' +
+    '<path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/>' +
+    '<path d="M19 11a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-2.08A7 7 0 0 0 19 11z"/>' +
+    '</svg><span class="sb-mi-casters-text"></span>';
+  overlay.appendChild(miCasters);
+
   var sbSponBox = document.createElement('div');
   sbSponBox.id = 'sb-sponsor-loop';
   var sbSponImg = document.createElement('img');
@@ -385,6 +417,22 @@ function sbUpdateGoldLead(total1, total2) {
   }
 }
 
+/* ── Shrink-to-fit text (binary search font-size, same technique as
+   fitPlayerName in overlay-core.js) — used by the patch/casters boxes
+   below since their content length varies a lot. ── */
+function sbFitText(el, maxWidth, maxPx) {
+  maxPx = maxPx || 13;
+  el.style.fontSize = maxPx + 'px';
+  if (el.scrollWidth <= maxWidth) return;
+  var lo = 6, hi = maxPx;
+  while (hi - lo > 0.5) {
+    var mid = (lo + hi) / 2;
+    el.style.fontSize = mid + 'px';
+    if (el.scrollWidth <= maxWidth) lo = mid; else hi = mid;
+  }
+  el.style.fontSize = lo + 'px';
+}
+
 /* ── Match score bars ── */
 function sbRenderBars(container, total, scored, fromRight) {
   container.innerHTML = '';
@@ -409,6 +457,24 @@ function sbPollMatchState() {
       var c2Team  = swapped ? home : away;
       sbRenderBars(document.getElementById('sb-score-c1'), maxWins, c1Team.score, true);
       sbRenderBars(document.getElementById('sb-score-c2'), maxWins, c2Team.score, false);
+
+      var miWeek  = document.getElementById('sb-mi-week');
+      var miMatch = document.getElementById('sb-mi-match');
+      if (miWeek)  miWeek.textContent  = 'WEEK '  + (s.week  != null ? s.week  : 1) + ' - DAY '  + (s.day   != null ? s.day   : 1);
+      if (miMatch) miMatch.textContent = 'MATCH ' + (s.match != null ? s.match : 1) + ' - GAME ' + (s.game  != null ? s.game  : 1);
+
+      /* Available widths below are the box width minus its 9px
+         left/right padding (and, for casters, the mic icon + gap). */
+      var miPatchTxt   = document.querySelector('#sb-mi-patch .sb-mi-patch-text');
+      var miCastersTxt = document.querySelector('#sb-mi-casters .sb-mi-casters-text');
+      if (miPatchTxt) {
+        miPatchTxt.textContent = s.patch || '';
+        sbFitText(miPatchTxt, 113, 13);
+      }
+      if (miCastersTxt) {
+        miCastersTxt.textContent = (s.casters || []).filter(Boolean).join(' | ').toUpperCase();
+        sbFitText(miCastersTxt, 241, 13);
+      }
     })
     .catch(function() {});
 }

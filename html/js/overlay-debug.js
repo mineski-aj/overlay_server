@@ -350,10 +350,50 @@ masterPoll();
       var d = JSON.parse(e.data);
       if (d.feature in featureEnabled) featureEnabled[d.feature] = !!d.enabled;
       if (d.feature === 'scoreboard' && typeof sbHandleToggle === 'function') sbHandleToggle(!!d.enabled);
+      if (d.feature === 'playerui' && typeof puiHandleToggle === 'function') puiHandleToggle(!!d.enabled);
     } catch {}
   });
   sse.addEventListener('debugoff', function() {
     var area = document.getElementById('debug-area');
     if (area) area.classList.remove('visible');
+  });
+  sse.addEventListener('itemcheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') icAnimateIn();
+      if (d.action === 'hide') icAnimateOut();
+    } catch {}
+  });
+  sse.addEventListener('emblemcheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') eccAnimateIn();
+      if (d.action === 'hide') eccAnimateOut();
+    } catch {}
+  });
+  sse.addEventListener('golddiffcheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') gdcAnimateIn();
+      if (d.action === 'hide') gdcAnimateOut();
+    } catch {}
+  });
+  /* Shared by every "side *check" ranking panel — one SSE event
+     ('sidecheck') carries a `check` field naming which panel, instead
+     of a dedicated event per panel. Add new side-checks here. */
+  var SIDE_CHECK_HANDLERS = {
+    sideexpcheck:    { in: function () { secAnimateIn(); }, out: function () { secAnimateOut(); } },
+    sidetakencheck:  { in: function () { stcAnimateIn(); }, out: function () { stcAnimateOut(); } },
+    sidedamagecheck: { in: function () { sdcAnimateIn(); }, out: function () { sdcAnimateOut(); } },
+    sidegoldcheck:   { in: function () { sgcAnimateIn(); }, out: function () { sgcAnimateOut(); } },
+  };
+  sse.addEventListener('sidecheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      var h = SIDE_CHECK_HANDLERS[d.check];
+      if (!h) return;
+      if (d.action === 'show') h.in();
+      if (d.action === 'hide') h.out();
+    } catch {}
   });
 })();
