@@ -1,19 +1,67 @@
-/* ── [FEATURE: conceal-overlay] ── */
-(function initConcealRefs() {
-  ['left', 'right'].forEach(side => {
-    const id     = side === 'right' ? 'conceal-overlay-r' : 'conceal-overlay';
-    const offXVal = side === 'right' ? 'translateX(300px)' : 'translateX(-300px)';
-    const el     = document.getElementById(id);
-    el.style.setProperty('--offX', offXVal);
-    concealRefs[side] = {
-      c:    el,
-      cw:   el.querySelector('.conceal-word'),
-      cwi:  el.querySelector('.conceal-word-inner'),
-      aw:   el.querySelector('.activated-word'),
-      img:  el.querySelector('.conceal-circle img'),
-    };
-  });
-})();
+/* ── [FEATURE: conceal-overlay] roaming-boot category "eventer" ──
+   Fires once per camp (home = player 4, away = player 9 — the
+   roamer's slot) when that camp's blessing_gold crosses 1000, i.e.
+   the roam spell tier fully activates. Same evt-clip/evt-card shell
+   and fip-time/evt-item-box layout as first-item-priority: label on
+   top, time activated bottom-left, category icon bottom-right. */
+const CONCEAL_SLOT = { left: 4, right: 9 }; /* which per-player evt slot each side borrows */
+
+function buildConcealOverlay(side) {
+  const i    = CONCEAL_SLOT[side];
+  const home = side === 'left';
+  const pos  = home ? i - 1 : i - 6;
+
+  const clip = document.createElement('div');
+  clip.className = home ? 'evt-clip' : 'evt-clip away';
+  clip.id = `conceal-evt-${side}`;
+  clip.style.left = (home ? EVT_LEFT_HOME : EVT_LEFT_AWAY) + 'px';
+  clip.style.top  = EVT_TOPS[pos] + 'px';
+
+  const card = document.createElement('div');
+  card.className = 'evt-card';
+
+  const bg = document.createElement('img');
+  bg.className = 'evt-bg';
+  bg.src = 'assets/ingame/eventerback.png';
+  bg.alt = '';
+
+  const label = document.createElement('span');
+  label.className = 'evt-label';
+  label.textContent = 'CONCEAL ACTIVATED';
+
+  const time = document.createElement('div');
+  time.className = 'fip-time';
+  const timeNum = document.createElement('span');
+  timeNum.className = 'fip-time-num';
+  timeNum.textContent = '--:--';
+  const timeUnit = document.createElement('span');
+  timeUnit.className = 'fip-time-unit';
+  timeUnit.textContent = 'MIN';
+  time.appendChild(timeNum);
+  time.appendChild(timeUnit);
+
+  const itemBox = document.createElement('div');
+  itemBox.className = 'evt-item-box';
+  itemBox.style.left = '109px';
+  const itemIcon = document.createElement('img');
+  itemIcon.className = 'evt-item-icon';
+  itemIcon.alt = '';
+  const sheen = document.createElement('div');
+  sheen.className = 'evt-sheen';
+  itemBox.appendChild(itemIcon);
+  itemBox.appendChild(sheen);
+
+  card.appendChild(bg);
+  card.appendChild(label);
+  card.appendChild(time);
+  card.appendChild(itemBox);
+  clip.appendChild(card);
+  document.getElementById('scene').insertBefore(clip, document.getElementById('player-ui-overlay'));
+
+  concealRefs[side] = { clip, label, timeNum, itemIcon, sheen };
+}
+
+['left', 'right'].forEach(buildConcealOverlay);
 
 const ROAMING_BOOT_CATS = {
   conceal:   new Set(['1511','3511','3521','3531','3541','3551','3561','3571']),
@@ -52,27 +100,19 @@ function getCampRoamingCategory(camp) {
 }
 
 function resetConceal(side) {
-  const offXVal = side === 'right' ? 'translateX(300px)' : 'translateX(-300px)';
-  const { c, cw, cwi, aw } = concealRefs[side];
-  c.classList.remove('sliding-in', 'sliding-out', 'sliding-out-fade');
-  c.style.animation  = '';
-  c.style.transition = 'none'; c.style.opacity = ''; c.style.transform  = offXVal;
-  c.style.display    = 'none';
-  cw.style.transition = 'none'; cw.style.opacity   = '0';
-  cw.style.transform  = 'translateY(10px)';
-  cwi.style.animation = 'none';
-  aw.style.transition = 'none'; aw.style.opacity   = '0';
-  aw.style.transform  = 'translateY(20px)';
+  const { clip, sheen } = concealRefs[side];
+  clip.classList.remove('evt-in');
+  sheen.classList.remove('sweep');
 }
 
-function triggerConceal(category, side) {
+function triggerConceal(category, side, timeStr) {
   if (side === undefined) side = 'left';
   if (isPlayingConceal[side]) return;
   isPlayingConceal[side] = true;
   const btnId = side === 'right' ? 'conceal-trigger-btn-r' : 'conceal-trigger-btn';
   const btn   = document.getElementById(btnId);
   if (btn) btn.disabled = true;
-  const { c, cw, cwi, aw, img } = concealRefs[side];
+  const { clip, label, timeNum, itemIcon, sheen } = concealRefs[side];
 
   let outerGuard;
   let cleanedUp = false;
@@ -81,39 +121,28 @@ function triggerConceal(category, side) {
     cleanedUp = true;
     clearTimeout(outerGuard);
     resetConceal(side);
+    clip.style.display     = 'none';
     isPlayingConceal[side] = false;
     if (btn) btn.disabled = false;
     playNextQueued(side === 'left' ? 4 : 9);
   };
-  outerGuard = setTimeout(cleanup, 5000);
+  outerGuard = setTimeout(cleanup, 3500);
 
+  label.textContent   = `${CONCEAL_CAT_LABEL[category] || 'CONCEAL'} ACTIVATED`;
+  timeNum.textContent = timeStr || '--:--';
+  itemIcon.src         = CONCEAL_CAT_IMG[category] || '';
   resetConceal(side);
-  c.style.display    = 'block';
-  img.src            = CONCEAL_CAT_IMG[category] || '';
-  cwi.textContent    = CONCEAL_CAT_LABEL[category] || 'CONCEAL';
-  c.style.transform  = '';
-  c.classList.add('sliding-in');
+  clip.style.display = 'block';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    clip.classList.add('evt-in');
+  }));
+
+  setTimeout(() => { sheen.classList.add('sweep'); }, 400);
 
   setTimeout(() => {
-    cw.style.opacity    = '1';
-    cwi.style.animation = 'lvlPunch 0.55s cubic-bezier(0.22,1,0.36,1) forwards, shimmer 0.55s ease forwards';
-  }, 500);
-
-  setTimeout(() => {
-    cwi.style.animation = 'none';
-    cw.style.transition = 'none';
-    cw.style.opacity    = '1'; cw.style.transform = 'translateY(10px)';
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      cw.style.transition = 'transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      cw.style.transform  = 'translateY(0)';
-      aw.style.transition = 'opacity 0.35s ease, transform 0.4s cubic-bezier(0.22,1,0.36,1)';
-      aw.style.opacity    = '1'; aw.style.transform = 'translateY(0)';
-    }));
-  }, 1050);
-
-  setTimeout(() => {
-    slideOut(c, cleanup);
-  }, 3200);
+    clip.classList.remove('evt-in');
+    setTimeout(cleanup, 350);
+  }, 2400);
 }
 
 function buildConcealDebugButtons(playerIdx, side) {
@@ -121,13 +150,15 @@ function buildConcealDebugButtons(playerIdx, side) {
   const rowId     = side === 'right' ? 'conceal-cat-row-r'     : 'conceal-cat-row';
 
   document.getElementById(triggerId).addEventListener('click', async () => {
+    let timeStr = '--:--';
     try {
-      const data  = lastData || await fetchData();
+      const data   = lastData || await fetchData();
       const campId = side === 'left' ? 1 : 2;
-      const camp  = (data.camp_list || []).find(c => c.campid === campId);
-      if (camp) { triggerConceal(getCampRoamingCategory(camp), side); return; }
+      const camp   = (data.camp_list || []).find(c => c.campid === campId);
+      timeStr = formatTime(data.game_time || 0);
+      if (camp) { triggerConceal(getCampRoamingCategory(camp), side, timeStr); return; }
     } catch(e) {}
-    triggerConceal('conceal', side);
+    triggerConceal('conceal', side, timeStr);
   });
 
   const row = document.getElementById(rowId);
@@ -135,12 +166,12 @@ function buildConcealDebugButtons(playerIdx, side) {
     const b = document.createElement('button');
     b.className = 'debug-btn'; b.textContent = CONCEAL_CAT_LABEL[cat];
     b.addEventListener('click', async () => {
+      let timeStr = '--:--';
       try {
         const data = lastData || await fetchData();
-        const r    = getPlayer(data, playerIdx);
-        if (r) { triggerConceal(cat, side); return; }
+        timeStr = formatTime(data.game_time || 0);
       } catch(e) {}
-      triggerConceal(cat, side);
+      triggerConceal(cat, side, timeStr);
     });
     row.appendChild(b);
   });

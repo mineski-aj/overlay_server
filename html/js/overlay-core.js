@@ -1,7 +1,12 @@
 /* ── overlay-core.js ── shared state, polling engine, utilities ── */
 
-const PLAYER_TOPS = [347, 437, 527, 617, 707];
 const DEFAULT_URL = 'https://theapi.dpdns.org/api/sub-info/';
+
+/* Shared "eventer" badge slots (lvl15, first-item-priority, …) —
+   70px box + 19px gap = 89px step, player 1..5. */
+const EVT_TOPS      = [367, 456, 545, 634, 723];
+const EVT_LEFT_HOME = 90;
+const EVT_LEFT_AWAY = 1679; /* 1920 - 90 - 151 */
 
 const TIER3_IDS = new Set([
   '2006','2008','2009','2011','2013','2014',
@@ -66,14 +71,6 @@ const T3_RECIPES = {
   '3212': ['2206','2201'],
 };
 
-const ITEM_SZ   = 65;
-const ITEM_WORK = 260;
-const ITEM_PAD  = 24;
-const WORK_W    = 282;
-const TI_SZ1 = 69, TI_GAP1 = 7;
-const TI_SZ2 = 38, TI_GAP2 = 5;
-const SW_SZ1 = 69, SW_GAP = 20;
-
 const isPlayingLvl    = {};
 const isPlayingItem   = {};
 const itemQueue       = {};
@@ -120,66 +117,6 @@ function preloadHeroImages(data) {
       img.src = `hero/HERO_${r.player.heroid}_KOTAK.png`;
     }
   }
-}
-
-function onceTransitionEnd(el, cb, fallbackMs) {
-  let done = false;
-  let timer = null;
-  const finish = (e) => {
-    if (e && (e.target !== el || e.propertyName !== 'transform')) return;
-    if (done) return;
-    done = true;
-    clearTimeout(timer);
-    el.removeEventListener('transitionend', finish);
-    cb();
-  };
-  el.addEventListener('transitionend', finish);
-  timer = setTimeout(() => {
-    if (done) return;
-    done = true;
-    el.removeEventListener('transitionend', finish);
-    cb();
-  }, fallbackMs);
-}
-
-function onceAnimationEnd(el, cb, fallbackMs) {
-  let done = false;
-  let timer = null;
-  const finish = (e) => {
-    if (e && (e.target !== el || !e.animationName.startsWith('slideOut'))) return;
-    if (done) return;
-    done = true;
-    clearTimeout(timer);
-    el.removeEventListener('animationend', finish);
-    cb();
-  };
-  el.addEventListener('animationend', finish);
-  timer = setTimeout(() => {
-    if (done) return;
-    done = true;
-    el.removeEventListener('animationend', finish);
-    cb();
-  }, fallbackMs);
-}
-
-function slideOut(c, onDone) {
-  let done = false;
-  const finish = () => {
-    if (done) return;
-    done = true;
-    clearTimeout(hard);
-    onDone();
-  };
-  const hard = setTimeout(finish, 600);
-  c.classList.remove('sliding-in', 'sliding-out', 'sliding-out-fade');
-  c.style.animation  = '';
-  c.style.transition = 'none';
-  c.style.transform  = '';
-  c.style.opacity    = '';
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    c.classList.add('sliding-out-fade');
-    onceAnimationEnd(c, finish, 400);
-  }));
 }
 
 function formatTime(s) {
@@ -240,36 +177,22 @@ function playNextQueued(i) {
   const side = i === 4 ? 'left' : i === 9 ? 'right' : null;
   if (trinityQueue[i] && !isPlayingTrinity[i]) {
     const q = trinityQueue[i]; trinityQueue[i] = null;
-    setTimeout(() => triggerTrinity(i, q.heroId, q.t3ItemIds, q.playerName, q.seatNum, q.label), 300);
+    setTimeout(() => triggerTrinity(i, q.t3ItemIds, q.label), 300);
   } else if (swapQueue[i] && !isPlayingSwap[i]) {
     const q = swapQueue[i]; swapQueue[i] = null;
-    setTimeout(() => triggerSwap(i, q.heroId, q.soldId, q.boughtId, q.playerName, q.seatNum), 300);
+    setTimeout(() => triggerSwap(i, q.soldId, q.boughtId), 300);
   } else if (itemQueue[i] && !isPlayingItem[i]) {
     const q = itemQueue[i]; itemQueue[i] = null;
-    setTimeout(() => triggerItem(i, q.heroId, q.recipeIds || [], q.newItemId, q.playerName, q.seatNum || (i <= 5 ? i : i-5)), 300);
+    setTimeout(() => triggerItem(i, q.itemId, q.timeStr), 300);
   } else if (lvl15Queue[i] && !isPlayingLvl[i]) {
     const q = lvl15Queue[i]; lvl15Queue[i] = null;
     setTimeout(() => triggerLvl15(i, q.timeStr, q.heroId), 300);
   } else if (side && concealQueue[side] && !isPlayingConceal[side]) {
-    const cat = concealQueue[side]; concealQueue[side] = null;
-    setTimeout(() => triggerConceal(cat, side), 300);
+    const q = concealQueue[side]; concealQueue[side] = null;
+    setTimeout(() => triggerConceal(q.cat, side, q.timeStr), 300);
   }
 }
 
-const NAME_MAX_W = 133;
-function fitPlayerName(el) {
-  el.style.fontSize = '25px';
-  if (el.scrollWidth <= NAME_MAX_W) return;
-  let lo = 10, hi = 25;
-  while (hi - lo > 0.5) {
-    const mid = (lo + hi) / 2;
-    el.style.fontSize = mid + 'px';
-    if (el.scrollWidth <= NAME_MAX_W) lo = mid; else hi = mid;
-  }
-  el.style.fontSize = lo + 'px';
-}
-
-const DEBUG_RECIPE = ['2301','2002','2101'];
 
 const ROLE_ICONS = {
   1: `role/${encodeURIComponent('EXP LANER')}.png`,

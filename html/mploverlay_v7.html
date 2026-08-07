@@ -8,32 +8,23 @@
 
   <!-- [FEATURE: item-pickup-v2] built dynamically via buildItemOverlay(i) -->
 
-  <!-- [FEATURE: conceal-overlay] camp 1 left -->
-  <div id="conceal-overlay" class="overlay-container left" style="top:617px; transform:translateX(-300px); display:none">
-    <div class="conceal-hero-section">
-      <div class="conceal-circle"><img src="" alt="" /></div>
-    </div>
-    <div class="conceal-text-section">
-      <span class="conceal-word"><span class="conceal-word-inner">CONCEAL</span></span>
-      <span class="activated-word">ACTIVATED</span>
-    </div>
-  </div>
-
-  <!-- [FEATURE: conceal-overlay] camp 2 right -->
-  <div id="conceal-overlay-r" class="overlay-container right" style="top:617px; transform:translateX(300px); display:none">
-    <div class="conceal-hero-section">
-      <div class="conceal-circle"><img src="" alt="" /></div>
-    </div>
-    <div class="conceal-text-section">
-      <span class="conceal-word"><span class="conceal-word-inner">CONCEAL</span></span>
-      <span class="activated-word">ACTIVATED</span>
-    </div>
-  </div>
+  <!-- [FEATURE: conceal-overlay] built dynamically via buildConcealOverlay(side) -->
 
 
   <!-- [FEATURE: kill-events] -->
   <div id="kill-event-overlay">
     <video id="kill-event-video" preload="auto" muted></video>
+    <div id="kill-event-photo-clip">
+      <img id="kill-event-photo" alt="">
+    </div>
+    <div id="kill-event-nametag-clip">
+      <div id="kill-event-nametag-text">
+        <img id="kill-event-role-icon" alt="">
+        <div id="kill-event-name-box">
+          <span id="kill-event-name"></span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- [FEATURE: fight-recap] -->

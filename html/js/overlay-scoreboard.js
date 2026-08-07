@@ -125,6 +125,24 @@
     '</svg><span class="sb-mi-casters-text"></span>';
   overlay.appendChild(miCasters);
 
+  /* Map box — background art + logo + map name, pulled from the match
+     board (/match/state). Map name shrinks to fit via sbFitText since
+     "Expanding Rivers" runs much longer than "Flying Cloud". */
+  var mapBox = document.createElement('div');
+  mapBox.id = 'sb-map';
+  var mapLogo = document.createElement('div');
+  mapLogo.id = 'sb-map-logo';
+  var mapLogoImg = document.createElement('img');
+  mapLogoImg.id  = 'sb-map-logo-img';
+  mapLogoImg.alt = '';
+  mapLogo.appendChild(mapLogoImg);
+  var mapName = document.createElement('div');
+  mapName.id = 'sb-map-name';
+  mapName.innerHTML = '<span class="sb-map-name-text"></span>';
+  mapBox.appendChild(mapLogo);
+  mapBox.appendChild(mapName);
+  overlay.appendChild(mapBox);
+
   var sbSponBox = document.createElement('div');
   sbSponBox.id = 'sb-sponsor-loop';
   var sbSponImg = document.createElement('img');
@@ -417,9 +435,8 @@ function sbUpdateGoldLead(total1, total2) {
   }
 }
 
-/* ── Shrink-to-fit text (binary search font-size, same technique as
-   fitPlayerName in overlay-core.js) — used by the patch/casters boxes
-   below since their content length varies a lot. ── */
+/* ── Shrink-to-fit text (binary search font-size) — used by the
+   patch/casters boxes below since their content length varies a lot. ── */
 function sbFitText(el, maxWidth, maxPx) {
   maxPx = maxPx || 13;
   el.style.fontSize = maxPx + 'px';
@@ -474,6 +491,18 @@ function sbPollMatchState() {
       if (miCastersTxt) {
         miCastersTxt.textContent = (s.casters || []).filter(Boolean).join(' | ').toUpperCase();
         sbFitText(miCastersTxt, 241, 13);
+      }
+
+      var mapVal     = s.map || 'Broken Walls';
+      var mapNameTxt = document.querySelector('#sb-map-name .sb-map-name-text');
+      var mapLogoImg = document.getElementById('sb-map-logo-img');
+      if (mapNameTxt) {
+        mapNameTxt.textContent = mapVal.toUpperCase();
+        sbFitText(mapNameTxt, 169, 26);
+      }
+      if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
+        mapLogoImg.dataset.map = mapVal;
+        mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
       }
     })
     .catch(function() {});

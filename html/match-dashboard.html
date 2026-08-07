@@ -368,9 +368,18 @@
           <button class="btn btn-spin" id="day-plus">+</button>
         </div>
       </div>
-      <div class="meta-field grow">
+      <div class="meta-field" style="flex:1.6;">
         <div class="meta-label">Patch</div>
         <input type="text" id="patch-input" value="Decisive Battle 420">
+      </div>
+      <div class="meta-field" style="flex:1;">
+        <div class="meta-label">Map</div>
+        <select id="map-select">
+          <option value="Broken Walls">Broken Walls</option>
+          <option value="Dangerous Grass">Dangerous Grass</option>
+          <option value="Expanding Rivers">Expanding Rivers</option>
+          <option value="Flying Cloud">Flying Cloud</option>
+        </select>
       </div>
     </div>
 
@@ -529,6 +538,7 @@
     week:    1,
     day:     1,
     patch:   'Decisive Battle 420',
+    map:     'Broken Walls',
     hosts:   ['None', 'None', 'None'],
     casters: ['None', 'None', 'None'],
   };
@@ -659,6 +669,7 @@
     document.getElementById('week-val').textContent   = s.week  || 1;
     document.getElementById('day-val').textContent    = s.day   || 1;
     document.getElementById('patch-input').value      = s.patch || 'Decisive Battle 420';
+    document.getElementById('map-select').value       = s.map   || 'Broken Walls';
     var hosts   = s.hosts   || ['None','None','None'];
     var casters = s.casters || ['None','None','None'];
     [0,1,2].forEach(function (i) {
@@ -1057,6 +1068,12 @@
     function pushPatch() { localState.patch = pi.value; push({ patch: pi.value }); }
     pi.addEventListener('blur', pushPatch);
     pi.addEventListener('keydown', function (e) { if (e.key === 'Enter') { pushPatch(); pi.blur(); } });
+  })();
+
+  /* ── MAP ── */
+  (function () {
+    var ms = document.getElementById('map-select');
+    ms.addEventListener('change', function () { localState.map = ms.value; push({ map: ms.value }); });
   })();
 
   /* ── PANEL TABS ── */

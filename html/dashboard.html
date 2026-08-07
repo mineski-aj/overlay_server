@@ -767,6 +767,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Team Head to Head API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="hexagon-api-input">Base URL</label>
+        <input type="text" id="hexagon-api-input" placeholder="https://theapi.dpdns.org/api/teamh2h/" spellcheck="false" autocomplete="off" />
+        <button id="hexagon-api-apply">Apply</button>
+        <span id="hexagon-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Debug</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -825,6 +837,34 @@
   gameApiApply.addEventListener('click', saveGameApiUrl);
   gameApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGameApiUrl(); });
 
+  /* ── Team Head to Head (Team Hexagon) API URL ─────────────── */
+  var hexApiInput  = document.getElementById('hexagon-api-input');
+  var hexApiApply  = document.getElementById('hexagon-api-apply');
+  var hexApiStatus = document.getElementById('hexagon-api-status');
+
+  fetch('/api/hexagon-url').then(function(r){ return r.json(); }).then(function(d){
+    hexApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveHexagonApiUrl() {
+    var url = hexApiInput.value.trim();
+    fetch('/api/hexagon-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      hexApiStatus.textContent = 'Saved ✓';
+      hexApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ hexApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      hexApiStatus.textContent = 'Error';
+      hexApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  hexApiApply.addEventListener('click', saveHexagonApiUrl);
+  hexApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHexagonApiUrl(); });
+
   document.getElementById('btn-debugoff').addEventListener('click', function() {
     fetch('/overlay/debugoff').catch(function(){});
   });
@@ -834,6 +874,13 @@
     'maniac.webm': 4, 'savage.webm': 5,
     'lordslain.webm': 1, 'turtleslain.webm': 1, 'wipedout.webm': 3,
   };
+
+  /* Kill-event player photo test control — see 'Kill event trigger' below */
+  var keePlayerMode    = 'random';
+  var keSignatureNames = [];
+  fetch('/api/signature-photos').then(function(r){ return r.json(); }).then(function(d) {
+    keSignatureNames = (d && d.names) || [];
+  }).catch(function(){});
 
   /* ── Feature toggle state ────────────────────────────────── */
   var featureStates  = {};
@@ -887,6 +934,69 @@
     fetch('/overlay/' + encodeURIComponent(key) + '/' + (shown ? 'show' : 'hide')).catch(function(){});
   }
 
+  /* ── MPL Full Screen scene state ─────────────────────────────
+     mplfs.html only ever shows one non-board "scene" at a time
+     (state.mplfsScene.activeFeature, mutually exclusive server-side)
+     plus three independent board booleans. Same on/off toggle button
+     as the check overlays above, but the "shown" state has to be
+     derived from that shared scene object instead of a flat map, and
+     re-fetched after every click since switching one scene feature
+     off implicitly switches others off too. */
+  var mplfsSceneState = { matchboard: false, middleboard: false, playerboard: false, activeFeature: null };
+  var mplfsFeatureBtns = {};
+  var MPLFS_BOOL_KEYS = ['matchboard', 'middleboard', 'playerboard'];
+  var MPLFS_ACTIVE_FEATURE_MAP = {
+    post_hearts:    'hearts',
+    post_itemline:  'itemline',
+    post_emblems:   'emblems',
+    post_items:     'items',
+    post_stats:     'stats',
+    post_richguy:   'richguy',
+    waiting_tvc:    'waiting',
+    waiting_lobby:  'lobby',
+    today_schedule: 'schedule',
+    standings:      'standings',
+    team_hexagon:   'hexagon',
+    final_team:     'finalteam',
+  };
+
+  function mplfsFeatureShown(key) {
+    if (MPLFS_BOOL_KEYS.indexOf(key) !== -1) return !!mplfsSceneState[key];
+    var af = MPLFS_ACTIVE_FEATURE_MAP[key];
+    return af ? mplfsSceneState.activeFeature === af : false;
+  }
+
+  function applyMplfsFeatureBtn(key) {
+    var b = mplfsFeatureBtns[key];
+    if (!b) return;
+    var shown = mplfsFeatureShown(key);
+    b.textContent = shown ? '● Showing' : '○ Hidden';
+    b.className   = 'btn btn-toggle ' + (shown ? 'btn-toggle-on' : 'btn-toggle-off');
+  }
+
+  function refreshMplfsFeatureButtons() {
+    Object.keys(mplfsFeatureBtns).forEach(applyMplfsFeatureBtn);
+  }
+
+  function loadMplfsScene() {
+    return fetch('/overlay/mplfs-scene').then(function(r){ return r.json(); }).then(function(d) {
+      mplfsSceneState = d || mplfsSceneState;
+      refreshMplfsFeatureButtons();
+    }).catch(function(){});
+  }
+  loadMplfsScene();
+
+  function toggleMplfsFeature(feat, key, body) {
+    var shown = !mplfsFeatureShown(key);
+    fetch(shown ? feat.show : feat.hide).then(function (r) {
+      if (r.ok && body) {
+        body.classList.remove('flash-ok');
+        void body.offsetWidth;
+        body.classList.add('flash-ok');
+      }
+    }).catch(function(){}).then(loadMplfsScene);
+  }
+
   /* ── Overlay definitions ──────────────────────────────────── */
   var OVERLAYS = [
     {
@@ -914,6 +1024,8 @@
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
         { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide' },
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
+        { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
+        { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
       ],
       extraActions: [
         { label: 'Item In',   action: '/overlay/post_itemline/itemin'  },
@@ -1077,7 +1189,7 @@
     buildControlBody(ov);
     previewTitle.textContent = ov.name;
     previewLabel.textContent = ov.url || ov.file || '';
-    if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : '?t=' + Date.now());
+    if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : ('?t=' + Date.now() + '&preview=1'));
     layout.classList.add('split');
     requestAnimationFrame(scalePreview);
   }
@@ -1278,7 +1390,7 @@
     SLOTS.forEach(function(slot, i) {
       var pid   = i + 1;
       var saved = JSON.parse(localStorage.getItem('ekg_p'+pid) || 'null') || { manualBpm:60, isManual:false };
-      var isManual = !!saved.isManual;
+      var isOff = !!saved.isManual;
 
       var pRow = el('div', '');
       pRow.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:3px;';
@@ -1290,78 +1402,36 @@
       var pidSpan = el('span', '', 'P'+pid);
       pidSpan.style.cssText = 'font-size:9px;color:#555;width:16px;flex-shrink:0;';
 
-      var bpmInput = document.createElement('input');
-      bpmInput.type='number'; bpmInput.min='0'; bpmInput.max='220'; bpmInput.value=saved.manualBpm||60;
-      bpmInput.style.cssText = 'width:42px;height:24px;background:#1e1e1e;border:1px solid #444;color:#eee;font-size:10px;padding:0 4px;border-radius:3px;text-align:center;';
-
       var liveBtn = el('button','','LIVE');
-      var manBtn  = el('button','','MAN');
-      var togBase = 'cursor:pointer;padding:2px 5px;border-radius:3px;font-size:8px;font-weight:bold;white-space:nowrap;border:1px solid;';
+      var offBtn  = el('button','','OFF');
+      var togBase = 'cursor:pointer;padding:2px 8px;border-radius:3px;font-size:8px;font-weight:bold;white-space:nowrap;border:1px solid;';
       function refreshToggles() {
-        liveBtn.style.cssText = togBase + (!isManual ? 'background:#d2001e;color:#fff;border-color:#d2001e;' : 'background:#2a2a2a;color:#777;border-color:#444;');
-        manBtn.style.cssText  = togBase + ( isManual ? 'background:#d2001e;color:#fff;border-color:#d2001e;' : 'background:#2a2a2a;color:#777;border-color:#444;');
+        liveBtn.style.cssText = togBase + (!isOff ? 'background:#d2001e;color:#fff;border-color:#d2001e;' : 'background:#2a2a2a;color:#777;border-color:#444;');
+        offBtn.style.cssText  = togBase + ( isOff ? 'background:#d2001e;color:#fff;border-color:#d2001e;' : 'background:#2a2a2a;color:#777;border-color:#444;');
       }
       refreshToggles();
 
-      liveBtn.addEventListener('click', (function(s, p, bi) { return function() {
-        isManual = false;
-        var bpm = parseInt(bi.value)||60;
-        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:bpm,isManual:false}));
+      liveBtn.addEventListener('click', (function(s, p) { return function() {
+        isOff = false;
+        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:saved.manualBpm||60,isManual:false}));
         refreshToggles();
-        ekgCall('setHrmPlayer', [s, false, bpm]);
-      }; })(slot, pid, bpmInput));
+        ekgCall('setHrmPlayer', [s, false]);
+      }; })(slot, pid));
 
-      manBtn.addEventListener('click', (function(s, p, bi) { return function() {
-        isManual = true;
-        var bpm = parseInt(bi.value)||60;
-        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:bpm,isManual:true}));
+      offBtn.addEventListener('click', (function(s, p) { return function() {
+        isOff = true;
+        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:saved.manualBpm||60,isManual:true}));
         refreshToggles();
-        ekgCall('setHrmPlayer', [s, true, bpm]);
-      }; })(slot, pid, bpmInput));
-
-      bpmInput.addEventListener('change', (function(s, p, bi) { return function() {
-        var bpm = parseInt(bi.value)||60;
-        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:bpm,isManual:isManual}));
-        ekgCall('setHrmPlayer', [s, isManual, bpm]);
-      }; })(slot, pid, bpmInput));
+        ekgCall('setHrmPlayer', [s, true]);
+      }; })(slot, pid));
 
       pRow.appendChild(teamDot);
       pRow.appendChild(pidSpan);
-      pRow.appendChild(bpmInput);
       pRow.appendChild(liveBtn);
-      pRow.appendChild(manBtn);
+      pRow.appendChild(offBtn);
       body.appendChild(pRow);
       playerRows.push({ pid: pid, dot: teamDot });
     });
-
-    body.appendChild(el('div', 'divider'));
-    body.appendChild(el('div', 'features-label', 'Visibility'));
-    var hideKeyPrefix = 'hrm_hide_' + side + '_p';
-    for (var pos = 1; pos <= 5; pos++) {
-      var isHidden = localStorage.getItem(hideKeyPrefix + pos) === '1';
-      var vRow = el('div', '');
-      vRow.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:3px;';
-      var posLabel = el('span', '', 'Slot ' + pos);
-      posLabel.style.cssText = 'font-size:9px;color:#888;width:32px;flex-shrink:0;';
-      var visBtn = el('button', '', isHidden ? 'SHOW' : 'HIDE');
-      var togBase2 = 'cursor:pointer;padding:2px 8px;border-radius:3px;font-size:8px;font-weight:bold;white-space:nowrap;border:1px solid;';
-      (function(p, btn, hidden) {
-        function refreshVis() {
-          btn.textContent   = hidden ? 'SHOW' : 'HIDE';
-          btn.style.cssText = togBase2 + (hidden ? 'background:#d97706;color:#fff;border-color:#d97706;' : 'background:#2a2a2a;color:#777;border-color:#444;');
-        }
-        refreshVis();
-        btn.addEventListener('click', function() {
-          hidden = !hidden;
-          localStorage.setItem(hideKeyPrefix + p, hidden ? '1' : '0');
-          refreshVis();
-          ekgCall('setHrmVisible', [p, !hidden]);
-        });
-      })(pos, visBtn, isHidden);
-      vRow.appendChild(posLabel);
-      vRow.appendChild(visBtn);
-      body.appendChild(vRow);
-    }
 
     function updateSwap() {
       fetch('/match/state', { cache: 'no-store' })
@@ -1463,7 +1533,11 @@
       if (ov.show)       row.appendChild(btn('Show',     'btn-show', function () { hit(ov.show, body); }));
       if (ov.hide)       row.appendChild(btn('Hide',     'btn-hide', function () { hit(ov.hide, body); }));
       if (ov.globalHide) {
-        row.appendChild(btn('Hide All', 'btn-hide', function () { hit(ov.globalHide, body); }));
+        row.appendChild(btn('Hide All', 'btn-hide', function () {
+          fetch(ov.globalHide).then(function (r) {
+            if (r.ok) { body.classList.remove('flash-ok'); void body.offsetWidth; body.classList.add('flash-ok'); }
+          }).catch(function(){}).then(loadMplfsScene);
+        }));
         var ghCb = document.createElement('button');
         ghCb.className = 'btn btn-copy';
         ghCb.innerHTML = '<span class="copy-icon">⧉</span>';
@@ -1606,7 +1680,14 @@
       var keTrigger = el('button', 'killevent-trigger', '▶ Trigger');
       keTrigger.addEventListener('click', function() {
         var video = keSelect.value;
-        fetch('/overlay/killevent?video=' + encodeURIComponent(video)).catch(function(){});
+        var url = '/overlay/killevent?video=' + encodeURIComponent(video);
+        if (keePlayerMode === 'random' && keSignatureNames.length) {
+          var name = keSignatureNames[Math.floor(Math.random() * keSignatureNames.length)];
+          var role = 1 + Math.floor(Math.random() * 5); /* 1=EXP 2=JUNGLE 3=MID 4=ROAM 5=GOLD */
+          var camp = Math.random() < 0.5 ? 'blue' : 'red';
+          url += '&playerName=' + encodeURIComponent(name) + '&role=' + role + '&camp=' + camp;
+        }
+        fetch(url).catch(function(){});
         body.classList.remove('flash-ok');
         void body.offsetWidth;
         body.classList.add('flash-ok');
@@ -1615,6 +1696,25 @@
       keRow.appendChild(keSelect);
       keRow.appendChild(keTrigger);
       body.appendChild(keRow);
+
+      /* Player photo source for the kill-event popup — 'Random Test' pulls a
+         random name from photos/SIGNATURE/ on each trigger; 'Live API' is the
+         hook point for wiring the real acting player once gamedata supplies one
+         (currently a no-op: triggers without a playerName, so no photo shows). */
+      body.appendChild(el('div', 'features-label', 'Kill Event Player Photo'));
+      var kePhotoRow = el('div', 'btn-row');
+      var keBtnLive   = el('button', 'btn btn-action', 'Live API');
+      var keBtnRandom = el('button', 'btn btn-action', 'Random Test');
+      function keApplyStyle(mode) {
+        keBtnLive.style.cssText   = mode === 'live'   ? 'background:#001a00;color:#0a9200;border-color:#0a9200;' : '';
+        keBtnRandom.style.cssText = mode === 'random' ? 'background:#1a1200;color:#ffcc00;border-color:#ffcc00;' : '';
+      }
+      keBtnLive.addEventListener('click', function() { keePlayerMode = 'live'; keApplyStyle('live'); });
+      keBtnRandom.addEventListener('click', function() { keePlayerMode = 'random'; keApplyStyle('random'); });
+      keApplyStyle(keePlayerMode);
+      kePhotoRow.appendChild(keBtnLive);
+      kePhotoRow.appendChild(keBtnRandom);
+      body.appendChild(kePhotoRow);
     }
 
     /* Sub-features */
@@ -1625,8 +1725,17 @@
         var fr = el('div', 'feature-row');
         fr.appendChild(el('div', 'feature-name', feat.name));
         var fb = el('div', 'feature-btns');
-        if (feat.show) fb.appendChild(btn('Show', 'btn-show', function () { hit(feat.show, body); }));
-        if (feat.hide) fb.appendChild(btn('Hide', 'btn-hide', function () { hit(feat.hide, body); }));
+        if (feat.show && feat.hide) {
+          var key = feat.show.split('/')[2];
+          var tb = el('button', 'btn btn-toggle btn-toggle-off', '○ Hidden');
+          tb.addEventListener('click', (function (f, k) { return function () { toggleMplfsFeature(f, k, body); }; })(feat, key));
+          mplfsFeatureBtns[key] = tb;
+          applyMplfsFeatureBtn(key);
+          fb.appendChild(tb);
+        } else {
+          if (feat.show) fb.appendChild(btn('Show', 'btn-show', function () { hit(feat.show, body); }));
+          if (feat.hide) fb.appendChild(btn('Hide', 'btn-hide', function () { hit(feat.hide, body); }));
+        }
         if (feat.show) {
           var csb = document.createElement('button');
           csb.className = 'btn btn-copy';
@@ -2538,7 +2647,7 @@
 
   function loadIframe(config) {
     editIfLoaded = false;
-    editIframe.src = '/html/' + config.file + '?t=' + Date.now();
+    editIframe.src = '/html/' + config.file + '?t=' + Date.now() + '&preview=1';
     editIframe.addEventListener('load', function() {
       editIfLoaded = true;
       applyToEditIframe();

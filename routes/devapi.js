@@ -63,6 +63,21 @@ router.post('/api/game-url', (req, res) => {
 
 // Player photo manifest — returns available filenames per pose for client-side lookup
 const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
+
+// GET /api/signature-photos — player names (igns) with a SIGNATURE cutout
+// available in photos/SIGNATURE/, e.g. for the kill-event photo popup.
+// Filename convention: <ign>_SIGNATURE_resized.png
+router.get('/api/signature-photos', (req, res) => {
+  try {
+    const names = fs.readdirSync(path.join(PHOTOS_DIR, 'SIGNATURE'))
+      .filter(f => f.endsWith('_SIGNATURE_resized.png'))
+      .map(f => f.slice(0, -'_SIGNATURE_resized.png'.length));
+    res.set('Cache-Control', 'no-store').json({ names });
+  } catch (e) {
+    res.status(500).json({ names: [] });
+  }
+});
+
 router.get('/api/photo-manifest', (req, res) => {
   try {
     const poses = ['VICTORY', 'DEFEAT'];
@@ -110,6 +125,39 @@ router.get('/api/gamedata-proxy', async (req, res) => {
     const gameUrl = (stored.url || '').trim();
     if (!gameUrl) return res.status(404).json({ error: 'no game URL configured' });
     const r = await fetch(gameUrl);
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// Team Head to Head (Team Hexagon) API base URL — GET to read, POST { url } to update
+const HEXAGON_URL_FILE    = path.join(__dirname, '..', 'hexagon_api_url.json');
+const HEXAGON_URL_DEFAULT = 'https://theapi.dpdns.org/api/teamh2h/';
+
+router.get('/api/hexagon-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: HEXAGON_URL_DEFAULT });
+  }
+});
+
+router.post('/api/hexagon-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(HEXAGON_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the Team Head to Head API and returns JSON, avoids browser CORS issues
+router.get('/api/hexagon-data', async (req, res) => {
+  try {
+    let stored;
+    try { stored = JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
+    const url = (stored.url || HEXAGON_URL_DEFAULT).trim();
+    const r = await fetch(url);
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);

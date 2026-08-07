@@ -33,6 +33,11 @@ function puiBuildCard(i) {
   card.className = 'pui-card pui-' + side;
   card.style.top = top + 'px';
 
+  const emblem = document.createElement('img');
+  emblem.className = 'pui-emblem';
+  emblem.alt = '';
+  card.appendChild(emblem);
+
   const bg = document.createElement('img');
   bg.className = 'pui-bg';
   bg.src = side === 'home' ? 'assets/ingame/ui/uiblue.png' : 'assets/ingame/ui/uired.png';
@@ -64,7 +69,7 @@ function puiBuildCard(i) {
   goldRow.appendChild(goldText);
   card.appendChild(goldRow);
 
-  puiRefs[i] = { level, nameInner, kda, goldText };
+  puiRefs[i] = { level, nameInner, kda, goldText, emblem };
   return card;
 }
 
@@ -102,6 +107,10 @@ function puiUpdate(data) {
 
     ref.kda.textContent = `${p.kill_num || 0}/${p.dead_num || 0}/${p.assist_num || 0}`;
     ref.goldText.textContent = puiFormatGold(p.gold);
+
+    const emblemUrl = eccRuneUrl(p.rune_map_3 || (p.rune_map || {})['3']);
+    if (emblemUrl) ref.emblem.src = emblemUrl;
+    else            ref.emblem.removeAttribute('src');
   }
 }
 registerPollHandler(puiUpdate);

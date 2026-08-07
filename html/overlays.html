@@ -385,10 +385,10 @@
 
     /* Load iframe (lazy, once per file) */
     if (!loadedFiles[ov.file]) {
-      previewIframe.src = ov.file;
+      previewIframe.src = ov.file + '?preview=1';
       loadedFiles[ov.file] = true;
     } else if (previewIframe.src.indexOf(ov.file) === -1) {
-      previewIframe.src = ov.file;
+      previewIframe.src = ov.file + '?preview=1';
     }
 
     previewTitle.textContent = ov.name;

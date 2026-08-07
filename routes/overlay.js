@@ -241,6 +241,34 @@ router.get('/overlay/waiting_lobby/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/team_hexagon/show
+router.get('/overlay/team_hexagon/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'hexagon';
+  state.overlayClients.forEach(c => { try { c.write('event: team_hexagon\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/team_hexagon/hide
+router.get('/overlay/team_hexagon/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: team_hexagon\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/final_team/show
+router.get('/overlay/final_team/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'finalteam';
+  state.overlayClients.forEach(c => { try { c.write('event: final_team\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/final_team/hide
+router.get('/overlay/final_team/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: final_team\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/today_schedule/show
 router.get('/overlay/today_schedule/show', (req, res) => {
   state.mplfsScene.activeFeature = 'schedule';
@@ -493,9 +521,13 @@ router.get('/overlay/killevent', (req, res) => {
     return res.status(400).json({ ok: false, error: 'unknown video' });
   }
   const priority = KILL_EVENT_PRIORITIES[video];
-  const payload = JSON.stringify({ video, priority, playerIdx: null, playerName: null });
+  const playerName = req.query.playerName ? String(req.query.playerName) : null;
+  const roleNum = parseInt(req.query.role, 10);
+  const role = roleNum >= 1 && roleNum <= 5 ? roleNum : null;
+  const camp = req.query.camp === 'red' || req.query.camp === 'blue' ? req.query.camp : null;
+  const payload = JSON.stringify({ video, priority, playerIdx: null, playerName, role, camp });
   state.overlayClients.forEach(c => { try { c.write(`event: killevent\ndata: ${payload}\n\n`); } catch {} });
-  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, video });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, video, playerName, role, camp });
 });
 
 // GET/POST /overlay/:slot — generic show/hide slot handler (must be LAST)

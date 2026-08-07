@@ -127,6 +127,21 @@
       z-index: 0;
       pointer-events: none;
     }
+    /* Shared background video for the 5 scenes below — two stacked layers
+       (crossfade between different files, see showSceneVideo), both
+       sitting directly above #bg-video (same z-index, later in DOM = on
+       top); #bg-video shows through whenever neither layer is visible. */
+    #scene-video-0, #scene-video-1 {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      object-fit: cover;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 400ms ease;
+      pointer-events: none;
+    }
+    #scene-video-0.sv-visible, #scene-video-1.sv-visible { opacity: 1; }
 
     /* ── POST EMBLEMS PAGE ── */
     #post-emblems-page {
@@ -292,18 +307,12 @@
       width: 1920px; height: 1080px;
       display: none;
       overflow: hidden;
-      background: #000;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
       opacity: 0;
       transition: opacity 400ms ease;
     }
     #waiting-screen-page.ws-on { display: block; }
     #waiting-screen-page.ws-visible { opacity: 1; }
-    #waiting-screen-page video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
     /* ── WAITING LOBBY PAGE ── */
     #waiting-lobby-page {
       position: absolute;
@@ -311,18 +320,12 @@
       width: 1920px; height: 1080px;
       display: none;
       overflow: hidden;
-      background: #000;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
       opacity: 0;
       transition: opacity 400ms ease;
     }
     #waiting-lobby-page.wl-on { display: block; }
     #waiting-lobby-page.wl-visible { opacity: 1; }
-    #waiting-lobby-page video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
     #wl-header {
       position: absolute;
       left: 40px; top: 80px;
@@ -487,6 +490,281 @@
     .wl-slide-el.wl-slide-out { opacity: 0; transform: translateY(28px); }
     .wl-slide-el.wl-slide-in  { opacity: 0; transform: translateY(-28px); }
     .wl-slide-el.wl-no-transition { transition: none !important; }
+    /* ── TEAM HEXAGON PAGE ── */
+    #team-hexagon-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #team-hexagon-page.th-on { display: block; }
+    #team-hexagon-page.th-visible { opacity: 1; }
+    /* Player cutouts bleed off the left/right edges — same hires source +
+       cross-fade cycle as the Waiting Lobby (see startThPlayerCycle), just
+       shifted further out toward the canvas edges for this scene's look. */
+    .th-player { position: absolute; }
+    .th-player-blue { left: -240px; top: 0; width: 1080px; height: 1080px; z-index: 1; }
+    .th-player-red  { left: 1080px; top: 0; width: 1080px; height: 1080px; z-index: 1; }
+    .th-player-photo {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+      object-position: 50% 0%;
+      display: block;
+      opacity: 0;
+    }
+    .th-teambox { position: absolute; width: 355px; height: 86px; z-index: 4; }
+    .th-teambox-blue { left: 505px;  top: 64px; }
+    .th-teambox-red  { left: 1060px; top: 64px; }
+    .th-teambox img.th-teambox-bg { position: absolute; left: 0; top: 0; width: 355px; height: 86px; }
+    .th-teambox-logo { position: absolute; top: 14px; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; }
+    .th-teambox-blue .th-teambox-logo { left: 26px; }
+    .th-teambox-red  .th-teambox-logo { left: 271px; }
+    .th-teambox-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .th-teambox-name {
+      position: absolute; top: 0; height: 86px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 59px; color: #fff;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .th-teambox-blue .th-teambox-name { left: 100px; width: 240px; }
+    .th-teambox-red  .th-teambox-name { left: 15px;  width: 240px; }
+    /* Radar sits in a 600×600 local box (cx=300,cy=300,R=250 in buildThRadar)
+       centered on the canvas — see buildThRadar for the SVG + axis labels. */
+    #th-radar { position: absolute; left: 660px; top: 180px; width: 600px; height: 600px; z-index: 2; }
+    /* Fixed width shared by the name + both value rows — this is what keeps
+       the blue/red chips lined up under each other: the row's total box is
+       constant regardless of alignment (left/center) or how wide the
+       percentage text is, so only the chip's fixed 14px slot ever matters.
+       Per the reference, EVERY axis (left-of-chart or right-of-chart) is
+       left-aligned text — only the top/bottom axes are centered. */
+    .th-axis { position: absolute; width: 150px; text-align: left; font-family: 'General Sans', sans-serif; }
+    /* GAME WIN RATE % / TOWER TAKE % sit right at the top/bottom vertex with
+       little vertical room before the team boxes / title bar — stacking
+       name+blue+red as 3 lines clips those neighbors, so for these two the
+       chips sit beside the name (one row) instead of stacked below it. */
+    .th-axis.th-axis-center { text-align: center; width: auto; white-space: nowrap; }
+    .th-axis-row { display: flex; align-items: center; gap: 10px; }
+    .th-axis-valcol { display: flex; flex-direction: column; gap: 0; }
+    .th-axis-valcol .th-axis-val { margin-top: 0; }
+    .th-axis-name { font-weight: 800; font-size: 19px; line-height: 1.15; color: #0a0a0a; text-transform: uppercase; white-space: nowrap; }
+    /* Explicit width (rather than relying on block-fill/flex-stretch, which
+       differ between the stacked side layout and the .th-axis-row/valcol
+       layout) so every axis's backer is the same "full length" regardless
+       of which of the two layouts it's rendered in. */
+    .th-axis-val {
+      display: flex; align-items: center; gap: 6px; width: 150px; font-weight: 800; font-size: 20px; white-space: nowrap; margin-top: 4px;
+      background: #fff; padding: 1px 5px; border-radius: 2px; box-sizing: border-box;
+    }
+    .th-axis-chip { width: 14px; height: 14px; flex: 0 0 auto; }
+    /* Fixed-width value text so the chip+value unit's total width never
+       changes between the blue/red rows — without this, a wider or
+       narrower percentage would nudge the chip out of alignment. */
+    .th-axis-num { display: inline-block; width: 58px; text-align: left; }
+    .th-axis-val-blue { color: #1656d5; }
+    .th-axis-val-red  { color: #d92027; }
+    .th-axis-chip-blue { background: #1656d5; }
+    .th-axis-chip-red  { background: #d92027; }
+    #th-title { position: absolute; left: 589px; top: 795px; width: 743px; height: 90px; z-index: 3; }
+    #th-title-bg { position: absolute; left: 0; top: 0; width: 743px; height: 90px; }
+    #th-title-text {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 44px; color: #0a0a0a;
+      text-transform: uppercase; letter-spacing: 0.02em;
+    }
+    /* overflow:hidden clips the name/logo to the plate's own bounds, so the
+       slide transition (translateY in .th-slide-el) wipes cleanly through
+       the box edges instead of the incoming/outgoing text floating visibly
+       outside the plate mid-animation. */
+    .th-namebox { position: absolute; width: 347px; height: 62px; font-family: 'Anton', sans-serif; z-index: 3; overflow: hidden; }
+    .th-namebox-blue { left: 162px;  top: 790px; }
+    .th-namebox-red  { left: 1411px; top: 790px; }
+    .th-namebox img.th-namebox-bg { position: absolute; left: 0; top: 0; width: 347px; height: 62px; }
+    .th-namebox-logo {
+      position: absolute; top: 0; width: 62px; height: 62px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .th-namebox-blue .th-namebox-logo { left: 6px; }
+    .th-namebox-red  .th-namebox-logo { right: 6px; }
+    .th-namebox-logo img { width: 40px; height: 40px; object-fit: contain; filter: brightness(0); } /* role/*.png icons are taupe by default — force solid black */
+    .th-namebox-name {
+      position: absolute; top: 0; width: 285px; height: 62px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700;
+      font-size: 28px; color: #fff;
+      text-transform: uppercase; white-space: nowrap;
+      text-align: center;
+    }
+    .th-namebox-blue .th-namebox-name { left: 62px; }
+    .th-namebox-red  .th-namebox-name { left: 0; }
+    /* Same scoreboard-style rotation as the Waiting Lobby's .wl-slide-el. */
+    .th-slide-el { transition: opacity 260ms ease, transform 260ms ease; }
+    .th-slide-el.th-slide-out { opacity: 0; transform: translateY(28px); }
+    .th-slide-el.th-slide-in  { opacity: 0; transform: translateY(-28px); }
+    .th-slide-el.th-no-transition { transition: none !important; }
+    /* Flat light panel behind the bottom stat bars (see hexagonguide.png) —
+       the player photo is sandwiched between the video background and this
+       panel, so the panel sits ABOVE the photo and crops it at this edge. */
+    #th-bottom-panel {
+      position: absolute; left: 0; top: 880px; width: 1920px; height: 152px;
+      background: #f4f4f5; z-index: 2;
+    }
+    #th-bars {
+      position: absolute; left: 300px; top: 900px; width: 1320px; height: 120px;
+      display: flex; align-items: center; gap: 24px; z-index: 3;
+    }
+    .th-bar-col { flex: 1; display: flex; flex-direction: column; gap: 14px; }
+    .th-bar-divider { width: 2px; align-self: stretch; margin: 4px 0; background: #0a0a0a; }
+    .th-bar-row { display: flex; align-items: center; gap: 16px; height: 32px; }
+    .th-bar-row-rev { flex-direction: row-reverse; }
+    .th-bar-label {
+      width: 160px; flex: 0 0 auto;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 20px;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    .th-bar-row .th-bar-label { text-align: left; }
+    .th-bar-row-rev .th-bar-label { text-align: right; }
+    .th-bar {
+      position: relative; flex: 1; height: 32px;
+      display: flex; border-radius: 2px; overflow: hidden;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 18px; color: #fff;
+    }
+    .th-bar-seg { display: flex; align-items: center; height: 100%; white-space: nowrap; }
+    .th-bar-seg:first-child { justify-content: flex-start; padding-left: 10px; }
+    .th-bar-seg:last-child  { justify-content: flex-end;   padding-right: 10px; }
+    /* Vertical gradient depth — darker at the top, true color at the bottom. */
+    .th-bar-seg-blue { background: linear-gradient(to bottom, #0b3a94 0%, #1656d5 100%); }
+    .th-bar-seg-red  { background: linear-gradient(to bottom, #8f0d12 0%, #d92027 100%); }
+    /* ── FINAL TEAM PAGE ── */
+    #final-team-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #final-team-page.ft-on { display: block; }
+    #final-team-page.ft-visible { opacity: 1; }
+
+    .ft-teambox { position: absolute; width: 446px; height: 108px; z-index: 4; }
+    .ft-teambox-blue { left: 196px;  top: 109px; }
+    .ft-teambox-red  { left: 1278px; top: 109px; }
+    .ft-teambox img.ft-teambox-bg { position: absolute; left: 0; top: 0; width: 446px; height: 108px; }
+    .ft-teambox-logo {
+      position: absolute; top: 14px; width: 80px; height: 80px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ft-teambox-blue .ft-teambox-logo { left: 24px; }
+    .ft-teambox-red  .ft-teambox-logo { left: 342px; }
+    .ft-teambox-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .ft-teambox-name {
+      position: absolute; top: 0; width: 210px; height: 108px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 71px; color: #fff;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .ft-teambox-blue .ft-teambox-name { left: 145px; }
+    .ft-teambox-red  .ft-teambox-name { left: 91px; }
+
+    /* Series score, "bar form" — same pip pattern as the in-game
+       scoreboard's #sb-score-c1/c2 (see overlay-scoreboard.js) — lives
+       inside the team box itself, opposite the logo (right edge for blue,
+       left edge for red), not a separate element. */
+    .ft-teambox-scorebar {
+      position: absolute; top: 29px; width: 90px; height: 50px;
+      display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .ft-teambox-blue .ft-teambox-scorebar { left: 362px; }
+    .ft-teambox-red  .ft-teambox-scorebar { left: -6px; }
+    /* Sits directly on the team's own colored fill, so pips use white
+       (won) vs. opaque dark grey (not yet) instead of the in-game
+       version's brand-blue/red-on-white scheme. */
+    .ft-score-bar { width: 9px; height: 100%; background: #3a3a3a; flex-shrink: 0; }
+    .ft-score-bar.filled { background: #fff; }
+
+    /* Match bar — bicolor strip between the team boxes and the card row;
+       shows which match this lineup is for (dashboard Match Board state). */
+    #ft-matchbar { position: absolute; left: 614px; top: 272px; width: 692px; height: 39px; z-index: 4; }
+    #ft-matchbar-bg { position: absolute; left: 0; top: 0; width: 692px; height: 39px; }
+    .ft-matchbar-label, .ft-matchbar-series {
+      position: absolute; top: 0; height: 39px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 16px;
+      text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+    }
+    .ft-matchbar-label  { left: 22px; width: 400px; color: #fff; justify-content: center; }
+    .ft-matchbar-series { right: 24px; left: auto; width: 200px; justify-content: center; color: #0a0a0a; }
+
+    /* Player cards — 10 across (5 blue toward center, then 5 red mirrored
+       away from center), built dynamically by buildFtCards(). Card-local
+       coordinates: hero draft webm fills the whole card behind everything;
+       the player photo covers the lower ~3/5 in front of it; the team-logo
+       badge and spell icon sit in the strip just above the name bar. */
+    #ft-cards { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 2; }
+    .ft-card {
+      position: absolute; top: 320px; width: 183px; height: 650px;
+      overflow: hidden;
+    }
+    .ft-card-hero {
+      position: absolute;
+      left: 0;
+      top: 0px;
+      width: 183px;
+      height: 384px;
+      object-fit: cover;
+      z-index: 1;
+      background: #111;
+    }
+    /* Fader sandwiched between the hero webm and the player photo — tinted
+       per side (see ftBuildCardHtml/hue-rotate below), scaled to the full
+       card even though its own native size doesn't match it exactly. */
+    .ft-card-fader {
+      position: absolute; left: 0; top: 0; width: 183px; height: 650px;
+      z-index: 2; pointer-events: none;
+      filter: saturate(0.85); /* -15% saturation, both sides */
+    }
+    /* The asset's native color is blue — left (home) side keeps it as-is,
+       right (away) side recolors it to red. Always left=blue/right=red
+       regardless of which team that happens to be. */
+    .ft-card-fader.ft-red { filter: saturate(0.85) hue-rotate(120deg); }
+    .ft-card-photo {
+      position: absolute; left: 0; top: 210px; width: 183px; height: 380px;
+      object-fit: cover; object-position: 50% 15%; z-index: 3;
+    }
+    /* Spell icon — horizontally centered on the card (the role icon sits
+       on the name bar itself, below; no team logo on this card). */
+    .ft-card-spell {
+      position: absolute; left: 66.5px; top: 528px; width: 50px; height: 50px;
+      border-radius: 50%; object-fit: cover; z-index: 4;
+    }
+    .ft-card-name {
+      position: absolute; left: 0; top: 590px; width: 183px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px; color: #fff;
+      text-transform: uppercase; white-space: nowrap; z-index: 4;
+    }
+    .ft-card-name.ft-blue { background: #1656d5; }
+    .ft-card-name.ft-red  { background: #d92027; }
+    /* Role icon — square, white, on its own backing plate matching the
+       name bar's own color (blue for home, red for away). */
+    .ft-card-role {
+      position: absolute; top: 556px; width: 34px; height: 34px; z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ft-card-role.ft-blue { left: 0px; background: #1656d5; }
+    .ft-card-role.ft-red  { right: 0px; background: #d92027; }
+    /* Filter goes on the icon itself, not the box — putting it on
+       .ft-card-role would also whiten the colored background behind it. */
+    .ft-card-role img { width: 70%; height: 70%; object-fit: contain; filter: brightness(0) invert(1); }
+
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
       position: absolute;
@@ -494,18 +772,12 @@
       width: 1920px; height: 1080px;
       display: none;
       overflow: hidden;
-      background: #000;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
       opacity: 0;
       transition: opacity 400ms ease;
     }
     #today-schedule-page.ts-on { display: block; }
     #today-schedule-page.ts-visible { opacity: 1; }
-    #today-schedule-page video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
     /* ── STANDINGS PAGE ── */
     #standings-page {
       position: absolute;
@@ -513,18 +785,12 @@
       width: 1920px; height: 1080px;
       display: none;
       overflow: hidden;
-      background: #000;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
       opacity: 0;
       transition: opacity 400ms ease;
     }
     #standings-page.st-on { display: block; }
     #standings-page.st-visible { opacity: 1; }
-    #standings-page video {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
     /* Standings — title block (asset bakes season text + blank week/day chip) */
     #st-header {
       position: absolute;
@@ -1268,6 +1534,26 @@
       </div>
     </div>
 
+    <!-- TEAM HEXAGON -->
+    <div class="feature-card">
+      <div class="feature-card-label">Team Hexagon</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showTeamHexagon()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideTeamHexagon()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-hexagon" onclick="toggleLocalPreview('hexagon', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- FINAL TEAM -->
+    <div class="feature-card">
+      <div class="feature-card-label">Final Team</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showFinalTeam()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideFinalTeam()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-finalteam" onclick="toggleLocalPreview('finalteam', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- TODAY'S SCHEDULE -->
     <div class="feature-card">
       <div class="feature-card-label">Today's Schedule</div>
@@ -1331,10 +1617,19 @@
   <!-- ── BROADCAST CANVAS ── -->
   <div id="canvas">
     <video id="bg-video" src="/assets/bgloop.webm" autoplay loop muted playsinline></video>
+    <!-- Shared background for the 5 video-backed scenes below (Waiting
+         Screen TVC, Waiting Lobby, Team Hexagon, Today's Schedule,
+         Standings) — two stacked layers (crossfade pattern, same idea as
+         the waiting-lobby/hexagon player photo swap) instead of one video
+         per scene: switching to a scene using the SAME file just keeps it
+         playing untouched (no reload); switching to a DIFFERENT file
+         crossfades from the old layer to the new one instead of cutting.
+         See showSceneVideo/SCENE_VIDEO_SRC. -->
+    <video id="scene-video-0" loop muted playsinline preload="auto"></video>
+    <video id="scene-video-1" loop muted playsinline preload="auto"></video>
     <!-- post_hearts containers injected by JS -->
     <div id="post-richguy-page"></div>
     <div id="waiting-screen-page">
-      <video id="ws-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
       <div id="ws-header">
         <img src="/assets/Waiting Screen TVC/S18_Header.png" alt="MPL Philippines — Season 18 Regular Season">
         <div id="ws-week-label">WEEK 8 DAY 3</div>
@@ -1350,7 +1645,6 @@
       <img id="ws-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
     </div>
     <div id="waiting-lobby-page">
-      <video id="wl-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
       <div id="wl-header">
         <img src="/assets/Waiting Lobby/MPL Header.png" alt="MPL Philippines">
         <div id="wl-week-label">WEEK 8 DAY 3</div>
@@ -1380,8 +1674,78 @@
         <div class="wl-namebox-name wl-slide-el" id="wl-red-name"></div>
       </div>
     </div>
+    <div id="team-hexagon-page">
+      <div id="th-bottom-panel"></div>
+      <div class="th-player th-player-blue">
+        <img class="th-player-photo" id="th-blue-photo-0" src="" alt="">
+        <img class="th-player-photo" id="th-blue-photo-1" src="" alt="">
+      </div>
+      <div class="th-player th-player-red">
+        <img class="th-player-photo" id="th-red-photo-0" src="" alt="">
+        <img class="th-player-photo" id="th-red-photo-1" src="" alt="">
+      </div>
+      <div class="th-teambox th-teambox-blue">
+        <img class="th-teambox-bg" src="/assets/hexagon/hexagonteambackblue.png" alt="">
+        <div class="th-teambox-logo"><img id="th-blue-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="th-teambox-name" id="th-blue-team-name"></div>
+      </div>
+      <div class="th-teambox th-teambox-red">
+        <img class="th-teambox-bg" src="/assets/hexagon/hexagonteambackred.png" alt="">
+        <div class="th-teambox-logo"><img id="th-red-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="th-teambox-name" id="th-red-team-name"></div>
+      </div>
+      <div id="th-radar"></div>
+      <div id="th-title">
+        <img id="th-title-bg" src="/assets/hexagon/hexagontitle.png" alt="">
+        <span id="th-title-text">TEAM HEAD TO HEAD</span>
+      </div>
+      <div class="th-namebox th-namebox-blue">
+        <img class="th-namebox-bg" src="/assets/hexagon/hexagonnamebackblue.png" alt="">
+        <div class="th-namebox-logo"><img class="th-slide-el" id="th-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="th-namebox-name th-slide-el" id="th-blue-name"></div>
+      </div>
+      <div class="th-namebox th-namebox-red">
+        <img class="th-namebox-bg" src="/assets/hexagon/hexagonnamebackred.png" alt="">
+        <div class="th-namebox-logo"><img class="th-slide-el" id="th-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="th-namebox-name th-slide-el" id="th-red-name"></div>
+      </div>
+      <div id="th-bars">
+        <div class="th-bar-col th-bar-col-left">
+          <div class="th-bar-row"><span class="th-bar-label">KDA</span><div class="th-bar" id="th-bar-kda"></div></div>
+          <div class="th-bar-row"><span class="th-bar-label">TEAM GPM</span><div class="th-bar" id="th-bar-gpm"></div></div>
+          <div class="th-bar-row"><span class="th-bar-label">TEAM DPM</span><div class="th-bar" id="th-bar-dpm"></div></div>
+        </div>
+        <div class="th-bar-divider"></div>
+        <div class="th-bar-col th-bar-col-right">
+          <div class="th-bar-row th-bar-row-rev"><div class="th-bar" id="th-bar-dmg"></div><span class="th-bar-label">DMG TKN/D</span></div>
+          <div class="th-bar-row th-bar-row-rev"><div class="th-bar" id="th-bar-hero"></div><span class="th-bar-label">HERO POOL</span></div>
+          <div class="th-bar-row th-bar-row-rev"><div class="th-bar" id="th-bar-time"></div><span class="th-bar-label">AVG GAME TIME</span></div>
+        </div>
+      </div>
+    </div>
+    <div id="final-team-page">
+      <div class="ft-teambox ft-teambox-blue">
+        <img class="ft-teambox-bg" src="/assets/finalteam/finalteambackblue.png" alt="">
+        <div class="ft-teambox-logo"><img id="ft-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="ft-teambox-name" id="ft-blue-name"></div>
+        <div class="ft-teambox-scorebar" id="ft-scorebar-blue"></div>
+      </div>
+      <div class="ft-teambox ft-teambox-red">
+        <img class="ft-teambox-bg" src="/assets/finalteam/finalteambackred.png" alt="">
+        <div class="ft-teambox-logo"><img id="ft-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="ft-teambox-name" id="ft-red-name"></div>
+        <div class="ft-teambox-scorebar" id="ft-scorebar-red"></div>
+      </div>
+      <div class="ft-scorebar ft-scorebar-red" id="ft-scorebar-red"></div>
+      <div id="ft-matchbar">
+        <img id="ft-matchbar-bg" src="/assets/finalteam/finalteammatch.png" alt="">
+        <span class="ft-matchbar-label" id="ft-matchbar-match"></span>
+        <span class="ft-matchbar-series" id="ft-matchbar-series"></span>
+      </div>
+      <!-- [FEATURE: final-team-cards] 10 cards built dynamically via buildFtCards() -->
+      <div id="ft-cards"></div>
+    </div>
     <div id="today-schedule-page">
-      <video id="ts-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
       <div id="ts-header">
         <div id="ts-title"><img src="/assets/Today's Schedule/TODAY&rsquo;S MATCHES.png" alt="Today's Matches"></div>
         <div id="ts-subline">
@@ -1392,7 +1756,6 @@
       <div id="ts-matches"></div>
     </div>
     <div id="standings-page">
-      <video id="st-video" src="/assets/bgloop.webm" loop muted playsinline preload="auto"></video>
       <div id="st-header">
         <img src="/assets/Standings/Infinix Standing.png" alt="Infinix Standings — Season 18 Regular Season">
         <div id="st-weekday">WEEK 1 - DAY 1</div>
@@ -1771,6 +2134,22 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showStandings, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('team_hexagon', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showTeamHexagon, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('final_team', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showFinalTeam, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -2533,10 +2912,64 @@
     }
 
     /* ════════════════════════════════════════════════
+       SHARED SCENE BACKGROUND VIDEO
+       Two stacked <video> layers behind all 5 scenes below instead of one
+       per scene:
+         - Back-to-back scenes using the SAME file (e.g. Waiting Lobby →
+           Waiting Screen TVC, both bgloopsun.webm) — untouched, just keeps
+           playing, no reload.
+         - Same file after a gap (scene hidden, then a scene using that
+           same file shows again later) — the already-loaded layer just
+           fades back in, no restart.
+         - Different file — crossfades: the new file plays on the other
+           (inactive) layer while it fades in, and the old layer fades out
+           at the same time, instead of a hard cut.
+    ════════════════════════════════════════════════ */
+    const sceneVideoEls = [document.getElementById('scene-video-0'), document.getElementById('scene-video-1')];
+    const SCENE_VIDEO_SRC = {
+      waiting:   '/assets/bgloopsun.webm',
+      lobby:     '/assets/bgloopsun.webm',
+      hexagon:   '/assets/bgloop.webm',
+      schedule:  '/assets/bgloop.webm',
+      standings: '/assets/bgloop.webm',
+      finalteam: '/assets/bgloopsun.webm',
+    };
+    let currentSceneVideoSrc = null;
+    let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
+    let sceneVideoVisible = false;
+
+    function showSceneVideo(feature) {
+      const src = SCENE_VIDEO_SRC[feature];
+
+      if (src === currentSceneVideoSrc) {
+        if (!sceneVideoVisible) sceneVideoEls[sceneVideoLayer].classList.add('sv-visible'); // same file after a gap — just reveal it again
+        sceneVideoVisible = true;
+        return; // back-to-back with the same file — leave it exactly as it is
+      }
+
+      const nextLayer = 1 - sceneVideoLayer;
+      const curEl  = sceneVideoEls[sceneVideoLayer];
+      const nextEl = sceneVideoEls[nextLayer];
+      nextEl.src = src;
+      nextEl.currentTime = 0;
+      nextEl.play().catch(() => {});
+      nextEl.classList.add('sv-visible');   // crossfade new layer in...
+      curEl.classList.remove('sv-visible'); // ...old layer out, at the same time
+
+      sceneVideoLayer = nextLayer;
+      currentSceneVideoSrc = src;
+      sceneVideoVisible = true;
+    }
+
+    function hideSceneVideo() {
+      sceneVideoEls[sceneVideoLayer].classList.remove('sv-visible');
+      sceneVideoVisible = false;
+    }
+
+    /* ════════════════════════════════════════════════
        WAITING SCREEN TVC
     ════════════════════════════════════════════════ */
     const wsPage  = document.getElementById('waiting-screen-page');
-    const wsVideo = document.getElementById('ws-video');
 
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
@@ -2933,8 +3366,7 @@
       const ms = await msPromise;
       if (activeFeature !== 'waiting') return; /* superseded while awaiting match state */
       updateWsFromState(ms);
-      wsVideo.currentTime = 0;
-      wsVideo.play().catch(() => {});
+      showSceneVideo('waiting');
       startWsTimer();
       startWsSponsorLoop();
       startWsPanelCycle();
@@ -2950,7 +3382,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           wsPage.classList.remove('ws-on');
-          wsVideo.pause();
+          hideSceneVideo();
           stopWsTimer();
           stopWsSponsorLoop();
           stopWsPanelCycle();
@@ -2963,7 +3395,6 @@
        WAITING LOBBY
     ════════════════════════════════════════════════ */
     const wlPage  = document.getElementById('waiting-lobby-page');
-    const wlVideo = document.getElementById('wl-video');
     const WL_ASSET = '/assets/Waiting Lobby/';
 
     /* Match type → box art + pulsing rivalry banner, both sourced straight
@@ -3151,8 +3582,12 @@
       const startX = side === 'blue' ? -60 : 60;
 
       // Prep the incoming layer's hidden start state now (invisible, so
-      // harmless) — its actual entrance is deferred below.
-      nextEl.onerror = () => { nextEl.onerror = null; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+      // harmless) — its actual entrance is deferred below. `photoFailed`
+      // tracks a missing file so the fade-in below can skip it — onerror
+      // alone isn't enough, since it used to run unconditionally and stomp
+      // the hidden state back to visible (showing the broken-image icon).
+      let photoFailed = false;
+      nextEl.onerror = () => { nextEl.onerror = null; photoFailed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
       nextEl.style.transition = 'none';
       nextEl.style.opacity = '0';
       nextEl.style.transform = `translateX(${startX}px)`;
@@ -3166,7 +3601,7 @@
       curEl.style.opacity = '0';
 
       setTimeout(() => {
-        if (!ign) return;
+        if (!ign || photoFailed) return; // no file (or it 404'd) — stay invisible instead of showing a broken-image icon
         nextEl.style.transition = `opacity ${WL_PHOTO_FADE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${WL_PHOTO_MOVE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
         nextEl.style.opacity = '1';
         nextEl.style.transform = 'translateX(0)';
@@ -3230,8 +3665,7 @@
       const ms = await msPromise;
       if (activeFeature !== 'lobby') return; /* superseded while awaiting match state */
       updateWlFromState(ms);
-      wlVideo.currentTime = 0;
-      wlVideo.play().catch(() => {});
+      showSceneVideo('lobby');
       startWlTimer();
       startWlSponsorLoop();
       wlPage.classList.add('wl-on');
@@ -3245,7 +3679,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           wlPage.classList.remove('wl-on');
-          wlVideo.pause();
+          hideSceneVideo();
           stopWlTimer();
           stopWlSponsorLoop();
           stopWlPlayerCycle();
@@ -3255,10 +3689,614 @@
     }
 
     /* ════════════════════════════════════════════════
+       TEAM HEXAGON — "Team Head to Head" fullscreen scene
+    ════════════════════════════════════════════════ */
+    const thPage  = document.getElementById('team-hexagon-page');
+
+    /* Team identity (logo/name) comes from the same match-board home/away
+       state as every other mplfs scene. Radar + bottom-bar numbers come
+       from the Team Head to Head API (see /api/hexagon-url in Settings to
+       repoint it), matched to home/away by tricode. */
+    function thApplyTeamBox(side, teamObj) {
+      const nameEl = document.getElementById('th-' + side + '-team-name');
+      const logoEl = document.getElementById('th-' + side + '-team-logo');
+      const short  = (teamObj && teamObj.short) || '';
+      nameEl.textContent = short;
+      logoEl.onerror = () => { logoEl.style.display = 'none'; };
+      logoEl.style.display = '';
+      logoEl.src = short ? '/logos/' + encodeURIComponent(short) + '.png' : '';
+    }
+
+    /* Player spotlight — identical cycle/cross-fade/timing to the Waiting
+       Lobby (WL_PLAYER_HOLD / WL_PHOTO_*_MS + wlPhotoUrl, defined above),
+       just its own DOM ids and nameplate assets (hexagonnameback*). */
+    let thLineupBlue = [], thLineupRed = [];
+    let thPlayerIdx = 0, thPlayerInt = null;
+    let thPhotoLayer = { blue: 0, red: 0 };
+
+    function thApplyPlayer(side, player) {
+      const ign  = player && player.ign;
+      const role = player && player.role;
+      const nameEl  = document.getElementById('th-' + side + '-name');
+      const logoEl  = document.getElementById('th-' + side + '-logo');
+      const nameEls = [nameEl, logoEl];
+
+      nameEls.forEach(el => el.classList.add('th-slide-out'));
+      setTimeout(() => {
+        nameEl.textContent = ign || '';
+        logoEl.onerror = () => { logoEl.style.display = 'none'; };
+        logoEl.style.display = '';
+        logoEl.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
+        nameEls.forEach(el => { el.classList.add('th-no-transition'); el.classList.remove('th-slide-out'); el.classList.add('th-slide-in'); });
+        void nameEl.offsetWidth;
+        nameEls.forEach(el => el.classList.remove('th-no-transition', 'th-slide-in'));
+      }, 260);
+
+      const cur    = thPhotoLayer[side];
+      const next   = 1 - cur;
+      const curEl  = document.getElementById('th-' + side + '-photo-' + cur);
+      const nextEl = document.getElementById('th-' + side + '-photo-' + next);
+      const startX = side === 'blue' ? -60 : 60;
+
+      let photoFailed = false;
+      nextEl.onerror = () => { nextEl.onerror = null; photoFailed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+      nextEl.style.transition = 'none';
+      nextEl.style.opacity = '0';
+      nextEl.style.transform = `translateX(${startX}px)`;
+      if (ign) nextEl.src = wlPhotoUrl(ign, side);
+      else nextEl.removeAttribute('src');
+      void nextEl.offsetWidth;
+
+      curEl.style.transition = `opacity ${WL_PHOTO_FADE_OUT_MS}ms ease`;
+      curEl.style.opacity = '0';
+
+      setTimeout(() => {
+        if (!ign || photoFailed) return; // no file (or it 404'd) — stay invisible instead of showing a broken-image icon
+        nextEl.style.transition = `opacity ${WL_PHOTO_FADE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${WL_PHOTO_MOVE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+        nextEl.style.opacity = '1';
+        nextEl.style.transform = 'translateX(0)';
+      }, WL_PHOTO_FADE_OUT_MS);
+
+      thPhotoLayer[side] = next;
+    }
+
+    function thShowPlayers(idx) {
+      const blue = thLineupBlue[idx % (thLineupBlue.length || 1)];
+      const red  = thLineupRed[idx % (thLineupRed.length || 1)];
+      thApplyPlayer('blue', blue);
+      thApplyPlayer('red', red);
+    }
+
+    function startThPlayerCycle(state) {
+      clearInterval(thPlayerInt);
+      thLineupBlue = (state && state.home && state.home.lineup) || [];
+      thLineupRed  = (state && state.away && state.away.lineup) || [];
+      thPlayerIdx = 0;
+      thShowPlayers(thPlayerIdx);
+      if (thLineupBlue.length > 1 || thLineupRed.length > 1) {
+        thPlayerInt = setInterval(() => {
+          thPlayerIdx += 1;
+          thShowPlayers(thPlayerIdx);
+        }, WL_PLAYER_HOLD);
+      }
+    }
+    function stopThPlayerCycle() {
+      clearInterval(thPlayerInt);
+      thPlayerInt = null;
+    }
+
+    /* ── Team Head to Head data ── */
+    function thNum(v) { return typeof v === 'number' ? v : (parseFloat(v) || 0); }
+    function thParseTime(v) {
+      const m = String(v || '').match(/(\d+):(\d+)/);
+      return m ? (parseInt(m[1], 10) * 60 + parseInt(m[2], 10)) : (parseFloat(v) || 0);
+    }
+    function thNormalizeTeam(t) {
+      if (!t) return null;
+      return {
+        winrate: thNum(t['GAME WIN RATE']),
+        fb:      thNum(t['FIRST BLOOD']),
+        kp:      thNum(t['KILL PARTICIPATION']),
+        tower:   thNum(t['TOWER SECURED']),
+        turtle:  thNum(t['TURTLE CONTROL']),
+        lord:    thNum(t['LORD CONTROL']),
+        kda:     thNum(t['KDA']),
+        gpm:     thNum(t['TEAM GPM']),
+        dpm:     thNum(t['TEAM DPM']),
+        dmg:     thNum(t['TEAM DMG TKN/D']),
+        hero:    thNum(t['HERO POOL']),
+        timeSec: thParseTime(t['AVG GAME TIME']),
+        tricode: (t.tricode || '').toUpperCase(),
+      };
+    }
+    const TH_EMPTY_TEAM = thNormalizeTeam({});
+
+    /* Match the API's team1/team2 to the match board's home/away by tricode
+       — falls back to team1→home, team2→away if neither tricode matches
+       (e.g. the configured API endpoint doesn't share this match's data). */
+    function thMatchSides(ms, h2h) {
+      const home = (ms && ms.home) || {};
+      const t1 = thNormalizeTeam(h2h && h2h.team1) || TH_EMPTY_TEAM;
+      const t2 = thNormalizeTeam(h2h && h2h.team2) || TH_EMPTY_TEAM;
+      const homeShort = (home.short || '').toUpperCase();
+      if (t2.tricode && t2.tricode === homeShort) return { blue: t2, red: t1 };
+      return { blue: t1, red: t2 };
+    }
+
+    async function thFetchH2H() {
+      try {
+        const r = await fetch(buildUrl('/api/hexagon-data'), { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (e) { return null; }
+    }
+
+    /* ── Radar chart — plain inline SVG, no charting library ── */
+    /* Line breaks match the reference exactly (hexagonguide.png) — these
+       are NOT a width-driven auto-wrap (GAME WIN RATE % is longer than
+       LORD CONTROL % but stays on one line), they're per-label. */
+    const TH_RADAR_AXES = [
+      { key: 'winrate', label: 'GAME WIN RATE %'        },
+      { key: 'fb',      label: 'FIRST<br>BLOOD %'       },
+      { key: 'kp',      label: 'KP%'                    },
+      { key: 'tower',   label: 'TOWER TAKE %'           },
+      { key: 'turtle',  label: 'TURTLE<br>CONTROL %'    },
+      { key: 'lord',    label: 'LORD<br>CONTROL %'      },
+    ];
+    const TH_R = 250, TH_CX = 300, TH_CY = 300;
+    /* Shared duration for both team shapes' entrance (see buildThRadar's
+       THR_KEYFRAMES) and every number's count-up. */
+    const TH_ANIM_MS = 700;
+    function thAxisPoint(i, r) {
+      const ang = (Math.PI / 180) * (i * 60);
+      return { x: TH_CX + r * Math.sin(ang), y: TH_CY - r * Math.cos(ang) };
+    }
+    /* Generic count-up — animates el's text from 0 to `to`, formatting each
+       frame with `fmt`, ease-out over TH_ANIM_MS. Used for every number in
+       the scene: radar axis values and the bottom bar values alike. */
+    function thCountUp(el, to, fmt) {
+      if (!el) return;
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min(1, (now - start) / TH_ANIM_MS);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(to * eased);
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = fmt(to);
+      }
+      requestAnimationFrame(tick);
+    }
+    function thFmtPct(v)  { return (Math.max(0, Math.min(100, v))).toFixed(2) + '%'; }
+    function thFmtInt(v)  { return String(Math.round(v)); }
+    function thFmtDec2(v) { return v.toFixed(2); }
+    function thFmtTime(v) {
+      const s = Math.max(0, Math.round(v));
+      return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+    }
+
+    function buildThRadar(blue, red, animate = true) {
+      const root = document.getElementById('th-radar');
+      let grid = '';
+      for (let ring = 1; ring <= 5; ring++) {
+        const r = TH_R * ring / 5;
+        const pts = TH_RADAR_AXES.map((_, i) => { const p = thAxisPoint(i, r); return `${p.x},${p.y}`; }).join(' ');
+        grid += `<polygon points="${pts}" fill="none" stroke="#9a9a9f" stroke-width="2"/>`;
+      }
+      const spokes = TH_RADAR_AXES.map((_, i) => {
+        const p = thAxisPoint(i, TH_R);
+        return `<line x1="${TH_CX}" y1="${TH_CY}" x2="${p.x}" y2="${p.y}" stroke="#9a9a9f" stroke-width="2"/>`;
+      }).join('');
+      function poly(stats, color, groupId) {
+        const pts = TH_RADAR_AXES.map((ax, i) => {
+          const v = Math.max(0, Math.min(100, stats[ax.key] || 0));
+          const p = thAxisPoint(i, TH_R * v / 100);
+          return `${p.x},${p.y}`;
+        }).join(' ');
+        /* transform-origin here is in the SVG's own user-unit space (same
+           numbers as cx/cy above) since it's a plain pixel value, not a
+           percentage — that's what lets each team's shape grow from the
+           chart's true center regardless of its own bounding box. */
+        return `<g id="${groupId}" style="transform-origin:300px 300px;">` +
+          `<polygon points="${pts}" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="3"/></g>`;
+      }
+      const svg = `<svg id="th-radar-svg" width="600" height="600" viewBox="0 0 600 600">${grid}${spokes}` +
+        `${poly(red, '#d92027', 'th-radar-poly-red')}${poly(blue, '#1656d5', 'th-radar-poly-blue')}</svg>`;
+
+      /* Same fixed-width .th-axis box (150px) for the 4 side axes — only
+         its anchor point/transform changes, so the name text and both value
+         rows always share one consistent box, which is what keeps the
+         blue/red chips lined up under each other. Every side axis
+         (left-of-chart or right-of-chart) is left-aligned text — only the
+         top/bottom axes are centered, and (see CSS) laid out as a single
+         row — name, then the chips beside it — instead of 3 stacked lines,
+         since those two sit right up against the team boxes / title bar. */
+      const labels = TH_RADAR_AXES.map((ax, i) => {
+        const p = thAxisPoint(i, TH_R + 42);
+        const valcol =
+          `<div class="th-axis-valcol">` +
+          `<div class="th-axis-val"><span class="th-axis-chip th-axis-chip-blue"></span><span class="th-axis-num th-axis-val-blue" id="th-radar-v-${i}-blue"></span></div>` +
+          `<div class="th-axis-val"><span class="th-axis-chip th-axis-chip-red"></span><span class="th-axis-num th-axis-val-red" id="th-radar-v-${i}-red"></span></div>` +
+          `</div>`;
+        if (i === 0 || i === 3) {
+          /* Sits right against the vertex — pulled in tighter than the
+             TH_R+42 side-label gap since these are single-row now. */
+          const posCss = i === 0
+            ? `left:${p.x}px; top:51px; transform:translate(-50%,-100%);`
+            : `left:${p.x}px; top:546px; transform:translate(-50%,0);`;
+          return `<div class="th-axis th-axis-center" style="${posCss}">` +
+            `<div class="th-axis-row"><div class="th-axis-name">${ax.label}</div>${valcol}</div>` +
+            `</div>`;
+        }
+        const posCss = (i === 1 || i === 2)
+          ? `left:${p.x}px; top:${p.y}px; transform:translate(0,-50%);`
+          : `left:${p.x}px; top:${p.y}px; transform:translate(-100%,-50%);`;
+        return `<div class="th-axis" style="${posCss}">` +
+          `<div class="th-axis-name">${ax.label}</div>${valcol}` +
+          `</div>`;
+      }).join('');
+
+      root.innerHTML = svg + labels;
+
+      if (!animate) {
+        /* Static zeroed baseline (see thResetRadarAndBars) — the polygon
+           groups just render as-is (no .animate() call), so there's
+           nothing to trigger a transition; this paints instantly. */
+        TH_RADAR_AXES.forEach((ax, i) => {
+          document.getElementById(`th-radar-v-${i}-blue`).textContent = thFmtPct(blue[ax.key] || 0);
+          document.getElementById(`th-radar-v-${i}-red`).textContent  = thFmtPct(red[ax.key]  || 0);
+        });
+        return;
+      }
+
+      /* Each team's shape grows in from its own center point via the Web
+         Animations API (not a CSS class + forced-reflow transition, which
+         turned out unreliable here — WAAPI's explicit from/to keyframes
+         always run the full timeline regardless of paint timing). Red is
+         staggered a beat behind blue with `delay`, `fill: 'both'` holds
+         each shape at its start keyframe through that delay and at its end
+         keyframe once done. Then count every axis value up. */
+      const THR_KEYFRAMES = [
+        { transform: 'scale(0.3)', opacity: 0 },
+        { transform: 'scale(1)',   opacity: 1 },
+      ];
+      const THR_EASING = 'cubic-bezier(0.16, 1, 0.3, 1)'; // smooth ease-out, no bounce
+      document.getElementById('th-radar-poly-blue')
+        .animate(THR_KEYFRAMES, { duration: TH_ANIM_MS, easing: THR_EASING, fill: 'both' });
+      document.getElementById('th-radar-poly-red')
+        .animate(THR_KEYFRAMES, { duration: TH_ANIM_MS, delay: 150, easing: THR_EASING, fill: 'both' });
+
+      TH_RADAR_AXES.forEach((ax, i) => {
+        thCountUp(document.getElementById(`th-radar-v-${i}-blue`), Math.max(0, Math.min(100, blue[ax.key] || 0)), thFmtPct);
+        thCountUp(document.getElementById(`th-radar-v-${i}-red`),  Math.max(0, Math.min(100, red[ax.key]  || 0)), thFmtPct);
+      });
+    }
+
+    /* ── Bottom bars — split by value proportion; `reversed` puts the red
+       segment first (left column is blue-then-red, right column mirrors
+       it as red-then-blue — see hexagonguide.png). Segment width is set
+       immediately (only the number inside counts up). ── */
+    function setThBar(elId, blueVal, redVal, blueFmt, redFmt, reversed, animate = true) {
+      const total    = blueVal + redVal;
+      const bluePct  = total > 0 ? (blueVal / total * 100) : 50;
+      const redPct   = 100 - bluePct;
+      const blueId = elId + '-blue', redId = elId + '-red';
+      const blueSeg = `<div class="th-bar-seg th-bar-seg-blue" style="width:${bluePct}%"><span id="${blueId}"></span></div>`;
+      const redSeg  = `<div class="th-bar-seg th-bar-seg-red"  style="width:${redPct}%"><span id="${redId}"></span></div>`;
+      document.getElementById(elId).innerHTML = reversed ? (redSeg + blueSeg) : (blueSeg + redSeg);
+      if (!animate) {
+        document.getElementById(blueId).textContent = blueFmt(blueVal);
+        document.getElementById(redId).textContent  = redFmt(redVal);
+        return;
+      }
+      thCountUp(document.getElementById(blueId), blueVal, blueFmt);
+      thCountUp(document.getElementById(redId),  redVal,  redFmt);
+    }
+
+    function updateThTeamAndPlayers(ms) {
+      if (!ms) return;
+      thApplyTeamBox('blue', ms.home);
+      thApplyTeamBox('red', ms.away);
+      startThPlayerCycle(ms);
+    }
+
+    /* Static, unanimated 0-state for the radar + bars — rendered the instant
+       the scene appears (see showTeamHexagon), well before the Team Head to
+       Head API has even responded. Without this, the pop-in/count-up (which
+       only starts once that fetch resolves) would race the page's own
+       400ms fade-in: whenever the API happened to respond quickly, most or
+       all of the animation played out while the scene was still becoming
+       visible, so it looked like the numbers/hexagon just appeared already
+       near-final instead of animating from zero. Establishing a visible
+       zero baseline up front means the real animation is always seen in
+       full, regardless of how fast or slow that fetch is. */
+    function thResetRadarAndBars() {
+      buildThRadar(TH_EMPTY_TEAM, TH_EMPTY_TEAM, false);
+      setThBar('th-bar-kda',  0, 0, thFmtDec2, thFmtDec2, false, false);
+      setThBar('th-bar-gpm',  0, 0, thFmtInt,  thFmtInt,  false, false);
+      setThBar('th-bar-dpm',  0, 0, thFmtInt,  thFmtInt,  false, false);
+      setThBar('th-bar-dmg',  0, 0, thFmtInt,  thFmtInt,  true,  false);
+      setThBar('th-bar-hero', 0, 0, thFmtInt,  thFmtInt,  true,  false);
+      setThBar('th-bar-time', 0, 0, thFmtTime, thFmtTime, true,  false);
+    }
+
+    function updateThRadarAndBars(ms, h2h) {
+      const { blue, red } = thMatchSides(ms, h2h);
+      buildThRadar(blue, red);
+      setThBar('th-bar-kda',  blue.kda, red.kda, thFmtDec2, thFmtDec2, false);
+      setThBar('th-bar-gpm',  blue.gpm, red.gpm, thFmtInt,  thFmtInt,  false);
+      setThBar('th-bar-dpm',  blue.dpm, red.dpm, thFmtInt,  thFmtInt,  false);
+      setThBar('th-bar-dmg',  blue.dmg, red.dmg, thFmtInt,  thFmtInt,  true);
+      setThBar('th-bar-hero', blue.hero, red.hero, thFmtInt, thFmtInt, true);
+      setThBar('th-bar-time', blue.timeSec, red.timeSec, thFmtTime, thFmtTime, true);
+    }
+
+    /* Wait for <img>/<video> elements to finish loading (or fail) before
+       the scene using them becomes visible — without this, whichever
+       assets aren't already browser-cached (team logos, hero-pick clips,
+       player photos, spell icons) paint in one at a time mid-fade instead
+       of the scene appearing as one complete frame. Every element
+       resolves within maxWaitMs regardless of outcome, so one slow/dead
+       asset can't hold up the reveal indefinitely. Shared by Team Hexagon
+       and Final Team below. */
+    function preloadMedia(els, maxWaitMs) {
+      return Promise.all(Array.from(els).map(el => new Promise(resolve => {
+        if (!el.getAttribute('src')) return resolve();
+        const isVideo = el.tagName === 'VIDEO';
+        if (isVideo ? el.readyState >= 2 : el.complete) return resolve();
+        el.addEventListener(isVideo ? 'loadeddata' : 'load', resolve, { once: true });
+        el.addEventListener('error', resolve, { once: true });
+        setTimeout(resolve, maxWaitMs);
+      })));
+    }
+
+    async function showTeamHexagon() {
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo('hexagon');
+      const ms = await msPromise;
+      if (activeFeature !== 'hexagon') return; /* superseded while awaiting data */
+      updateThTeamAndPlayers(ms);
+      thResetRadarAndBars();
+      await preloadMedia(thPage.querySelectorAll('img, video'), 900);
+      if (activeFeature !== 'hexagon') return; /* superseded while preloading */
+      showSceneVideo('hexagon');
+      thPage.classList.add('th-on');
+      void thPage.offsetWidth; /* force reflow so the opacity transition runs */
+      thPage.classList.add('th-visible');
+
+      /* Radar + bottom bars come from the external Team Head to Head API,
+         which can take a lot longer than our own /match/state (~1s+ vs
+         ~10ms) — don't gate the reveal on it, just fill it in once it
+         lands so the scene appears instantly like every other overlay. */
+      thFetchH2H().then(h2h => {
+        if (activeFeature !== 'hexagon') return; /* superseded while awaiting data */
+        updateThRadarAndBars(ms, h2h);
+      });
+    }
+
+    function hideTeamHexagon() {
+      activeFeature = null;
+      thPage.classList.remove('th-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          thPage.classList.remove('th-on');
+          hideSceneVideo();
+          stopThPlayerCycle();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       FINAL TEAM — fullscreen lineup card wall
+    ════════════════════════════════════════════════ */
+    const ftPage = document.getElementById('final-team-page');
+
+    /* Battle spell icon per skillid (spell/*.png filenames bake the id in). */
+    const FT_SPELL_NAMES = {
+      20020: 'Retribution', 20030: 'Inspire',    20040: 'Sprint',     20050: 'Revitalize',
+      20060: 'Aegis',       20070: 'Petrify',     20080: 'Purify',     20100: 'Flicker',
+      20140: 'Flameshot',   20150: 'Execute',     20160: 'Arrival',    20190: 'Vengeance',
+    };
+    function ftSpellUrl(skillId) {
+      const name = FT_SPELL_NAMES[skillId];
+      return name ? '/spell/' + skillId + name + '.png' : null;
+    }
+    function ftHeroWebmUrl(heroId) { return '/assets/draft/webm/HERO_PICK_DRAFT_' + heroId + '.webm'; }
+
+    /* Canonical role order for the 5 card slots — player 1 is EXP nearest
+       the blue (home) edge through player 5 GOLD nearest the middle; the
+       away side mirrors this outward from the middle (5,4,3,2,1). Matches
+       both the dashboard lineup's role strings ("EXP LANER") and the live
+       game feed's ("exp_laner"). */
+    const FT_ROLE_ORDER = ['exp', 'jungle', 'mid', 'roam', 'gold'];
+    function ftRoleKey(role) {
+      const r = (role || '').toLowerCase();
+      if (r.includes('exp'))  return 'exp';
+      if (r.includes('jung')) return 'jungle';
+      if (r.includes('mid'))  return 'mid';
+      if (r.includes('roam')) return 'roam';
+      if (r.includes('gold')) return 'gold';
+      return '';
+    }
+
+    /* Live hero pick + battle spell come from the in-game feed
+       (/api/gamedata-proxy), keyed by campid — camp1/camp2 are draft-side
+       identities, not home/away, so resolve which is which the same way
+       the Match Board preview does (ms.swapped). */
+    function ftResolveCamps(ms, gameData) {
+      const camps = (gameData && gameData.camp_list) || [];
+      const isSwapped = !!(ms && ms.swapped);
+      const homeCampId = isSwapped ? 2 : 1;
+      const awayCampId = isSwapped ? 1 : 2;
+      return {
+        homeCamp: camps.find(c => c.campid === homeCampId) || null,
+        awayCamp: camps.find(c => c.campid === awayCampId) || null,
+      };
+    }
+    function ftLiveRoleMap(camp) {
+      const map = {};
+      if (!camp) return map;
+      for (let i = 1; i <= 5; i++) {
+        const seat = camp['seat_' + i];
+        if (!seat) continue;
+        /* Some game_api variants leave seat.role blank (only a globally-
+           numbered `pos` across every camp, not useful per-camp) — fall
+           back to the seat's own index within its camp, which follows the
+           same fixed EXP/JUNGLE/MID/ROAM/GOLD order used everywhere else
+           in this codebase (CAMP_MAP in lib/config.js). */
+        const key = ftRoleKey(seat.role) || FT_ROLE_ORDER[i - 1];
+        if (key) map[key] = { heroId: seat.heroid, skillId: seat.skillid, ign: seat.name };
+      }
+      return map;
+    }
+
+    const FT_CARD_W = 183, FT_MARGIN = 45;
+
+    /* Everything here — name, hero, spell, role — comes from the live
+       game_api feed (via homeLive/awayLive, see ftLiveRoleMap), not the
+       dashboard-managed roster Team Hexagon/Waiting Lobby use. `roleKey`
+       is always one of FT_ROLE_ORDER, guaranteed by the fixed column
+       layout, so the role icon is never conditionally missing. */
+    function ftBuildCardHtml(side, colIndex, roleKey, live) {
+      const left = FT_MARGIN + colIndex * FT_CARD_W;
+      const ign  = (live && live.ign) || '';
+      const heroSrc  = live && live.heroId ? ftHeroWebmUrl(live.heroId) : '';
+      const spellSrc = live && live.skillId ? ftSpellUrl(live.skillId) : null;
+      /* Inverted from Waiting Lobby/Team Hexagon's usual LEFT-for-blue —
+         on this card wall, blue (left-side) cards use the RIGHT-facing
+         asset and red (right-side) cards use the LEFT-facing one. */
+      const photoSrc = ign ? wlPhotoUrl(ign, side === 'blue' ? 'red' : 'blue') : '';
+      const roleSrc  = '/role/' + encodeURIComponent(roleFile(roleKey)) + '.png';
+      return `<div class="ft-card" style="left:${left}px;">` +
+        (heroSrc  ? `<video class="ft-card-hero" src="${heroSrc}" autoplay loop muted playsinline></video>` : '') +
+        `<img class="ft-card-fader ft-${side}" src="/assets/finalteam/finalfader.png" alt="">` +
+        (photoSrc ? `<img class="ft-card-photo" src="${photoSrc}" alt="" onerror="this.style.display='none'">` : '') +
+        (spellSrc ? `<img class="ft-card-spell" src="${spellSrc}" alt="" onerror="this.style.display='none'">` : '') +
+        `<div class="ft-card-name ft-${side}">${ign}</div>` +
+        `<div class="ft-card-role ft-${side}"><img src="${roleSrc}" alt="" onerror="this.parentElement.style.display='none'"></div>` +
+        `</div>`;
+    }
+
+    function buildFtCards(homeCamp, awayCamp) {
+      const root = document.getElementById('ft-cards');
+      const homeLive = ftLiveRoleMap(homeCamp);
+      const awayLive = ftLiveRoleMap(awayCamp);
+
+      let html = '';
+      FT_ROLE_ORDER.forEach((key, i) => {
+        html += ftBuildCardHtml('blue', i, key, homeLive[key]);
+      });
+      /* Away side reads 5,4,3,2,1 outward from the middle — reverse the
+         role order (gold nearest center at column 5, exp farthest at 9). */
+      FT_ROLE_ORDER.slice().reverse().forEach((key, i) => {
+        html += ftBuildCardHtml('red', 5 + i, key, awayLive[key]);
+      });
+      root.innerHTML = html;
+    }
+
+    /* Series score "bar form" — identical pip pattern to the in-game
+       scoreboard's sbRenderBars (overlay-scoreboard.js): `total` pips,
+       `scored` of them filled, growing from the side nearest the middle
+       (fromRight fills starting at the right end instead of the left). */
+    function ftRenderScoreBar(container, total, scored, fromRight) {
+      container.innerHTML = '';
+      for (let i = 0; i < total; i++) {
+        const bar = document.createElement('div');
+        bar.className = 'ft-score-bar';
+        const filled = fromRight ? (i >= total - scored) : (i < scored);
+        if (filled) bar.classList.add('filled');
+        container.appendChild(bar);
+      }
+    }
+
+    /* Series score bars — the series-wins tally lives on the dashboard
+       Match Board (home.score/away.score), not the live feed (whose own
+       "score" field is this game's kill count, a different number), so
+       this part still reads from /match/state. */
+    function updateFtScoreBars(ms) {
+      const home = (ms && ms.home) || {};
+      const away = (ms && ms.away) || {};
+      const maxWins = Math.ceil(parseInt(((ms && ms.series) || 'BO3').replace('BO', ''), 10) / 2);
+      ftRenderScoreBar(document.getElementById('ft-scorebar-blue'), maxWins, home.score || 0, true);
+      ftRenderScoreBar(document.getElementById('ft-scorebar-red'),  maxWins, away.score || 0, false);
+    }
+
+    /* Team logo + name come from the live game_api feed's own camp
+       identity (team_simple_name), not the dashboard roster — same
+       tricode the Match Board preview uses for its logo lookup. */
+    function updateFtTeamIdentity(homeCamp, awayCamp) {
+      const homeTri = (homeCamp && homeCamp.team_simple_name) || '';
+      const awayTri = (awayCamp && awayCamp.team_simple_name) || '';
+      const blueLogo = document.getElementById('ft-blue-logo');
+      const redLogo  = document.getElementById('ft-red-logo');
+      blueLogo.onerror = () => { blueLogo.style.display = 'none'; };
+      blueLogo.style.display = '';
+      blueLogo.src = homeTri ? '/logos/' + encodeURIComponent(homeTri) + '.png' : '';
+      redLogo.onerror = () => { redLogo.style.display = 'none'; };
+      redLogo.style.display = '';
+      redLogo.src = awayTri ? '/logos/' + encodeURIComponent(awayTri) + '.png' : '';
+      document.getElementById('ft-blue-name').textContent = homeTri;
+      document.getElementById('ft-red-name').textContent  = awayTri;
+    }
+
+    function updateFtMatchBar(ms) {
+      const week     = (ms && ms.week  != null) ? ms.week  : 1;
+      const day      = (ms && ms.day   != null) ? ms.day   : 1;
+      const matchNum = (ms && ms.match != null) ? ms.match : 1;
+      const gameNum  = (ms && ms.game  != null) ? ms.game  : 1;
+      document.getElementById('ft-matchbar-match').textContent  = 'REGULAR SEASON WEEK ' + week + ' DAY ' + day;
+      document.getElementById('ft-matchbar-series').textContent = 'MATCH ' + matchNum + ' GAME ' + gameNum;
+    }
+
+    /* Live feed can be slow/unavailable — cap how long the reveal waits
+       on it so a dead feed can't hold the scene forever; past this, the
+       cards/logos just fill in whenever (if ever) it resolves. */
+    const FT_FEED_TIMEOUT_MS = 1200;
+
+    async function showFinalTeam() {
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      const gdPromise = fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo('finalteam');
+      const ms = await msPromise;
+      if (activeFeature !== 'finalteam') return; /* superseded while awaiting match state */
+      updateFtScoreBars(ms);
+      updateFtMatchBar(ms);
+
+      /* Team logo/name, player names, hero picks, and battle spells all
+         come from the live game feed — wait for it (capped above), then
+         preload everything it produces, so the scene appears as one
+         complete frame instead of logos/cards/hero clips popping in one
+         at a time as each asset finishes loading. */
+      const gd = await Promise.race([gdPromise, new Promise(r => setTimeout(r, FT_FEED_TIMEOUT_MS))]);
+      if (activeFeature !== 'finalteam') return; /* superseded while awaiting the feed */
+      const { homeCamp, awayCamp } = ftResolveCamps(ms, gd && gd.data);
+      updateFtTeamIdentity(homeCamp, awayCamp);
+      buildFtCards(homeCamp, awayCamp);
+      await preloadMedia(ftPage.querySelectorAll('img, video'), 900);
+      if (activeFeature !== 'finalteam') return; /* superseded while preloading */
+
+      showSceneVideo('finalteam');
+      ftPage.classList.add('ft-on');
+      void ftPage.offsetWidth; /* force reflow so the opacity transition runs */
+      ftPage.classList.add('ft-visible');
+    }
+
+    function hideFinalTeam() {
+      activeFeature = null;
+      ftPage.classList.remove('ft-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          ftPage.classList.remove('ft-on');
+          hideSceneVideo();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
        TODAY'S SCHEDULE
     ════════════════════════════════════════════════ */
     const tsPage  = document.getElementById('today-schedule-page');
-    const tsVideo = document.getElementById('ts-video');
 
     async function showTodaySchedule() {
       /* Week/Day chip + match rows follow the Match Board state */
@@ -3273,8 +4311,7 @@
         }
         buildTsMatches(ms);
       }
-      tsVideo.currentTime = 0;
-      tsVideo.play().catch(() => {});
+      showSceneVideo('schedule');
       wsMatchesSlideIn('ts-matches');
       tsPage.classList.add('ts-on');
       void tsPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -3287,7 +4324,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           tsPage.classList.remove('ts-on');
-          tsVideo.pause();
+          hideSceneVideo();
           resolve();
         }, 420);
       });
@@ -3297,7 +4334,6 @@
        STANDINGS
     ════════════════════════════════════════════════ */
     const stPage  = document.getElementById('standings-page');
-    const stVideo = document.getElementById('st-video');
 
     /* Standings table — driven by the Standings tab on the dashboard
        (GET /standings/state + SSE /standings/events). ST_TEAMS is only the
@@ -3363,8 +4399,7 @@
       stApplyWeekDay(ms);
       stApplyTeams(st);
       buildStandings();
-      stVideo.currentTime = 0;
-      stVideo.play().catch(() => {});
+      showSceneVideo('standings');
       wsMatchesSlideIn('st-rows');
       stPage.classList.add('st-on');
       void stPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -3377,7 +4412,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           stPage.classList.remove('st-on');
-          stVideo.pause();
+          hideSceneVideo();
           resolve();
         }, 420);
       });
@@ -3458,6 +4493,8 @@
       if (prev === 'richguy')  return hidePostRichguy();
       if (prev === 'waiting')  return hideWaitingScreen();
       if (prev === 'lobby')    return hideWaitingLobby();
+      if (prev === 'hexagon')  return hideTeamHexagon();
+      if (prev === 'finalteam') return hideFinalTeam();
       if (prev === 'schedule') return hideTodaySchedule();
       if (prev === 'standings') return hideStandings();
       if (prev === 'timeline') return hideItemTimeline();
@@ -4315,15 +5352,32 @@
         connectSSE(); // match + standings updates are fanned out over this same connection
       }
     }
-    setInterval(() => {
-      if (isSseLeader) {
-        try { localStorage.setItem(LEADER_KEY, JSON.stringify({ id: tabInstanceId, ts: Date.now() })); } catch {}
-      } else {
-        tryClaimLeadership();
-      }
-    }, LEADER_CHECK_MS);
-    sseDot.title = 'Waiting to become live-feed leader…';
-    tryClaimLeadership();
+
+    /* The dashboard's own Control-tab preview iframe (mplfs.html?preview=1)
+       is a single known instance, not one of the "many broadcast tabs" the
+       leader election above guards against — but it shares localStorage
+       (same origin) with any standalone/OBS tab of this same page, so it
+       was silently losing the leader election to whichever tab claimed it
+       first and never opening its own SSE connection, leaving the preview
+       stuck showing whatever was live at iframe-load time. Exempt it: it
+       always gets its own connection, on top of whatever the elected
+       leader is doing. */
+    const isPreviewFrame = new URLSearchParams(location.search).get('preview') === '1';
+    if (isPreviewFrame) {
+      isSseLeader = true;
+      sseDot.title = 'Live feed (dashboard preview)';
+      connectSSE();
+    } else {
+      setInterval(() => {
+        if (isSseLeader) {
+          try { localStorage.setItem(LEADER_KEY, JSON.stringify({ id: tabInstanceId, ts: Date.now() })); } catch {}
+        } else {
+          tryClaimLeadership();
+        }
+      }, LEADER_CHECK_MS);
+      sseDot.title = 'Waiting to become live-feed leader…';
+      tryClaimLeadership();
+    }
 
     startRichguyPoll();
 
@@ -4339,6 +5393,8 @@
         else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
         else if (scene.activeFeature === 'waiting')  showWaitingScreen();
         else if (scene.activeFeature === 'lobby')    showWaitingLobby();
+        else if (scene.activeFeature === 'hexagon')  showTeamHexagon();
+        else if (scene.activeFeature === 'finalteam') showFinalTeam();
         else if (scene.activeFeature === 'schedule') showTodaySchedule();
         else if (scene.activeFeature === 'standings') showStandings();
         else if (scene.matchboard)                   showMatchBoard();
@@ -4365,6 +5421,8 @@
         if (feature === 'richguy')  fetchAndShowRichguy();
         if (feature === 'waiting')  showWaitingScreen();
         if (feature === 'lobby')    showWaitingLobby();
+        if (feature === 'hexagon')  showTeamHexagon();
+        if (feature === 'finalteam') showFinalTeam();
         if (feature === 'schedule') showTodaySchedule();
         if (feature === 'standings') showStandings();
         if (feature === 'timeline') showItemTimeline();
@@ -4375,7 +5433,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', final_team: 'preview-finalteam' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -4385,6 +5443,8 @@
         if (event === 'post_richguy')  fetchAndShowRichguy();
         if (event === 'waiting_tvc')   showWaitingScreen();
         if (event === 'waiting_lobby') showWaitingLobby();
+        if (event === 'team_hexagon') showTeamHexagon();
+        if (event === 'final_team') showFinalTeam();
         if (event === 'today_schedule') showTodaySchedule();
         if (event === 'standings')     showStandings();
         if (event === 'post_emblems')  showPostEmblems();

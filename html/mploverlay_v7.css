@@ -13,149 +13,6 @@
     background: transparent;
   }
 
-  .overlay-container {
-    position: absolute;
-    height: 90px; width: 300px;
-    background: linear-gradient(180deg, #ffffff 0%, #e2e2e2 100%);
-    border-radius: 0; overflow: hidden;
-    contain: layout style;
-  }
-  .overlay-container.left  { left: 0; }
-  .overlay-container.right { right: 0; }
-
-  .lvl-text {
-    position: absolute; width: 300px; height: 90px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; font-size: 32px; color: #111;
-    letter-spacing: 0.06em; white-space: nowrap;
-   ;
-  }
-  .left  .lvl-text { left: 0; }
-  .right .lvl-text { right: 0; }
-
-  .lvl-inner { display: inline-block; transform-origin: center center; }
-
-  .time-text {
-    position: absolute; width: 140px; height: 90px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; color: #444;
-    opacity: 0 pointer-events: none;
-  }
-  .left  .time-text { right: 0; transform: translateX(12px); }
-  .right .time-text { left: 0;  transform: translateX(-12px); }
-
-  .time-label {
-    font-size: 10px; color: #888; letter-spacing: 0.1em;
-    display: block; line-height: 1; margin-bottom: 5px;
-    font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700;
-  }
-  .time-value {
-    font-size: 34px; color: #222; display: block; line-height: 1;
-    font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700;
-    letter-spacing: 0.04em;
-  }
-
-  .divider {
-    position: absolute; top: 16px; bottom: 16px; width: 1px;
-    background: #ccc; opacity: 0
-  }
-  .left  .divider { left: 160px; }
-  .right .divider { left: 140px; }
-
-  /* ── Item pickup v2 ── */
-  .item-overlay { width: 370px; }
-  .item-overlay-left  { background: url('/assets/blueitem.png') center/cover no-repeat; }
-  .item-overlay-right { background: url('/assets/reditem.png')  center/cover no-repeat; }
-  /* right-side: hero on right, work area on left */
-  .item-overlay-right .item-hero-img  { left: auto; right: 2px; }
-  .item-overlay-right .item-work-area { left: 0; }
-  .item-overlay-right .item-nameplate { left: auto; right: 28px; flex-direction: row-reverse; }
-  .item-overlay-right .item-priority-plate { left: auto; right: 17px; background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%); }
-
-  .item-hero-img {
-    position: absolute; left: 2px; top: 2px;
-    width: 86px; height: 86px;
-    object-fit: cover; object-position: center top; display: block;
-  }
-  .item-work-area {
-    position: absolute; left: 88px; top: 0;
-    width: 282px; height: 90px;
-  }
-  .recipe-item {
-    position: absolute; top: 12.5px;
-    width: 65px; height: 65px;
-    object-fit: contain; display: block;
-    opacity: 0; transform: scale(0.75);
-   ;
-    transform-origin: center center;
-  }
-  .item-t3-icon {
-    position: absolute; top: 12.5px;
-    width: 65px; height: 65px;
-    object-fit: contain; display: block;
-    transform: scale(0); opacity: 0;
-   ;
-    transform-origin: center center;
-    z-index: 10;
-  }
-  .item-nameplate {
-    position: absolute; left: 28px; top: 12px;
-    display: flex; align-items: center; gap: 3px;
-    opacity: 0; transform: translateY(16px);
-   ;
-  }
-  .item-role-square {
-    width: 22px; height: 22px; background: #000; flex-shrink: 0;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .item-role-icon { width: 18px; height: 18px; object-fit: contain; display: block; }
-  .item-player-name {
-    font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700;
-    font-size: 25px; color: #000; line-height: 1; white-space: nowrap;
-    letter-spacing: 0.02em;
-  }
-  .item-priority-plate {
-    position: absolute; left: 17px; top: 45px;
-    width: 177px; height: 43px;
-    background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px;
-    opacity: 0; transform: translateY(-16px);
-   ;
-  }
-  .item-priority-first {
-    font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700;
-    font-size: 19px; color: #161616; line-height: 1; letter-spacing: 0.06em;
-    white-space: nowrap;
-  }
-  .item-priority-label {
-    font-family: 'General Sans','Arial Black',sans-serif; font-weight: 500;
-    font-size: 16px; color: #161616; line-height: 1; letter-spacing: 0.1em;
-    white-space: nowrap;
-  }
-
-  .item-flash {
-    position: absolute; left: 114px; top: 5px;
-    width: 80px; height: 80px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,255,200,1) 0%, rgba(255,220,60,0.85) 35%, rgba(255,140,0,0.4) 65%, transparent 80%);
-    transform: scale(0); opacity: 0;
-    pointer-events: none
-    transform-origin: center center;
-    z-index: 20;
-  }
-  .item-glow-ring {
-    position: absolute; left: 114px; top: 5px;
-    width: 80px; height: 80px; border-radius: 50%;
-    border: 3px solid rgba(255,200,50,0.9);
-    box-shadow: 0 0 8px rgba(255,180,0,0.6);
-    transform: scale(0); opacity: 0;
-    pointer-events: none
-    transform-origin: center center;
-    z-index: 20;
-  }
-
   /* ── Debug area ── */
   #debug-area {
     position: absolute; bottom: 20px; left: 0; right: 0;
@@ -242,220 +99,140 @@
   }
   .t3-cell.selected span { color: #8af; }
 
-  @keyframes lvlPunch {
-    0%   { transform: scale(1); }
-    15%  { transform: scale(1.14); }
-    30%  { transform: scale(0.95); }
-    50%  { transform: scale(1.06); }
-    70%  { transform: scale(0.98); }
-    100% { transform: scale(1); }
-  }
-  @keyframes shimmer {
-    0%   { color: #111; }
-    40%  { color: #fff; }
-    100% { color: #111; }
-  }
-  @keyframes itemPunch {
-    0%   { transform: scale(0.35); opacity: 0; }
-    35%  { transform: scale(1.4);  opacity: 1; }
-    58%  { transform: scale(0.88); opacity: 1; }
-    78%  { transform: scale(1.08); opacity: 1; }
-    100% { transform: scale(1);    opacity: 1; }
-  }
-  @keyframes flashBurst {
-    0%   { transform: scale(0.2); opacity: 0; }
-    20%  { transform: scale(0.7); opacity: 1; }
-    55%  { transform: scale(1.5); opacity: 0.7; }
-    100% { transform: scale(2.6); opacity: 0; }
-  }
-  @keyframes glowRing {
-    0%   { transform: scale(0.4); opacity: 1; }
-    100% { transform: scale(3.2); opacity: 0; }
-  }
-  @keyframes t3Glow {
-    0%, 100% { opacity: 0.85; }
-    50%      { opacity: 1; }
-  }
-
-  /* ── [FEATURE: conceal-overlay] ── */
-  #conceal-overlay {
-    width: 282px;
-    background: url('/assets/backblue.png') center/cover no-repeat;
-  }
-  #conceal-overlay-r {
-    width: 282px;
-    background: url('/assets/backred.png') center/cover no-repeat;
-  }
-  #conceal-overlay-r .conceal-hero-section { left: auto; right: 0; }
-  #conceal-overlay-r .conceal-text-section { left: 0; }
-
-  .conceal-hero-section {
-    position: absolute; left: 0; top: 0;
-    width: 116px; height: 90px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .conceal-circle {
-    width: 64px; height: 64px; border-radius: 50%;
-    border: 3px solid #c8cbd2;
-    box-shadow: inset 0 0 3px rgba(0,0,0,0.22);
-    overflow: hidden; flex-shrink: 0;
-    background: rgba(200,203,210,0.18);
-  }
-  .conceal-circle img {
-    width: 100%; height: 100%; object-fit: cover; display: block;
-  }
-  .conceal-text-section {
-    position: absolute; left: 116px; top: 0;
-    width: 166px; height: 90px; overflow: hidden;
-  }
-  .conceal-word {
-    position: absolute; left: 0; right: 0; text-align: center;
-    top: 18px;
-    font-family: 'Anton', sans-serif; font-size: 34px;
-    color: #111; letter-spacing: 0.04em; line-height: 1;
-    opacity: 0; transform: translateY(10px)
-  }
-  .conceal-word-inner { display: inline-block; transform-origin: center center; }
-  .activated-word {
-    position: absolute; left: 0; right: 0; text-align: center;
-    top: 56px;
-    font-family: 'Anton', sans-serif; font-size: 17px;
-    color: #555; letter-spacing: 0.12em; line-height: 1;
-    opacity: 0; transform: translateY(20px)
-  }
-  /* ── [REDESIGN: lvl15 v2] all players ── */
-  .overlay-container.left.lvl15-v2  { background: url('/assets/blue15.png') center/cover no-repeat; }
-  .overlay-container.right.lvl15-v2 { background: url('/assets/red15.png')  center/cover no-repeat; }
-  .lvl15-v2 .lvl15-hero {
-    position: absolute; left: 2px; top: 2px;
-    width: 86px; height: 86px;
-    object-fit: cover; object-position: center top; display: block;
-  }
-  .overlay-container.right.lvl15-v2 .lvl15-hero    { left: auto; right: 2px; }
-  .overlay-container.right.lvl15-v2 .lvl15-content { left: 0; }
-  .lvl15-v2 .lvl15-content {
-    position: absolute; left: 108px; top: 3px;
-    width: 192px; height: 85px; overflow: hidden;
-  }
-  .lvl15-v2 .lvl15-word {
-    position: absolute; left: 0; right: 0; text-align: center;
-    top: 12px;
-    font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; font-size: 32px; color: #111;
-    letter-spacing: 0.06em; line-height: 1; white-space: nowrap;
-    opacity: 0; transform: translateY(15px)
-  }
-  .lvl15-v2 .lvl15-time-block {
-    position: absolute; left: 0; right: 0; text-align: center;
-    top: 36px;
-    display: flex; flex-direction: column; align-items: center; gap: 3px;
-    opacity: 0; transform: translateY(16px)
-  }
-  .lvl15-time-block .time-reached-label {
-    font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; font-size: 9px; color: #888;
-    letter-spacing: 0.1em; line-height: 1;
-  }
-  .lvl15-time-block .time-reached-value {
-    font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; font-size: 26px; color: #222;
-    letter-spacing: 0.04em; line-height: 1;
-  }
-  .lvl15-v2 .lvl15-word-inner {
-    display: inline-block; transform-origin: center center;
-  }
-
-  @keyframes concealPunch {
-    0%   { transform: translateY(10px) scale(0.88); opacity: 0; }
-    55%  { transform: translateY(10px) scale(1.08); opacity: 1; }
-    80%  { transform: translateY(10px) scale(0.97); opacity: 1; }
-    100% { transform: translateY(10px) scale(1);    opacity: 1; }
-  }
-
-  /* ── [FEATURE: trinity] ── */
-  .trinity-item {
+  /* ── [REDESIGN: "eventer" family] shared compact fixed-position
+     badge shell (151×70), used by lvl15 and first-item-priority.
+     Fixed per-player slot; the card reveals via a side wipe (clip
+     stays put, inner card slides in from its own edge — home from
+     the left, away mirrored from the right — so the visible sliver
+     grows outward from that edge toward the middle).
+     Home player 1 sits at left:90 top:367 (5 lanes, 89px top step =
+     70px box + 19px gap between each); away mirrors home
+     horizontally (left = 1920 - 90 - 151 = 1679). */
+  .evt-clip {
     position: absolute;
-    object-fit: contain; display: block;
-    opacity: 0; transform: scale(0.5) rotate(-15deg);
-   ;
-    transform-origin: center center;
-    z-index: 8;
-  }
-  .trinity-priority-plate {
-    position: absolute; top: 45px;
-    width: 263px; height: 43px;
-    background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 3px;
-    opacity: 0; transform: translateY(-16px);
-   ;
-  }
-  .item-overlay-left  .trinity-priority-plate { left: 17px; }
-  .item-overlay-right .trinity-priority-plate { right: 17px; background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%); }
-
-  @keyframes trinityItemIn {
-    0%   { transform: scale(0.2) rotate(-20deg); opacity: 0; }
-    45%  { transform: scale(1.3) rotate(5deg);   opacity: 1; }
-    72%  { transform: scale(0.91) rotate(-1deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0deg);     opacity: 1; }
-  }
-  @keyframes trinityGlow {
-    0%, 100% { opacity: 0.88; }
-    50%      { opacity: 1; }
-  }
-  @keyframes trinityFlash {
-    0%   { transform: scale(0.1); opacity: 0; }
-    18%  { transform: scale(0.65); opacity: 1; }
-    50%  { transform: scale(1.9);  opacity: 0.85; }
-    100% { transform: scale(4.5);  opacity: 0; }
-  }
-  @keyframes trinityRing {
-    0%   { transform: scale(0.3); opacity: 1; }
-    100% { transform: scale(4.0); opacity: 0; }
-  }
-
-  /* ── [FEATURE: swap] ── */
-  .swap-item {
-    position: absolute;
-    object-fit: contain; display: block;
-    opacity: 0; transform: scale(0.5) rotate(-15deg);
-    transform-origin: center center;
-    z-index: 8;
-  }
-  .swap-arrow-icon {
-    position: absolute;
-    width: 34px; height: 34px;
-    opacity: 0; transform: scale(0.5);
-    transform-origin: center center;
+    width: 151px; height: 70px;
+    overflow: hidden;
+    display: none;
     pointer-events: none;
-    z-index: 15;
+    z-index: 475; /* sits above #player-ui-overlay (z-index:30) which its box overlaps */
   }
-  .swap-priority-plate {
-    position: absolute; top: 45px;
-    width: 177px; height: 43px;
-    background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%);
+  .evt-card {
+    position: absolute; left: 0; top: 0;
+    width: 151px; height: 70px;
+    transform: translateX(-151px);
+    transition: transform 350ms ease-in;
+  }
+  .evt-clip.away .evt-card {
+    transform: translateX(151px);
+  }
+  .evt-clip.evt-in .evt-card {
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(0);
+  }
+  .evt-bg {
+    position: absolute; left: 0; top: 0;
+    width: 151px; height: 70px;
+  }
+  .evt-label {
+    position: absolute; left: 0; top: 0;
+    width: 151px; height: 26px;
     display: flex; align-items: center; justify-content: center;
-    opacity: 0; transform: translateY(-16px);
-  }
-  .item-overlay-left  .swap-priority-plate { left: 17px; }
-  .item-overlay-right .swap-priority-plate { right: 17px; background: linear-gradient(45deg, #ca9a35 0%, #ffef87 50%, #ca9a35 100%); }
-  .swap-label {
     font-family: 'General Sans','Arial Black',sans-serif;
-    font-weight: 700; font-size: 21px; color: #161616;
-    letter-spacing: 0.07em; white-space: nowrap; line-height: 1;
+    font-weight: 700; font-size: 11px; color: #333;
+    letter-spacing: 0.03em; text-transform: uppercase; line-height: 1;
+  }
+  .evt-value {
+    position: absolute; left: 0; top: 26px;
+    width: 151px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 34px; color: #111;
+    letter-spacing: 0.01em; line-height: 1;
   }
 
-  /* ── Compositor-thread slide animations ── */
-  @keyframes slideIn  { from { transform: var(--offX); } to { transform: translateX(0); } }
-  @keyframes slideOut { from { transform: translateX(0); } to { transform: var(--offX); } }
-  .sliding-in       { animation: slideIn       0.45s cubic-bezier(0.22,1,0.36,1) both; }
-  .sliding-out      { animation: slideOut      0.38s cubic-bezier(0.55,0,1,0.45) forwards; }
-  @keyframes slideOutFade {
-    from { transform: translateX(0); opacity: 1; }
-    50%  { opacity: 0; }
-    to   { transform: var(--offX); opacity: 0; }
+  /* ── [FEATURE: first-item-priority / trinity] ── both share the
+     evt-clip/evt-card shell plus this generic item-icon-in-a-box
+     unit; .evt-item-box's own `left` is set inline per instance
+     (fip: one box at 109; trinity: three boxes at 7/55/103, per
+     eventfirstitemguide.png and eventtrinityguide.png). The green
+     blocks in those guides are placeholders — real art comes from
+     Items/<id>.png. Sheen is a skewed light bar swept across the
+     icon once, clipped to the icon's own box. */
+  .evt-label.big { font-size: 13px; } /* MARKSMAN TRINITY measures 144px at 13px — 14px wraps to 2 lines at 151px wide */
+  .fip-time {
+    position: absolute; left: 0; top: 26px;
+    width: 109px; height: 44px;
+    display: flex; align-items: center; justify-content: center; gap: 3px;
+    white-space: nowrap;
   }
-  .sliding-out-fade { animation: slideOutFade  0.27s cubic-bezier(0.55,0,1,0.45) forwards; }
+  .fip-time-num {
+    font-family: 'Anton', sans-serif;
+    font-size: 26px; color: #111;
+    letter-spacing: 0.01em; line-height: 1;
+  }
+  .fip-time-unit {
+    font-family: 'General Sans','Arial Black',sans-serif;
+    font-weight: 700; font-size: 11px; color: #111;
+    letter-spacing: 0.02em; line-height: 1;
+  }
+  .evt-item-box {
+    position: absolute; top: 28px;
+    width: 42px; height: 42px;
+    overflow: hidden;
+  }
+  .evt-item-icon {
+    position: absolute; left: 3px; top: 3px;
+    width: 36px; height: 36px;
+    object-fit: contain; display: block;
+  }
+  .evt-item-icon.dimmed { filter: brightness(0.8); } /* 20% darker — the item being replaced */
+  .evt-sheen {
+    position: absolute; top: -20%; left: -60%;
+    width: 40%; height: 140%;
+    background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-15deg);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .evt-sheen.sweep {
+    animation: evtSheenSweep 0.75s ease-out forwards;
+  }
+  @keyframes evtSheenSweep {
+    0%   { left: -60%;  opacity: 1; }
+    70%  { opacity: 1; }
+    100% { left: 140%;  opacity: 0; }
+  }
+
+  /* ── [FEATURE: quick-swap] ── evt-clip/evt-card shell; measured off
+     eventswapguide1.png (phase 1 — sold item left at 31, bought item
+     right at 79, both 42×42) and eventswapguide2.png (phase 2 — sold
+     item gone, bought item recentered to 55). .swap-out fades/shrinks
+     the sold item away; .swap-center slides the bought item to the
+     middle; sheen plays on the bought item once it settles there. */
+  .evt-item-box.swap-old {
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4,0,0.6,1);
+  }
+  .evt-item-box.swap-old.swap-out {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  .evt-item-box.swap-new {
+    transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  .evt-item-box.swap-new.swap-center {
+    transform: translateX(-24px);
+  }
+  .evt-swap-icon {
+    position: absolute; left: 64.5px; top: 38px;
+    width: 22px; height: 22px;
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .evt-swap-icon.swap-out {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+
 
 
   /* ── [FEATURE: fight-recap] ── */
@@ -1309,6 +1086,59 @@
     height: 13px;
     flex-shrink: 0;
   }
+  /* ── Map box — background art + logo + name, from the match board.
+     Coords/dimensions match the .MAP / Rectangle_1 / Rectangle_2 guide
+     layers; only position/size carried over, not their guide fills. ── */
+  #sb-map {
+    position: absolute;
+    left: 1638px;
+    top: 141px;
+    width: 294px;
+    height: 69px;
+    z-index: 267;
+    background-image: url('/assets/ingame/mapbacker.png');
+    background-size: 100% 100%;
+    pointer-events: none;
+  }
+  #sb-map-logo {
+    position: absolute;
+    left: 9px;
+    top: 9px;
+    width: 52px;
+    height: 52px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  #sb-map-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  #sb-map-name {
+    position: absolute;
+    left: 102px;
+    top: 10px;
+    width: 185px;
+    height: 50px;
+    z-index: 4;
+    box-sizing: border-box;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .sb-map-name-text {
+    font-family: 'Anton', sans-serif;
+    font-weight: 400;
+    color: #000000;
+    text-transform: uppercase;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1;
+  }
   #sb-sponsor-loop {
     position: absolute;
     left: 1689px;
@@ -1422,6 +1252,111 @@
   #kill-event-video {
     width: 100%; height: 100%;
     display: block;
+  }
+  /* Player photo — pops up from the bottom of its own box (Rectangle_1:
+     462,693 388×388, bottom edge flush with the 1080px scene bottom), holds,
+     then pops back down. Clip window stays fixed; only the img slides. */
+  #kill-event-photo-clip {
+    position: absolute;
+    left: 462px; top: 693px;
+    width: 388px; height: 388px;
+    overflow: hidden;
+    z-index: 51;
+  }
+  #kill-event-photo {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    /* +12px overshoot past the clip's own bottom edge, plus opacity 0 at
+       rest — belt-and-suspenders so a stray subpixel-rounding sliver of
+       the image is never visible at the resting (pre-/post-animation)
+       position, not just mid-transition. */
+    transform: translateY(calc(100% + 12px));
+    opacity: 0;
+    transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45), opacity 220ms ease-in;
+  }
+  #kill-event-photo-clip.ke-in #kill-event-photo {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease-out;
+  }
+  /* Little settle bounce once the slide-up lands — same scale-bounce
+     approach as .ic-middle-bounce/.ecc-middle-bounce/.gdc-smart-bounce
+     elsewhere. translateY(0) is baked into every step since the slide
+     transition above has already finished by the time this plays. */
+  @keyframes kill-photo-bounce {
+    0%   { transform: translateY(0) scale(1); }
+    40%  { transform: translateY(0) scale(1.06); }
+    70%  { transform: translateY(0) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
+  }
+  #kill-event-photo.ke-bounce {
+    animation: kill-photo-bounce 400ms ease-out;
+  }
+  /* Name tag — Rectangle_2: 552,1012 217×39, background is
+     assets/ingame/kill{blue,red}back.png (native 217×39, one per camp).
+     Role icon (Rectangle_4: 561,1016 31×31) and name (Rectangle_3:
+     613,1016 151×30) are both given in the same coordinate frame as the
+     plate itself, so relative to the plate's own top-left they sit at
+     9,4 and 61,4 respectively. Same pop pattern, staggered slightly
+     behind the photo. */
+  #kill-event-nametag-clip {
+    position: absolute;
+    left: 552px; top: 1012px;
+    width: 217px; height: 39px;
+    overflow: hidden;
+    z-index: 52;
+  }
+  #kill-event-nametag-text {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    /* +12px overshoot + opacity 0 at rest — same belt-and-suspenders fix
+       as the photo above, so no sliver of the plate art is ever visible
+       before it pops in or after it pops back down. */
+    transform: translateY(calc(100% + 12px));
+    opacity: 0;
+    transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45), opacity 220ms ease-in;
+  }
+  #kill-event-nametag-clip.ke-in #kill-event-nametag-text {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1) 70ms, opacity 300ms ease-out 70ms;
+  }
+  #kill-event-role-icon {
+    position: absolute;
+    left: 9px; top: 4px;
+    width: 31px; height: 31px;
+    object-fit: contain;
+    filter: brightness(0); /* role/*.png icons are taupe by default — force solid black */
+  }
+  /* Fixed box (position/size never changes) — centers whatever the inner
+     span ends up sized to. overflow:hidden is a hard safety net so a name
+     can never visually exceed Rectangle_3's box even at killFitName()'s
+     smallest step. */
+  #kill-event-name-box {
+    position: absolute;
+    left: 61px; top: 4px;
+    width: 151px; height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  /* The actual text run — deliberately NOT given a fixed width, so its
+     scrollWidth in killFitName() reflects the real rendered text width
+     instead of the (fixed) parent box's width. */
+  #kill-event-name {
+    display: inline-block;
+    white-space: nowrap;
+    text-align: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
   }
 
   /* ── [FEATURE: item-check] ──────────────────────────────────────
@@ -1870,8 +1805,11 @@
      downward with no gap (card height 89px). Away side is the same
      180-wide local layout mirrored (mirror(x) = 180 - x - width),
      matching uired.png's pre-mirrored background art. The portrait
-     circle and the thin bar beneath it are intentionally left
-     empty/transparent — no element renders there. */
+     circle is a real cutout baked into uiblue.png/uired.png (5,53
+     19×19 home / 156,53 19×19 away) — .pui-emblem renders the
+     player's main rune there, behind .pui-bg so the art's cutout
+     edge frames it; the thin bar beneath it is still intentionally
+     left empty/transparent. */
   #player-ui-overlay {
     position: absolute;
     left: 0; top: 0;
@@ -1890,6 +1828,14 @@
     position: absolute; left: 0; top: 0;
     width: 180px; height: 89px;
   }
+  .pui-emblem {
+    position: absolute;
+    top: 53px; width: 19px; height: 19px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+  .pui-card.pui-home .pui-emblem { left: 5px; }
+  .pui-card.pui-away .pui-emblem { left: 156px; }
   .pui-level {
     position: absolute;
     top: 0; width: 32px; height: 19px;

@@ -51,47 +51,64 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: fill;
-  z-index: 0;
+  z-index: 3;
   pointer-events: none;
   display: block;
 }
 
-/* ── Hero photo ── */
+/* ── Hero photo — fits the green box2 slot, cropped top/bottom ── */
 .pb-hero {
   position: absolute;
-  right: 2px;
-  top: 211px;
-  width: 73px;
-  height: 73px;
+  left: 359px;
+  top: 1px;
+  width: 148px;
+  height: 67px;
   object-fit: cover;
-  object-position: top center;
-  z-index: 5;
+  object-position: center 40%;
+  z-index: 1;
   display: block;
+}
+
+/* ── Level badge — ribbon is baked into blue_box2.png, text sits on top ── */
+.pb-lvl {
+  position: absolute;
+  left: 368px;
+  top: 50px;
+  width: 52px;
+  height: 17px;
+  font-family: 'GeneralSans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 17px;
+  color: #fff;
+  text-transform: uppercase;
+  z-index: 6;
 }
 
 /* ── Damage flash overlay (same position as hero portrait) ── */
 .pb-dmg-flash {
   position: absolute;
-  right: 2px;
-  top: 211px;
-  width: 73px;
-  height: 73px;
+  left: 359px;
+  top: 1px;
+  width: 148px;
+  height: 67px;
   background: transparent;
   box-shadow: inset 0 0 14px 6px rgba(255,30,0,0.9);
   opacity: 0;
   pointer-events: none;
   z-index: 7;
   border-radius: 3px;
+  display: none;
 }
 
-/* ── Ultimate indicator ── */
+/* ── Ultimate indicator — hidden for now, revisit later ── */
 .pb-ulti {
   position: absolute;
   right: 2px;
   top: 188px;
   width: 73px;
   height: 22px;
-  display: flex;
+  display: none;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -108,39 +125,39 @@ html, body {
 .pb-ulti.ready     { background: linear-gradient(to bottom, #2edb6e, #0f7a35); }
 .pb-ulti.not-ready { background: linear-gradient(to bottom, #4a4a4a, #1a1a1a); }
 
-/* ── Role icon ── */
+/* ── Role icon — bottom bar, in the white holder ── */
 .pb-role {
   position: absolute;
-  left: 8px;
-  top: 193px;
-  width: 22px;
-  height: 22px;
+  left: 14px;
+  top: 249px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   filter: brightness(0);
   z-index: 5;
   display: block;
 }
 
-/* ── Player name ── */
+/* ── Player name — bottom bar, next to role icon ── */
 .pb-name {
   position: absolute;
-  left: 48px;
-  top: 194px;
-  width: 160px;
-  height: 22px;
+  left: 78px;
+  top: 251px;
+  width: 265px;
+  height: 24px;
   font-family: 'GeneralSans', sans-serif;
   font-weight: 700;
-  font-size: 21px;
+  font-size: 22px;
   color: #ffffff;
   text-transform: uppercase;
-  line-height: 22px;
-  text-align: center;
+  line-height: 24px;
+  text-align: left;
   white-space: nowrap;
   overflow: visible;
   z-index: 5;
 }
 
-/* ── Level circle ── */
+/* ── Level circle — hidden for now, revisit later ── */
 .pb-level {
   position: absolute;
   left: 467px;
@@ -148,28 +165,27 @@ html, body {
   width: 34px;
   height: 34px;
   z-index: 5;
+  display: none;
 }
 .pb-level-arc {
   transition: stroke-dashoffset 0.5s ease-out;
 }
 
-/* ── KDA numbers ── */
+/* ── KDA — single "K/D/A" string, part of the KDA+Gold block, shown when BPM is Off ── */
 .pb-kda {
   position: absolute;
-  top: 247px;
+  left: 365px;
+  top: 192px;
+  width: 134px;
   z-index: 5;
   font-family: 'Anton', sans-serif;
-  font-size: 29px;
-  color: #000;
+  font-size: 34px;
+  color: #111;
   line-height: 1;
   text-align: center;
-  width: 26px;
 }
-.pb-kda.kill   { left: 270px; }
-.pb-kda.death  { left: 331px; }
-.pb-kda.assist { left: 391px; }
 
-/* ── HP Bar ── */
+/* ── HP Bar — hidden for now, revisit later ── */
 .pb-hp-wrap {
   position: absolute;
   left: 0px;
@@ -180,6 +196,7 @@ html, body {
   border-radius: 2px;
   overflow: hidden;
   z-index: 5;
+  display: none;
 }
 .pb-hp-wrap::after {
   content: '';
@@ -202,19 +219,19 @@ html, body {
   will-change: width;
 }
 
-/* ── Item panel ── */
+/* ── Item panel — 3×2 grid over the box2 item slots ── */
 .pb-items {
   position: absolute;
-  left: 8px;
-  top: 243px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
+  left: 365px;
+  top: 78px;
+  display: grid;
+  grid-template-columns: repeat(3, 40px);
+  grid-template-rows: repeat(2, 38px);
+  gap: 5px 7px;
   z-index: 5;
 }
 .item-slot {
-  width: 37px; height: 37px; flex-shrink: 0;
+  width: 40px; height: 38px; flex-shrink: 0;
   border-radius: 4px; overflow: hidden;
   position: relative;
 }
@@ -296,59 +313,83 @@ html, body {
   padding-right: 0;
 }
 
-/* ── HRM bar (EKG + heart + BPM) ── */
-.pb-hrm {
+/* ── BPM meter — heart + number + unit ("Live" state) ── */
+.pb-bpm-box {
   position: absolute;
-  left: 212px;
-  top: 187px;
-  width: 220px;
-  height: 33px;
-  z-index: 79;
-  background-image: url('assets/ingame/hrm_bluebox.png');
-  background-size: 100% 100%;
+  left: 372px;
+  top: 192px;
+  width: 121px;
+  height: 30px;
+  z-index: 5;
 }
-.pb-hrm-ekg {
+.pb-bpm-heart {
   position: absolute;
-  left: 2px;
-  top: 4px;
-  width: 49px;
-  height: 25px;
-  overflow: hidden;
-  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
-}
-.pb-hrm-ekg svg { display: block; }
-.pb-hrm-path {
-  vector-effect: non-scaling-stroke;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  fill: none;
-  stroke-width: 1.5;
-}
-.pb-hrm-heart {
-  position: absolute;
-  left: 53px;
-  top: 8px;
-  width: 17px;
-  height: 17px;
-  font-size: 13px;
-  line-height: 17px;
+  left: 0px;
+  top: 0px;
+  width: 24px;
+  height: 22px;
+  font-size: 22px;
+  line-height: 22px;
   text-align: center;
-  color: #2a2a2a;
+  color: #e8121f;
   transition: color 0.6s, transform 0.05s;
 }
-.pb-hrm-bpm {
+.pb-bpm-num {
   position: absolute;
-  left: 71px;
-  top: 4px;
-  width: 37px;
-  height: 25px;
+  left: 33px;
+  top: -8px;
+  width: 56px;
+  height: 38px;
   font-family: 'Anton', sans-serif;
-  font-size: 20px;
-  line-height: 25px;
-  color: #2a2a2a;
-  text-align: center;
+  font-size: 34px;
+  line-height: 38px;
+  color: #111;
   transition: color 0.6s;
+}
+.pb-bpm-unit {
+  position: absolute;
+  left: 94px;
+  top: 8px;
+  width: 27px;
+  height: 16px;
+  font-family: 'GeneralSans', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 16px;
+  color: #111;
+}
+
+/* ── Detected-by badge ── */
+.pb-detected {
+  position: absolute;
+  left: 389px;
+  top: 239px;
+  width: 84px;
+  height: 33px;
+  object-fit: contain;
+  z-index: 5;
+}
+
+/* ── KDA + Gold — shown instead of the BPM meter when a player is set to Off ── */
+.pb-kdagold { display: none; }
+.pb-gold-row {
+  position: absolute;
+  left: 365px;
+  top: 237px;
+  width: 134px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  z-index: 5;
+}
+.pb-gold-icon { width: 16px; height: 16px; display: block; }
+.pb-gold-text {
+  font-family: 'Anton', sans-serif;
+  font-size: 33px;
+  color: #111;
+  line-height: 1;
 }
 
 </style>
@@ -383,12 +424,13 @@ html, body {
 
   <!-- ── P1 ── -->
   <div class="playerbox" id="p1">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p1-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p1-hp-fill"></div>
     </div>
     <img class="pb-hero"  id="p1-hero" src="" alt="">
+    <div class="pb-lvl" id="p1-lvl">LVL.1</div>
     <div class="pb-ulti not-ready" id="p1-ulti">ULTI<br>NOT READY</div>
     <img class="pb-role"  id="p1-role" src="" alt="">
     <div class="pb-name"  id="p1-name">—</div>
@@ -403,9 +445,13 @@ html, body {
           fill="#161616" font-family="Anton" font-size="28" id="p1-level-text">1</text>
       </svg>
     </div>
-    <div class="pb-kda kill"   id="p1-kill">0</div>
-    <div class="pb-kda death"  id="p1-death">0</div>
-    <div class="pb-kda assist" id="p1-assist">0</div>
+    <div class="pb-kdagold" id="p1-kdagold">
+      <div class="pb-kda" id="p1-kill">0/0/0</div>
+      <div class="pb-gold-row">
+        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <div class="pb-gold-text" id="p1-gold">0</div>
+      </div>
+    </div>
     <div class="pb-items" id="p1-items">
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
@@ -414,25 +460,23 @@ html, body {
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
     </div>
-    <div class="pb-hrm" id="p1-hrm-box">
-      <div class="pb-hrm-ekg">
-        <svg width="100%" height="25" viewBox="0 0 400 25" preserveAspectRatio="none">
-          <path id="p1-hrm-path" class="pb-hrm-path" d=""/>
-        </svg>
-      </div>
-      <div id="p1-hrm-heart" class="pb-hrm-heart">&#10084;</div>
-      <div id="p1-hrm-bpm"   class="pb-hrm-bpm">--</div>
+    <div class="pb-bpm-box" id="p1-bpm-box">
+      <div id="p1-bpm-heart" class="pb-bpm-heart">&#10084;</div>
+      <div id="p1-bpm-num"   class="pb-bpm-num">--</div>
+      <div class="pb-bpm-unit">BPM</div>
     </div>
+    <img class="pb-detected" id="p1-detected" src="assets/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P2 ── -->
   <div class="playerbox" id="p2">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p2-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p2-hp-fill"></div>
     </div>
     <img class="pb-hero"  id="p2-hero" src="" alt="">
+    <div class="pb-lvl" id="p2-lvl">LVL.1</div>
     <div class="pb-ulti not-ready" id="p2-ulti">ULTI<br>NOT READY</div>
     <img class="pb-role"  id="p2-role" src="" alt="">
     <div class="pb-name"  id="p2-name">—</div>
@@ -447,9 +491,13 @@ html, body {
           fill="#161616" font-family="Anton" font-size="28" id="p2-level-text">1</text>
       </svg>
     </div>
-    <div class="pb-kda kill"   id="p2-kill">0</div>
-    <div class="pb-kda death"  id="p2-death">0</div>
-    <div class="pb-kda assist" id="p2-assist">0</div>
+    <div class="pb-kdagold" id="p2-kdagold">
+      <div class="pb-kda" id="p2-kill">0/0/0</div>
+      <div class="pb-gold-row">
+        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <div class="pb-gold-text" id="p2-gold">0</div>
+      </div>
+    </div>
     <div class="pb-items" id="p2-items">
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
@@ -458,25 +506,23 @@ html, body {
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
     </div>
-    <div class="pb-hrm" id="p2-hrm-box">
-      <div class="pb-hrm-ekg">
-        <svg width="100%" height="25" viewBox="0 0 400 25" preserveAspectRatio="none">
-          <path id="p2-hrm-path" class="pb-hrm-path" d=""/>
-        </svg>
-      </div>
-      <div id="p2-hrm-heart" class="pb-hrm-heart">&#10084;</div>
-      <div id="p2-hrm-bpm"   class="pb-hrm-bpm">--</div>
+    <div class="pb-bpm-box" id="p2-bpm-box">
+      <div id="p2-bpm-heart" class="pb-bpm-heart">&#10084;</div>
+      <div id="p2-bpm-num"   class="pb-bpm-num">--</div>
+      <div class="pb-bpm-unit">BPM</div>
     </div>
+    <img class="pb-detected" id="p2-detected" src="assets/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P3 ── -->
   <div class="playerbox" id="p3">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p3-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p3-hp-fill"></div>
     </div>
     <img class="pb-hero"  id="p3-hero" src="" alt="">
+    <div class="pb-lvl" id="p3-lvl">LVL.1</div>
     <div class="pb-ulti not-ready" id="p3-ulti">ULTI<br>NOT READY</div>
     <img class="pb-role"  id="p3-role" src="" alt="">
     <div class="pb-name"  id="p3-name">—</div>
@@ -491,9 +537,13 @@ html, body {
           fill="#161616" font-family="Anton" font-size="28" id="p3-level-text">1</text>
       </svg>
     </div>
-    <div class="pb-kda kill"   id="p3-kill">0</div>
-    <div class="pb-kda death"  id="p3-death">0</div>
-    <div class="pb-kda assist" id="p3-assist">0</div>
+    <div class="pb-kdagold" id="p3-kdagold">
+      <div class="pb-kda" id="p3-kill">0/0/0</div>
+      <div class="pb-gold-row">
+        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <div class="pb-gold-text" id="p3-gold">0</div>
+      </div>
+    </div>
     <div class="pb-items" id="p3-items">
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
@@ -502,25 +552,23 @@ html, body {
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
     </div>
-    <div class="pb-hrm" id="p3-hrm-box">
-      <div class="pb-hrm-ekg">
-        <svg width="100%" height="25" viewBox="0 0 400 25" preserveAspectRatio="none">
-          <path id="p3-hrm-path" class="pb-hrm-path" d=""/>
-        </svg>
-      </div>
-      <div id="p3-hrm-heart" class="pb-hrm-heart">&#10084;</div>
-      <div id="p3-hrm-bpm"   class="pb-hrm-bpm">--</div>
+    <div class="pb-bpm-box" id="p3-bpm-box">
+      <div id="p3-bpm-heart" class="pb-bpm-heart">&#10084;</div>
+      <div id="p3-bpm-num"   class="pb-bpm-num">--</div>
+      <div class="pb-bpm-unit">BPM</div>
     </div>
+    <img class="pb-detected" id="p3-detected" src="assets/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P4 ── -->
   <div class="playerbox" id="p4">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p4-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p4-hp-fill"></div>
     </div>
     <img class="pb-hero"  id="p4-hero" src="" alt="">
+    <div class="pb-lvl" id="p4-lvl">LVL.1</div>
     <div class="pb-ulti not-ready" id="p4-ulti">ULTI<br>NOT READY</div>
     <img class="pb-role"  id="p4-role" src="" alt="">
     <div class="pb-name"  id="p4-name">—</div>
@@ -535,9 +583,13 @@ html, body {
           fill="#161616" font-family="Anton" font-size="28" id="p4-level-text">1</text>
       </svg>
     </div>
-    <div class="pb-kda kill"   id="p4-kill">0</div>
-    <div class="pb-kda death"  id="p4-death">0</div>
-    <div class="pb-kda assist" id="p4-assist">0</div>
+    <div class="pb-kdagold" id="p4-kdagold">
+      <div class="pb-kda" id="p4-kill">0/0/0</div>
+      <div class="pb-gold-row">
+        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <div class="pb-gold-text" id="p4-gold">0</div>
+      </div>
+    </div>
     <div class="pb-items" id="p4-items">
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
@@ -546,25 +598,23 @@ html, body {
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
     </div>
-    <div class="pb-hrm" id="p4-hrm-box">
-      <div class="pb-hrm-ekg">
-        <svg width="100%" height="25" viewBox="0 0 400 25" preserveAspectRatio="none">
-          <path id="p4-hrm-path" class="pb-hrm-path" d=""/>
-        </svg>
-      </div>
-      <div id="p4-hrm-heart" class="pb-hrm-heart">&#10084;</div>
-      <div id="p4-hrm-bpm"   class="pb-hrm-bpm">--</div>
+    <div class="pb-bpm-box" id="p4-bpm-box">
+      <div id="p4-bpm-heart" class="pb-bpm-heart">&#10084;</div>
+      <div id="p4-bpm-num"   class="pb-bpm-num">--</div>
+      <div class="pb-bpm-unit">BPM</div>
     </div>
+    <img class="pb-detected" id="p4-detected" src="assets/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P5 ── -->
   <div class="playerbox" id="p5">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p5-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p5-hp-fill"></div>
     </div>
     <img class="pb-hero"  id="p5-hero" src="" alt="">
+    <div class="pb-lvl" id="p5-lvl">LVL.1</div>
     <div class="pb-ulti not-ready" id="p5-ulti">ULTI<br>NOT READY</div>
     <img class="pb-role"  id="p5-role" src="" alt="">
     <div class="pb-name"  id="p5-name">—</div>
@@ -579,9 +629,13 @@ html, body {
           fill="#161616" font-family="Anton" font-size="28" id="p5-level-text">1</text>
       </svg>
     </div>
-    <div class="pb-kda kill"   id="p5-kill">0</div>
-    <div class="pb-kda death"  id="p5-death">0</div>
-    <div class="pb-kda assist" id="p5-assist">0</div>
+    <div class="pb-kdagold" id="p5-kdagold">
+      <div class="pb-kda" id="p5-kill">0/0/0</div>
+      <div class="pb-gold-row">
+        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <div class="pb-gold-text" id="p5-gold">0</div>
+      </div>
+    </div>
     <div class="pb-items" id="p5-items">
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
@@ -590,20 +644,17 @@ html, body {
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
       <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
     </div>
-    <div class="pb-hrm" id="p5-hrm-box">
-      <div class="pb-hrm-ekg">
-        <svg width="100%" height="25" viewBox="0 0 400 25" preserveAspectRatio="none">
-          <path id="p5-hrm-path" class="pb-hrm-path" d=""/>
-        </svg>
-      </div>
-      <div id="p5-hrm-heart" class="pb-hrm-heart">&#10084;</div>
-      <div id="p5-hrm-bpm"   class="pb-hrm-bpm">--</div>
+    <div class="pb-bpm-box" id="p5-bpm-box">
+      <div id="p5-bpm-heart" class="pb-bpm-heart">&#10084;</div>
+      <div id="p5-bpm-num"   class="pb-bpm-num">--</div>
+      <div class="pb-bpm-unit">BPM</div>
     </div>
+    <img class="pb-detected" id="p5-detected" src="assets/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P6 empty slot ── -->
   <div class="playerbox" id="p6">
-    <img class="pb-bg" src="assets/ingame/blue_box.png" alt="">
+    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
   </div>
 
 </div>
@@ -729,6 +780,11 @@ function getSeats(camp) {
   return ['seat_1','seat_2','seat_3','seat_4','seat_5'].map(k => camp[k]).filter(Boolean);
 }
 
+function formatGold(g) {
+  g = Math.max(0, Math.round(g || 0));
+  return g < 1000 ? String(g) : (g / 1000).toFixed(1) + 'K';
+}
+
 /* ── Update a single player from seat data ── */
 function updatePlayer(pos, seat) {
   const key = 'p' + pos;
@@ -737,30 +793,30 @@ function updatePlayer(pos, seat) {
   const heroEl = document.getElementById(key + '-hero');
   if (heroEl && heroEl.dataset.hero !== String(seat.heroid)) {
     heroEl.dataset.hero = seat.heroid;
-    heroEl.src = `hero/HERO_${seat.heroid}_KOTAK.png`;
+    heroEl.src = `posthero/${seat.heroid}_POST_HERO.png`;
     heroEl.onerror = () => { heroEl.src = ''; };
   }
 
   /* HP */
   setHP(key, seat.cur_health_point, seat.max_health_point);
 
-  /* Name — scale font down if text exceeds 160px */
+  /* Name — scale font down if text exceeds the 265px working space */
   const nameEl = document.getElementById(key + '-name');
   if (nameEl) {
-    nameEl.style.fontSize = '21px';
+    nameEl.style.fontSize = '22px';
     nameEl.textContent = seat.name || '—';
-    if (nameEl.scrollWidth > 160) {
-      nameEl.style.fontSize = Math.floor(21 * 160 / nameEl.scrollWidth) + 'px';
+    if (nameEl.scrollWidth > 265) {
+      nameEl.style.fontSize = Math.floor(22 * 265 / nameEl.scrollWidth) + 'px';
     }
   }
 
-  /* KDA */
-  const killEl   = document.getElementById(key + '-kill');
-  const deathEl  = document.getElementById(key + '-death');
-  const assistEl = document.getElementById(key + '-assist');
-  if (killEl)   killEl.textContent   = seat.kill_num   ?? 0;
-  if (deathEl)  deathEl.textContent  = seat.dead_num   ?? 0;
-  if (assistEl) assistEl.textContent = seat.assist_num ?? 0;
+  /* KDA — single seamless "K/D/A" string */
+  const kdaEl = document.getElementById(key + '-kill');
+  if (kdaEl) kdaEl.textContent = `${seat.kill_num ?? 0}/${seat.dead_num ?? 0}/${seat.assist_num ?? 0}`;
+
+  /* Gold */
+  const goldEl = document.getElementById(key + '-gold');
+  if (goldEl) goldEl.textContent = formatGold(seat.gold);
 
   /* Level */
   updateLevelCircle(
@@ -768,6 +824,8 @@ function updatePlayer(pos, seat) {
     document.getElementById(key + '-level-text'),
     seat.level, seat.level_percent
   );
+  const lvlEl = document.getElementById(key + '-lvl');
+  if (lvlEl) lvlEl.textContent = 'LVL.' + (seat.level ?? 1);
 
   /* Ultimate — ready when level ≥ 4 and major_left_time === 0 */
   const ultiEl  = document.getElementById(key + '-ulti');
@@ -824,133 +882,75 @@ pollGame();
 setInterval(pollGame, 1000);
 
 /* ══════════════════════════════════════════════════
-   HRM — EKG + heart + BPM per player
+   BPM meter — heart + number per player
    Blue = camp1 → player1-5 (swapped: player6-10)
-   EKG scrolls left → right
+   Off  → BPM meter hides, KDA + Gold shows instead
    ══════════════════════════════════════════════════ */
-const HRM_MY_SLOTS   = ['player1','player2','player3','player4','player5'];
-const HRM_SWAP_SLOTS = ['player6','player7','player8','player9','player10'];
-const HRM_SIDE       = 'left';
-const HRM_PATH_LEN   = 200;
-const HRM_FREQ       = 3.95;
-const HRM_HIDE_KEY   = 'hrm_hide_blue_p';
+const BPM_MY_SLOTS   = ['player1','player2','player3','player4','player5'];
+const BPM_SWAP_SLOTS = ['player6','player7','player8','player9','player10'];
 
-let hrmSwapped = false;
+let bpmSwapped = false;
 
-const hrmPlayers = {};
+const bpmPlayers = {};
 for (let i = 1; i <= 5; i++) {
-  hrmPlayers['p' + i] = {
-    bpm: 0, connected: false,
+  bpmPlayers['p' + i] = {
+    bpm: 0, connected: false, off: false,
     phase: Math.random(),
-    points: Array(HRM_PATH_LEN).fill(12.5),
-    revPoints: Array(HRM_PATH_LEN).fill(12.5),
-    scrollBuffer: 0,
-    pathEl: null, heartEl: null, bpmEl: null, hrmEl: null,
-    lastStroke: null,
+    boxEl: null, heartEl: null, numEl: null, detectedEl: null, kdagoldEl: null,
   };
 }
 
-async function pollHrmSwap() {
+async function pollBpmSwap() {
   try {
     const r = await fetch('/match/state', { cache: 'no-store' });
     if (!r.ok) return;
     const d = await r.json();
-    hrmSwapped = !!d.swapped;
+    bpmSwapped = !!d.swapped;
   } catch {}
 }
-pollHrmSwap();
-setInterval(pollHrmSwap, 2000);
+pollBpmSwap();
+setInterval(pollBpmSwap, 2000);
 
-function hrmGetY(phase, bpm) {
-  const b = 12.5;
-  if (bpm <= 0) return b;
-  if (phase > 0.10 && phase < 0.20)
-    return b - Math.sin((phase - 0.10) * 10 * Math.PI) * 2.5;
-  if (phase > 0.22 && phase < 0.30) {
-    const q = (phase - 0.22) / 0.08;
-    return b - Math.sin(q * 2 * Math.PI) * 11;
-  }
-  if (phase > 0.45 && phase < 0.65)
-    return b - Math.sin((phase - 0.45) * 5 * Math.PI) * 3.5;
-  return b;
-}
-
-const hrmParts = new Array(HRM_PATH_LEN);
-function hrmBuildPath(pts) {
-  hrmParts[0] = `M 0 ${pts[0]}`;
-  const step = 400 / (HRM_PATH_LEN - 1);
-  for (let i = 1; i < HRM_PATH_LEN; i++)
-    hrmParts[i] = `L ${(i * step).toFixed(1)} ${pts[i]}`;
-  return hrmParts.join(' ');
-}
-
-const hrmColorCache = {};
-function hrmColor(bpm) {
-  const key = bpm | 0;
-  if (hrmColorCache[key]) return hrmColorCache[key];
-  const green  = {r:10, g:146, b:0};
-  const orange = {r:230,g:100, b:0};
-  const red    = {r:210,g:0,   b:30};
-  const t = Math.max(0, Math.min(1, (bpm - 60) / 60));
-  const a = t < 0.5 ? green  : orange;
-  const bv= t < 0.5 ? orange : red;
-  const u = t < 0.5 ? t * 2  : (t - 0.5) * 2;
-  const c = `rgb(${Math.round(a.r+(bv.r-a.r)*u)},${Math.round(a.g+(bv.g-a.g)*u)},${Math.round(a.b+(bv.b-a.b)*u)})`;
-  hrmColorCache[key] = c;
-  return c;
-}
-
-let hrmLast = 0;
-function hrmAnimate(ts) {
-  const dt = (ts - (hrmLast || ts)) / 1000;
-  hrmLast = ts;
+let bpmLast = 0;
+function bpmAnimate(ts) {
+  const dt = (ts - (bpmLast || ts)) / 1000;
+  bpmLast = ts;
   for (let i = 1; i <= 5; i++) {
-    const h = hrmPlayers['p' + i];
-    if (!h.pathEl) continue;
-    const active = h.bpm > 0 && h.connected;
+    const h = bpmPlayers['p' + i];
+    if (!h.heartEl) continue;
+    const active = h.bpm > 0 && h.connected && !h.off;
     if (active) h.phase = (h.phase + (h.bpm / 60) * dt) % 1;
-    h.scrollBuffer += dt * 60 * HRM_FREQ;
-    while (h.scrollBuffer >= 1) {
-      h.points.push(hrmGetY(h.phase, active ? h.bpm : 0));
-      h.points.shift();
-      h.scrollBuffer -= 1;
-    }
-    let pts = h.points;
-    if (HRM_SIDE === 'right') {
-      const src = h.points, rev = h.revPoints;
-      for (let j = 0; j < HRM_PATH_LEN; j++) rev[j] = src[HRM_PATH_LEN - 1 - j];
-      pts = rev;
-    }
-    h.pathEl.setAttribute('d', hrmBuildPath(pts));
-    const col = (active && h.bpm > 0) ? hrmColor(h.bpm) : '#2a2a2a';
-    if (col !== h.lastStroke) {
-      h.pathEl.setAttribute('stroke', col);
-      h.lastStroke = col;
-    }
     let beat = 0;
     if (active && h.phase >= 0.22 && h.phase <= 0.50)
       beat = Math.pow(1 - (h.phase - 0.22) / 0.28, 4);
     h.heartEl.style.transform = `scale(${(1 + beat * 0.4).toFixed(3)})`;
   }
-  requestAnimationFrame(hrmAnimate);
+  requestAnimationFrame(bpmAnimate);
 }
-requestAnimationFrame(hrmAnimate);
+requestAnimationFrame(bpmAnimate);
 
-function setHrmDisplay(key, bpm, active) {
-  const h = hrmPlayers[key];
-  if (!h.bpmEl) return;
-  h.bpmEl.textContent = (active && bpm > 0) ? bpm : '--';
-  const col = (active && bpm > 0) ? hrmColor(bpm) : '#2a2a2a';
-  h.bpmEl.style.color   = col;
-  h.heartEl.style.color = col;
+function setBpmDisplay(key, bpm, active) {
+  const h = bpmPlayers[key];
+  if (!h.numEl) return;
+  h.numEl.textContent   = (active && bpm > 0) ? bpm : '--';
+  h.heartEl.style.color = (active && bpm > 0) ? '#e8121f' : '#999';
+}
+
+/* isOff toggles the whole meter off and swaps in the KDA + Gold block */
+function setBpmOff(key, isOff) {
+  const h = bpmPlayers[key];
+  h.off = isOff;
+  if (h.boxEl)      h.boxEl.style.display      = isOff ? 'none' : '';
+  if (h.detectedEl) h.detectedEl.style.display = isOff ? 'none' : '';
+  if (h.kdagoldEl)  h.kdagoldEl.style.display  = isOff ? 'block' : 'none';
 }
 
 function hrmGetSaved(feedNum) {
   try { return JSON.parse(localStorage.getItem('ekg_p' + feedNum)) || {}; } catch(e) { return {}; }
 }
 
-async function pollHrmFeed() {
-  const slots = hrmSwapped ? HRM_SWAP_SLOTS : HRM_MY_SLOTS;
+async function pollBpmFeed() {
+  const slots = bpmSwapped ? BPM_SWAP_SLOTS : BPM_MY_SLOTS;
   let feed = null;
   try {
     const r = await fetch(window.location.origin + '/feed', { cache: 'no-store' });
@@ -961,67 +961,51 @@ async function pollHrmFeed() {
     const key     = 'p' + i;
     const feedNum = parseInt(slots[i-1].replace('player', ''));
     const saved   = hrmGetSaved(feedNum);
-    if (saved.isManual) {
-      const bpm = parseInt(saved.manualBpm) || 60;
-      hrmPlayers[key].bpm = bpm; hrmPlayers[key].connected = true;
-      setHrmDisplay(key, bpm, true);
-    } else if (feed) {
+    setBpmOff(key, !!saved.isManual);
+    if (saved.isManual) continue;
+    if (feed) {
       const entry = feed.find(e => e.slot === slots[i-1]);
-      if (!entry) { hrmPlayers[key].bpm = 0; hrmPlayers[key].connected = false; setHrmDisplay(key, 0, false); continue; }
+      if (!entry) { bpmPlayers[key].bpm = 0; bpmPlayers[key].connected = false; setBpmDisplay(key, 0, false); continue; }
       const bpm = parseInt(entry.bpm) || 0;
-      hrmPlayers[key].bpm = bpm; hrmPlayers[key].connected = true;
-      setHrmDisplay(key, bpm, bpm > 0);
+      bpmPlayers[key].bpm = bpm; bpmPlayers[key].connected = true;
+      setBpmDisplay(key, bpm, bpm > 0);
     } else {
-      hrmPlayers[key].bpm = 0; hrmPlayers[key].connected = false; setHrmDisplay(key, 0, false);
+      bpmPlayers[key].bpm = 0; bpmPlayers[key].connected = false; setBpmDisplay(key, 0, false);
     }
   }
 }
 
-window.setHrmVisible = function(pos, visible) {
-  localStorage.setItem(HRM_HIDE_KEY + pos, visible ? '0' : '1');
-  const h = hrmPlayers['p' + pos];
-  if (h && h.hrmEl) h.hrmEl.style.display = visible ? '' : 'none';
-};
-
-window.setHrmPlayer = function(slot, isManual, bpm) {
+/* Dashboard's Live/Off toggle for this player (isOff replaces the old isManual+bpm pair) */
+window.setHrmPlayer = function(slot, isOff) {
   const feedNum = parseInt(slot.replace('player', ''));
-  localStorage.setItem('ekg_p' + feedNum, JSON.stringify({ isManual: !!isManual, manualBpm: parseInt(bpm) || 60 }));
-  const slots = hrmSwapped ? HRM_SWAP_SLOTS : HRM_MY_SLOTS;
+  const saved = hrmGetSaved(feedNum);
+  localStorage.setItem('ekg_p' + feedNum, JSON.stringify({ manualBpm: saved.manualBpm || 60, isManual: !!isOff }));
+  const slots = bpmSwapped ? BPM_SWAP_SLOTS : BPM_MY_SLOTS;
   const idx   = slots.indexOf(slot);
   if (idx === -1) return;
   const key = 'p' + (idx + 1);
-  if (isManual) {
-    hrmPlayers[key].bpm = parseInt(bpm) || 60; hrmPlayers[key].connected = true;
-    setHrmDisplay(key, parseInt(bpm) || 60, true);
-  } else {
-    hrmPlayers[key].bpm = 0; hrmPlayers[key].connected = false; setHrmDisplay(key, 0, false);
-  }
+  setBpmOff(key, !!isOff);
+  if (isOff) { bpmPlayers[key].bpm = 0; bpmPlayers[key].connected = false; }
 };
 
 window.addEventListener('storage', function(e) {
-  if (e.key && e.key.startsWith('ekg_p')) pollHrmFeed();
-  if (e.key && e.key.startsWith(HRM_HIDE_KEY)) {
-    const pos = parseInt(e.key.replace(HRM_HIDE_KEY, ''));
-    const h = hrmPlayers['p' + pos];
-    if (h && h.hrmEl) h.hrmEl.style.display = (e.newValue === '1') ? 'none' : '';
-  }
+  if (e.key && e.key.startsWith('ekg_p')) pollBpmFeed();
 });
 
-(function initHrm() {
+(function initBpm() {
   for (let i = 1; i <= 5; i++) {
     const key = 'p' + i;
-    const h   = hrmPlayers[key];
-    h.pathEl  = document.getElementById(key + '-hrm-path');
-    h.heartEl = document.getElementById(key + '-hrm-heart');
-    h.bpmEl   = document.getElementById(key + '-hrm-bpm');
-    h.hrmEl   = document.getElementById(key + '-hrm-box');
-    if (localStorage.getItem(HRM_HIDE_KEY + i) === '1' && h.hrmEl)
-      h.hrmEl.style.display = 'none';
+    const h   = bpmPlayers[key];
+    h.boxEl      = document.getElementById(key + '-bpm-box');
+    h.heartEl    = document.getElementById(key + '-bpm-heart');
+    h.numEl      = document.getElementById(key + '-bpm-num');
+    h.detectedEl = document.getElementById(key + '-detected');
+    h.kdagoldEl  = document.getElementById(key + '-kdagold');
   }
 })();
 
-pollHrmFeed();
-setInterval(pollHrmFeed, 1000);
+pollBpmFeed();
+setInterval(pollBpmFeed, 1000);
 </script>
 </body>
 </html>
