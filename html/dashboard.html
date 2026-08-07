@@ -958,6 +958,8 @@
     standings:      'standings',
     team_hexagon:   'hexagon',
     final_team:     'finalteam',
+    team_lineup_blue: 'lineupblue',
+    team_lineup_red:  'lineupred',
   };
 
   function mplfsFeatureShown(key) {
@@ -1026,6 +1028,8 @@
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
         { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
+        { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
+        { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
       ],
       extraActions: [
         { label: 'Item In',   action: '/overlay/post_itemline/itemin'  },
@@ -1921,6 +1925,45 @@
     { group: 'Players', id: '.wl-namebox-red',  name: 'Name Box (Red)'  },
   ];
 
+  /* ── Team Line-Up (mplfs.html) element defaults ────────────────
+     Blue and Red are two separate page divs (lub- / lur- prefixed ids) but they
+     share every positioning CLASS (.lu-player-N, .lu-nametag-N, .lu-title,
+     .lu-teambar-*) — so this one editor pass, saved under the shared
+     "mplfs" style file, repositions both sides identically. */
+  var LU_DEFAULTS = {
+    '.lu-title':          { left: 660,  top: 46,  width: 600, height: 96 },
+    '.lu-player-1':       { left: -50,  top: 110, width: 900, height: 900 },
+    '.lu-player-2':       { left: 230,  top: 110, width: 900, height: 900 },
+    '.lu-player-3':       { left: 510,  top: 110, width: 900, height: 900 },
+    '.lu-player-4':       { left: 790,  top: 110, width: 900, height: 900 },
+    '.lu-player-5':       { left: 1070, top: 110, width: 900, height: 900 },
+    '.lu-nametag-1':      { left: 250,  top: 770, width: 300, height: 54 },
+    '.lu-nametag-2':      { left: 530,  top: 770, width: 300, height: 54 },
+    '.lu-nametag-3':      { left: 810,  top: 770, width: 300, height: 54 },
+    '.lu-nametag-4':      { left: 1090, top: 770, width: 300, height: 54 },
+    '.lu-nametag-5':      { left: 1370, top: 770, width: 300, height: 54 },
+    '.lu-teambar-logo':   { left: 880,  top: 928, width: 160, height: 160 },
+    '.lu-teambar-season': { left: 140,  top: 992, width: 480, height: 40 },
+    '.lu-teambar-match':  { left: 1300, top: 992, width: 480, height: 40 },
+  };
+
+  var LU_ELEMENTS = [
+    { group: 'Title',    id: '.lu-title',          name: 'Smart Logo + Title' },
+    { group: 'Players',  id: '.lu-player-1',       name: 'Photo 1'            },
+    { group: 'Players',  id: '.lu-player-2',       name: 'Photo 2'            },
+    { group: 'Players',  id: '.lu-player-3',       name: 'Photo 3 (center)'  },
+    { group: 'Players',  id: '.lu-player-4',       name: 'Photo 4'            },
+    { group: 'Players',  id: '.lu-player-5',       name: 'Photo 5'            },
+    { group: 'Name Tags', id: '.lu-nametag-1',     name: 'Name Tag 1'         },
+    { group: 'Name Tags', id: '.lu-nametag-2',     name: 'Name Tag 2'         },
+    { group: 'Name Tags', id: '.lu-nametag-3',     name: 'Name Tag 3'         },
+    { group: 'Name Tags', id: '.lu-nametag-4',     name: 'Name Tag 4'         },
+    { group: 'Name Tags', id: '.lu-nametag-5',     name: 'Name Tag 5'         },
+    { group: 'Team Bar', id: '.lu-teambar-logo',   name: 'Team Logo'          },
+    { group: 'Team Bar', id: '.lu-teambar-season', name: 'Season Label'       },
+    { group: 'Team Bar', id: '.lu-teambar-match',  name: 'Week/Day/Match Label' },
+  ];
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -1939,6 +1982,15 @@
       elements:    WL_ELEMENTS,
       defaults:    WL_DEFAULTS,
       showFn:      'showWaitingLobby',
+    },
+    mplfs_lineup: {
+      label:       'Team Line-Up · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_lineup',
+      elements:    LU_ELEMENTS,
+      defaults:    LU_DEFAULTS,
+      showFn:      'showTeamLineupBlue',
     },
   };
   var currentConfigKey = 'mploverlay_v7';

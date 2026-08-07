@@ -765,6 +765,129 @@
        .ft-card-role would also whiten the colored background behind it. */
     .ft-card-role img { width: 70%; height: 70%; object-fit: contain; filter: brightness(0) invert(1); }
 
+    /* ── TEAM LINE-UP PAGES ──
+       Two independent fullscreen instances (Blue = home team, Red = away
+       team) — never shown together, but built as two separate page divs
+       (lub- / lur- prefixed ids) rather than one page fed by camp, per
+       spec. All positioning/sizing lives on SHARED classes (.lu-player-N,
+       .lu-nametag-N, .lu-title, .lu-teambar-*) so one dashboard-editor pass
+       repositions both sides identically; only ids (for JS) and content
+       differ per side. */
+    #team-lineup-blue-page, #team-lineup-red-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #team-lineup-blue-page.lub-on { display: block; }
+    #team-lineup-blue-page.lub-visible { opacity: 1; }
+    #team-lineup-red-page.lur-on { display: block; }
+    #team-lineup-red-page.lur-visible { opacity: 1; }
+
+    .lu-title {
+      position: absolute; left: 660px; top: 46px; width: 600px; height: 96px;
+      z-index: 10;
+      display: flex; align-items: center; justify-content: center; gap: 18px;
+    }
+    .lu-title-logo { height: 70px; width: auto; object-fit: contain; }
+    .lu-title-text {
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 58px;
+      color: #0a0a0a; text-transform: uppercase; letter-spacing: 0.01em;
+      white-space: nowrap;
+    }
+
+    /* Player photo boxes — 900×900, evenly spaced/overlapping, staggered
+       depth via z-index (3 front, 1/5 mid, 2/4 back — see layering note in
+       showTeamLineup). */
+    .lu-player {
+      position: absolute; width: 900px; height: 900px;
+      overflow: visible;
+    }
+    .lu-player-1 { left: -50px;   top: 110px; z-index: 4; }
+    .lu-player-2 { left: 230px;   top: 110px; z-index: 2; }
+    .lu-player-3 { left: 510px;   top: 110px; z-index: 5; }
+    .lu-player-4 { left: 790px;   top: 110px; z-index: 2; }
+    .lu-player-5 { left: 1070px;  top: 110px; z-index: 4; }
+
+    /* Two stacked photo layers per slot — signature pose animates in first,
+       then the final (left/right) pose crossfades on top of it once
+       "posed" (see luPlayAnimation). Gradient mask fades each photo to
+       fully transparent at its own bottom edge, opaque from the middle up,
+       so overlapping neighbors blend instead of hard-clipping. */
+    .lu-photo {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: contain; object-position: 50% 100%;
+      display: block;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, #000 25%);
+              mask-image: linear-gradient(to top, transparent 0%, #000 25%);
+    }
+    .lu-photo-sig {
+      opacity: 0; transform: translateY(70px) scale(0.94);
+      transition: opacity 520ms cubic-bezier(0.16, 1, 0.3, 1), transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 2;
+    }
+    .lu-photo-final {
+      opacity: 0; transform: scale(1.05);
+      transition: opacity 300ms ease, transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 3;
+    }
+    .lu-player.lu-in .lu-photo-sig { opacity: 1; transform: translateY(0) scale(1); }
+    .lu-player.lu-posed .lu-photo-sig { opacity: 0; transition: opacity 300ms ease; }
+    .lu-player.lu-posed .lu-photo-final { opacity: 1; transform: scale(1); }
+    @keyframes lu-pose-bounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.05); }
+      70%  { transform: scale(0.98); }
+      100% { transform: scale(1); }
+    }
+    .lu-photo-final.lu-bounce { animation: lu-pose-bounce 380ms ease-out; }
+
+    /* Name tags — sibling of the photo box (not nested) so they can be
+       repositioned independently, and always sit above every photo layer
+       regardless of that slot's own z-index. Background/role-icon layout
+       mirrors mploverlay_v7's kill-event name tag 1:1, just scaled up. */
+    .lu-nametag {
+      position: absolute; width: 300px; height: 54px; z-index: 20;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity 300ms ease, transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .lu-nametag.lu-tag-in { opacity: 1; transform: translateY(0); }
+    .lu-nametag-1 { left: 250px;  top: 770px; }
+    .lu-nametag-2 { left: 530px;  top: 770px; }
+    .lu-nametag-3 { left: 810px;  top: 770px; }
+    .lu-nametag-4 { left: 1090px; top: 770px; }
+    .lu-nametag-5 { left: 1370px; top: 770px; }
+    .lu-nametag-bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+    .lu-nametag-role {
+      position: absolute; left: 12px; top: 6px; width: 42px; height: 42px;
+      object-fit: contain; filter: brightness(0); /* role/*.png icons are taupe by default — force solid black, same as the kill-event nametag's white notch */
+    }
+    .lu-nametag-name {
+      position: absolute; left: 84px; top: 6px; width: 206px; height: 42px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 26px;
+      color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    }
+
+    /* Bottom bar — team crest centered, season label left, week/day/match
+       label right (all independently positioned/editable). */
+    .lu-teambar-logo {
+      position: absolute; left: 880px; top: 928px; width: 160px; height: 160px;
+      object-fit: contain; z-index: 11;
+    }
+    .lu-teambar-season, .lu-teambar-match {
+      position: absolute; top: 992px; width: 480px; height: 40px; z-index: 11;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px;
+      color: #0a0a0a; text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap;
+    }
+    .lu-teambar-season { left: 140px;  justify-content: flex-start; }
+    .lu-teambar-match  { left: 1300px; justify-content: flex-end; }
+
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
       position: absolute;
@@ -1554,6 +1677,26 @@
       </div>
     </div>
 
+    <!-- TEAM LINE-UP — BLUE -->
+    <div class="feature-card">
+      <div class="feature-card-label">Team Line-Up — Blue</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showTeamLineupBlue()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideTeamLineupBlue()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-lineupblue" onclick="toggleLocalPreview('lineupblue', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- TEAM LINE-UP — RED -->
+    <div class="feature-card">
+      <div class="feature-card-label">Team Line-Up — Red</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showTeamLineupRed()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideTeamLineupRed()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-lineupred" onclick="toggleLocalPreview('lineupred', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- TODAY'S SCHEDULE -->
     <div class="feature-card">
       <div class="feature-card-label">Today's Schedule</div>
@@ -1744,6 +1887,114 @@
       </div>
       <!-- [FEATURE: final-team-cards] 10 cards built dynamically via buildFtCards() -->
       <div id="ft-cards"></div>
+    </div>
+    <div id="team-lineup-blue-page">
+      <div class="lu-title" id="lub-title">
+        <img class="lu-title-logo" src="/assets/lineup/lineupsmart.png" alt="Smart">
+        <span class="lu-title-text">TEAM LINE-UP</span>
+      </div>
+      <div class="lu-player lu-player-1" id="lub-player-1">
+        <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-1"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lub-photo-final-1" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-1" id="lub-nametag-1">
+        <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
+        <img class="lu-nametag-role" id="lub-nametag-role-1" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lub-nametag-name-1"></div>
+      </div>
+      <div class="lu-player lu-player-2" id="lub-player-2">
+        <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-2"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lub-photo-final-2" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-2" id="lub-nametag-2">
+        <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
+        <img class="lu-nametag-role" id="lub-nametag-role-2" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lub-nametag-name-2"></div>
+      </div>
+      <div class="lu-player lu-player-3" id="lub-player-3">
+        <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-3"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lub-photo-final-3" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-3" id="lub-nametag-3">
+        <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
+        <img class="lu-nametag-role" id="lub-nametag-role-3" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lub-nametag-name-3"></div>
+      </div>
+      <div class="lu-player lu-player-4" id="lub-player-4">
+        <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-4"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lub-photo-final-4" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-4" id="lub-nametag-4">
+        <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
+        <img class="lu-nametag-role" id="lub-nametag-role-4" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lub-nametag-name-4"></div>
+      </div>
+      <div class="lu-player lu-player-5" id="lub-player-5">
+        <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-5"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lub-photo-final-5" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-5" id="lub-nametag-5">
+        <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
+        <img class="lu-nametag-role" id="lub-nametag-role-5" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lub-nametag-name-5"></div>
+      </div>
+      <img class="lu-teambar-logo" id="lub-teambar-logo" src="" alt="" onerror="this.style.display='none'">
+      <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
+      <div class="lu-teambar-match" id="lub-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
+    </div>
+    <div id="team-lineup-red-page">
+      <div class="lu-title" id="lur-title">
+        <img class="lu-title-logo" src="/assets/lineup/lineupsmart.png" alt="Smart">
+        <span class="lu-title-text">TEAM LINE-UP</span>
+      </div>
+      <div class="lu-player lu-player-1" id="lur-player-1">
+        <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-1"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lur-photo-final-1" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-1" id="lur-nametag-1">
+        <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
+        <img class="lu-nametag-role" id="lur-nametag-role-1" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lur-nametag-name-1"></div>
+      </div>
+      <div class="lu-player lu-player-2" id="lur-player-2">
+        <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-2"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lur-photo-final-2" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-2" id="lur-nametag-2">
+        <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
+        <img class="lu-nametag-role" id="lur-nametag-role-2" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lur-nametag-name-2"></div>
+      </div>
+      <div class="lu-player lu-player-3" id="lur-player-3">
+        <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-3"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lur-photo-final-3" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-3" id="lur-nametag-3">
+        <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
+        <img class="lu-nametag-role" id="lur-nametag-role-3" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lur-nametag-name-3"></div>
+      </div>
+      <div class="lu-player lu-player-4" id="lur-player-4">
+        <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-4"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lur-photo-final-4" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-4" id="lur-nametag-4">
+        <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
+        <img class="lu-nametag-role" id="lur-nametag-role-4" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lur-nametag-name-4"></div>
+      </div>
+      <div class="lu-player lu-player-5" id="lur-player-5">
+        <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-5"   src="" alt="">
+        <img class="lu-photo lu-photo-final" id="lur-photo-final-5" src="" alt="">
+      </div>
+      <div class="lu-nametag lu-nametag-5" id="lur-nametag-5">
+        <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
+        <img class="lu-nametag-role" id="lur-nametag-role-5" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-nametag-name" id="lur-nametag-name-5"></div>
+      </div>
+      <img class="lu-teambar-logo" id="lur-teambar-logo" src="" alt="" onerror="this.style.display='none'">
+      <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
+      <div class="lu-teambar-match" id="lur-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
     </div>
     <div id="today-schedule-page">
       <div id="ts-header">
@@ -2150,6 +2401,22 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showFinalTeam, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('team_lineup_blue', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showTeamLineupBlue, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('team_lineup_red', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showTeamLineupRed, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -2933,6 +3200,8 @@
       schedule:  '/assets/bgloop.webm',
       standings: '/assets/bgloop.webm',
       finalteam: '/assets/bgloopsun.webm',
+      lineupblue: '/assets/bgloopwaves.webm',
+      lineupred:  '/assets/bgloopwaves.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -4294,6 +4563,151 @@
     }
 
     /* ════════════════════════════════════════════════
+       TEAM LINE-UP — fullscreen 5-player roster reveal
+       Two independent instances (Blue = home team, Red = away team) — see
+       the CSS comment above #team-lineup-blue-page for why they're two
+       separate page divs rather than one page fed by camp. Both sides
+       share the exact same behavior below, parameterized by LU_SIDES.
+    ════════════════════════════════════════════════ */
+    const LU_SIDES = {
+      blue: { camp: 'home', prefix: 'lub', page: document.getElementById('team-lineup-blue-page'), onClass: 'lub-on', visClass: 'lub-visible' },
+      red:  { camp: 'away', prefix: 'lur', page: document.getElementById('team-lineup-red-page'),  onClass: 'lur-on', visClass: 'lur-visible' },
+    };
+
+    function luPoseUrl(ign, pose) {
+      return '/hires/' + pose + '/' + encodeURIComponent(ign + '_' + pose) + '.png';
+    }
+
+    /* Which pose folder each slot buttons into, independent of team color —
+       alternates per slot rather than a straight left-half/right-half
+       split (player 3 stays LEFT). */
+    const LU_SLOT_POSE = { 1: 'RIGHT', 2: 'LEFT', 3: 'LEFT', 4: 'RIGHT', 5: 'LEFT' };
+    function luPoseForSlot(n) { return LU_SLOT_POSE[n] || 'LEFT'; }
+
+    function luApplyPlayers(side, lineup) {
+      const s = LU_SIDES[side];
+      for (let n = 1; n <= 5; n++) {
+        const player = lineup[n - 1] || null;
+        const ign    = player && player.ign;
+        const role   = player && player.role;
+        const sigEl   = document.getElementById(s.prefix + '-photo-sig-' + n);
+        const finalEl = document.getElementById(s.prefix + '-photo-final-' + n);
+        const roleImg = document.getElementById(s.prefix + '-nametag-role-' + n);
+        const nameEl  = document.getElementById(s.prefix + '-nametag-name-' + n);
+
+        sigEl.onerror = () => { sigEl.style.visibility = 'hidden'; };
+        finalEl.onerror = () => { finalEl.style.visibility = 'hidden'; };
+        sigEl.style.visibility = '';
+        finalEl.style.visibility = '';
+        sigEl.src   = ign ? luPoseUrl(ign, 'SIGNATURE')        : '';
+        finalEl.src = ign ? luPoseUrl(ign, luPoseForSlot(n))   : '';
+
+        roleImg.style.display = '';
+        roleImg.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
+        nameEl.textContent = ign || '';
+      }
+    }
+
+    function luApplyTeamBar(side, teamObj, ms) {
+      const s = LU_SIDES[side];
+      const logoEl = document.getElementById(s.prefix + '-teambar-logo');
+      logoEl.style.display = '';
+      logoEl.src = (teamObj && teamObj.short) ? '/logos/' + encodeURIComponent(teamObj.short) + '.png' : '';
+      if (ms && ms.week != null && ms.day != null && ms.match != null) {
+        document.getElementById(s.prefix + '-teambar-match').textContent =
+          'WEEK ' + ms.week + ' - DAY ' + ms.day + ' - MATCH ' + ms.match;
+      }
+    }
+
+    /* Clears every animation class back to its pre-show rest state — called
+       before a fresh show() so a re-trigger always replays the full
+       sequence instead of starting from wherever the last run left off. */
+    function luResetAnimation(side) {
+      const s = LU_SIDES[side];
+      for (let n = 1; n <= 5; n++) {
+        document.getElementById(s.prefix + '-player-' + n).classList.remove('lu-in');
+        document.getElementById(s.prefix + '-player-' + n).classList.remove('lu-posed');
+        document.getElementById(s.prefix + '-nametag-' + n).classList.remove('lu-tag-in');
+        document.getElementById(s.prefix + '-photo-final-' + n).classList.remove('lu-bounce');
+      }
+    }
+
+    /* Entrance: signature poses pop in front-to-back by layering depth
+       (center player 3 first, then the 2/4 pair, then the 1/5 pair) rather
+       than a flat left-to-right wipe. Once they've settled, each slot
+       "buttons" into its final left/right pose, left-to-right, like buttons
+       closing down a row. */
+    function luPlayAnimation(side) {
+      const s = LU_SIDES[side];
+      const REVEAL_ORDER = [3, 2, 4, 1, 5];
+      const REVEAL_STAGGER_MS = 90;
+      REVEAL_ORDER.forEach((n, i) => {
+        setTimeout(() => {
+          document.getElementById(s.prefix + '-player-' + n).classList.add('lu-in');
+          document.getElementById(s.prefix + '-nametag-' + n).classList.add('lu-tag-in');
+        }, i * REVEAL_STAGGER_MS);
+      });
+
+      const POSE_START_MS = 900; // after the slowest signature entrance (520ms) + a short hold
+      const POSE_STAGGER_MS = 90;
+      for (let n = 1; n <= 5; n++) {
+        setTimeout(() => {
+          const p = document.getElementById(s.prefix + '-player-' + n);
+          const finalEl = document.getElementById(s.prefix + '-photo-final-' + n);
+          p.classList.add('lu-posed');
+          finalEl.classList.add('lu-bounce');
+        }, POSE_START_MS + (n - 1) * POSE_STAGGER_MS);
+      }
+    }
+
+    async function showTeamLineup(side) {
+      const s = LU_SIDES[side];
+      const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo(feature);
+      const ms = await msPromise;
+      if (activeFeature !== feature) return; /* superseded while awaiting match state */
+
+      const teamObj = ms ? ms[s.camp] : null;
+      const lineup  = (teamObj && teamObj.lineup) || [];
+      luApplyPlayers(side, lineup);
+      luApplyTeamBar(side, teamObj, ms);
+      luResetAnimation(side);
+
+      // Wait for every signature/left/right photo + logo/plate image to be
+      // fully loaded before revealing anything — a half-loaded roster
+      // popping in piece by piece is exactly what this guards against.
+      await preloadMedia(s.page.querySelectorAll('img, video'), 1500);
+      if (activeFeature !== feature) return; /* superseded while preloading */
+
+      showSceneVideo(feature);
+      s.page.classList.add(s.onClass);
+      void s.page.offsetWidth; /* force reflow so the opacity transition runs */
+      s.page.classList.add(s.visClass);
+      luPlayAnimation(side);
+    }
+
+    function hideTeamLineup(side) {
+      const s = LU_SIDES[side];
+      activeFeature = null;
+      s.page.classList.remove(s.visClass);
+      return new Promise(resolve => {
+        setTimeout(() => {
+          s.page.classList.remove(s.onClass);
+          hideSceneVideo();
+          luResetAnimation(side);
+          resolve();
+        }, 420);
+      });
+    }
+
+    function showTeamLineupBlue() { return showTeamLineup('blue'); }
+    function hideTeamLineupBlue() { return hideTeamLineup('blue'); }
+    function showTeamLineupRed()  { return showTeamLineup('red'); }
+    function hideTeamLineupRed()  { return hideTeamLineup('red'); }
+
+    /* ════════════════════════════════════════════════
        TODAY'S SCHEDULE
     ════════════════════════════════════════════════ */
     const tsPage  = document.getElementById('today-schedule-page');
@@ -4495,6 +4909,8 @@
       if (prev === 'lobby')    return hideWaitingLobby();
       if (prev === 'hexagon')  return hideTeamHexagon();
       if (prev === 'finalteam') return hideFinalTeam();
+      if (prev === 'lineupblue') return hideTeamLineupBlue();
+      if (prev === 'lineupred') return hideTeamLineupRed();
       if (prev === 'schedule') return hideTodaySchedule();
       if (prev === 'standings') return hideStandings();
       if (prev === 'timeline') return hideItemTimeline();
@@ -5395,6 +5811,8 @@
         else if (scene.activeFeature === 'lobby')    showWaitingLobby();
         else if (scene.activeFeature === 'hexagon')  showTeamHexagon();
         else if (scene.activeFeature === 'finalteam') showFinalTeam();
+        else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
+        else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
         else if (scene.activeFeature === 'schedule') showTodaySchedule();
         else if (scene.activeFeature === 'standings') showStandings();
         else if (scene.matchboard)                   showMatchBoard();
@@ -5423,6 +5841,8 @@
         if (feature === 'lobby')    showWaitingLobby();
         if (feature === 'hexagon')  showTeamHexagon();
         if (feature === 'finalteam') showFinalTeam();
+        if (feature === 'lineupblue') showTeamLineupBlue();
+        if (feature === 'lineupred') showTeamLineupRed();
         if (feature === 'schedule') showTodaySchedule();
         if (feature === 'standings') showStandings();
         if (feature === 'timeline') showItemTimeline();
@@ -5433,7 +5853,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', final_team: 'preview-finalteam' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -5445,6 +5865,8 @@
         if (event === 'waiting_lobby') showWaitingLobby();
         if (event === 'team_hexagon') showTeamHexagon();
         if (event === 'final_team') showFinalTeam();
+        if (event === 'team_lineup_blue') showTeamLineupBlue();
+        if (event === 'team_lineup_red') showTeamLineupRed();
         if (event === 'today_schedule') showTodaySchedule();
         if (event === 'standings')     showStandings();
         if (event === 'post_emblems')  showPostEmblems();

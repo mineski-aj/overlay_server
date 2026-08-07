@@ -269,6 +269,34 @@ router.get('/overlay/final_team/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/team_lineup_blue/show
+router.get('/overlay/team_lineup_blue/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'lineupblue';
+  state.overlayClients.forEach(c => { try { c.write('event: team_lineup_blue\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/team_lineup_blue/hide
+router.get('/overlay/team_lineup_blue/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: team_lineup_blue\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/team_lineup_red/show
+router.get('/overlay/team_lineup_red/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'lineupred';
+  state.overlayClients.forEach(c => { try { c.write('event: team_lineup_red\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/team_lineup_red/hide
+router.get('/overlay/team_lineup_red/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: team_lineup_red\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/today_schedule/show
 router.get('/overlay/today_schedule/show', (req, res) => {
   state.mplfsScene.activeFeature = 'schedule';
