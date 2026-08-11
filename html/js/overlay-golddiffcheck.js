@@ -22,8 +22,8 @@ const GDC_COUNT_MS      = 700;
 
 let gdcShouldShow = false;
 let gdcOutTimer   = null;
-let gdcPriming    = false;
 let gdcRevealTimer = null;
+let gdcWaitingForData = false; /* animateIn was requested but no poll data has arrived yet */
 const gdcRefs     = [];
 
 function gdcFormatGoldK(v) {
@@ -199,7 +199,14 @@ function gdcApplyData(data) {
 }
 
 function gdcUpdate(data) {
-  if (!gdcShouldShow || gdcPriming) return;
+  if (gdcWaitingForData && gdcShouldShow) {
+    /* First poll data has landed while we were holding off — start the
+       reveal now instead of leaving it queued. */
+    gdcWaitingForData = false;
+    gdcStartReveal();
+    return;
+  }
+  if (!gdcShouldShow) return;
   gdcApplyData(data);
 }
 registerPollHandler(gdcUpdate);
@@ -235,33 +242,51 @@ function gdcPlaySmartFlourish() {
 
 function gdcAnimateIn() {
   gdcShouldShow = true;
-  gdcPriming    = true;
   clearTimeout(gdcOutTimer);
   clearTimeout(gdcRevealTimer);
+
+  if (!lastData) {
+    /* Fresh server / no poll data yet — don't pop in with all-zero bars
+       and have the real numbers snap in a moment later once the first
+       poll lands. Hold off entirely; gdcUpdate() above starts the reveal
+       as soon as data actually arrives. */
+    gdcWaitingForData = true;
+    return;
+  }
+  gdcWaitingForData = false;
+  gdcStartReveal();
+}
+
+function gdcStartReveal() {
+  /* lastData is guaranteed non-null here — gdcAnimateIn only calls this
+     directly when it's already present, and gdcUpdate() only calls it
+     once a poll has actually landed. Apply the real numbers right away
+     (bars grow / counters count up from the zeroed baseline via their
+     own CSS transition + gdcCountTo) instead of holding the panel at an
+     empty zero state and applying data only after GDC_REVEAL_DELAY —
+     that gap was reading as "no data" right after the slide-in. */
   const clip    = document.getElementById('golddiff-check-clip');
   const overlay = document.getElementById('golddiff-check-overlay');
   clip.style.display = 'block';
 
   gdcResetToZero();
+  gdcApplyData(lastData);
 
   requestAnimationFrame(() => requestAnimationFrame(() => {
     overlay.classList.add('gdc-in');
   }));
 
-  /* Bars grow, numbers count up, and the smart chip does its
-     button-press + sheen — all fired together once the slide-in
-     finishes. */
+  /* Smart chip's button-press + sheen still fires once the slide-in
+     transition itself finishes. */
   gdcRevealTimer = setTimeout(() => {
     if (!gdcShouldShow) return;
-    gdcPriming = false;
     gdcPlaySmartFlourish();
-    if (lastData) gdcApplyData(lastData);
   }, GDC_REVEAL_DELAY);
 }
 
 function gdcAnimateOut() {
   gdcShouldShow = false;
-  gdcPriming    = false;
+  gdcWaitingForData = false;
   clearTimeout(gdcRevealTimer);
   const clip    = document.getElementById('golddiff-check-clip');
   const overlay = document.getElementById('golddiff-check-overlay');

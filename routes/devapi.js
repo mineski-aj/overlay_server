@@ -27,20 +27,74 @@ router.get('/api/sub-info/', (req, res) => {
   }
 });
 
-// Returns list of sponsor files from assets/sponsors/
-// Filename format: name<N>.ext  where N = display duration in seconds (default 3)
-router.get('/api/sponsors', (req, res) => {
-  const dir = path.join(__dirname, '..', 'assets', 'sponsors');
+// Sponsor logos + categorization — logos live in /sponsors/, categorization
+// (grouping, per-category loop duration, display order) is edited from the
+// dashboard's Sponsors tab and persisted to sponsors_config.json.
+const SPONSORS_DIR         = path.join(__dirname, '..', 'sponsors');
+const SPONSORS_CONFIG_FILE = path.join(__dirname, '..', 'sponsors_config.json');
+const CONFIG_FILE          = path.join(__dirname, '..', 'config.json');
+
+function getDashboardPassword() {
   try {
-    const files = fs.readdirSync(dir).filter(f => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f));
-    const sponsors = files.map(f => {
-      const m = f.match(/(\d+)\.[^.]+$/);
-      return { src: 'assets/sponsors/' + f, dur: m ? parseInt(m[1], 10) * 1000 : 3000 };
-    });
-    sponsors.sort(function(a, b) { return b.dur - a.dur; });
-    res.json(sponsors);
+    return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')).dashboard_password || '';
   } catch (e) {
-    res.status(500).json({ error: 'sponsors folder not found' });
+    return '';
+  }
+}
+
+function readSponsorFiles() {
+  try {
+    return fs.readdirSync(SPONSORS_DIR).filter(f => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f));
+  } catch (e) {
+    return [];
+  }
+}
+
+function readSponsorsConfig() {
+  try {
+    const data = JSON.parse(fs.readFileSync(SPONSORS_CONFIG_FILE, 'utf8'));
+    if (data && Array.isArray(data.categories)) return data;
+  } catch (e) {}
+  return { categories: [] };
+}
+
+// Public — overlays read this for the ordered, timed play list
+// (category order → each category's logo order, dur in ms).
+router.get('/api/sponsors', (req, res) => {
+  const files  = new Set(readSponsorFiles());
+  const config = readSponsorsConfig();
+  const sponsors = [];
+  config.categories.forEach(cat => {
+    const dur = Math.max(0.5, Number(cat.duration) || 3) * 1000;
+    (cat.logos || []).forEach(f => {
+      if (files.has(f)) sponsors.push({ src: '/sponsors/' + encodeURIComponent(f), dur, category: cat.name });
+    });
+  });
+  res.set('Cache-Control', 'no-store').json(sponsors);
+});
+
+// Dashboard Sponsors tab — categorization + every available logo file
+// (so the UI can show unassigned logos alongside categorized ones).
+router.get('/api/sponsors-config', (req, res) => {
+  res.set('Cache-Control', 'no-store').json({
+    categories: readSponsorsConfig().categories,
+    availableFiles: readSponsorFiles(),
+  });
+});
+
+router.post('/api/sponsors-config', (req, res) => {
+  const body  = req.body || {};
+  const token = body.token;
+  if (!token || token !== getDashboardPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  const data = body.data;
+  if (!data || !Array.isArray(data.categories)) {
+    return res.status(400).json({ error: 'Payload must include a categories array' });
+  }
+  try {
+    fs.writeFileSync(SPONSORS_CONFIG_FILE, JSON.stringify({ categories: data.categories }, null, 2));
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Could not write sponsors_config.json' });
   }
 });
 
@@ -244,6 +298,39 @@ router.get('/api/highlights-data', async (req, res) => {
     let stored;
     try { stored = JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || HIGHLIGHTS_URL_DEFAULT).trim();
+    const r = await fetch(url);
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// Draft Index (Line-Up Rate) API base URL — GET to read, POST { url } to update
+const LINEUPRATE_URL_FILE    = path.join(__dirname, '..', 'lineuprate_api_url.json');
+const LINEUPRATE_URL_DEFAULT = 'https://theapi.dpdns.org/api/line-up-rate/';
+
+router.get('/api/lineuprate-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(LINEUPRATE_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: LINEUPRATE_URL_DEFAULT });
+  }
+});
+
+router.post('/api/lineuprate-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(LINEUPRATE_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the Draft Index (Line-Up Rate) API and returns JSON, avoids browser CORS issues
+router.get('/api/lineuprate-data', async (req, res) => {
+  try {
+    let stored;
+    try { stored = JSON.parse(fs.readFileSync(LINEUPRATE_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
+    const url = (stored.url || LINEUPRATE_URL_DEFAULT).trim();
     const r = await fetch(url);
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();

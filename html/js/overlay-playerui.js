@@ -38,6 +38,19 @@ function puiBuildCard(i) {
   emblem.alt = '';
   card.appendChild(emblem);
 
+  const ulti = document.createElement('div');
+  ulti.className = 'pui-ulti';
+  const ultiLocked = document.createElement('div');
+  ultiLocked.className = 'pui-ulti-locked';
+  const ultiPie = document.createElement('div');
+  ultiPie.className = 'pui-ulti-pie';
+  const ultiReady = document.createElement('div');
+  ultiReady.className = 'pui-ulti-ready';
+  ulti.appendChild(ultiLocked);
+  ulti.appendChild(ultiPie);
+  ulti.appendChild(ultiReady);
+  card.appendChild(ulti);
+
   const bg = document.createElement('img');
   bg.className = 'pui-bg';
   bg.src = side === 'home' ? 'assets/ingame/ui/uiblue.png' : 'assets/ingame/ui/uired.png';
@@ -69,8 +82,49 @@ function puiBuildCard(i) {
   goldRow.appendChild(goldText);
   card.appendChild(goldRow);
 
-  puiRefs[i] = { level, nameInner, kda, goldText, emblem };
+  puiRefs[i] = { level, nameInner, kda, goldText, emblem, ultiLocked, ultiPie, ultiReady };
   return card;
+}
+
+/* Ultimate cooldown max, per player index — captured the first time
+   major_left_time is seen going from 0 (or unknown) to a nonzero value,
+   or jumping to a higher value than the current max (covers a poll tick
+   landing exactly on 0 getting missed). If the overlay starts up already
+   mid-cooldown, with no 0-baseline ever observed, the FIRST nonzero
+   reading we see is assumed to be the max per the same rule. */
+const puiUltiState = {};
+
+function puiUltiColor(i) {
+  return i <= 5 ? '#1E64FF' : '#FF3232';
+}
+
+function puiUpdateUlti(i, ref, p) {
+  const level = p.level || 0;
+  const mlt   = p.major_left_time;
+  const st    = puiUltiState[i] || (puiUltiState[i] = { prev: null, max: null });
+
+  if (mlt != null) {
+    if (mlt > 0 && (st.prev === 0 || st.prev == null || mlt > (st.max || 0))) {
+      st.max = mlt;
+    }
+    st.prev = mlt;
+  }
+
+  const isLocked = level < 4;
+  const isTiming = !isLocked && mlt > 0;
+  const isReady  = !isLocked && !isTiming;
+
+  ref.ultiLocked.classList.toggle('on', isLocked);
+  ref.ultiPie.classList.toggle('on', isTiming);
+  ref.ultiReady.classList.toggle('on', isReady);
+
+  if (isTiming) {
+    const max = st.max || mlt;
+    const pct = max > 0 ? Math.min(1, Math.max(0, (max - mlt) / max)) : 0;
+    const deg = pct * 360;
+    ref.ultiPie.style.background =
+      `conic-gradient(${puiUltiColor(i)} 0deg ${deg}deg, #4a4a4a ${deg}deg 360deg)`;
+  }
 }
 
 function puiBuildPanel() {
@@ -101,6 +155,7 @@ function puiUpdate(data) {
     const p = r.player;
 
     ref.level.textContent = p.level != null ? p.level : '';
+    puiUpdateUlti(i, ref, p);
 
     ref.nameInner.textContent = (p.name || '').toUpperCase();
     puiFitName(ref.nameInner);

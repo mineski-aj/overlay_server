@@ -418,6 +418,31 @@
       transform: translateX(110%);
       transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
     }
+    /* Category label — white rectangle in the sponsor box's left slot,
+       showing which sponsor category (Official Sponsor, Partner in
+       Esports, etc.) the box is currently on. Shared by every scene that
+       uses a sponsor box (Waiting Screen TVC, Waiting Lobby, Today's/
+       Tomorrow's Schedule) since they're all the same 340x94 frame with
+       the logo loop starting at left:140px. */
+    .sponsor-cat-label {
+      position: absolute;
+      left: 4px; top: 4px;
+      width: 105px; height: 86px;
+      background-color: rgb(255, 255, 255);
+      z-index: 4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      overflow: hidden;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 15.5px;
+      line-height: 1.15;
+      color: #0a0a0a;
+      text-transform: uppercase;
+      word-break: break-word;
+    }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -1122,16 +1147,27 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    /* Standings — stats column header bar */
+    /* Standings — stats column header bar. Standing_Header.png is now the
+       same width as Team_Box.png (1803px) and sits flush above row 1
+       (top = ST_ROW_TOP − its own height, no gap) so the header and the
+       row stack looks like one continuous table. The 6 labels are real
+       DOM children of #st-colheader (position:absolute inside a
+       position:absolute parent), positioned relative to the bar's own
+       top-left instead of the page — so dragging the bar in the dashboard
+       Edit tab carries every label with it automatically, no group-drag
+       step required. Each label can still be nudged on its own by
+       clicking directly on it. */
     #st-colheader {
       position: absolute;
-      left: 922px; top: 303px;
-      width: 885px; height: 44px;
+      left: 118px; top: 327px;
+      width: 1803px; height: 27px;
+      background-image: url('/assets/Standings/Standing_Header.png');
+      background-size: 100% 100%;
     }
     .st-col-label {
       position: absolute;
-      top: 303px;
-      width: 234px; height: 44px;
+      top: 0;
+      width: 260px; height: 27px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1143,19 +1179,39 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    .st-l1 { left: 910px; }
-    .st-l2 { left: 1143px; }
-    .st-l3 { left: 1373px; }
-    .st-l4 { left: 1605px; }
+    /* RANK centers over .str-rank; TEAM left-aligns with .str-tri — both
+       new labels the wider full-width header now has room for. Left
+       values are relative to #st-colheader now (page-left 118 already
+       subtracted). */
+    .st-l0 { left: 104px; width: 80px; }
+    .st-lteam {
+      position: absolute;
+      left: 294px; top: 0;
+      height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      color: #fff;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .st-l1 { left: 768px; }
+    .st-l2 { left: 1035px; }
+    .st-l3 { left: 1303px; }
+    .st-l4 { left: 1555px; }
     /* Standings — team rows */
     #st-rows { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; }
     .st-row {
       position: absolute;
       left: 118px;
-      width: 1682px; height: 71px;
+      width: 1803px; height: 71px;
       font-family: 'General Sans', sans-serif;
     }
-    .st-row .str-bg { position: absolute; top: 0; left: 0; width: 1682px; height: 71px; }
+    .st-row .str-bg { position: absolute; top: 0; left: 0; width: 1803px; height: 71px; }
     .str-move {
       position: absolute;
       left: 30px; top: 4px;
@@ -1199,7 +1255,7 @@
     .str-stat {
       position: absolute;
       top: 4px;
-      width: 234px; height: 56px;
+      width: 260px; height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -1207,10 +1263,10 @@
       font-size: 30px;
       color: #0e0e0e;
     }
-    .str-c1 { left: 792px; }
-    .str-c2 { left: 1025px; }
-    .str-c3 { left: 1255px; }
-    .str-c4 { left: 1487px; }
+    .str-c1 { left: 768px; }
+    .str-c2 { left: 1035px; }
+    .str-c3 { left: 1303px; }
+    .str-c4 { left: 1555px; }
     /* Today's Schedule — header over the matches column */
     #ts-header {
       position: absolute;
@@ -1220,10 +1276,15 @@
       font-family: 'General Sans', sans-serif;
       color: #0a0a0a;
     }
-    #ts-title img {
-      display: block;
+    #ts-title {
       width: 758px; height: 88px;
       margin: 0 auto;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      color: #0a0a0a;
+      line-height: 88px;
+      white-space: nowrap;
+      text-transform: uppercase;
     }
     #ts-subline {
       margin-top: 8px;
@@ -1292,6 +1353,86 @@
     .tsm-score .tsm-score-l   { font-weight: 800; font-size: 48px; color: #1656d5; }
     .tsm-score .tsm-score-div { width: 50px; height: 4px; background: #0a0a0a; margin: 4px 0; }
     .tsm-score .tsm-score-r   { font-weight: 800; font-size: 48px; color: #d92027; }
+    /* Sponsor box underneath the match rows — reuses the Waiting Lobby's
+       .wl-sponsor-loop/.spon-in/.spon-out slide-loop classes verbatim. */
+    #ts-sponsor {
+      position: absolute;
+      left: 429px; top: 975px;
+      width: 340px; height: 94px;
+    }
+
+    /* ── TOMORROW'S SCHEDULE PAGE (same layout as Today's Schedule) ── */
+    #tomorrow-schedule-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #tomorrow-schedule-page.tw-on { display: block; }
+    #tomorrow-schedule-page.tw-visible { opacity: 1; }
+    #tw-header {
+      position: absolute;
+      left: 170px; top: 98px;
+      width: 858px;
+      text-align: center;
+      font-family: 'General Sans', sans-serif;
+      color: #0a0a0a;
+    }
+    #tw-title {
+      width: 758px; height: 88px;
+      margin: 0 auto;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      color: #0a0a0a;
+      line-height: 88px;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    #tw-subline {
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+    #tw-season {
+      font-weight: 800;
+      font-size: 30px;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    #tw-week {
+      width: 213px; height: 29px;
+      background: url("/assets/Today's Schedule/BlackBox.png") no-repeat center / 100% 100%;
+      color: #fff;
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    /* Tomorrow's Schedule match rows share Today's Schedule's .tsm-* classes */
+    #tw-matches {
+      position: absolute;
+      left: 170px; top: 255px;
+      width: 858px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-family: 'General Sans', sans-serif;
+    }
+    #tw-sponsor {
+      position: absolute;
+      left: 429px; top: 975px;
+      width: 340px; height: 94px;
+    }
 
     #ws-header {
       position: absolute;
@@ -1980,6 +2121,16 @@
       </div>
     </div>
 
+    <!-- TOMORROW'S SCHEDULE -->
+    <div class="feature-card">
+      <div class="feature-card-label">Tomorrow's Schedule</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showTomorrowSchedule()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideTomorrowSchedule()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-tomorrowschedule" onclick="toggleLocalPreview('tomorrow', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- STANDINGS -->
     <div class="feature-card">
       <div class="feature-card-label">Standings</div>
@@ -2271,24 +2422,39 @@
     </div>
     <div id="today-schedule-page">
       <div id="ts-header">
-        <div id="ts-title"><img src="/assets/Today's Schedule/TODAY&rsquo;S MATCHES.png" alt="Today's Matches"></div>
+        <div id="ts-title">Today&rsquo;s Matches</div>
         <div id="ts-subline">
-          <span id="ts-season">Season 17 Regular Season</span>
+          <span id="ts-season">Season 18 Regular Season</span>
           <div id="ts-week">Week 8 Day 3</div>
         </div>
       </div>
       <div id="ts-matches"></div>
+      <div id="ts-sponsor"></div>
+    </div>
+    <div id="tomorrow-schedule-page">
+      <div id="tw-header">
+        <div id="tw-title">See You Tomorrow</div>
+        <div id="tw-subline">
+          <span id="tw-season">Season 18 Regular Season</span>
+          <div id="tw-week">Week 8 Day 1</div>
+        </div>
+      </div>
+      <div id="tw-matches"></div>
+      <div id="tw-sponsor"></div>
     </div>
     <div id="standings-page">
       <div id="st-header">
         <img src="/assets/Standings/Infinix Standing.png" alt="Infinix Standings — Season 18 Regular Season">
         <div id="st-weekday">WEEK 1 - DAY 1</div>
       </div>
-      <img id="st-colheader" src="/assets/Standings/Standing_Header.png" alt="">
-      <span class="st-col-label st-l1">MATCH POINT</span>
-      <span class="st-col-label st-l2">MATCH W/L</span>
-      <span class="st-col-label st-l3">GAME W/L</span>
-      <span class="st-col-label st-l4">NET GAME WIN</span>
+      <div id="st-colheader">
+        <span class="st-col-label st-l0">RANK</span>
+        <span class="st-lteam">TEAM</span>
+        <span class="st-col-label st-l1">MATCH POINT</span>
+        <span class="st-col-label st-l2">MATCH W/L</span>
+        <span class="st-col-label st-l3">GAME W/L</span>
+        <span class="st-col-label st-l4">NET GAME WIN</span>
+      </div>
       <div id="st-rows"></div>
     </div>
     <div id="highlights-page">
@@ -2708,6 +2874,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showTodaySchedule, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('tomorrow_schedule', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showTomorrowSchedule, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -3553,7 +3727,8 @@
       lobby:     '/assets/bgloopsun.webm',
       hexagon:   '/assets/bgloop.webm',
       schedule:  '/assets/bgloop.webm',
-      standings: '/assets/bgloop.webm',
+      tomorrow:  '/assets/bgloop.webm',
+      standings: '/assets/bgloopwaves.webm',
       finalteam: '/assets/bgloopsun.webm',
       lineupblue: '/assets/bgloopwaves.webm',
       lineupred:  '/assets/bgloopwaves.webm',
@@ -3733,6 +3908,7 @@
     function buildWsSponsor() {
       document.getElementById('ws-sponsor').innerHTML =
         `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="ws-sponsor-cat"></div>` +
         `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>`;
     }
     buildWsSponsor();
@@ -3757,6 +3933,7 @@
       const s = wsSponsors[wsSponsorIdx];
       img.className = '';
       img.src = s.src;
+      updateSponsorCatLabel('ws-sponsor-cat', s.category);
       void img.offsetWidth;
       img.classList.add('spon-in');
 
@@ -3932,7 +4109,7 @@
       root.innerHTML = rows.map(m => {
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
-          : `<img class="tsm-vs" src="${WS_ASSET}VS.png" alt="VS">`;
+          : `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
         return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}${m.star ? 'StarMatch_Match_Box' : 'Regular_Match_Box'}.png" alt="">` +
           `<span class="tsm-label">${m.label}</span>` +
           `<span class="tsm-time">${m.time}</span>` +
@@ -3945,6 +4122,78 @@
       }).join('');
     }
     buildTsMatches();
+
+    /* Tomorrow's Schedule — Day 1/2 preview same week's next day; Day 3
+       previews next week's Day 1 (no play the following calendar day). */
+    function computeTomorrowWeekDay(state) {
+      const week = state.week || 1, day = state.day || 1;
+      return day === 3 ? { week: week + 1, day: 1 } : { week, day: day + 1 };
+    }
+
+    /* Tomorrow's matches never carry live scores/star-match styling —
+       always the plain Regular_Match_Box + VS icon. Match count for the
+       previewed day follows the same 3-match-on-Day-2 rule as today's
+       schedule (see match-dashboard.html's renderTomorrowMatches). */
+    function msToTomorrowMatchRows(state) {
+      if (!state || !Array.isArray(state.tomorrowMatches) || !state.tomorrowMatches.length) return null;
+      const bo = (state.series || 'BO3').toUpperCase();
+      const isThreeMatch = computeTomorrowWeekDay(state).day === 2;
+      const slice = isThreeMatch ? state.tomorrowMatches.slice(0, 3) : state.tomorrowMatches.slice(-2);
+      return slice.map((m, i) => ({
+        label: 'MATCH ' + (i + 1),
+        time:  m.time || '',
+        bo,
+        left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
+        right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
+      }));
+    }
+
+    function buildTwMatches(state) {
+      const root = document.getElementById('tw-matches');
+      const rows = msToTomorrowMatchRows(state) || TS_MATCHES;
+      const logo = (m, side) =>
+        `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
+        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
+      root.innerHTML = rows.map(m => {
+        const center = `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
+        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}Regular_Match_Box.png" alt="">` +
+          `<span class="tsm-label">${m.label}</span>` +
+          `<span class="tsm-time">${m.time}</span>` +
+          `<span class="tsm-bo">${m.bo}</span>` +
+          `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
+          logo(m, 'l') +
+          `<div class="tsm-slot tsm-center">${center}</div>` +
+          logo(m, 'r') +
+          `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
+      }).join('');
+    }
+    buildTwMatches();
+
+    /* Schedule scene titles — static text, sized once to fit the same
+       758×88 box the old title PNGs occupied. */
+    function fitTitleText(el, maxSize, minSize) {
+      if (!el) return;
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
+        el.style.fontSize = (--size) + 'px';
+      }
+    }
+    fitTitleText(document.getElementById('ts-title'), 80, 40);
+
+    /* Tomorrow's Schedule title is a sign-off line, not "Tomorrow's
+       Matches" — it reads the CURRENT day from the Match Board: Day 3
+       means there's no play the next calendar day (next games are next
+       week), any other day means play resumes tomorrow. */
+    function twTitleText(state) {
+      return (state && state.day === 3) ? 'See You Next Week' : 'See You Tomorrow';
+    }
+    function applyTwTitle(state) {
+      const el = document.getElementById('tw-title');
+      el.textContent = twTitleText(state);
+      fitTitleText(el, 80, 40);
+    }
+    applyTwTitle(null);
 
 
     /* Staggered slide-in — title first, then each row, left to right */
@@ -4090,6 +4339,7 @@
     function buildWlSponsor() {
       document.getElementById('wl-sponsor').innerHTML =
         `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="wl-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="wl-sponsor-img" src="" alt=""></div>`;
     }
     buildWlSponsor();
@@ -4114,6 +4364,7 @@
       const s = wlSponsors[wlSponsorIdx];
       img.className = '';
       img.src = s.src;
+      updateSponsorCatLabel('wl-sponsor-cat', s.category);
       void img.offsetWidth;
       img.classList.add('spon-in');
 
@@ -5479,10 +5730,97 @@
     function showTeamLineupRed()  { return showTeamLineup('red'); }
     function hideTeamLineupRed()  { return hideTeamLineup('red'); }
 
+    /* Sponsor category label — the white box at the left of every sponsor
+       box, showing which category (Official Sponsor, Partner in Esports,
+       etc.) is currently playing. Shrinks its font if a long category name
+       still overflows the 105x86 box after wrapping (see CLAUDE.md's
+       shrink-to-fit convention), never grows past the 15.5pt spec size. */
+    function fitSponsorCatLabel(el) {
+      if (!el) return;
+      const maxSize = 15.5, minSize = 8;
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollHeight > el.clientHeight && size > minSize) {
+        el.style.fontSize = (size -= 0.5) + 'px';
+      }
+    }
+    function updateSponsorCatLabel(labelId, category) {
+      const el = document.getElementById(labelId);
+      if (!el) return;
+      el.textContent = category || '';
+      fitSponsorCatLabel(el);
+    }
+
+    /* Generic Draft/Waiting-Lobby-style sponsor loop (same /api/sponsors
+       source + slide timing as startWlSponsorLoop above), reused by both
+       Today's and Tomorrow's Schedule sponsor boxes. */
+    function makeSponsorLoop(imgId, labelId) {
+      let sponsors = [], idx = 0, active = false;
+      let inHandler = null, outHandler = null, holdTimer = null;
+      function run() {
+        if (!active) return;
+        const img = document.getElementById(imgId);
+        if (!img) return;
+        const s = sponsors[idx];
+        img.className = '';
+        img.src = s.src;
+        updateSponsorCatLabel(labelId, s.category);
+        void img.offsetWidth;
+        img.classList.add('spon-in');
+        inHandler = (ev) => {
+          if (ev.propertyName !== 'transform') return;
+          img.removeEventListener('transitionend', inHandler);
+          holdTimer = setTimeout(() => {
+            if (!active) return;
+            img.classList.remove('spon-in');
+            img.classList.add('spon-out');
+            outHandler = (ev2) => {
+              if (ev2.propertyName !== 'transform') return;
+              img.removeEventListener('transitionend', outHandler);
+              if (!active) return;
+              idx = (idx + 1) % sponsors.length;
+              run();
+            };
+            img.addEventListener('transitionend', outHandler);
+          }, s.dur);
+        };
+        img.addEventListener('transitionend', inHandler);
+      }
+      return {
+        start() {
+          active = true;
+          fetch('/api/sponsors').then(r => r.json()).then(list => {
+            if (!active || !list || !list.length) return;
+            sponsors = list;
+            idx = 0;
+            run();
+          }).catch(() => {});
+        },
+        stop() {
+          active = false;
+          clearTimeout(holdTimer);
+          const img = document.getElementById(imgId);
+          if (img) {
+            img.removeEventListener('transitionend', inHandler);
+            img.removeEventListener('transitionend', outHandler);
+          }
+        },
+      };
+    }
+
     /* ════════════════════════════════════════════════
        TODAY'S SCHEDULE
     ════════════════════════════════════════════════ */
     const tsPage  = document.getElementById('today-schedule-page');
+
+    function buildTsSponsor() {
+      document.getElementById('ts-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="ts-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="ts-sponsor-img" src="" alt=""></div>`;
+    }
+    buildTsSponsor();
+    const tsSponsorLoop = makeSponsorLoop('ts-sponsor-img', 'ts-sponsor-cat');
 
     async function showTodaySchedule() {
       /* Week/Day chip + match rows follow the Match Board state */
@@ -5499,6 +5837,7 @@
       }
       showSceneVideo('schedule');
       wsMatchesSlideIn('ts-matches');
+      tsSponsorLoop.start();
       tsPage.classList.add('ts-on');
       void tsPage.offsetWidth; /* force reflow so the opacity transition runs */
       tsPage.classList.add('ts-visible');
@@ -5506,10 +5845,61 @@
 
     function hideTodaySchedule() {
       activeFeature = null;
+      tsSponsorLoop.stop();
       tsPage.classList.remove('ts-visible');
       return new Promise(resolve => {
         setTimeout(() => {
           tsPage.classList.remove('ts-on');
+          hideSceneVideo();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       TOMORROW'S SCHEDULE
+    ════════════════════════════════════════════════ */
+    const twPage  = document.getElementById('tomorrow-schedule-page');
+
+    function buildTwSponsor() {
+      document.getElementById('tw-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="tw-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="tw-sponsor-img" src="" alt=""></div>`;
+    }
+    buildTwSponsor();
+    const twSponsorLoop = makeSponsorLoop('tw-sponsor-img', 'tw-sponsor-cat');
+
+    async function showTomorrowSchedule() {
+      /* Week/Day chip + match rows follow the Match Board state */
+      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+      await transitionTo('tomorrow');
+      const ms = await msPromise;
+      if (activeFeature !== 'tomorrow') return; /* superseded while awaiting match state */
+      applyTwTitle(ms);
+      if (ms) {
+        if (ms.week != null && ms.day != null) {
+          const wd = computeTomorrowWeekDay(ms);
+          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' DAY ' + wd.day;
+        }
+        buildTwMatches(ms);
+      }
+      showSceneVideo('tomorrow');
+      wsMatchesSlideIn('tw-matches');
+      twSponsorLoop.start();
+      twPage.classList.add('tw-on');
+      void twPage.offsetWidth; /* force reflow so the opacity transition runs */
+      twPage.classList.add('tw-visible');
+    }
+
+    function hideTomorrowSchedule() {
+      activeFeature = null;
+      twSponsorLoop.stop();
+      twPage.classList.remove('tw-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          twPage.classList.remove('tw-on');
           hideSceneVideo();
           resolve();
         }, 420);
@@ -5537,7 +5927,7 @@
       { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
       { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
     ];
-    const ST_ROW_TOP = 354, ST_ROW_PITCH = 79.3;
+    const ST_ROW_TOP = 354, ST_ROW_PITCH = 77;
     let stTeams = ST_TEAMS;
 
     function buildStandings() {
@@ -5621,6 +6011,15 @@
         }
         buildTsMatches(ms);
       }
+      /* Tomorrow's Schedule rows + week/day chip + sign-off title */
+      if (activeFeature === 'tomorrow') {
+        applyTwTitle(ms);
+        if (ms.week != null && ms.day != null) {
+          const wd = computeTomorrowWeekDay(ms);
+          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' DAY ' + wd.day;
+        }
+        buildTwMatches(ms);
+      }
       /* Standings week/day chip */
       if (activeFeature === 'standings') stApplyWeekDay(ms);
       /* MVP Scene match/game plate */
@@ -5689,6 +6088,7 @@
       if (prev === 'lineupblue') return hideTeamLineupBlue();
       if (prev === 'lineupred') return hideTeamLineupRed();
       if (prev === 'schedule') return hideTodaySchedule();
+      if (prev === 'tomorrow') return hideTomorrowSchedule();
       if (prev === 'standings') return hideStandings();
       if (prev === 'timeline') return hideItemTimeline();
       if (prev === 'emblems')  return hidePostEmblems();
@@ -6594,6 +6994,7 @@
         else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
         else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
         else if (scene.activeFeature === 'schedule') showTodaySchedule();
+        else if (scene.activeFeature === 'tomorrow') showTomorrowSchedule();
         else if (scene.activeFeature === 'standings') showStandings();
         else if (scene.matchboard)                   showMatchBoard();
         if (scene.middleboard)                       showMiddleBoard();
@@ -6627,6 +7028,7 @@
         if (feature === 'lineupblue') showTeamLineupBlue();
         if (feature === 'lineupred') showTeamLineupRed();
         if (feature === 'schedule') showTodaySchedule();
+        if (feature === 'tomorrow') showTomorrowSchedule();
         if (feature === 'standings') showStandings();
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
@@ -6636,7 +7038,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -6653,6 +7055,7 @@
         if (event === 'team_lineup_blue') showTeamLineupBlue();
         if (event === 'team_lineup_red') showTeamLineupRed();
         if (event === 'today_schedule') showTodaySchedule();
+        if (event === 'tomorrow_schedule') showTomorrowSchedule();
         if (event === 'standings')     showStandings();
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();

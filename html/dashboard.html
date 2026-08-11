@@ -701,6 +701,8 @@
   <button class="tab-btn" data-page="standings">Standings</button>
   <button class="tab-btn active" data-page="control">Control</button>
   <button class="tab-btn" data-page="dynamic">Dynamic</button>
+  <button class="tab-btn" data-page="roster">Roster</button>
+  <button class="tab-btn" data-page="sponsors">Sponsors</button>
   <button class="tab-btn" data-page="edit">Edit</button>
   <button class="tab-btn" data-page="settings">Settings</button>
 </nav>
@@ -723,6 +725,18 @@
     <a href="/html/dynamic.html" target="_blank" class="btn btn-open" style="font-size:12px;padding:5px 14px;text-decoration:none;">Open ↗</a>
   </div>
   <iframe src="/html/dynamic.html" style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Roster -->
+<div id="page-roster" class="page">
+  <iframe id="roster-iframe" src="/html/roster-dashboard.html" allow="autoplay"
+    style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Sponsors -->
+<div id="page-sponsors" class="page">
+  <iframe id="sponsors-iframe" src="/html/sponsors-dashboard.html" allow="autoplay"
+    style="width:100%;flex:1;border:none;min-height:0;"></iframe>
 </div>
 
 <!-- Page 1: Control -->
@@ -835,6 +849,18 @@
         <input type="text" id="highlights-api-input" placeholder="https://theapi.dpdns.org/api/game-mvp/view/" spellcheck="false" autocomplete="off" />
         <button id="highlights-api-apply">Apply</button>
         <span id="highlights-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Draft Index (Line-Up Rate) API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="lineuprate-api-input">Base URL</label>
+        <input type="text" id="lineuprate-api-input" placeholder="https://theapi.dpdns.org/api/line-up-rate/" spellcheck="false" autocomplete="off" />
+        <button id="lineuprate-api-apply">Apply</button>
+        <span id="lineuprate-api-status"></span>
       </div>
     </div>
   </div>
@@ -954,6 +980,34 @@
   hlApiApply.addEventListener('click', saveHighlightsApiUrl);
   hlApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHighlightsApiUrl(); });
 
+  /* ── Draft Index (Line-Up Rate) API URL ──────────────────── */
+  var luApiInput  = document.getElementById('lineuprate-api-input');
+  var luApiApply  = document.getElementById('lineuprate-api-apply');
+  var luApiStatus = document.getElementById('lineuprate-api-status');
+
+  fetch('/api/lineuprate-url').then(function(r){ return r.json(); }).then(function(d){
+    luApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveLineupRateApiUrl() {
+    var url = luApiInput.value.trim();
+    fetch('/api/lineuprate-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      luApiStatus.textContent = 'Saved ✓';
+      luApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ luApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      luApiStatus.textContent = 'Error';
+      luApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  luApiApply.addEventListener('click', saveLineupRateApiUrl);
+  luApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveLineupRateApiUrl(); });
+
   document.getElementById('btn-debugoff').addEventListener('click', function() {
     fetch('/overlay/debugoff').catch(function(){});
   });
@@ -1044,6 +1098,7 @@
     waiting_tvc:    'waiting',
     waiting_lobby:  'lobby',
     today_schedule: 'schedule',
+    tomorrow_schedule: 'tomorrow',
     standings:      'standings',
     team_hexagon:   'hexagon',
     highlights:     'highlights',
@@ -1100,6 +1155,13 @@
       photoModeToggle: true,
     },
     {
+      id: 'draftindex',
+      name: 'Draft Index',
+      file: 'DraftIndex.html',
+      show: '/overlay/draftindex/show',
+      hide: '/overlay/draftindex/hide',
+    },
+    {
       id: 'mplfs',
       name: 'MPL Full Screen',
       file: 'mplfs.html',
@@ -1117,6 +1179,7 @@
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
         { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide' },
+        { name: "Tomorrow's Schedule", show: '/overlay/tomorrow_schedule/show', hide: '/overlay/tomorrow_schedule/hide' },
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
         { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
         { name: 'MVP Highlights', show: '/overlay/highlights/show', hide: '/overlay/highlights/hide' },
@@ -1631,6 +1694,24 @@
       var row = el('div', 'btn-row');
       if (ov.show)       row.appendChild(btn('Show',     'btn-show', function () { hit(ov.show, body); }));
       if (ov.hide)       row.appendChild(btn('Hide',     'btn-hide', function () { hit(ov.hide, body); }));
+      if (ov.show) {
+        var scb = document.createElement('button');
+        scb.className = 'btn btn-copy';
+        scb.innerHTML = '<span class="copy-icon">⧉</span> show';
+        (function (path, name, b) {
+          b.addEventListener('click', function () { copyRoute(path, name + ' show route', b); });
+        })(ov.show, ov.name, scb);
+        row.appendChild(scb);
+      }
+      if (ov.hide) {
+        var hcb = document.createElement('button');
+        hcb.className = 'btn btn-copy';
+        hcb.innerHTML = '<span class="copy-icon">⧉</span> hide';
+        (function (path, name, b) {
+          b.addEventListener('click', function () { copyRoute(path, name + ' hide route', b); });
+        })(ov.hide, ov.name, hcb);
+        row.appendChild(hcb);
+      }
       if (ov.globalHide) {
         row.appendChild(btn('Hide All', 'btn-hide', function () {
           fetch(ov.globalHide).then(function (r) {
@@ -2020,6 +2101,94 @@
     { group: 'Players', id: '.wl-namebox-red',  name: 'Name Box (Red)'  },
   ];
 
+  /* ── Today's / Tomorrow's Schedule (mplfs.html) element defaults ──
+     Each scene groups down to its three major pieces (header text block,
+     match rows, sponsor box) rather than exposing every label/logo. */
+  var TS_DEFAULTS = {
+    '#ts-header':  { left: 170, top: 98,  width: 858 },
+    '#ts-title':   { fontSize: 64 },
+    '#ts-season':  { fontSize: 30 },
+    '#ts-week':    { fontSize: 20 },
+    '#ts-matches': { left: 170, top: 255, width: 858 },
+    '#ts-sponsor': { left: 429, top: 975, width: 340, height: 94 },
+  };
+  var TS_ELEMENTS = [
+    { group: 'Header',  id: '#ts-header',  name: 'Title / Season / Week (position)' },
+    { group: 'Header',  id: '#ts-title',   name: 'Title Font Size'  },
+    { group: 'Header',  id: '#ts-season',  name: 'Season Font Size' },
+    { group: 'Header',  id: '#ts-week',    name: 'Week Chip Font Size' },
+    { group: 'Matches', id: '#ts-matches', name: 'Match Rows'            },
+    { group: 'Sponsor', id: '#ts-sponsor', name: 'Sponsor Box'           },
+  ];
+
+  var TW_DEFAULTS = {
+    '#tw-header':  { left: 170, top: 98,  width: 858 },
+    '#tw-title':   { fontSize: 64 },
+    '#tw-season':  { fontSize: 30 },
+    '#tw-week':    { fontSize: 20 },
+    '#tw-matches': { left: 170, top: 255, width: 858 },
+    '#tw-sponsor': { left: 429, top: 975, width: 340, height: 94 },
+  };
+  var TW_ELEMENTS = [
+    { group: 'Header',  id: '#tw-header',  name: 'Title / Season / Week (position)' },
+    { group: 'Header',  id: '#tw-title',   name: 'Title Font Size'  },
+    { group: 'Header',  id: '#tw-season',  name: 'Season Font Size' },
+    { group: 'Header',  id: '#tw-week',    name: 'Week Chip Font Size' },
+    { group: 'Matches', id: '#tw-matches', name: 'Match Rows'            },
+    { group: 'Sponsor', id: '#tw-sponsor', name: 'Sponsor Box'           },
+  ];
+
+  /* ── Standings (mplfs.html) ──────────────────────────────────
+     "Header" group = #st-header (title/season/week) + #st-colheader (the
+     column-header bar). The 6 column labels are real DOM children of
+     #st-colheader now (position:absolute inside it, coordinates relative
+     to its own top-left) — dragging the bar carries every label with it
+     automatically via normal CSS containment, no group-drag needed for
+     them. Each label keeps its own entry (own unique group) so it can
+     still be nudged individually within the bar.
+     "Body" = #st-rows, a single-element group: it's position:absolute
+     and every .st-row is positioned relative to IT (not the page), so
+     dragging #st-rows carries all 8 rows with it without a new wrapper. */
+  var ST_DEFAULTS = {
+    '#st-header':    { left: 230, top: 82  },
+    '#st-colheader': { left: 118, top: 327, width: 1803, height: 27 },
+    '.st-l0':        { left: 104, top: 0,   width: 80,   height: 27 },
+    '.st-lteam':     { left: 294, top: 0,   height: 27 },
+    '.st-l1':        { left: 768, top: 0,   width: 260,  height: 27 },
+    '.st-l2':        { left: 1035, top: 0,  width: 260,  height: 27 },
+    '.st-l3':        { left: 1303, top: 0,  width: 260,  height: 27 },
+    '.st-l4':        { left: 1555, top: 0,  width: 260,  height: 27 },
+    '#st-rows':      { left: 0,    top: 0,   width: 1920, height: 1080 },
+  };
+  var ST_ELEMENTS = [
+    { group: 'Header',    id: '#st-header',    name: 'Title / Season / Week' },
+    { group: 'Header',    id: '#st-colheader', name: 'Column Header Bar (drag moves all labels)' },
+    { group: 'Rank Label',       id: '.st-l0',    name: 'Rank Label (within bar)'         },
+    { group: 'Team Label',       id: '.st-lteam', name: 'Team Label (within bar)'         },
+    { group: 'Match Point Label', id: '.st-l1',   name: 'Match Point Label (within bar)'  },
+    { group: 'Match W-L Label',   id: '.st-l2',   name: 'Match W-L Label (within bar)'    },
+    { group: 'Game W-L Label',    id: '.st-l3',   name: 'Game W-L Label (within bar)'     },
+    { group: 'Net Game Win Label', id: '.st-l4',  name: 'Net Game Win Label (within bar)' },
+    { group: 'Body',   id: '#st-rows',      name: 'Team Rows'             },
+  ];
+
+  /* ── Map bug (Draft.html) — same box as mploverlay_v7's ingame
+     #sb-map, cloned centered above the draft area. Icon and name box
+     are absolutely positioned WITHIN #draft-map, so moving #draft-map
+     carries both along; each can also be nudged on its own. */
+  var DRAFT_MAP_DEFAULTS = {
+    '#draft-map':           { left: 813, top: 691, width: 294, height: 69 },
+    '#draft-map-logo':      { left: 9,   top: 9,   width: 52,  height: 52 },
+    '#draft-map-name':      { left: 102, top: 10,  width: 185, height: 50 },
+    '.draft-map-name-text': { fontSize: 26 },
+  };
+  var DRAFT_MAP_ELEMENTS = [
+    { group: 'Background', id: '#draft-map',           name: 'Map Bug Background' },
+    { group: 'Icon',       id: '#draft-map-logo',      name: 'Map Icon' },
+    { group: 'Text',       id: '#draft-map-name',      name: 'Map Name Box' },
+    { group: 'Text',       id: '.draft-map-name-text', name: 'Map Name Font Size' },
+  ];
+
   /* ── Team Line-Up (mplfs.html) element defaults ────────────────
      Blue and Red are two separate page divs (lub- / lur- prefixed ids) but they
      share every positioning CLASS (.lu-player-N, .lu-nametag-N, .lu-title,
@@ -2194,6 +2363,36 @@
     { group: 'Credit Reel', id: '#credits-viewport', name: 'Credit Reel Viewport' },
   ];
 
+  /* ── Draft Index (DraftIndex.html) element defaults ──────────────
+     Two sub-configs share one file: the intro (Smart logo + DRAFT
+     INDEX title lockup) and the comparison (mini logo + blue/red team
+     panels + stat bars). Both write into the same overlay_styles.json
+     bucket (styleFile: 'DraftIndex'), same as mplfs's multiple
+     sub-scenes sharing styleFile 'mplfs'. The 7 stat bars themselves
+     aren't individually editable — only the container box is
+     drag/resize-able, same philosophy as Credit Reel's viewport. */
+  var DI_INTRO_DEFAULTS = {
+    '#di-smart-logo-p1': { left: 377, top: 469, width: 424, height: 154 },
+    '#di-title-text':    { left: 855, top: 469, width: 700, height: 154, fontSize: 145 },
+  };
+  var DI_INTRO_ELEMENTS = [
+    { group: 'Smart Logo', id: '#di-smart-logo-p1', name: 'Smart Logo (Intro)' },
+    { group: 'Title',      id: '#di-title-text',     name: 'DRAFT INDEX Title' },
+  ];
+
+  var DI_COMPARE_DEFAULTS = {
+    '#di-smart-logo-p2': { left: 874, top: 301, width: 172, height: 63  },
+    '#di-blue-box':      { left: 166, top: 340, width: 285, height: 414 },
+    '#di-red-box':       { left: 1429, top: 342, width: 285, height: 414 },
+    '#di-bars-container': { left: 634, top: 370, width: 622, height: 420 },
+  };
+  var DI_COMPARE_ELEMENTS = [
+    { group: 'Smart Logo',    id: '#di-smart-logo-p2',  name: 'Smart Logo (Mini)' },
+    { group: 'Blue Team',     id: '#di-blue-box',       name: 'Blue Team Panel'   },
+    { group: 'Red Team',      id: '#di-red-box',        name: 'Red Team Panel'    },
+    { group: 'Stat Bars',     id: '#di-bars-container', name: 'Stat Bars Panel'   },
+  ];
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -2267,6 +2466,59 @@
       defaults:    CREDITS_DEFAULTS,
       showFn:      'showCreditsScene',
     },
+    mplfs_todayschedule: {
+      label:       "Today's Schedule · mplfs",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_todayschedule',
+      elements:    TS_ELEMENTS,
+      defaults:    TS_DEFAULTS,
+      showFn:      'showTodaySchedule',
+    },
+    mplfs_tomorrowschedule: {
+      label:       "Tomorrow's Schedule · mplfs",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_tomorrowschedule',
+      elements:    TW_ELEMENTS,
+      defaults:    TW_DEFAULTS,
+      showFn:      'showTomorrowSchedule',
+    },
+    draft_mapbug: {
+      label:       'Map Bug · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_mapbug',
+      elements:    DRAFT_MAP_ELEMENTS,
+      defaults:    DRAFT_MAP_DEFAULTS,
+    },
+    mplfs_standings: {
+      label:       'Standings · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_standings',
+      elements:    ST_ELEMENTS,
+      defaults:    ST_DEFAULTS,
+      showFn:      'showStandings',
+    },
+    draftindex_intro: {
+      label:       'Draft Index — Intro',
+      file:        'DraftIndex.html',
+      styleFile:   'DraftIndex',
+      defaultsKey: 'sb_edit_defaults_draftindex_intro',
+      elements:    DI_INTRO_ELEMENTS,
+      defaults:    DI_INTRO_DEFAULTS,
+      showFn:      'showDraftIndexIntroForEdit',
+    },
+    draftindex_compare: {
+      label:       'Draft Index — Comparison',
+      file:        'DraftIndex.html',
+      styleFile:   'DraftIndex',
+      defaultsKey: 'sb_edit_defaults_draftindex_compare',
+      elements:    DI_COMPARE_ELEMENTS,
+      defaults:    DI_COMPARE_DEFAULTS,
+      showFn:      'showDraftIndexCompareForEdit',
+    },
   };
   var currentConfigKey = 'mploverlay_v7';
 
@@ -2297,6 +2549,7 @@
   window.SB_DEFAULTS         = SB_DEFAULTS;
   window.getEditValues       = function() { return editValues; };
   window.getSelectedGroupName = function() { return selectedGroupName; };
+  window.getSelectedElId     = function() { return selectedElId; };
 
   /* ── Group helpers ───────────────────────────────────────── */
   function getGroupElements(groupName) {
@@ -2618,17 +2871,34 @@
       var hasLeft = 'left' in (SB_DEFAULTS[elem.id] || {});
       var hasTop  = 'top'  in (SB_DEFAULTS[elem.id] || {});
 
-      el.addEventListener('mousedown', (function(id, hasL, hasT, elemGroup) {
+      el.addEventListener('mousedown', (function(clickedId, clickedHasL, clickedHasT, clickedGroup) {
         return function(e) {
           e.preventDefault();
           e.stopPropagation();
 
-          /* Group drag — if this element's group is the selected group */
-          if (elemGroup && elemGroup === window.parent.getSelectedGroupName()) {
-            window.parent.pushHistory();
+          /* Lock the drag to whatever is ALREADY selected (via the left
+             sidebar or a prior click), not whichever element the mouse
+             happens to land on — overlapping/packed elements no longer
+             steal the drag out from under the current selection. Only
+             when nothing is selected yet do we fall back to the element
+             actually clicked. A plain click (no real movement) still
+             (re)selects the clicked element, so switching selection by
+             clicking directly on something still works. */
+          var lockedGroup = window.parent.getSelectedGroupName();
+          var lockedId    = window.parent.getSelectedElId();
+
+          var startX = e.clientX, startY = e.clientY;
+          var moved  = false;
+          var mode   = null;   /* 'group' | 'elem', decided once movement starts */
+          var groupName, startPositions;
+          var dragId, dragHasL, dragHasT, startLeft, startTop;
+
+          function beginGroupDrag(name) {
+            mode = 'group';
+            groupName = name;
             window.parent.sbEditGroupDragStart();
-            var gElems = window.parent.SB_ELEMENTS.filter(function(ge) { return ge.group === elemGroup; });
-            var startPositions = {};
+            var gElems = window.parent.SB_ELEMENTS.filter(function(ge) { return ge.group === name; });
+            startPositions = {};
             gElems.forEach(function(ge) {
               var gv = window.parent.getEditValues()[ge.id] || {};
               var gd = window.parent.SB_DEFAULTS[ge.id]    || {};
@@ -2637,41 +2907,52 @@
                 top:  'top'  in gd ? (gv.top  !== undefined ? gv.top  : gd.top)  : undefined,
               };
             });
-            var startX = e.clientX;
-            var startY = e.clientY;
-            function onGroupMove(ev) {
-              var dx = Math.round((ev.clientX - startX) * 10) / 10;
-              var dy = Math.round((ev.clientY - startY) * 10) / 10;
-              window.parent.sbEditGroupDragDelta(startPositions, dx, dy);
-            }
-            function onGroupUp() {
-              doc.removeEventListener('mousemove', onGroupMove);
-              doc.removeEventListener('mouseup',   onGroupUp);
-            }
-            doc.addEventListener('mousemove', onGroupMove);
-            doc.addEventListener('mouseup',   onGroupUp);
-            return;
           }
 
-          /* Individual drag */
-          window.parent.pushHistory();
-          window.parent.sbEditSelect(id);
+          function beginElemDrag(id, hasL, hasT) {
+            mode     = 'elem';
+            dragId   = id;
+            dragHasL = hasL;
+            dragHasT = hasT;
+            var vals = window.parent.getEditValues()[id] || {};
+            var defs = window.parent.SB_DEFAULTS[id]    || {};
+            startLeft = vals.left !== undefined ? vals.left : (defs.left || 0);
+            startTop  = vals.top  !== undefined ? vals.top  : (defs.top  || 0);
+          }
 
-          var vals      = window.parent.getEditValues()[id] || {};
-          var defs      = window.parent.SB_DEFAULTS[id]    || {};
-          var startLeft = vals.left !== undefined ? vals.left : (defs.left || 0);
-          var startTop  = vals.top  !== undefined ? vals.top  : (defs.top  || 0);
-          var startX    = e.clientX;
-          var startY    = e.clientY;
+          if (lockedGroup) {
+            beginGroupDrag(lockedGroup);
+          } else if (lockedId) {
+            var ld = window.parent.SB_DEFAULTS[lockedId] || {};
+            beginElemDrag(lockedId, 'left' in ld, 'top' in ld);
+          }
+          /* else: nothing selected — decided lazily on first real move below */
 
           function onMove(ev) {
-            var l = hasL ? Math.round((startLeft + ev.clientX - startX) * 10) / 10 : undefined;
-            var t = hasT ? Math.round((startTop  + ev.clientY - startY) * 10) / 10 : undefined;
-            window.parent.sbEditDrag(id, l, t);
+            var dx = ev.clientX - startX, dy = ev.clientY - startY;
+            if (!moved) {
+              if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+              moved = true;
+              window.parent.pushHistory();
+              if (!mode) beginElemDrag(clickedId, clickedHasL, clickedHasT);
+            }
+            if (mode === 'group') {
+              window.parent.sbEditGroupDragDelta(startPositions, Math.round(dx * 10) / 10, Math.round(dy * 10) / 10);
+            } else {
+              var l = dragHasL ? Math.round((startLeft + dx) * 10) / 10 : undefined;
+              var t = dragHasT ? Math.round((startTop  + dy) * 10) / 10 : undefined;
+              window.parent.sbEditDrag(dragId, l, t);
+            }
           }
           function onUp() {
             doc.removeEventListener('mousemove', onMove);
             doc.removeEventListener('mouseup',   onUp);
+            if (!moved) {
+              /* Plain click, no drag — (re)select the individual element
+                 actually clicked (group selection stays a deliberate,
+                 separate action via the sidebar's group entry). */
+              window.parent.sbEditSelect(clickedId);
+            }
           }
           doc.addEventListener('mousemove', onMove);
           doc.addEventListener('mouseup',   onUp);

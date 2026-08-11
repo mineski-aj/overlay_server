@@ -12,6 +12,25 @@ const killNametagClipEl = document.getElementById('kill-event-nametag-clip');
 const killNametagBgEl   = document.getElementById('kill-event-nametag-text');
 const killNameEl        = document.getElementById('kill-event-name');
 const killRoleIconEl    = document.getElementById('kill-event-role-icon');
+const killSponsorLabelClipEl = document.getElementById('kill-event-sponsor-label-clip');
+const killSponsorLabelEl     = document.getElementById('kill-event-sponsor-label');
+const killSponsorLogoClipEl  = document.getElementById('kill-event-sponsor-logo-clip');
+const killSponsorLogoEl      = document.getElementById('kill-event-sponsor-logo');
+
+/* Never show a broken-image icon if a player's signature photo is
+   missing — just leave that spot transparent instead. Reset to visible
+   before each new src assignment in showKillEventPlayer() below. */
+killPhotoEl.onerror = function() {
+  killPhotoEl.style.visibility = 'hidden';
+};
+
+/* Kill events sponsored by a specific brand — the sponsor plate (label +
+   logo) only shows for these videos, popping in alongside the photo. */
+var KILL_EVENT_SPONSOR_LOGO = {
+  'doublekill.webm':  'assets/ingame/ingamesmart.png',
+  'turtleslain.webm': 'assets/ingame/ingamesmart.png',
+  'savage.webm':      'assets/ingame/ingamevisawhite.png',
+};
 
 /* Pop timing — start delayed 300ms after the trigger, held up for 1.3s,
    then pops back down. KILL_POP_EXIT_MS must track the exit transition
@@ -28,6 +47,10 @@ var KILL_POP_ENTER_MS = 480;
 /* Rectangle_3 (name text box) is 151px wide — leave a small margin so
    shrink-to-fit text never touches the plate art's edges. */
 var KILL_NAME_MAX_W = 139;
+
+/* Rectangle_1 (sponsor label) is 131x19 — small margin so shrink-to-fit
+   text never touches its edges. */
+var KILL_SPONSOR_LABEL_MAX_W = 125;
 
 var killShowTimer      = null; /* pending: about to pop in */
 var killBounceTimer    = null; /* pending: about to play the settle bounce */
@@ -67,6 +90,28 @@ function killFitName(el) {
   }
 }
 
+/* Same binary-search shrink-to-fit as killFitNameMeasure, but starting
+   from Rectangle_1's own 19px height (maximize the height) and only
+   shrinking from there if "OFFICIAL SPONSOR" would otherwise overflow
+   its 131px width. */
+function killFitSponsorLabelMeasure(el) {
+  el.style.fontSize = '19px';
+  if (el.scrollWidth <= KILL_SPONSOR_LABEL_MAX_W) return;
+  var lo = 8, hi = 19;
+  while (hi - lo > 0.5) {
+    var mid = (lo + hi) / 2;
+    el.style.fontSize = mid + 'px';
+    if (el.scrollWidth <= KILL_SPONSOR_LABEL_MAX_W) lo = mid; else hi = mid;
+  }
+  el.style.fontSize = lo + 'px';
+}
+function killFitSponsorLabel(el) {
+  killFitSponsorLabelMeasure(el);
+  if (document.fonts && document.fonts.status !== 'loaded') {
+    document.fonts.ready.then(function() { killFitSponsorLabelMeasure(el); });
+  }
+}
+
 function clearKillTimers() {
   if (killShowTimer)   { clearTimeout(killShowTimer);   killShowTimer   = null; }
   if (killBounceTimer) { clearTimeout(killBounceTimer); killBounceTimer = null; }
@@ -74,15 +119,33 @@ function clearKillTimers() {
   killPhotoEl.classList.remove('ke-bounce');
 }
 
-function showKillEventPlayer(playerName, role, camp) {
+/* Instantly hides a still-visible popup piece (no animated slide-out) by
+   disabling its transition for one frame. Used when a new kill event
+   supersedes one that's still on screen — without this, the OLD player's
+   photo/name plays its normal ~300ms exit slide before the new one pops
+   in, which reads as "the wrong player briefly shows" when kill events
+   fire in quick succession (e.g. rapid-fire testing from the dashboard). */
+function killSnapHide(clipEl, innerEl) {
+  innerEl.style.transition = 'none';
+  clipEl.classList.remove('ke-in');
+  void innerEl.offsetWidth;
+  innerEl.style.transition = '';
+}
+
+function showKillEventPlayer(playerName, role, camp, sponsorLogo) {
   clearKillTimers();
-  /* if a previous popup is still up, slide it out first — the new photo/name/role
-     only get swapped in once it's fully hidden, so we never swap the image mid-slide */
-  killPhotoClipEl.classList.remove('ke-in');
-  killNametagClipEl.classList.remove('ke-in');
+  /* If a previous popup is still up, snap it away instantly instead of
+     letting it slide out — the new photo/name/role only get swapped in
+     once the old one is fully gone, so we never swap the image mid-slide
+     (see killSnapHide above for why this must be instant, not animated). */
+  killSnapHide(killPhotoClipEl, killPhotoEl);
+  killSnapHide(killNametagClipEl, killNametagBgEl);
+  killSnapHide(killSponsorLabelClipEl, killSponsorLabelEl);
+  killSnapHide(killSponsorLogoClipEl, killSponsorLogoEl);
 
   killShowTimer = setTimeout(function() {
     killShowTimer = null;
+    killPhotoEl.style.visibility = ''; /* undo any previous missing-photo hide */
     killPhotoEl.src = killEventPhotoSrc(playerName);
     killNametagBgEl.style.backgroundImage = 'url(' + killNametagBgSrc(camp) + ')';
     killNameEl.textContent = playerName;
@@ -96,6 +159,13 @@ function showKillEventPlayer(playerName, role, camp) {
     }
     killPhotoClipEl.classList.add('ke-in');
     killNametagClipEl.classList.add('ke-in');
+    if (sponsorLogo) {
+      killSponsorLabelEl.textContent = 'OFFICIAL SPONSOR';
+      killFitSponsorLabel(killSponsorLabelEl);
+      killSponsorLogoEl.src = sponsorLogo;
+      killSponsorLabelClipEl.classList.add('ke-in');
+      killSponsorLogoClipEl.classList.add('ke-in');
+    }
     killBounceTimer = setTimeout(function() {
       killBounceTimer = null;
       killPhotoEl.classList.remove('ke-bounce');
@@ -106,6 +176,8 @@ function showKillEventPlayer(playerName, role, camp) {
       killHoldTimer = null;
       killPhotoClipEl.classList.remove('ke-in');
       killNametagClipEl.classList.remove('ke-in');
+      killSponsorLabelClipEl.classList.remove('ke-in');
+      killSponsorLogoClipEl.classList.remove('ke-in');
     }, KILL_POP_HOLD_MS);
   }, KILL_POP_DELAY_MS);
 
@@ -116,6 +188,8 @@ function hideKillEventPlayer() {
   clearKillTimers();
   killPhotoClipEl.classList.remove('ke-in');
   killNametagClipEl.classList.remove('ke-in');
+  killSponsorLabelClipEl.classList.remove('ke-in');
+  killSponsorLogoClipEl.classList.remove('ke-in');
   killPopCycleEndsAt = 0;
 }
 
@@ -157,7 +231,7 @@ function playNextKillEvent() {
   killEventCurrent = entry.video;
   killVideoEl.src = 'assets/motion/' + entry.video;
   killOverlayEl.style.display = 'block';
-  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp);
+  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, KILL_EVENT_SPONSOR_LOGO[entry.video] || null);
   else hideKillEventPlayer();
   killVideoEl.play().catch(function() {
     scheduleOverlayHide();

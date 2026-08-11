@@ -83,6 +83,26 @@ router.get('/api/draft-roles', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json(state.draftRoles);
 });
 
+// GET /overlay/draftindex-state — current shown/hidden state, so a
+// freshly (re)loaded DraftIndex.html can restore instead of guessing.
+router.get('/overlay/draftindex-state', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json({ active: state.draftIndexActive });
+});
+
+// GET /overlay/draftindex/show
+router.get('/overlay/draftindex/show', (req, res) => {
+  state.draftIndexActive = true;
+  state.overlayClients.forEach(c => { try { c.write('event: draftindex\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/draftindex/hide
+router.get('/overlay/draftindex/hide', (req, res) => {
+  state.draftIndexActive = false;
+  state.overlayClients.forEach(c => { try { c.write('event: draftindex\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/fights/show
 router.get('/overlay/fights/show', (req, res) => {
   state.fightsPendingAction = { action: "show", ts: Date.now() };
@@ -350,6 +370,20 @@ router.get('/overlay/today_schedule/show', (req, res) => {
 router.get('/overlay/today_schedule/hide', (req, res) => {
   state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/tomorrow_schedule/show
+router.get('/overlay/tomorrow_schedule/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'tomorrow';
+  state.overlayClients.forEach(c => { try { c.write('event: tomorrow_schedule\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/tomorrow_schedule/hide
+router.get('/overlay/tomorrow_schedule/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: tomorrow_schedule\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 

@@ -100,6 +100,25 @@ app.post('/standings/state', function (req, res) {
   res.json({ ok: true, state: standingsState.get() });
 });
 
+// Team roster — mainroster.json. Reads go through the existing static
+// file serving (GET /mainroster.json, already no-cache'd below); this is
+// just the write side, same dashboard password as match/standings state.
+app.post('/api/roster', function (req, res) {
+  var body  = req.body || {};
+  var token = body.token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  var data = body.data;
+  if (!data || typeof data !== 'object' || !data.teams || !data.players) {
+    return res.status(400).json({ error: 'Payload must include teams and players' });
+  }
+  try {
+    fs.writeFileSync(path.join(__dirname, 'mainroster.json'), JSON.stringify(data, null, 2));
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'Could not write mainroster.json' });
+  }
+});
+
 // Static assets — HTML files served fresh, other assets cached for 1 day
 app.use(express.static(path.join(__dirname), {
   maxAge: '1d',
@@ -168,6 +187,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`             → GET  http://localhost:${PORT}/match/events  (SSE)`);
   console.log(`  Timer      → POST http://localhost:${PORT}/match/timer  { action: start|pause|set, seconds }`);
   console.log(`  Sponsors   → GET  http://localhost:${PORT}/api/sponsors`);
+  console.log(`             → GET  http://localhost:${PORT}/api/sponsors-config`);
+  console.log(`             → POST http://localhost:${PORT}/api/sponsors-config  (auth)`);
   console.log(`  Game API   → GET  http://localhost:${PORT}/api/game-url`);
   console.log(`             → POST http://localhost:${PORT}/api/game-url  { url }`)
   console.log("================================================");

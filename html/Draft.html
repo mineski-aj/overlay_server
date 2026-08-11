@@ -630,6 +630,137 @@
       transform: translateX(110%);
       transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
     }
+
+    /* ── Map bug — same box/asset as mploverlay_v7's #sb-map (ingame
+       scoreboard), centered here directly above the ban/pick draft area
+       (bans start at BAN_TOP = 780px) instead of the ingame position. ── */
+    #draft-map {
+      position: absolute;
+      left: 813px;
+      top: 691px;
+      width: 294px;
+      height: 69px;
+      z-index: 50;
+      background-image: url('/assets/ingame/mapbacker.png');
+      background-size: 100% 100%;
+      pointer-events: none;
+    }
+    #draft-map-logo {
+      position: absolute;
+      left: 9px;
+      top: 9px;
+      width: 52px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #draft-map-logo-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #draft-map-name {
+      position: absolute;
+      left: 102px;
+      top: 10px;
+      width: 185px;
+      height: 50px;
+      box-sizing: border-box;
+      padding: 0 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .draft-map-name-text {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      color: #000000;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── Coach BPM + headset + name — home=blue/left, away=red/right,
+       mirror(x) = 1920 − x − width (same formula as the map bug / pui
+       cards elsewhere in this codebase). Heart+beat pattern is the same
+       one ingame_blue.html's #p*-bpm-box uses against the live HRM feed
+       (GET /feed, coach_home1 / coach_away1 slots — already served by
+       lib/feeds.js, just not consumed here yet). ── */
+    .dcoach-bpm {
+      position: absolute;
+      top: 793px;
+      width: 91px; height: 44px;
+    }
+    .dcoach-bpm.dcoach-home { left: 7px; }
+    .dcoach-bpm.dcoach-away { left: 1822px; }
+    .dcoach-bpm-heart {
+      position: absolute;
+      left: 2px; top: 11px;
+      width: 22px; height: 22px;
+      color: #e8121f;
+      transition: color 0.6s;
+    }
+    .dcoach-bpm-heart svg { width: 100%; height: 100%; display: block; }
+    .dcoach-bpm-num {
+      position: absolute;
+      left: 26px; top: 0;
+      width: 44px; height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Anton', sans-serif;
+      font-size: 32px;
+      line-height: 1;
+      color: #141414;
+      transition: color 0.6s;
+    }
+    .dcoach-bpm-unit {
+      position: absolute;
+      left: 71px; top: 9px;
+      width: 20px; height: 14px;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 9px;
+      line-height: 10px;
+      color: #141414;
+    }
+
+    .dcoach-headset {
+      position: absolute;
+      top: 801px;
+      width: 27px; height: 27px;
+      color: #141414;
+    }
+    .dcoach-headset.dcoach-home { left: 130px; }
+    .dcoach-headset.dcoach-away { left: 1763px; }
+    .dcoach-headset svg { width: 100%; height: 100%; display: block; }
+
+    .dcoach-name {
+      position: absolute;
+      top: 802px;
+      width: 129px; height: 27px;
+      /* No overflow-x/overflow-y mix here on purpose — per spec, pairing
+         hidden with visible forces the visible axis to compute as auto
+         (a scrollbar), which is not what we want. Width never actually
+         overflows (dcoachFitName guarantees it fits), so plain `visible`
+         on both axes is enough and never shows a scrollbar. */
+      overflow: visible;
+      display: flex;
+      align-items: center;
+    }
+    .dcoach-name.dcoach-home { left: 165px;  justify-content: flex-start; }
+    .dcoach-name.dcoach-away { left: 1626px; justify-content: flex-end; }
+    .dcoach-name-text {
+      display: block;
+      max-width: 129px;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      color: #141414;
+    }
+    .dcoach-name.dcoach-home .dcoach-name-text { text-align: left; }
+    .dcoach-name.dcoach-away .dcoach-name-text { text-align: right; }
   </style>
 </head>
 <body>
@@ -1047,6 +1178,28 @@
         var c2Team  = swapped ? home : away;
         renderBars(scoreEls[1], maxWins, c1Team.score, true);
         renderBars(scoreEls[2], maxWins, c2Team.score, false);
+
+        /* Coach name — camp1 is always the LEFT/blue box (dcoach-home)
+           and camp2 the RIGHT/red box (dcoach-away) regardless of which
+           team (home/away) is currently swapped into that camp, same as
+           the score bars above. BPM slot selection in pollCoachBpm()
+           below follows the same swap so the heart/number match. */
+        dcoachSwapped = swapped;
+        if (dcoachRefs.home) dcoachFitName(dcoachRefs.home.nameTextEl, c1Team.coach || 'COACH NAME');
+        if (dcoachRefs.away) dcoachFitName(dcoachRefs.away.nameTextEl, c2Team.coach || 'COACH NAME');
+
+        /* Map bug — same source as the ingame scoreboard's #sb-map */
+        var mapVal     = s.map || 'Broken Walls';
+        var mapNameTxt = document.querySelector('#draft-map-name .draft-map-name-text');
+        var mapLogoImg = document.getElementById('draft-map-logo-img');
+        if (mapNameTxt) {
+          mapNameTxt.textContent = mapVal.toUpperCase();
+          draftFitText(mapNameTxt, 169, 26);
+        }
+        if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
+          mapLogoImg.dataset.map = mapVal;
+          mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+        }
       })
       .catch(function() {});
   }
@@ -1084,6 +1237,207 @@
 
       logoEls[c] = { img: img, fb: fb };
     });
+  }
+
+  /* ── Build map bug ─────────────────────────────────────────── */
+  function buildDraftMap() {
+    var box = document.createElement('div');
+    box.id = 'draft-map';
+
+    var logo = document.createElement('div');
+    logo.id = 'draft-map-logo';
+    var logoImg = document.createElement('img');
+    logoImg.id  = 'draft-map-logo-img';
+    logoImg.alt = '';
+    logo.appendChild(logoImg);
+
+    var name = document.createElement('div');
+    name.id = 'draft-map-name';
+    name.innerHTML = '<span class="draft-map-name-text"></span>';
+
+    box.appendChild(logo);
+    box.appendChild(name);
+    scene.appendChild(box);
+  }
+
+  /* ── Build coach BPM + headset + name (home + away) ──────────── */
+  var DCOACH_HEART_SVG =
+    '<svg viewBox="0 0 24 22" xmlns="http://www.w3.org/2000/svg">' +
+    '<path fill="currentColor" d="M12 20.5C12 20.5 1.5 13.8 1.5 7.2 1.5 3.6 4.3 1 7.6 1c1.9 0 3.6.9 4.4 2.4C12.8 1.9 14.5 1 16.4 1c3.3 0 6.1 2.6 6.1 6.2 0 6.6-10.5 13.3-10.5 13.3z"/>' +
+    '<path fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" d="M0 11h5l2.2-4.5L11 15l2-7.5 1.6 3.5H24"/>' +
+    '</svg>';
+  var DCOACH_HEADSET_SVG =
+    '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+    '<path d="M4 15v-3a8 8 0 0 1 16 0v3"/>' +
+    '<rect x="2" y="14" width="6" height="8" rx="2.5" fill="currentColor" stroke="none"/>' +
+    '<rect x="16" y="14" width="6" height="8" rx="2.5" fill="currentColor" stroke="none"/>' +
+    '</svg>';
+
+  var dcoachRefs = {};   /* CSS position key ('home'=left, 'away'=right) -> { heartEl, numEl, nameTextEl } */
+  var dcoachSwapped = false; /* mirrors /match/state's swapped flag — see pollMatchState() */
+
+  function buildCoachSide(side) {
+    var bpm = document.createElement('div');
+    bpm.className = 'dcoach-bpm dcoach-' + side;
+    var heart = document.createElement('div');
+    heart.className = 'dcoach-bpm-heart';
+    heart.innerHTML = DCOACH_HEART_SVG;
+    var num = document.createElement('div');
+    num.className = 'dcoach-bpm-num';
+    num.textContent = '--';
+    var unit = document.createElement('div');
+    unit.className = 'dcoach-bpm-unit';
+    unit.textContent = 'BPM';
+    bpm.appendChild(heart);
+    bpm.appendChild(num);
+    bpm.appendChild(unit);
+    scene.appendChild(bpm);
+
+    var headset = document.createElement('div');
+    headset.className = 'dcoach-headset dcoach-' + side;
+    headset.innerHTML = DCOACH_HEADSET_SVG;
+    scene.appendChild(headset);
+
+    var name = document.createElement('div');
+    name.className = 'dcoach-name dcoach-' + side;
+    var nameText = document.createElement('span');
+    nameText.className = 'dcoach-name-text';
+    name.appendChild(nameText);
+    scene.appendChild(name);
+
+    dcoachRefs[side] = { heartEl: heart, numEl: num, nameTextEl: nameText, phase: Math.random(), bpm: 0, connected: false };
+  }
+
+  /* Coach name fit — maximize a single line to fill the 27px-tall box;
+     only wrap to two (smaller) lines when a name genuinely doesn't fit
+     on one, e.g. "MASTER THE BASICS" vs. the usual short coach names. */
+  function dcoachFitName(el, nameStr) {
+    var maxW = 129, maxH = 27;
+
+    function fitsOneLine(size) {
+      el.textContent      = nameStr;
+      el.style.whiteSpace = 'nowrap';
+      el.style.fontSize   = size + 'px';
+      el.style.lineHeight = maxH + 'px';
+      return el.scrollWidth <= maxW;
+    }
+
+    /* Single line, maximized: the largest size — down to a floor below
+       which it'd look too small — that fits the width at full box
+       height. Covers the common case ("most coaches have short names"). */
+    var ceiling = maxH - 3, floor = 15;
+    for (var s = ceiling; s >= floor; s--) {
+      if (fitsOneLine(s)) return;
+    }
+
+    /* Doesn't fit on one line even at the floor size (e.g. "MASTER THE
+       BASICS") — force an explicit two-line break at the most balanced
+       word boundary (rather than relying on natural reflow, which can
+       coincidentally settle back onto one cramped line at this box's
+       width). Keep the SAME size range single-line uses instead of
+       shrinking further just because it wrapped — each line only needs
+       to fit the box WIDTH; the stacked pair is allowed to exceed the
+       box's height. */
+    var words = nameStr.split(' ');
+    var line1 = nameStr, line2 = '';
+    if (words.length > 1) {
+      var best = 1, bestDiff = Infinity;
+      for (var i = 1; i < words.length; i++) {
+        var l1 = words.slice(0, i).join(' '), l2 = words.slice(i).join(' ');
+        var diff = Math.abs(l1.length - l2.length);
+        if (diff < bestDiff) { bestDiff = diff; best = i; }
+      }
+      line1 = words.slice(0, best).join(' ');
+      line2 = words.slice(best).join(' ');
+    }
+    function fitsTwoLines(size) {
+      el.innerHTML        = line1 + '<br>' + line2;
+      el.style.whiteSpace = 'nowrap';
+      el.style.fontSize   = size + 'px';
+      el.style.lineHeight = (size + 1) + 'px';
+      return el.scrollWidth <= maxW;
+    }
+    for (var s2 = ceiling; s2 >= floor; s2--) {
+      if (fitsTwoLines(s2)) return;
+    }
+    /* Extremely long individual word(s) — only now drop below the
+       single-line floor, since the horizontal bound still can't be
+       crossed. */
+    for (var s3 = floor - 1; s3 >= 7; s3--) {
+      if (fitsTwoLines(s3)) return;
+    }
+    fitsTwoLines(7); /* smallest fallback if even that won't fit */
+  }
+
+  function buildCoachBpm() {
+    buildCoachSide('home');
+    buildCoachSide('away');
+    /* No coach-name source yet — placeholder until one exists; swap the
+       literal string for real data the same way pollCoachBpm() below
+       updates the heart/number when a name feed shows up. */
+    dcoachFitName(dcoachRefs.home.nameTextEl, 'COACH NAME');
+    dcoachFitName(dcoachRefs.away.nameTextEl, 'COACH NAME');
+  }
+
+  /* Heartbeat scale bump, phase-driven by actual BPM — same easing curve
+     as ingame_blue.html's bpmAnimate so the coach heart beats in time. */
+  var dcoachLast = 0;
+  function dcoachAnimate(ts) {
+    var dt = (ts - (dcoachLast || ts)) / 1000;
+    dcoachLast = ts;
+    ['home', 'away'].forEach(function(side) {
+      var h = dcoachRefs[side];
+      if (!h) return;
+      var active = h.bpm > 0 && h.connected;
+      if (active) h.phase = (h.phase + (h.bpm / 60) * dt) % 1;
+      var beat = 0;
+      if (active && h.phase >= 0.22 && h.phase <= 0.50) {
+        beat = Math.pow(1 - (h.phase - 0.22) / 0.28, 4);
+      }
+      h.heartEl.style.transform = 'scale(' + (1 + beat * 0.4).toFixed(3) + ')';
+    });
+    requestAnimationFrame(dcoachAnimate);
+  }
+
+  function pollCoachBpm() {
+    fetch('/feed', { cache: 'no-store' })
+      .then(function(r) { return r.json(); })
+      .then(function(list) {
+        if (!Array.isArray(list)) return;
+        /* LEFT box (home position) is camp1 — coach_home1 unless swapped,
+           matching pollMatchState()'s c1Team/c2Team logic. */
+        var pairs = dcoachSwapped
+          ? [['home', 'coach_away1'], ['away', 'coach_home1']]
+          : [['home', 'coach_home1'], ['away', 'coach_away1']];
+        pairs.forEach(function(pair) {
+          var side = pair[0], slot = pair[1];
+          var h = dcoachRefs[side];
+          if (!h) return;
+          var entry = list.find(function(e) { return e.slot === slot; });
+          var bpm = entry ? (parseInt(entry.bpm) || 0) : 0;
+          h.bpm = bpm;
+          h.connected = !!entry && bpm > 0;
+          h.numEl.textContent   = h.connected ? bpm : '--';
+          h.heartEl.style.color = h.connected ? '#e8121f' : '#999';
+        });
+      })
+      .catch(function() {});
+  }
+
+  /* Shrink-to-fit — same binary-search approach as overlay-scoreboard.js's
+     sbFitText, since "Expanding Rivers" runs much longer than "Flying
+     Cloud" inside the same fixed-width name box. */
+  function draftFitText(el, maxWidth, maxPx) {
+    maxPx = maxPx || 13;
+    el.style.fontSize = maxPx + 'px';
+    if (el.scrollWidth <= maxWidth) return;
+    var lo = 6, hi = maxPx;
+    while (hi - lo > 0.5) {
+      var mid = (lo + hi) / 2;
+      el.style.fontSize = mid + 'px';
+      if (el.scrollWidth <= maxWidth) lo = mid; else hi = mid;
+    }
+    el.style.fontSize = lo + 'px';
   }
 
   /* ── Build status / countdown area ────────────────────────── */
@@ -1884,12 +2238,39 @@
   buildTeamNames();
   buildTeamLogos();
   buildStatusArea();
+  buildDraftMap();
+  buildCoachBpm();
   buildTimerBar();
   startSponsorLoop();
   pollMatchState();
   setInterval(pollMatchState, 3000);
+  requestAnimationFrame(dcoachAnimate);
+  pollCoachBpm();
+  setInterval(pollCoachBpm, 1000);
   poll();
   setInterval(poll, POLL_MS);
+
+  /* ── Load saved position/size overrides from dashboard editor ── */
+  (function loadDraftOverrides() {
+    fetch('/api/overlay-styles?file=Draft')
+      .then(function(r) { return r.json(); })
+      .then(function(styles) {
+        if (!styles || !Object.keys(styles).length) return;
+        var css = Object.keys(styles).map(function(sel) {
+          var props = styles[sel];
+          var decls = Object.keys(props).map(function(prop) {
+            var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+            return cssProp + ':' + props[prop] + ' !important';
+          }).join(';');
+          return sel + '{' + decls + '}';
+        }).join('\n');
+        var style = document.createElement('style');
+        style.id = 'draft-overrides';
+        style.textContent = css;
+        document.head.appendChild(style);
+      })
+      .catch(function() {});
+  })();
 })();
 </script>
 </body>

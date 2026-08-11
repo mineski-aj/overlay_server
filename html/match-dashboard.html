@@ -146,6 +146,13 @@
 
     .slot-empty { font-size: 11px; color: #333; font-style: italic; }
 
+    /* Coach row — sits right under Gold Laner; read-only, sourced straight
+       from mainroster.json's teams[id].coach when a team is picked (same
+       as the player slots above — edited only from the Roster tab). This
+       is what Draft.html's coach box reads via /match/state. */
+    .coach-slot { border-top: 1px dashed #1a1a28; margin-top: 4px; padding-top: 8px; }
+    .coach-slot .player-chip { cursor: default; }
+
     .bench { margin-top: 6px; padding-top: 8px; border-top: 1px dashed #1a1a28; }
     .bench-label { font-size: 10px; color: #333; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
     .bench-chips { display: flex; flex-wrap: wrap; gap: 5px; }
@@ -633,8 +640,8 @@
     // Normalize old teamA/teamB format
     if (s.teamA && !s.home) {
       s = {
-        home:    Object.assign({ teamId: '', lineup: [] }, s.teamA),
-        away:    Object.assign({ teamId: '', lineup: [] }, s.teamB || {}),
+        home:    Object.assign({ teamId: '', lineup: [], coach: '' }, s.teamA),
+        away:    Object.assign({ teamId: '', lineup: [], coach: '' }, s.teamB || {}),
         series:  s.series  || 'BO5',
         game:    s.game    || 1,
         swapped: s.blueTeam === 'B',
@@ -787,6 +794,29 @@
       }
       slotsEl.appendChild(slot);
     });
+
+    // Coach — right under Gold Laner, read-only display like the player
+    // slots above: sourced from the roster (mainroster.json), edited only
+    // from the Roster tab, never typed in here.
+    var coachSlot = document.createElement('div');
+    coachSlot.className = 'role-slot coach-slot';
+    var coachLbl = document.createElement('span');
+    coachLbl.className = 'role-label';
+    coachLbl.textContent = 'COACH';
+    coachSlot.appendChild(coachLbl);
+    if (st.coach) {
+      var coachChip = document.createElement('div');
+      coachChip.className = 'player-chip';
+      coachChip.textContent = st.coach;
+      coachSlot.appendChild(coachChip);
+    } else {
+      var coachEmpty = document.createElement('span');
+      coachEmpty.className = 'slot-empty';
+      coachEmpty.textContent = '(no coach set)';
+      coachSlot.appendChild(coachEmpty);
+    }
+    slotsEl.appendChild(coachSlot);
+
     div.appendChild(slotsEl);
 
     // Bench
@@ -890,7 +920,7 @@
     if (!teamId || !roster) return;
     var team   = roster.teams[teamId] || {};
     var lineup = buildDefaultLineup(teamId);
-    localState[side] = { teamId: teamId, name: team.name || '', short: team.tag || '', score: localState[side].score || 0, lineup: lineup };
+    localState[side] = { teamId: teamId, name: team.name || '', short: team.tag || '', score: localState[side].score || 0, lineup: lineup, coach: team.coach || '' };
     renderRoster(side);
     updatePreview();
     document.getElementById(side + '-short-disp').textContent = (team.tag || '').toUpperCase();
