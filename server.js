@@ -132,7 +132,6 @@ app.use(express.static(path.join(__dirname), {
 }));
 
 // Routes
-app.use(require('./routes/bpm'));
 app.use(require('./routes/feed'));
 app.use(require('./routes/overlay'));
 app.use(require('./routes/led'));
@@ -155,12 +154,10 @@ require('./lib/pollers');
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log("================================================");
-  console.log(`  BPM Server running on :${PORT}`);
+  console.log(`  Overlay Server running on :${PORT}`);
   console.log(`  Dashboard  → http://localhost:${PORT}/`);
   console.log(`  Feed       → http://localhost:${PORT}/feed`);
   console.log(`  Camp Feed  → http://localhost:${PORT}/feed/order`);
-  console.log(`  Latest BPM → http://localhost:${PORT}/bpm`);
-  console.log(`  BPM Log    → http://localhost:${PORT}/bpm/log`);
   console.log(`  Postgame   → http://localhost:${PORT}/postgame`);
   console.log(`  League     → http://localhost:${PORT}/stats/league`);
   console.log(`  Overlay    → GET  http://localhost:${PORT}/overlay/slot1  (show)`);

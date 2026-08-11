@@ -854,6 +854,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">HRM Server</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="hrm-api-input">Base URL</label>
+        <input type="text" id="hrm-api-input" placeholder="http://192.168.1.100:5055" spellcheck="false" autocomplete="off" />
+        <button id="hrm-api-apply">Apply</button>
+        <span id="hrm-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Draft Index (Line-Up Rate) API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -979,6 +991,34 @@
 
   hlApiApply.addEventListener('click', saveHighlightsApiUrl);
   hlApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHighlightsApiUrl(); });
+
+  /* ── HRM Server URL ───────────────────────────────────────── */
+  var hrmApiInput  = document.getElementById('hrm-api-input');
+  var hrmApiApply  = document.getElementById('hrm-api-apply');
+  var hrmApiStatus = document.getElementById('hrm-api-status');
+
+  fetch('/api/hrm-url').then(function(r){ return r.json(); }).then(function(d){
+    hrmApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveHrmApiUrl() {
+    var url = hrmApiInput.value.trim().replace(/\/$/, '');
+    fetch('/api/hrm-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      hrmApiStatus.textContent = 'Saved ✓';
+      hrmApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ hrmApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      hrmApiStatus.textContent = 'Error';
+      hrmApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  hrmApiApply.addEventListener('click', saveHrmApiUrl);
+  hrmApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHrmApiUrl(); });
 
   /* ── Draft Index (Line-Up Rate) API URL ──────────────────── */
   var luApiInput  = document.getElementById('lineuprate-api-input');

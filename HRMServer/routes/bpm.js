@@ -1,8 +1,8 @@
 // routes/bpm.js — POST /bpm, GET /bpm, GET /bpm/log
 const express = require('express');
 const router  = express.Router();
-const state   = require('../lib/state');
-const { MAX_LOG } = require('../lib/config');
+const state   = require('../state');
+const { MAX_LOG } = require('../config');
 
 // POST /bpm — receive from Android watches
 router.post('/bpm', (req, res) => {

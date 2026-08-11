@@ -241,6 +241,24 @@ router.get('/api/gamedata-proxy', async (req, res) => {
   }
 });
 
+// HRM Server (heartrate ingestion) base URL — GET to read, POST { url } to update
+const HRM_URL_FILE    = path.join(__dirname, '..', 'hrm_api_url.json');
+const HRM_URL_DEFAULT = 'http://<HRM-SERVER-IP>:5055';
+
+router.get('/api/hrm-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(HRM_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: HRM_URL_DEFAULT });
+  }
+});
+
+router.post('/api/hrm-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim().replace(/\/$/, '');
+  fs.writeFileSync(HRM_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
 // Team Head to Head (Team Hexagon) API base URL — GET to read, POST { url } to update
 const HEXAGON_URL_FILE    = path.join(__dirname, '..', 'hexagon_api_url.json');
 const HEXAGON_URL_DEFAULT = 'https://theapi.dpdns.org/api/teamh2h/';

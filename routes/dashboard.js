@@ -18,8 +18,8 @@ router.get('/bpm/status', (req, res) => {
       <td>${p.name}</td>
       <td>${p.team}</td>
       <td style="color:#aaa;font-weight:bold">${p.role}</td>
-      <td style="color:${p.status === "ok" ? "#1db954" : p.bpm_simulated ? "#f5a623" : "#555"};font-size:20px;font-weight:bold">
-        ${p.bpm !== null && p.bpm !== undefined ? p.bpm : "--"}${p.bpm_simulated ? " ~" : ""}
+      <td style="color:${p.status === "ok" ? "#1db954" : "#555"};font-size:20px;font-weight:bold">
+        ${p.bpm !== null && p.bpm !== undefined ? p.bpm : "--"}
       </td>
       <td>
         <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${p.status === "ok" ? "#1db954" : "#e53935"};margin-right:6px;"></span>
