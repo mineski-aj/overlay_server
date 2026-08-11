@@ -619,6 +619,31 @@
     }
     .edit-no-sel { font-size: 12px; color: #444; font-style: italic; }
 
+    #edit-content-panel {
+      border-top: 1px solid #1e1e2c;
+      padding: 14px 16px;
+      flex-shrink: 0;
+    }
+    .edit-content-hint {
+      font-size: 11px; color: #666; line-height: 1.5; margin-bottom: 8px;
+    }
+    .edit-content-hint code {
+      background: #1a1a2a; color: #8888cc; padding: 1px 4px; border-radius: 3px;
+    }
+    #edit-credits-textarea {
+      width: 100%; height: 220px; resize: vertical;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid #333344; border-radius: 5px;
+      color: #eee; padding: 8px;
+      font-family: 'Consolas', monospace; font-size: 12px; line-height: 1.5;
+      outline: none; box-sizing: border-box;
+    }
+    #edit-credits-textarea:focus { border-color: #4455aa; }
+    .edit-content-actions {
+      display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    }
+    #edit-credits-status { font-size: 11px; color: #555; }
+
     .edit-group-btn {
       display: flex;
       align-items: center;
@@ -744,6 +769,30 @@
       <div id="edit-controls">
         <div class="edit-no-sel">Select an element to edit</div>
       </div>
+      <div id="edit-content-panel" style="display:none;">
+        <div class="edit-content-hint">
+          One line per credit: <code>@file.png | Title</code> for a sponsor
+          logo (from <code>assets/sponsors/</code>), <code># HEADING</code>
+          for a section title, blank line for a gap, anything else is a
+          plain credit line. Paste straight from a text file.
+        </div>
+        <textarea id="edit-credits-textarea" spellcheck="false"></textarea>
+        <div class="edit-content-actions" style="flex-wrap:wrap;">
+          <label for="edit-credits-speed" class="edit-ctrl-label" style="width:auto;">Speed</label>
+          <input type="number" id="edit-credits-speed" class="edit-ctrl-input" style="width:60px;" min="10" max="1000" step="5" />
+          <span class="edit-ctrl-unit">px/s</span>
+          <label for="edit-credits-heading-size" class="edit-ctrl-label" style="width:auto;">Heading</label>
+          <input type="number" id="edit-credits-heading-size" class="edit-ctrl-input" style="width:60px;" min="8" max="200" step="1" />
+          <span class="edit-ctrl-unit">px</span>
+          <label for="edit-credits-body-size" class="edit-ctrl-label" style="width:auto;">Body</label>
+          <input type="number" id="edit-credits-body-size" class="edit-ctrl-input" style="width:60px;" min="8" max="200" step="1" />
+          <span class="edit-ctrl-unit">px</span>
+        </div>
+        <div class="edit-content-actions">
+          <button class="edit-btn" id="edit-credits-save" style="background:#1a3a2a;border-color:#2a5a3a;color:#44cc88;margin-left:auto;">Save</button>
+          <span id="edit-credits-status"></span>
+        </div>
+      </div>
     </div>
     <div id="edit-frame-wrap">
       <iframe id="edit-iframe" src="" allow="autoplay"></iframe>
@@ -774,6 +823,18 @@
         <input type="text" id="hexagon-api-input" placeholder="https://theapi.dpdns.org/api/teamh2h/" spellcheck="false" autocomplete="off" />
         <button id="hexagon-api-apply">Apply</button>
         <span id="hexagon-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">MVP Highlights API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="highlights-api-input">Base URL</label>
+        <input type="text" id="highlights-api-input" placeholder="https://theapi.dpdns.org/api/game-mvp/view/" spellcheck="false" autocomplete="off" />
+        <button id="highlights-api-apply">Apply</button>
+        <span id="highlights-api-status"></span>
       </div>
     </div>
   </div>
@@ -864,6 +925,34 @@
 
   hexApiApply.addEventListener('click', saveHexagonApiUrl);
   hexApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHexagonApiUrl(); });
+
+  /* ── MVP Highlights API URL ──────────────────────────────── */
+  var hlApiInput  = document.getElementById('highlights-api-input');
+  var hlApiApply  = document.getElementById('highlights-api-apply');
+  var hlApiStatus = document.getElementById('highlights-api-status');
+
+  fetch('/api/highlights-url').then(function(r){ return r.json(); }).then(function(d){
+    hlApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveHighlightsApiUrl() {
+    var url = hlApiInput.value.trim();
+    fetch('/api/highlights-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      hlApiStatus.textContent = 'Saved ✓';
+      hlApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ hlApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      hlApiStatus.textContent = 'Error';
+      hlApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  hlApiApply.addEventListener('click', saveHighlightsApiUrl);
+  hlApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHighlightsApiUrl(); });
 
   document.getElementById('btn-debugoff').addEventListener('click', function() {
     fetch('/overlay/debugoff').catch(function(){});
@@ -957,6 +1046,9 @@
     today_schedule: 'schedule',
     standings:      'standings',
     team_hexagon:   'hexagon',
+    highlights:     'highlights',
+    mvp:            'mvp',
+    credits:        'credits',
     final_team:     'finalteam',
     team_lineup_blue: 'lineupblue',
     team_lineup_red:  'lineupred',
@@ -1027,6 +1119,9 @@
         { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide' },
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
         { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
+        { name: 'MVP Highlights', show: '/overlay/highlights/show', hide: '/overlay/highlights/hide' },
+        { name: 'MVP Scene', show: '/overlay/mvp/show', hide: '/overlay/mvp/hide' },
+        { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
         { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
@@ -1964,6 +2059,141 @@
     { group: 'Team Bar', id: '.lu-teambar-match',  name: 'Week/Day/Match Label' },
   ];
 
+  /* ── Casters (mplfs.html Waiting Screen TVC) element defaults ───
+     3 photo slots inside the 571×478 .ws-talent-photos container. Free to
+     drag/resize past the container edge — it just gets cropped by the
+     container's own overflow:hidden, same as any other overlay element. */
+  var CASTER_DEFAULTS = {
+    '.ws-casters-slot-left':   { left: 0,   top: 14, width: 354, height: 464 },
+    '.ws-casters-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
+    '.ws-casters-slot-right':  { left: 217, top: 14, width: 354, height: 464 },
+  };
+
+  var CASTER_ELEMENTS = [
+    { group: 'Casters', id: '.ws-casters-slot-left',   name: 'Photo (Left)'   },
+    { group: 'Casters', id: '.ws-casters-slot-middle', name: 'Photo (Middle)' },
+    { group: 'Casters', id: '.ws-casters-slot-right',  name: 'Photo (Right)'  },
+  ];
+
+  /* ── Hosts (mplfs.html Waiting Screen TVC) element defaults ─────
+     2 photo slots, same 571×478 container as Casters. */
+  var HOST_DEFAULTS = {
+    '.ws-hosts-slot-left':  { left: 40,  top: 14, width: 300, height: 464 },
+    '.ws-hosts-slot-right': { left: 251, top: 14, width: 300, height: 464 },
+  };
+
+  var HOST_ELEMENTS = [
+    { group: 'Hosts', id: '.ws-hosts-slot-left',  name: 'Photo (Left)'  },
+    { group: 'Hosts', id: '.ws-hosts-slot-right', name: 'Photo (Right)' },
+  ];
+
+  /* ── MVP Highlights (mplfs.html) element defaults ───────────────
+     Signature-pose hires photo behind the plaque, then the plaque's own
+     pieces (team logo / role icon / name / hero art) positioned per
+     mvpreplayguide.png. */
+  var HL_DEFAULTS = {
+    '#hl-title':             { left: 52,   top: 95,   width: 641, height: 94, fontSize: 103 },
+    '.hl-player-photo-wrap': { left: 1360, top: -30,  width: 560, height: 1110 },
+    '#hl-plaque':            { left: 1393, top: 777,  width: 462, height: 174  },
+    '.hl-logo':              { left: 11,   top: 3,    width: 49,  height: 49   },
+    '.hl-role':              { left: 77,   top: 5,    width: 45,  height: 45   },
+    '.hl-name':              { left: 157,  top: 5,    width: 298, height: 43   },
+    '.hl-hero':              { left: 1,    top: 55,   width: 460, height: 118  },
+    '.hl-hero-name':         { left: 10,   top: 83,   fontSize: 22 },
+  };
+
+  var HL_ELEMENTS = [
+    { group: 'Title',        id: '#hl-title',              name: 'MVP Highlights Title' },
+    { group: 'Player Photo', id: '.hl-player-photo-wrap', name: 'Signature Photo' },
+    { group: 'Plaque',       id: '#hl-plaque',            name: 'Plaque Background' },
+    { group: 'Plaque',       id: '.hl-logo',               name: 'Team Logo' },
+    { group: 'Plaque',       id: '.hl-role',               name: 'Role Icon' },
+    { group: 'Plaque',       id: '.hl-name',               name: 'Player Name' },
+    { group: 'Plaque',       id: '.hl-hero',               name: 'Hero Image' },
+    { group: 'Plaque',       id: '.hl-hero-name',          name: 'Hero Name' },
+  ];
+
+  /* ── MVP Scene (mplfs.html) element defaults ─────────────────────
+     Positions follow assets/mvp/mvpfsguide.png; the plaque row (team
+     logo / role icon / name / KDA / GPM / KP%) sits on top of
+     mvpfsblue.png/mvpfsred.png. */
+  var MV_DEFAULTS = {
+    '#mv-box-bg':       { left: 953,  top: 74,  width: 867,  height: 470 },
+    '#mv-hero-img':     { left: 953,  top: 74,  width: 867,  height: 470 },
+    '#mv-photo':        { left: 953,  top: 74,  width: 867,  height: 470 },
+    '#mv-ofthegame':    { left: 1086, top: 562, width: 304,  height: 57,  fontSize: 50 },
+    '#mv-matchbox':     { left: 1402, top: 562, width: 224,  height: 57  },
+    '#mv-spell-title':  { left: 1029, top: 672, width: 62,   height: 24  },
+    '#mv-spell':        { left: 1029, top: 707, width: 62,   height: 62  },
+    '#mv-emblem-title': { left: 1142, top: 672, width: 212,  height: 24  },
+    '#mv-rune-main':    { left: 1142, top: 708, width: 58,   height: 58  },
+    '#mv-rune-1':       { left: 1207, top: 718, width: 38,   height: 38  },
+    '#mv-rune-2':       { left: 1250, top: 718, width: 38,   height: 38  },
+    '#mv-rune-3':       { left: 1296, top: 708, width: 58,   height: 58  },
+    '#mv-items-title':  { left: 1404, top: 672, width: 380,  height: 24  },
+    '#mv-item-0':       { left: 1404, top: 708, width: 58,   height: 58  },
+    '#mv-item-1':       { left: 1468, top: 708, width: 58,   height: 58  },
+    '#mv-item-2':       { left: 1533, top: 708, width: 58,   height: 58  },
+    '#mv-item-3':       { left: 1597, top: 708, width: 58,   height: 58  },
+    '#mv-item-4':       { left: 1662, top: 708, width: 58,   height: 58  },
+    '#mv-item-5':       { left: 1726, top: 708, width: 58,   height: 58  },
+    '#mv-backer':       { left: 0,    top: 829, width: 1762, height: 164 },
+    '.mv-logo':         { left: 16,   top: 22,  width: 120,  height: 120 },
+    '.mv-role':         { left: 196,  top: 48,  width: 68,   height: 68  },
+    '#mv-name':         { left: 279,  top: 48,  width: 342,  height: 67, fontSize: 52 },
+    '#mv-kda-label':    { left: 843,  top: 22,  width: 299,  height: 22  },
+    '#mv-kda':          { left: 843,  top: 48,  width: 299,  height: 67, fontSize: 64 },
+    '#mv-gpm-label':    { left: 1312, top: 22,  width: 134,  height: 22  },
+    '#mv-gpm':          { left: 1312, top: 48,  width: 134,  height: 67, fontSize: 64 },
+    '#mv-kp-label':     { left: 1555, top: 22,  width: 204,  height: 22  },
+    '#mv-kp':           { left: 1555, top: 48,  width: 204,  height: 67, fontSize: 64 },
+  };
+
+  var MV_ELEMENTS = [
+    { group: 'MVP Video', id: '#mv-box-bg',       name: 'MVP Text Video' },
+    { group: 'Hero Image', id: '#mv-hero-img',    name: 'Hero Image' },
+    { group: 'Signature Photo', id: '#mv-photo',  name: 'Signature Photo' },
+    { group: 'Title Row', id: '#mv-ofthegame',    name: 'Of The Game Text' },
+    { group: 'Title Row', id: '#mv-matchbox',     name: 'Season / Match Box' },
+    { group: 'Icons',     id: '#mv-spell-title',  name: 'Spell Label' },
+    { group: 'Icons',     id: '#mv-spell',        name: 'Spell Icon' },
+    { group: 'Icons',     id: '#mv-emblem-title', name: 'Emblem Label' },
+    { group: 'Icons',     id: '#mv-rune-main',    name: 'Main Rune Icon' },
+    { group: 'Icons',     id: '#mv-rune-1',       name: 'Rune 1 Icon' },
+    { group: 'Icons',     id: '#mv-rune-2',       name: 'Rune 2 Icon' },
+    { group: 'Icons',     id: '#mv-rune-3',       name: 'Rune 3 Icon' },
+    { group: 'Icons',     id: '#mv-items-title',  name: 'Items Label' },
+    { group: 'Icons',     id: '#mv-item-0',       name: 'Item 1' },
+    { group: 'Icons',     id: '#mv-item-1',       name: 'Item 2' },
+    { group: 'Icons',     id: '#mv-item-2',       name: 'Item 3' },
+    { group: 'Icons',     id: '#mv-item-3',       name: 'Item 4' },
+    { group: 'Icons',     id: '#mv-item-4',       name: 'Item 5' },
+    { group: 'Icons',     id: '#mv-item-5',       name: 'Item 6' },
+    { group: 'Plaque',    id: '#mv-backer',       name: 'Plaque Background' },
+    { group: 'Plaque',    id: '.mv-logo',         name: 'Team Logo' },
+    { group: 'Plaque',    id: '.mv-role',         name: 'Role Icon' },
+    { group: 'Plaque',    id: '#mv-name',         name: 'Player Name' },
+    { group: 'KDA Label', id: '#mv-kda-label',    name: 'KDA Label' },
+    { group: 'KDA Value', id: '#mv-kda',          name: 'KDA Value' },
+    { group: 'GPM Label', id: '#mv-gpm-label',    name: 'GPM Label' },
+    { group: 'GPM Value', id: '#mv-gpm',          name: 'GPM Value' },
+    { group: 'KP% Label', id: '#mv-kp-label',     name: 'KP% Label' },
+    { group: 'KP% Value', id: '#mv-kp',           name: 'KP% Value' },
+  ];
+
+  /* ── Credit Reel (mplfs.html) element defaults ───────────────────
+     The reel's actual content (sponsor logos/titles, cast/crew text)
+     is a data array in mplfs.html's script (CREDIT_REEL_ITEMS), not
+     individually editable elements — only the viewport box (where
+     the reel scrolls) is drag/resize-able here. */
+  var CREDITS_DEFAULTS = {
+    '#credits-viewport': { left: 660, top: 0, width: 600, height: 1080 },
+  };
+
+  var CREDITS_ELEMENTS = [
+    { group: 'Credit Reel', id: '#credits-viewport', name: 'Credit Reel Viewport' },
+  ];
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -1991,6 +2221,51 @@
       elements:    LU_ELEMENTS,
       defaults:    LU_DEFAULTS,
       showFn:      'showTeamLineupBlue',
+    },
+    mplfs_casters: {
+      label:       'Casters · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_casters',
+      elements:    CASTER_ELEMENTS,
+      defaults:    CASTER_DEFAULTS,
+      showFn:      'showCastersForEdit',
+    },
+    mplfs_hosts: {
+      label:       'Hosts · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_hosts',
+      elements:    HOST_ELEMENTS,
+      defaults:    HOST_DEFAULTS,
+      showFn:      'showHostsForEdit',
+    },
+    mplfs_highlights: {
+      label:       'MVP Highlights · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_highlights',
+      elements:    HL_ELEMENTS,
+      defaults:    HL_DEFAULTS,
+      showFn:      'showHighlights',
+    },
+    mplfs_mvp: {
+      label:       'MVP Scene · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_mvp',
+      elements:    MV_ELEMENTS,
+      defaults:    MV_DEFAULTS,
+      showFn:      'showMvpScene',
+    },
+    mplfs_credits: {
+      label:       'Credit Reel · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_credits',
+      elements:    CREDITS_ELEMENTS,
+      defaults:    CREDITS_DEFAULTS,
+      showFn:      'showCreditsScene',
     },
   };
   var currentConfigKey = 'mploverlay_v7';
@@ -2670,18 +2945,29 @@
       if (v.height   !== undefined) out[sel].height   = v.height   + 'px';
       if (v.fontSize !== undefined) out[sel].fontSize = v.fontSize + 'px';
     });
-    fetch('/api/overlay-styles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ file: EDIT_CONFIGS[currentConfigKey].styleFile, styles: out }),
-    }).then(function(r) { return r.json(); }).then(function() {
-      statusEl.textContent = 'Saved ✓';
-      statusEl.style.color = '#44cc88';
-      setTimeout(function() { statusEl.textContent = ''; }, 2000);
-    }).catch(function() {
-      statusEl.textContent = 'Error';
-      statusEl.style.color = '#ff4455';
-    });
+    var styleFile = EDIT_CONFIGS[currentConfigKey].styleFile;
+    /* Multiple configs can share one style file (Waiting Lobby / Team
+       Line-Up / Casters all write into "mplfs") — merge this config's own
+       selectors into whatever's already saved instead of replacing the
+       whole file's block, so saving one doesn't wipe out the others. */
+    fetch('/api/overlay-styles?file=' + styleFile)
+      .then(function(r) { return r.json(); })
+      .then(function(existing) {
+        var merged = Object.assign({}, existing || {}, out);
+        return fetch('/api/overlay-styles', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: styleFile, styles: merged }),
+        });
+      })
+      .then(function(r) { return r.json(); }).then(function() {
+        statusEl.textContent = 'Saved ✓';
+        statusEl.style.color = '#44cc88';
+        setTimeout(function() { statusEl.textContent = ''; }, 2000);
+      }).catch(function() {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#ff4455';
+      });
   });
 
   /* ── Config switching ────────────────────────────────────────── */
@@ -2732,11 +3018,66 @@
       '<div class="edit-no-sel">Select an element to edit</div>';
     buildEditList();
 
+    var contentPanel = document.getElementById('edit-content-panel');
+    if (key === 'mplfs_credits') {
+      contentPanel.style.display = 'block';
+      fetch('/api/credits-text', { cache: 'no-store' })
+        .then(function(r) { return r.text(); })
+        .then(function(text) { document.getElementById('edit-credits-textarea').value = text; });
+      fetch('/api/credits-speed', { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) { document.getElementById('edit-credits-speed').value = d.speed || 90; });
+      fetch('/api/credits-style', { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          document.getElementById('edit-credits-heading-size').value = d.headingSize || 40;
+          document.getElementById('edit-credits-body-size').value    = d.bodySize    || 24;
+        });
+    } else {
+      contentPanel.style.display = 'none';
+    }
+
     fetch('/api/overlay-styles?file=' + config.styleFile)
       .then(function(r) { return r.json(); })
       .then(function(saved) { mergeSaved(saved); loadIframe(config); })
       .catch(function() { loadIframe(config); });
   }
+
+  /* ── Credit Reel content Save ────────────────────────────────── */
+  document.getElementById('edit-credits-save').addEventListener('click', function() {
+    var statusEl = document.getElementById('edit-credits-status');
+    var text        = document.getElementById('edit-credits-textarea').value;
+    var speed       = Number(document.getElementById('edit-credits-speed').value) || 90;
+    var headingSize = Number(document.getElementById('edit-credits-heading-size').value) || 40;
+    var bodySize    = Number(document.getElementById('edit-credits-body-size').value) || 24;
+    Promise.all([
+      fetch('/api/credits-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text }),
+      }),
+      fetch('/api/credits-speed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speed: speed }),
+      }),
+      fetch('/api/credits-style', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ headingSize: headingSize, bodySize: bodySize }),
+      }),
+    ])
+      .then(function() {
+        statusEl.textContent = 'Saved ✓';
+        statusEl.style.color = '#44cc88';
+        setTimeout(function() { statusEl.textContent = ''; }, 2000);
+        if (editIfLoaded) { try { editIframe.contentWindow.showCreditsScene(); } catch (e) {} }
+      })
+      .catch(function() {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#ff4455';
+      });
+  });
 
   /* ── Config dropdown ─────────────────────────────────────────── */
   (function buildConfigSelect() {

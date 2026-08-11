@@ -44,6 +44,60 @@ router.get('/api/sponsors', (req, res) => {
   }
 });
 
+// Credit Reel content — plain text, edited from the dashboard's Edit tab
+// (or by hand-editing this file / pasting into the textarea) and rendered
+// by mplfs.html's crParseText(). GET to read, POST { text } to update.
+const CREDITS_TEXT_FILE = path.join(__dirname, '..', 'credits_reel.txt');
+
+router.get('/api/credits-text', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').type('text/plain').send(fs.readFileSync(CREDITS_TEXT_FILE, 'utf8'));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').type('text/plain').send('');
+  }
+});
+
+router.post('/api/credits-text', (req, res) => {
+  const text = (req.body || {}).text || '';
+  fs.writeFileSync(CREDITS_TEXT_FILE, text);
+  res.json({ ok: true });
+});
+
+// Credit Reel scroll speed, in px/sec — GET to read, POST { speed } to update
+const CREDITS_SPEED_FILE = path.join(__dirname, '..', 'credits_speed.json');
+
+router.get('/api/credits-speed', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(CREDITS_SPEED_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json({ speed: 90 });
+  }
+});
+
+router.post('/api/credits-speed', (req, res) => {
+  const speed = Math.max(10, Math.min(1000, Number((req.body || {}).speed) || 90));
+  fs.writeFileSync(CREDITS_SPEED_FILE, JSON.stringify({ speed }));
+  res.json({ ok: true, speed });
+});
+
+// Credit Reel font sizes, in px — GET to read, POST { headingSize, bodySize } to update
+const CREDITS_STYLE_FILE = path.join(__dirname, '..', 'credits_style.json');
+
+router.get('/api/credits-style', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(CREDITS_STYLE_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json({ headingSize: 40, bodySize: 24 });
+  }
+});
+
+router.post('/api/credits-style', (req, res) => {
+  const headingSize = Math.max(8, Math.min(200, Number((req.body || {}).headingSize) || 40));
+  const bodySize     = Math.max(8, Math.min(200, Number((req.body || {}).bodySize) || 24));
+  fs.writeFileSync(CREDITS_STYLE_FILE, JSON.stringify({ headingSize, bodySize }));
+  res.json({ ok: true, headingSize, bodySize });
+});
+
 // Game API base URL — GET to read, POST { url } to update
 const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
 
@@ -157,6 +211,39 @@ router.get('/api/hexagon-data', async (req, res) => {
     let stored;
     try { stored = JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || HEXAGON_URL_DEFAULT).trim();
+    const r = await fetch(url);
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// MVP Highlights (game-mvp/view) API base URL — GET to read, POST { url } to update
+const HIGHLIGHTS_URL_FILE    = path.join(__dirname, '..', 'highlights_api_url.json');
+const HIGHLIGHTS_URL_DEFAULT = 'https://theapi.dpdns.org/api/game-mvp/view/';
+
+router.get('/api/highlights-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: HIGHLIGHTS_URL_DEFAULT });
+  }
+});
+
+router.post('/api/highlights-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(HIGHLIGHTS_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the MVP Highlights API and returns JSON, avoids browser CORS issues
+router.get('/api/highlights-data', async (req, res) => {
+  try {
+    let stored;
+    try { stored = JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
+    const url = (stored.url || HIGHLIGHTS_URL_DEFAULT).trim();
     const r = await fetch(url);
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
