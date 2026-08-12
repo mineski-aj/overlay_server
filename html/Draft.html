@@ -780,10 +780,20 @@
   var STORAGE_KEY = 'draft_overlay_api_url';
   var POLL_MS     = 1000;
 
-  /* Fetch game API URL from server, override default if set */
-  fetch('/api/game-url').then(function(r){ return r.json(); }).then(function(d){
+  /* Fetch draft API URL from server, override default if set.
+     Dedicated setting (Settings → Draft (Pick/Ban) API) — separate from the
+     general /api/game-url used by the rest of the overlay, since the draft
+     feed uses its own response format (see normalizeDraftPayload below).
+     poll() isn't started (see startPolling below) until this resolves —
+     otherwise an early poll() tick could hit DEFAULT_URL first, latch onto
+     whatever battleid that reports, then flip to the real apiUrl and see a
+     different battleid, forcing a reload loop the instant the two sources
+     disagree (e.g. DEFAULT_URL's local game client vs. a remote draft feed
+     watching a different match entirely). */
+  fetch('/api/draft-url').then(function(r){ return r.json(); }).then(function(d){
     if (d.url) apiUrl = d.url;
-  }).catch(function(){});
+    startPolling();
+  }).catch(function(){ startPolling(); });
 
   /* Player photo names (basenames with both FRONT + VICTORY variants). */
   var PLAYER_PHOTO_NAMES  = [];
@@ -838,6 +848,52 @@
         }
       })
       .catch(function() {});
+  }
+
+  /* The draft-info-only feed has no roleid field (server-locked roles are
+     keyed by roleid from the *general* game API, which this feed doesn't
+     share), so role icons need a client-local equivalent, keyed by player
+     name instead, only used when normalizeDraftPayload() below is actually
+     rewriting a draft-info-only response. Locked per battleid like the
+     server-side version, mirroring its "keep explicit real roles, randomize
+     the rest" heuristic. */
+  var usingDraftInfoOnlyFormat = false;
+  var localDraftRoles          = {};
+  var localDraftRolesBattleId  = null;
+  var ROLE_ALIASES = {
+    'exp_laner': 'exp_laner', 'exp': 'exp_laner', 'exp laner': 'exp_laner',
+    'jungler': 'jungler', 'jungle': 'jungler',
+    'mid_laner': 'mid_laner', 'mid': 'mid_laner', 'mid laner': 'mid_laner',
+    'roamer': 'roamer', 'roam': 'roamer', 'support': 'roamer',
+    'gold_laner': 'gold_laner', 'gold': 'gold_laner', 'gold laner': 'gold_laner', 'marksman': 'gold_laner'
+  };
+
+  function assignLocalDraftRoles(camp1, camp2) {
+    var result = {};
+    [camp1, camp2].forEach(function (camp) {
+      if (!camp) return;
+      var seats = [];
+      for (var s = 1; s <= 5; s++) { var seat = camp['seat_' + s]; if (seat && seat.name) seats.push(seat); }
+      if (!seats.length) return;
+
+      var claimed = {};
+      seats.forEach(function (seat) {
+        var mapped = ROLE_ALIASES[(seat.role || '').toLowerCase().trim()];
+        if (mapped && !claimed[mapped]) { claimed[mapped] = true; result[seat.name] = mapped; }
+      });
+
+      var remaining = ALL_ROLES.filter(function (r) { return !claimed[r]; });
+      for (var j = remaining.length - 1; j > 0; j--) {
+        var k = Math.floor(Math.random() * (j + 1));
+        var tmp = remaining[j]; remaining[j] = remaining[k]; remaining[k] = tmp;
+      }
+      var ri = 0;
+      seats.forEach(function (seat) {
+        if (result[seat.name]) return;
+        result[seat.name] = remaining[ri++];
+      });
+    });
+    return result;
   }
 
   /* Ban plate layout — no gap between seats */
@@ -1103,7 +1159,7 @@
         prevPick[key] = {
           heroid: undefined, picking: false, banning: false,
           small: false, expanded: false, matteActive: false,
-          roleid: undefined,
+          roleid: undefined, assignedRole: undefined,
           photoName: undefined, photoPhase: 'none', photoErasing: false,
           photoTimer0: null, photoTimer1: null, photoTimer2: null,
           pickAnimTimer: null
@@ -1851,14 +1907,16 @@
     /* Role icon — follows the player (roleid), not the seat slot.
        Updates whenever a different player occupies this slot (e.g. draft swap). */
     var roleid = seat.roleid || 0;
-    if (roleid !== p.roleid) {
-      var assignedRole = playerRoles[roleid];
+    var assignedRole = (roleid && playerRoles[roleid]) ||
+      (seat.name && localDraftRoles[seat.name]) || null;
+    if (assignedRole !== p.assignedRole) {
       if (assignedRole && ROLE_MAP[assignedRole]) {
         e.roleImg.src = ROLE_MAP[assignedRole];
         e.roleImg.style.opacity = '';
       }
-      p.roleid = roleid;
+      p.assignedRole = assignedRole;
     }
+    p.roleid = roleid;
 
     if (heroid !== p.heroid) {
       if (heroid > 0) {
@@ -2101,7 +2159,7 @@
       prevPick[key] = {
         heroid: undefined, picking: false, banning: false,
         small: false, expanded: false, matteActive: false,
-        roleid: undefined,
+        roleid: undefined, assignedRole: undefined,
         photoName: undefined, photoPhase: 'none', photoErasing: false,
         photoTimer0: null, photoTimer1: null, photoTimer2: null,
         pickAnimTimer: null
@@ -2148,6 +2206,47 @@
     tmSync(0, 0);
   }
 
+  /* theapi.dpdns.org/sql/draft-info-only/ uses a different shape than the
+     general game-data feed (no code/data wrapper, BattleID instead of
+     battleid, camp_list entries hold a player_list[] instead of named
+     seat_1..seat_5 props, hero_name is a plain string not an array, and
+     there's no roleid). Rewrite it into the same { code, data } shape the
+     rest of poll()/updatePickSeat()/updateBanSeat()/updateStatus() already
+     expect, so none of that code needs to know which feed it's looking at.
+     Old-format payloads (data.camp_list present) pass through untouched. */
+  function normalizeDraftPayload(raw) {
+    if (!raw || !Array.isArray(raw.camp_list) || !raw.camp_list.length || !raw.camp_list[0].player_list) {
+      usingDraftInfoOnlyFormat = false;
+      return raw;
+    }
+    usingDraftInfoOnlyFormat = true;
+    var campList = raw.camp_list.map(function (camp, idx) {
+      var players = camp.player_list || [];
+      var out = {
+        campid: (players[0] && players[0].campid) || (idx + 1),
+        team_simple_name: camp.team_name_simple || camp.team_name || ''
+      };
+      players.forEach(function (p, seatIdx) {
+        /* No explicit seat/position field in this feed — player_list order
+           lines up with fixed seat order (seat_1..seat_5) in every draft
+           observed so far, same as ban_order/pick_order climbing in lockstep
+           with array order. */
+        out['seat_' + (seatIdx + 1)] = {
+          name: p.name || '',
+          campid: p.campid,
+          heroid: p.heroid || 0,
+          hero_name: p.hero_name ? [p.hero_name] : [],
+          ban_heroid: p.ban_heroid || 0,
+          banning: !!p.banning,
+          picking: !!p.picking,
+          role: p.role || ''
+        };
+      });
+      return out;
+    });
+    return { code: 0, data: { battleid: raw.BattleID || null, state_left_time: raw.state_time || 0, camp_list: campList } };
+  }
+
   function poll() {
     fetch(apiUrl, { cache: 'no-store' })
       .then(function (res) {
@@ -2155,6 +2254,7 @@
         return res.json();
       })
       .then(function (json) {
+        json = normalizeDraftPayload(json);
         if (json.code !== 0 || !json.data) throw new Error('unexpected payload');
 
         /* Detect new battle → reset everything before processing new data */
@@ -2185,8 +2285,15 @@
           }
         });
 
-        /* Fetch server-locked roles once per battleid (retried each poll until confirmed) */
-        if (Object.keys(playerRoles).length === 0 && currentBattleId) {
+        /* Role assignment: server-locked roles (keyed by roleid) for the general
+           feed, or a client-local name-keyed equivalent for draft-info-only,
+           which has no roleid at all (see normalizeDraftPayload). */
+        if (usingDraftInfoOnlyFormat) {
+          if (localDraftRolesBattleId !== currentBattleId) {
+            localDraftRoles = assignLocalDraftRoles(camp1, camp2);
+            localDraftRolesBattleId = currentBattleId;
+          }
+        } else if (Object.keys(playerRoles).length === 0 && currentBattleId) {
           fetchAndApplyRoles(currentBattleId);
         }
 
@@ -2247,8 +2354,14 @@
   requestAnimationFrame(dcoachAnimate);
   pollCoachBpm();
   setInterval(pollCoachBpm, 1000);
-  poll();
-  setInterval(poll, POLL_MS);
+
+  /* Started from the /api/draft-url fetch above once apiUrl is confirmed —
+     not called here directly, so poll()'s first tick can't run against the
+     stale DEFAULT_URL before the real setting has loaded. */
+  function startPolling() {
+    poll();
+    setInterval(poll, POLL_MS);
+  }
 
   /* ── Load saved position/size overrides from dashboard editor ── */
   (function loadDraftOverrides() {

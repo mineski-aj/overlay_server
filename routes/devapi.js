@@ -3,6 +3,7 @@ const express = require('express');
 const router  = express.Router();
 const fs      = require('fs');
 const path    = require('path');
+const state   = require('../lib/state');
 
 router.get('/api/sub-info', (req, res) => {
   const samplePath = path.join(__dirname, '..', 'sub-info_sample.json');
@@ -53,21 +54,31 @@ function readSponsorFiles() {
 function readSponsorsConfig() {
   try {
     const data = JSON.parse(fs.readFileSync(SPONSORS_CONFIG_FILE, 'utf8'));
-    if (data && Array.isArray(data.categories)) return data;
+    if (data && Array.isArray(data.categories)) {
+      return { categories: data.categories, hiddenInIngame: Array.isArray(data.hiddenInIngame) ? data.hiddenInIngame : [] };
+    }
   } catch (e) {}
-  return { categories: [] };
+  return { categories: [], hiddenInIngame: [] };
 }
 
 // Public — overlays read this for the ordered, timed play list
-// (category order → each category's logo order, dur in ms).
+// (category order → each category's logo order, dur in ms). The always-on
+// ingame scoreboard overlay (overlay-scoreboard.js) passes ?ingame=1 to
+// additionally drop any logo toggled "hide in in-game loop" on the
+// dashboard's Sponsors tab — every other loop (Waiting Lobby, Waiting
+// Screen TVC, Today's/Tomorrow's Schedule, Draft, Credit Reel) still
+// shows it, only this call filters it out.
 router.get('/api/sponsors', (req, res) => {
   const files  = new Set(readSponsorFiles());
   const config = readSponsorsConfig();
+  const hidden = req.query.ingame ? new Set(config.hiddenInIngame) : null;
   const sponsors = [];
   config.categories.forEach(cat => {
     const dur = Math.max(0.5, Number(cat.duration) || 3) * 1000;
     (cat.logos || []).forEach(f => {
-      if (files.has(f)) sponsors.push({ src: '/sponsors/' + encodeURIComponent(f), dur, category: cat.name });
+      if (!files.has(f)) return;
+      if (hidden && hidden.has(f)) return;
+      sponsors.push({ src: '/sponsors/' + encodeURIComponent(f), dur, category: cat.name });
     });
   });
   res.set('Cache-Control', 'no-store').json(sponsors);
@@ -76,8 +87,10 @@ router.get('/api/sponsors', (req, res) => {
 // Dashboard Sponsors tab — categorization + every available logo file
 // (so the UI can show unassigned logos alongside categorized ones).
 router.get('/api/sponsors-config', (req, res) => {
+  const config = readSponsorsConfig();
   res.set('Cache-Control', 'no-store').json({
-    categories: readSponsorsConfig().categories,
+    categories: config.categories,
+    hiddenInIngame: config.hiddenInIngame,
     availableFiles: readSponsorFiles(),
   });
 });
@@ -90,8 +103,9 @@ router.post('/api/sponsors-config', (req, res) => {
   if (!data || !Array.isArray(data.categories)) {
     return res.status(400).json({ error: 'Payload must include a categories array' });
   }
+  const hiddenInIngame = Array.isArray(data.hiddenInIngame) ? data.hiddenInIngame.filter(f => typeof f === 'string') : [];
   try {
-    fs.writeFileSync(SPONSORS_CONFIG_FILE, JSON.stringify({ categories: data.categories }, null, 2));
+    fs.writeFileSync(SPONSORS_CONFIG_FILE, JSON.stringify({ categories: data.categories, hiddenInIngame }, null, 2));
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Could not write sponsors_config.json' });
@@ -226,8 +240,15 @@ router.post('/api/dynamic-content', (req, res) => {
   res.set('Cache-Control', 'no-store').json({ ok: true, data });
 });
 
-// Server-side proxy — fetches game API and returns JSON, avoids browser CORS issues
+// Server-side proxy — serves the game API payload lib/pollers.js already
+// polls every second (state.lastGameData), so every mplfs.html board reads
+// an in-memory cache instead of each one triggering its own live round-trip
+// to the upstream game API. Falls back to a direct fetch only if the poller
+// hasn't landed a payload yet (e.g. right at server startup).
 router.get('/api/gamedata-proxy', async (req, res) => {
+  if (state.lastGameData) {
+    return res.set('Cache-Control', 'no-store').json(state.lastGameData);
+  }
   try {
     const stored = JSON.parse(fs.readFileSync(GAME_URL_FILE, 'utf8'));
     const gameUrl = (stored.url || '').trim();
@@ -356,6 +377,26 @@ router.get('/api/lineuprate-data', async (req, res) => {
   } catch (e) {
     res.status(502).json({ error: e.message });
   }
+});
+
+// Draft (pick/ban) API base URL — GET to read, POST { url } to update.
+// Separate from /api/game-url: Draft.html polls this dedicated endpoint
+// (draft-info-only format) instead of the general game-data feed.
+const DRAFT_URL_FILE    = path.join(__dirname, '..', 'draft_api_url.json');
+const DRAFT_URL_DEFAULT = 'https://theapi.dpdns.org/sql/draft-info-only/';
+
+router.get('/api/draft-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(DRAFT_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: DRAFT_URL_DEFAULT });
+  }
+});
+
+router.post('/api/draft-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(DRAFT_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
 });
 
 module.exports = router;

@@ -866,6 +866,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Draft (Pick/Ban) API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="draft-api-input">Base URL</label>
+        <input type="text" id="draft-api-input" placeholder="https://theapi.dpdns.org/sql/draft-info-only/" spellcheck="false" autocomplete="off" />
+        <button id="draft-api-apply">Apply</button>
+        <span id="draft-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Draft Index (Line-Up Rate) API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -991,6 +1003,34 @@
 
   hlApiApply.addEventListener('click', saveHighlightsApiUrl);
   hlApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHighlightsApiUrl(); });
+
+  /* ── Draft (Pick/Ban) API URL ────────────────────────────── */
+  var draftApiInput  = document.getElementById('draft-api-input');
+  var draftApiApply  = document.getElementById('draft-api-apply');
+  var draftApiStatus = document.getElementById('draft-api-status');
+
+  fetch('/api/draft-url').then(function(r){ return r.json(); }).then(function(d){
+    draftApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveDraftApiUrl() {
+    var url = draftApiInput.value.trim();
+    fetch('/api/draft-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      draftApiStatus.textContent = 'Saved ✓';
+      draftApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ draftApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      draftApiStatus.textContent = 'Error';
+      draftApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  draftApiApply.addEventListener('click', saveDraftApiUrl);
+  draftApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveDraftApiUrl(); });
 
   /* ── HRM Server URL ───────────────────────────────────────── */
   var hrmApiInput  = document.getElementById('hrm-api-input');
@@ -1315,7 +1355,7 @@
   var _copyTipTimer = null;
   function copyRoute(path, label, triggerEl) {
     var url = window.location.origin + path;
-    navigator.clipboard.writeText(url).then(function () {
+    function showTip() {
       var tip = document.getElementById('copy-tooltip');
       tip.textContent = label + ' copied!';
       var r = triggerEl.getBoundingClientRect();
@@ -1324,7 +1364,30 @@
       tip.classList.add('visible');
       clearTimeout(_copyTipTimer);
       _copyTipTimer = setTimeout(function () { tip.classList.remove('visible'); }, 1800);
-    });
+    }
+    /* navigator.clipboard only exists in a secure context (https or
+       localhost) — opening the dashboard from another PC over plain
+       http://<ip>:PORT leaves it undefined, so the old direct call threw
+       silently with no fallback and no visible error. */
+    function fallbackCopy() {
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      if (ok) showTip();
+      else window.prompt('Copy this URL:', url);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(showTip, fallbackCopy);
+    } else {
+      fallbackCopy();
+    }
   }
 
   function el(tag, cls, text) {

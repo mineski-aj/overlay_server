@@ -295,4 +295,7 @@ function gdcAnimateOut() {
   gdcOutTimer = setTimeout(() => {
     clip.style.display = 'none';
   }, 350);
+  /* Resume any kill events that queued up while this panel was blocking
+     them (see killEventsBlocked() in overlay-killevents.js). */
+  playNextKillEvent();
 }

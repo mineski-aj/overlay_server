@@ -101,11 +101,35 @@ function icUpdate(data) {
 }
 registerPollHandler(icUpdate);
 
-function icAnimateIn() {
+/* Waits for every <img> under `overlay` to finish loading (or errors, or
+   maxWaitMs elapses) — same shape as mplfs.html's preloadMedia(). On a
+   freshly-reloaded page none of the ~60 item/portrait icons are cached
+   yet, so setting all their src at once and immediately starting the
+   slide-in transition let the burst of first-time image decodes stall
+   the main thread right on the transition's opening frames, making it
+   look like it "pops in" partway instead of sliding from the start.
+   Once every icon is cached (every show after the first), there's
+   nothing to wait on and this resolves immediately. */
+function icPreloadImages(overlay, maxWaitMs) {
+  const els = overlay.querySelectorAll('img');
+  return Promise.all(Array.from(els).map(el => new Promise(resolve => {
+    if (!el.getAttribute('src') || el.complete) return resolve();
+    el.addEventListener('load', resolve, { once: true });
+    el.addEventListener('error', resolve, { once: true });
+    setTimeout(resolve, maxWaitMs);
+  })));
+}
+
+async function icAnimateIn() {
   icShouldShow = true;
   clearTimeout(icOutTimer);
   const clip    = document.getElementById('item-check-clip');
   const overlay = document.getElementById('item-check-overlay');
+
+  if (lastData) icUpdate(lastData);
+  await icPreloadImages(overlay, 900);
+  if (!icShouldShow) return; /* hidden again while we were preloading */
+
   clip.style.display = 'block';
   /* Double rAF (same technique as slideOut() in overlay-core.js) so the
      browser commits a full style+layout+paint pass at the base rule's
@@ -115,8 +139,6 @@ function icAnimateIn() {
   requestAnimationFrame(() => requestAnimationFrame(() => {
     overlay.classList.add('ic-in');
   }));
-
-  if (lastData) icUpdate(lastData);
 
   /* Subtle bounce on the middle branding panel once the 350ms slide-in
      finishes */
@@ -140,4 +162,7 @@ function icAnimateOut() {
   icOutTimer = setTimeout(() => {
     clip.style.display = 'none';
   }, 350);
+  /* Resume any kill events that queued up while this panel was blocking
+     them (see killEventsBlocked() in overlay-killevents.js). */
+  playNextKillEvent();
 }

@@ -31,7 +31,7 @@
     "name": "AP.BREN",
     "short": "APBR",
     "score": 0,
-    "coach": "BLUFFZY"
+    "coach": "REGGIE"
   },
   "away": {
     "teamId": "10845",
@@ -69,15 +69,15 @@
   },
   "series": "BO3",
   "game": 1,
-  "swapped": true,
+  "swapped": false,
   "official": true,
   "week": 1,
-  "day": 3,
+  "day": 1,
   "patch": "Decisive Battle 420",
   "hosts": [
     "Thea",
     "Odin",
-    "None"
+    "Denisse"
   ],
   "casters": [
     "Athena",
@@ -133,9 +133,9 @@
       "team1Id": "11149",
       "team1Name": "AP.BREN",
       "team1Short": "APBR",
-      "team2Id": "",
-      "team2Name": "",
-      "team2Short": "",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
       "vsDisplay": "VS",
       "time": "2:30 PM"
     },
@@ -161,13 +161,13 @@
     }
   ],
   "countdownLabel": "SHOW RESUMES IN",
-  "goodbyeLabel": "SEE YOU NEXT WEEK",
+  "goodbyeLabel": "SEE YOU TOMORROW",
   "match": 3,
   "countdownLabelAuto": true,
   "timer": {
     "running": true,
-    "endAt": 1786436047050,
-    "remaining": 1800
+    "endAt": 1786530198425,
+    "remaining": 3648
   },
   "map": "Dangerous Grass"
 }

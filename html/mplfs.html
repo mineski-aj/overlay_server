@@ -576,7 +576,14 @@
     .th-axis-row { display: flex; align-items: center; gap: 10px; }
     .th-axis-valcol { display: flex; flex-direction: column; gap: 0; }
     .th-axis-valcol .th-axis-val { margin-top: 0; }
-    .th-axis-name { font-weight: 800; font-size: 19px; line-height: 1.15; color: #0a0a0a; text-transform: uppercase; white-space: nowrap; }
+    /* Solid backer (not just transparent text) — the player cutouts sit
+       right underneath this label at z-index:1, and a dark/black jersey
+       showing straight through the near-black label text made it
+       unreadable. Same opaque #fff chip look as .th-axis-val below it. */
+    .th-axis-name {
+      font-weight: 800; font-size: 19px; line-height: 1.15; color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+      background: #fff; padding: 1px 6px; border-radius: 2px; box-sizing: border-box;
+    }
     /* Explicit width (rather than relying on block-fill/flex-stretch, which
        differ between the stacked side layout and the .th-axis-row/valcol
        layout) so every axis's backer is the same "full length" regardless
@@ -3726,8 +3733,8 @@
       waiting:   '/assets/bgloopsun.webm',
       lobby:     '/assets/bgloopsun.webm',
       hexagon:   '/assets/bgloop.webm',
-      schedule:  '/assets/bgloop.webm',
-      tomorrow:  '/assets/bgloop.webm',
+      schedule:  '/assets/bgloopsun.webm',
+      tomorrow:  '/assets/bgloopsun.webm',
       standings: '/assets/bgloopwaves.webm',
       finalteam: '/assets/bgloopsun.webm',
       lineupblue: '/assets/bgloopwaves.webm',
@@ -5248,10 +5255,14 @@
 
     /* ════════════════════════════════════════════════
        CREDIT REEL — continuous upward scroll.
-       Content is edited from the dashboard's Edit tab (Credit Reel ·
-       mplfs → Content box), which saves plain text to credits_reel.txt
-       via /api/credits-text. Format, one line each:
-         @file.png | Title     sponsor logo (from /assets/sponsors/) + title
+       Sponsor section (category heading + that category's logos stacked
+       below it, one category after another) is generated automatically
+       from sponsors_config.json — the same categories/logos/order
+       maintained on the dashboard's Sponsors tab, not hand-typed here.
+       Everything after that comes from credits_reel.txt, edited from the
+       dashboard's Edit tab (Credit Reel · mplfs → Content box), which
+       saves plain text via /api/credits-text. Format, one line each:
+         @file.png | Title     a logo (from /assets/sponsors/) + title
          # HEADING             big section title
          (blank line)          vertical gap
          anything else         a plain credit line
@@ -5299,6 +5310,32 @@
       } catch (e) { return CREDITS_DEFAULT_STYLE; }
     }
 
+    async function crFetchSponsorCategories() {
+      try {
+        const r = await fetch('/api/sponsors-config', { cache: 'no-store' });
+        const d = await r.json();
+        return (d && Array.isArray(d.categories)) ? d.categories : [];
+      } catch (e) { return []; }
+    }
+
+    /* Category heading, then that category's logos stacked downward below
+       it, in the exact order set on the dashboard's Sponsors tab — same
+       /sponsors/ files and category list /api/sponsors serves to the live
+       loops, just laid out as a static list instead of a timed loop. */
+    function crBuildSponsorItems(categories) {
+      const items = [];
+      (categories || []).forEach(cat => {
+        const logos = cat.logos || [];
+        if (!logos.length) return;
+        items.push({ type: 'heading', text: cat.name });
+        logos.forEach(file => {
+          items.push({ type: 'logo', src: '/sponsors/' + encodeURIComponent(file), title: '' });
+        });
+        items.push({ type: 'space', height: 40 });
+      });
+      return items;
+    }
+
     function crApplyStyle(style) {
       crScroll.style.setProperty('--cr-heading-size', style.headingSize + 'px');
       crScroll.style.setProperty('--cr-body-size', style.bodySize + 'px');
@@ -5326,7 +5363,7 @@
 
     function crBuild(items) {
       crScroll.innerHTML = items.map(item => {
-        if (item.type === 'logo')    return `<div class="cr-logo-row"><div class="cr-logo-title">${crEsc(item.title)}</div><img src="${item.src}" alt="" onerror="this.style.display='none'"></div>`;
+        if (item.type === 'logo')    return `<div class="cr-logo-row">${item.title ? `<div class="cr-logo-title">${crEsc(item.title)}</div>` : ''}<img src="${item.src}" alt="" onerror="this.style.display='none'"></div>`;
         if (item.type === 'heading') return `<div class="cr-heading">${crEsc(item.text)}</div>`;
         if (item.type === 'line')    return `<div class="cr-line">${crEsc(item.text)}</div>`;
         if (item.type === 'space')   return `<div class="cr-space" style="height:${item.height}px"></div>`;
@@ -5348,14 +5385,15 @@
     }
 
     async function showCreditsScene() {
-      const textPromise  = crFetchText();
-      const speedPromise = crFetchSpeed();
-      const stylePromise = crFetchStyle();
+      const textPromise      = crFetchText();
+      const speedPromise     = crFetchSpeed();
+      const stylePromise     = crFetchStyle();
+      const sponsorsPromise  = crFetchSponsorCategories();
       await transitionTo('credits');
-      const [text, speed, style] = await Promise.all([textPromise, speedPromise, stylePromise]);
+      const [text, speed, style, sponsorCategories] = await Promise.all([textPromise, speedPromise, stylePromise, sponsorsPromise]);
       if (activeFeature !== 'credits') return; /* superseded while awaiting */
       crApplyStyle(style);
-      crBuild(crParseText(text));
+      crBuild([...crBuildSponsorItems(sponsorCategories), ...crParseText(text)]);
       await preloadMedia(crScroll.querySelectorAll('img'), 1500);
       if (activeFeature !== 'credits') return; /* superseded while preloading */
       showSceneVideo('credits');
@@ -6176,6 +6214,8 @@
       await transitionTo('emblems');
       await fetchEmblemData();
       if (activeFeature !== 'emblems') return; /* superseded while awaiting data */
+      await preloadMedia(document.querySelectorAll('[id^="emb-card-"] img'), 900);
+      if (activeFeature !== 'emblems') return; /* superseded while preloading */
       embVisible = true;
       EMB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`emb-card-${i + 1}`);
@@ -6266,11 +6306,12 @@
         for (let j = 0; j < 6; j++) {
           const el = document.getElementById(`${id}-i${j}`);
           if (!el) continue;
+          el.onerror = () => { el.onerror = null; el.src = buildUrl('/photos/placeholder.png'); };
           if (items[j] && items[j].value) {
             el.src = buildUrl('/items/' + items[j].value + '.png');
             el.style.visibility = '';
           } else {
-            el.src = '';
+            el.src = buildUrl('/photos/placeholder.png');
             el.style.visibility = 'hidden';
           }
         }
@@ -6305,6 +6346,8 @@
       await transitionTo('items');
       await fetchItemsData();
       if (activeFeature !== 'items') return; /* superseded while awaiting data */
+      await preloadMedia(document.querySelectorAll('[id^="pib-card-"] img'), 900);
+      if (activeFeature !== 'items') return; /* superseded while preloading */
       pibVisible = true;
       PIB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`pib-card-${i + 1}`);
@@ -6645,7 +6688,7 @@
           const c1 = camps.find(c => c.campid === 1);
           const c2 = camps.find(c => c.campid === 2);
           if (c1 && c2) {
-            const sumBuff = (camp, key) => (camp.enemy_area_get || []).reduce((s, e) => s + (e[key] || 0), 0);
+            const sumBuff = (camp, key) => (camp.enemy_area_get && camp.enemy_area_get[key]) || 0;
             set('mdb-gold-l',       fmtGold(c1.total_money));
             set('mdb-gold-r',       fmtGold(c2.total_money));
             set('mdb-tower-l',      c1.kill_tower || 0);
@@ -6735,13 +6778,14 @@
       return files.includes(exact) ? '/photos/' + pose + '/' + exact : null;
     }
 
-    // Sets an img's photo, clearing it (no broken-image icon) if there's no
-    // URL, or if the resolved URL fails to actually load.
+    // Sets an img's photo, falling back to a transparent placeholder (no
+    // broken-image icon) if there's no URL, or if the resolved URL fails
+    // to actually load.
+    const PB_TRANSPARENT_PHOTO = '/photos/placeholder.png';
     function pbSetPhoto(photoEl, name, pose) {
       const url = pbPhotoUrl(name, pose);
-      photoEl.onerror = () => { photoEl.onerror = null; photoEl.removeAttribute('src'); };
-      if (url) photoEl.src = buildUrl(url);
-      else photoEl.removeAttribute('src');
+      photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = buildUrl(PB_TRANSPARENT_PHOTO); };
+      photoEl.src = url ? buildUrl(url) : buildUrl(PB_TRANSPARENT_PHOTO);
     }
 
     function pbFitName(spanEl) {
@@ -6798,12 +6842,16 @@
       } catch {}
     }
 
-    function showPlayerBoard() {
+    async function showPlayerBoard() {
       if (pbVisible) return;
       pbVisible = true;
       pbLastPoseKey = '';
-      pbLoadManifest().then(fetchPlayerBoardData);
       const el = document.getElementById('playerboard');
+      await pbLoadManifest();
+      await fetchPlayerBoardData();
+      if (!pbVisible) return; /* hidden while awaiting data */
+      await preloadMedia(el.querySelectorAll('img'), 1200);
+      if (!pbVisible) return; /* hidden while preloading */
       el.classList.remove('pb-out');
       el.style.display = 'block';
       void el.offsetWidth;

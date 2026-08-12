@@ -101,6 +101,15 @@
       border-radius: 50%; background: #2a1218; border: 1px solid #5a2030; color: #ff6677;
       font-size: 11px; line-height: 16px; text-align: center; cursor: pointer; padding: 0;
     }
+    .chip-ingame-toggle {
+      position: absolute; top: -6px; left: -6px; width: 18px; height: 18px;
+      border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center;
+      cursor: pointer; padding: 0;
+      background: #14141e; border: 1px solid #2a2a3a; color: #444;
+    }
+    .chip-ingame-toggle.active {
+      background: #3a2a10; border-color: #7a5a20; color: #ffbb44;
+    }
     .chip-drop-marker { width: 3px; align-self: stretch; background: #5566cc; border-radius: 2px; }
 
     /* ── Category card ── */
@@ -179,7 +188,7 @@
 
     <div class="panel">
       <div class="panel-title">Categories — shown in this order, each looping at its own duration</div>
-      <div class="panel-hint">Drag logos between categories or back up to Unassigned. Use ▲▼ to reorder categories — this is the order every overlay's sponsor loop plays in.</div>
+      <div class="panel-hint">Drag logos between categories or back up to Unassigned. Use ▲▼ to reorder categories — this is the order every overlay's sponsor loop plays in. The 🎮 badge on a logo toggles whether it's hidden from the always-on in-game scoreboard's sponsor loop only — every other loop (Waiting Lobby, Waiting Screen TVC, Schedule, Draft, Credit Reel) still shows it.</div>
       <div id="categories-list"></div>
       <button class="btn btn-add-cat" id="add-cat-btn" style="margin-top:12px;">+ Add Category</button>
     </div>
@@ -194,7 +203,7 @@
 <script>
 (function () {
   var token   = sessionStorage.getItem('match_token') || '';
-  var config  = { categories: [] };
+  var config  = { categories: [], hiddenInIngame: [] };
   var files   = [];   /* every logo file found in /sponsors */
   var dirty   = false;
   var dragFile = null; /* filename currently being dragged, or null */
@@ -230,7 +239,7 @@
     return fetch('/api/sponsors-config', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
-        config = { categories: data.categories || [] };
+        config = { categories: data.categories || [], hiddenInIngame: data.hiddenInIngame || [] };
         files  = data.availableFiles || [];
         render();
       })
@@ -293,6 +302,15 @@
     render();
   }
 
+  function isHiddenInIngame(file) { return config.hiddenInIngame.indexOf(file) !== -1; }
+  function toggleIngame(file) {
+    var i = config.hiddenInIngame.indexOf(file);
+    if (i === -1) config.hiddenInIngame.push(file);
+    else config.hiddenInIngame.splice(i, 1);
+    setDirty(true);
+    render();
+  }
+
   /* ── DRAG HELPERS ── */
   function makeChip(file) {
     var chip = document.createElement('div');
@@ -320,6 +338,19 @@
       moveTo(file, null, null);
     });
     chip.appendChild(removeBtn);
+
+    var hiddenInIngame = isHiddenInIngame(file);
+    var ingameBtn = document.createElement('button');
+    ingameBtn.className = 'chip-ingame-toggle' + (hiddenInIngame ? ' active' : '');
+    ingameBtn.textContent = '🎮';
+    ingameBtn.title = hiddenInIngame
+      ? 'Hidden from the in-game scoreboard loop — click to show it there again'
+      : 'Shown in the in-game scoreboard loop — click to hide it from that loop only';
+    ingameBtn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      toggleIngame(file);
+    });
+    chip.appendChild(ingameBtn);
 
     chip.addEventListener('dragstart', function (e) {
       dragFile = file;

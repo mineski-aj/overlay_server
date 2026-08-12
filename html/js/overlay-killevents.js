@@ -223,8 +223,21 @@ killVideoEl.addEventListener('error', function() {
   playNextKillEvent();
 });
 
+/* Item Check / Emblem Check / Gold Diff Check each cover a big chunk of
+   the screen — a kill event popping in on top of (or getting covered by)
+   one of those reads as broken. icShouldShow/eccShouldShow/gdcShouldShow
+   are declared in overlay-itemcheck.js/overlay-emblemcheck.js/
+   overlay-golddiffcheck.js — safe to reference here even though this
+   script loads first in mploverlay_v7.html, since every call site below
+   only runs from an event handler fired well after all scripts have
+   finished their top-level execution. */
+function killEventsBlocked() {
+  return icShouldShow || eccShouldShow || gdcShouldShow;
+}
+
 function playNextKillEvent() {
   if (killEventPlaying || killEventQueue.length === 0) return;
+  if (killEventsBlocked()) return; /* stays queued — resumes via the blocking overlay's AnimateOut */
   killEventPlaying = true;
   killEventToken++;
   var entry = killEventQueue.shift();
