@@ -176,23 +176,24 @@
   scene.insertBefore(overlay, scene.firstChild);
 })();
 
-/* ── Scoreboard show/hide with animation ── */
-function sbHandleToggle(enabled) {
+/* ── Scoreboard show/hide with animation (slide only, no fade) ── */
+function sbHandleToggle(shown) {
   var el = document.getElementById('scoreboard-overlay');
   if (!el) return;
-  if (enabled) {
-    el.style.transition = 'transform 0.5s ease-out, opacity 0.5s ease-out';
+  if (shown) {
+    el.style.transition = 'transform 0.5s ease-out';
     el.classList.add('sb-on');
   } else {
-    el.style.transition = 'transform 0.35s ease-in, opacity 0.35s ease-in';
+    el.style.transition = 'transform 0.35s ease-in';
     el.classList.remove('sb-on');
   }
 }
 
-/* Apply initial state after features are synced (small delay for fetch) */
-setTimeout(function() {
-  sbHandleToggle(featureEnabled.scoreboard !== false);
-}, 120);
+/* Apply real server-side shown/hidden state on load, so a (re)loaded
+   overlay restores instead of guessing (see checkOverlays.scoreboard). */
+fetch('/overlay/check-overlays').then(function(r) { return r.json(); }).then(function(d) {
+  sbHandleToggle(!(d && d.scoreboard === false));
+}).catch(function() { sbHandleToggle(true); });
 
 function formatGold(g) {
   if (g < 1000) return String(g);

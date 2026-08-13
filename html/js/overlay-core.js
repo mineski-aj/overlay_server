@@ -204,7 +204,6 @@ const ROLE_ICONS = {
 
 /* ── Feature toggles (SSE-controlled from dashboard) ── */
 const featureEnabled = {
-  scoreboard: true,
   killevents: true,
   items:      true,
   trinity:    true,
@@ -212,7 +211,6 @@ const featureEnabled = {
   lvl15:      true,
   conceal:    true,
   fights:     true,
-  playerui:   true,
 };
 fetch('/overlay/features').then(r => r.json()).then(d => {
   if (d && typeof d === 'object') Object.assign(featureEnabled, d);

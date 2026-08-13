@@ -733,12 +733,16 @@
     width: 1920px; height: 1080px;
     z-index: 0;
     pointer-events: none;
-    transform: translateY(-130px);
-    opacity: 0;
+    /* Full box height, not a tuned per-element offset — the box holds
+       elements at every depth (top HUD bar, but also the map box down
+       to top:141+height:69=210px, sponsor loop to top:114px, etc), so
+       anything short of the full 1080px leaves whichever element sits
+       deepest still on-screen (this is what "map bug doesn't hide"
+       was: -130px cleared the top bar but not the map box). */
+    transform: translateY(-1080px);
   }
   #scoreboard-overlay.sb-on {
     transform: translateY(0);
-    opacity: 1;
   }
   #scoreboard-bg {
     position: absolute;
@@ -1760,7 +1764,9 @@
     overflow: hidden;
     display: none;
     pointer-events: none;
-    z-index: 40;
+    z-index: 500; /* highest layer in the scene — above the eventer family
+                     (.evt-clip, z-index:475) and #player-ui-overlay
+                     (z-index:30), which both sit underneath it */
   }
   .sidecheck-overlay {
     position: absolute;
@@ -1871,14 +1877,30 @@
     width: 100%; height: 1080px;
     pointer-events: none;
     z-index: 30;
-    display: none;
   }
+  /* Slide in/out from the outside — home cards from the left, away
+     cards from the right (reversed to hide). Base rule (no modifier
+     class) is the SHOWN position with no transform, so a page load
+     renders shown immediately with no flash while puiSetShown's fetch
+     is still in flight (matches every other feature's default-on
+     behavior); .pui-hidden — toggled via overlay-playerui.js's
+     puiSetShown — moves cards off-canvas only once we're told to. */
   .pui-card {
     position: absolute;
     width: 180px; height: 89px;
+    transform: translateX(0);
+    transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .pui-card.pui-home { left: 0; }
   .pui-card.pui-away { right: 0; }
+  #player-ui-overlay.pui-hidden .pui-card.pui-home {
+    transform: translateX(-180px);
+    transition: transform 350ms ease-in;
+  }
+  #player-ui-overlay.pui-hidden .pui-card.pui-away {
+    transform: translateX(180px);
+    transition: transform 350ms ease-in;
+  }
   .pui-bg {
     position: absolute; left: 0; top: 0;
     width: 180px; height: 89px;

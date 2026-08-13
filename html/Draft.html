@@ -73,6 +73,17 @@
       top: 0; left: 0;
       width: 1920px; height: 1080px;
       background: url('assets/draft/draftbg.png') no-repeat 0 0 / 1920px 1080px;
+      transform: translateY(0);
+      transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* Hidden state slides fully below the frame; base rule above carries
+       the "in" transition (slides upward to show), this carries the
+       "out" transition (slides downward to hide). Default (no class) is
+       visible, so a page load never flashes blank while the real state
+       is still being fetched — see the restore-on-load fetch below. */
+    #scene.draft-hidden {
+      transform: translateY(1080px);
+      transition: transform 0.45s cubic-bezier(0.4, 0, 1, 1);
     }
 
     /* ── Status area (BANNING / PICKING / FINAL CHANGES) ────────
@@ -2323,10 +2334,42 @@
       });
   }
 
+  /* ── Whole-scene show/hide — slides upward to show, downward to hide
+     (see #scene / #scene.draft-hidden in the <style> block above).
+     `instant` skips the transition, used only for the restore-on-load
+     fetch below so a reload doesn't visibly replay the slide. ── */
+  function showDraftScene(instant) {
+    var scene = document.getElementById('scene');
+    if (!scene) return;
+    if (instant) scene.style.transition = 'none';
+    scene.classList.remove('draft-hidden');
+    if (instant) requestAnimationFrame(function () { scene.style.transition = ''; });
+  }
+  function hideDraftScene(instant) {
+    var scene = document.getElementById('scene');
+    if (!scene) return;
+    if (instant) scene.style.transition = 'none';
+    scene.classList.add('draft-hidden');
+    if (instant) requestAnimationFrame(function () { scene.style.transition = ''; });
+  }
+
+  /* Restore-on-load — runs immediately (not gated behind the 2s SSE
+     delay below) since the default (no class) is visible; only need to
+     act if the server says it was explicitly hidden, so a reload never
+     shows a spurious blank frame while this resolves. */
+  fetch('/overlay/draft-state', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.active === false) hideDraftScene(true); })
+    .catch(function () {});
+
   /* SSE — listen for global debug hide.
      Opened after a short delay so Chrome's tab throbber settles on load. */
   setTimeout(function() {
     var sse = new EventSource('/overlay/events');
+    /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
+       hard reload so new position/size overrides apply immediately
+       (see mplfs.html's connectSSE() for the identical pattern). */
+    sse.addEventListener('reload', function() { window.location.reload(); });
     sse.addEventListener('debugoff', function() {
       var bar = document.getElementById('debug-bar');
       if (bar) bar.style.display = 'none';
@@ -2335,6 +2378,13 @@
       try {
         var d = JSON.parse(ev.data);
         if (d.mode) draftPhotoMode = d.mode;
+      } catch (e) {}
+    });
+    sse.addEventListener('draft', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        if (d.action === 'show') showDraftScene();
+        else if (d.action === 'hide') hideDraftScene();
       } catch (e) {}
     });
   }, 2000);

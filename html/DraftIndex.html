@@ -634,12 +634,15 @@
       diPhase1.style.display = 'none';
       diPhase2.style.display = 'block';
 
+      /* Apply data BEFORE preloading/revealing — preloading first races
+         the slow Line-Up Rate fetch (2-2.6s) against a 900ms cap, so the
+         reveal was firing on whatever (stale/blank) images happened to
+         already be in the DOM instead of the real match's logos. */
       dataPromise.then(function (r) {
         if (token !== sceneToken) return;
         diApplyPhase2Data(r[0], r[1], true);
-      });
-
-      diPreload(diPhase2.querySelectorAll('img'), 900).then(function () {
+        return diPreload(diPhase2.querySelectorAll('img'), 900);
+      }).then(function () {
         if (token !== sceneToken) return;
         diRevealPhase2();
       });
@@ -701,6 +704,12 @@
 
   /* ── Live control (SSE) ──────────────────────────────────────── */
   var es = new EventSource('/overlay/events');
+
+  /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
+     hard reload so new position/size overrides apply immediately (see
+     mplfs.html's connectSSE() for the identical pattern). */
+  es.addEventListener('reload', function () { window.location.reload(); });
+
   es.addEventListener('draftindex', function (e) {
     var msg = {};
     try { msg = JSON.parse(e.data); } catch (err) {}

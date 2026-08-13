@@ -240,6 +240,20 @@ router.post('/api/dynamic-content', (req, res) => {
   res.set('Cache-Control', 'no-store').json({ ok: true, data });
 });
 
+// vMix Data Sources needs the JSON root to be an array of row objects (it
+// binds title fields to columns of a table) — a bare object like the
+// editor's own /api/dynamic-content is treated as an invalid/unreadable
+// feed. Same underlying file, just wrapped in a one-row array for vMix.
+router.get('/api/dynamic-content/vmix', (req, res) => {
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(DYNAMIC_FILE, 'utf8'));
+  } catch {
+    data = DYNAMIC_DEFAULTS;
+  }
+  res.set('Cache-Control', 'no-store').json([data]);
+});
+
 // Server-side proxy — serves the game API payload lib/pollers.js already
 // polls every second (state.lastGameData), so every mplfs.html board reads
 // an in-memory cache instead of each one triggering its own live round-trip

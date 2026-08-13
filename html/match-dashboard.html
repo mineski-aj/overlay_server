@@ -394,15 +394,15 @@
     <div class="meta-row" style="margin-top:12px;">
       <div class="meta-field grow">
         <div class="meta-label">Host 1</div>
-        <select id="host-0"></select>
+        <input type="text" id="host-0" list="talent-list" autocomplete="off" value="None">
       </div>
       <div class="meta-field grow">
         <div class="meta-label">Host 2</div>
-        <select id="host-1"></select>
+        <input type="text" id="host-1" list="talent-list" autocomplete="off" value="None">
       </div>
       <div class="meta-field grow">
         <div class="meta-label">Host 3</div>
-        <select id="host-2"></select>
+        <input type="text" id="host-2" list="talent-list" autocomplete="off" value="None">
       </div>
     </div>
 
@@ -410,22 +410,39 @@
     <div class="meta-row" style="margin-top:10px;">
       <div class="meta-field grow">
         <div class="meta-label">Caster 1</div>
-        <select id="caster-0"></select>
+        <input type="text" id="caster-0" list="talent-list" autocomplete="off" value="None">
       </div>
       <div class="meta-field grow">
         <div class="meta-label">Caster 2</div>
-        <select id="caster-1"></select>
+        <input type="text" id="caster-1" list="talent-list" autocomplete="off" value="None">
       </div>
       <div class="meta-field grow">
         <div class="meta-label">Caster 3</div>
-        <select id="caster-2"></select>
+        <input type="text" id="caster-2" list="talent-list" autocomplete="off" value="None">
       </div>
     </div>
+
+    <!-- Row 5: EN Casters -->
+    <div class="meta-row" style="margin-top:10px;">
+      <div class="meta-field grow">
+        <div class="meta-label">EN Caster 1</div>
+        <input type="text" id="en-caster-0" list="talent-list" autocomplete="off" value="None">
+      </div>
+      <div class="meta-field grow">
+        <div class="meta-label">EN Caster 2</div>
+        <input type="text" id="en-caster-1" list="talent-list" autocomplete="off" value="None">
+      </div>
+      <div class="meta-field grow">
+        <div class="meta-label">EN Caster 3</div>
+        <input type="text" id="en-caster-2" list="talent-list" autocomplete="off" value="None">
+      </div>
+    </div>
+    <datalist id="talent-list"></datalist>
     <div class="show-label-wrap">
       <span class="show-label-key">Timer</span>
       <div class="timer-input-wrap">
         <div class="timer-input-group">
-          <input type="number" class="timer-input" id="countdown-min" min="0" max="99" value="30">
+          <input type="number" class="timer-input" id="countdown-min" min="0" max="999" value="30">
           <span class="timer-input-label">Minutes</span>
         </div>
         <span class="timer-input-sep">:</span>
@@ -546,8 +563,9 @@
     day:     1,
     patch:   'Decisive Battle 420',
     map:     'Broken Walls',
-    hosts:   ['None', 'None', 'None'],
-    casters: ['None', 'None', 'None'],
+    hosts:     ['None', 'None', 'None'],
+    casters:   ['None', 'None', 'None'],
+    enCasters: ['None', 'None', 'None'],
   };
 
   /* ── AUTH ── */
@@ -584,26 +602,26 @@
 
   function populateTalentSelects() {
     if (!roster || !roster.talents) return;
-    var talents = roster.talents;
-    ['host-0','host-1','host-2','caster-0','caster-1','caster-2'].forEach(function (id) {
-      var sel = document.getElementById(id);
-      if (!sel) return;
-      sel.innerHTML = '';
+    var dl = document.getElementById('talent-list');
+    if (dl) {
+      dl.innerHTML = '';
       var none = document.createElement('option');
-      none.value = 'None'; none.textContent = 'None';
-      sel.appendChild(none);
-      talents.forEach(function (t) {
+      none.value = 'None';
+      dl.appendChild(none);
+      roster.talents.forEach(function (t) {
         var opt = document.createElement('option');
-        opt.value = t; opt.textContent = t;
-        sel.appendChild(opt);
+        opt.value = t;
+        dl.appendChild(opt);
       });
-    });
+    }
     // Re-apply saved state values after populating
-    var hosts   = localState.hosts   || ['None','None','None'];
-    var casters = localState.casters || ['None','None','None'];
+    var hosts     = localState.hosts     || ['None','None','None'];
+    var casters   = localState.casters   || ['None','None','None'];
+    var enCasters = localState.enCasters || ['None','None','None'];
     [0,1,2].forEach(function (i) {
-      var hs = document.getElementById('host-'   + i); if (hs) hs.value = hosts[i]   || 'None';
-      var cs = document.getElementById('caster-' + i); if (cs) cs.value = casters[i] || 'None';
+      var hs = document.getElementById('host-'      + i); if (hs) hs.value = hosts[i]     || 'None';
+      var cs = document.getElementById('caster-'    + i); if (cs) cs.value = casters[i]   || 'None';
+      var ec = document.getElementById('en-caster-' + i); if (ec) ec.value = enCasters[i] || 'None';
     });
   }
 
@@ -677,11 +695,13 @@
     document.getElementById('day-val').textContent    = s.day   || 1;
     document.getElementById('patch-input').value      = s.patch || 'Decisive Battle 420';
     document.getElementById('map-select').value       = s.map   || 'Broken Walls';
-    var hosts   = s.hosts   || ['None','None','None'];
-    var casters = s.casters || ['None','None','None'];
+    var hosts     = s.hosts     || ['None','None','None'];
+    var casters   = s.casters   || ['None','None','None'];
+    var enCasters = s.enCasters || ['None','None','None'];
     [0,1,2].forEach(function (i) {
-      var hs = document.getElementById('host-'   + i); if (hs && hs.options.length > 1) hs.value = hosts[i]   || 'None';
-      var cs = document.getElementById('caster-' + i); if (cs && cs.options.length > 1) cs.value = casters[i] || 'None';
+      var hs = document.getElementById('host-'      + i); if (hs) hs.value = hosts[i]     || 'None';
+      var cs = document.getElementById('caster-'    + i); if (cs) cs.value = casters[i]   || 'None';
+      var ec = document.getElementById('en-caster-' + i); if (ec) ec.value = enCasters[i] || 'None';
     });
     updateBadges(s.swapped);
     renderRoster('home');
@@ -1004,7 +1024,7 @@
     }).catch(function () { setSyncStatus(false); });
   }
   function pushTimerRemaining() {
-    var min = Math.max(0, Math.min(99, parseInt(document.getElementById('countdown-min').value, 10) || 0));
+    var min = Math.max(0, parseInt(document.getElementById('countdown-min').value, 10) || 0);
     var sec = Math.max(0, Math.min(59, parseInt(document.getElementById('countdown-sec').value, 10) || 0));
     document.getElementById('countdown-min').value = min;
     document.getElementById('countdown-sec').value = sec;
@@ -1413,19 +1433,37 @@
     if (lbl) lbl.value = localState.goodbyeLabel || computeGoodbye(today);
   }
 
-  /* ── HOSTS & CASTERS ── */
+  /* ── HOSTS & CASTERS ──
+     Text inputs + a shared <datalist> for autocomplete (was a plain
+     <select> per field) — same blur/Enter-commits pattern as
+     patch-input, since 'change' on a text field only fires on blur
+     anyway and this also commits an Enter keypress immediately. */
+  function bindTalentInput(el, apply) {
+    function commit() {
+      apply(el.value);
+      el.blur();
+    }
+    el.addEventListener('blur', function () { apply(el.value); });
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') commit(); });
+  }
   [0, 1, 2].forEach(function (i) {
-    document.getElementById('host-' + i).addEventListener('change', function () {
+    bindTalentInput(document.getElementById('host-' + i), function (val) {
       var hosts = (localState.hosts || ['None','None','None']).slice();
-      hosts[i] = this.value;
+      hosts[i] = val;
       localState.hosts = hosts;
       push({ hosts: hosts });
     });
-    document.getElementById('caster-' + i).addEventListener('change', function () {
+    bindTalentInput(document.getElementById('caster-' + i), function (val) {
       var casters = (localState.casters || ['None','None','None']).slice();
-      casters[i] = this.value;
+      casters[i] = val;
       localState.casters = casters;
       push({ casters: casters });
+    });
+    bindTalentInput(document.getElementById('en-caster-' + i), function (val) {
+      var enCasters = (localState.enCasters || ['None','None','None']).slice();
+      enCasters[i] = val;
+      localState.enCasters = enCasters;
+      push({ enCasters: enCasters });
     });
   });
 

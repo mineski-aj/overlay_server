@@ -316,6 +316,12 @@ masterPoll();
 /* ── SSE — fight show/hide (instant) + debugoff ── */
 (function() {
   var sse = new EventSource('/overlay/events');
+
+  /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
+     hard reload so new position/size overrides apply immediately (see
+     mplfs.html's connectSSE() for the identical pattern). */
+  sse.addEventListener('reload', function() { window.location.reload(); });
+
   sse.addEventListener('fights', function(e) {
     try {
       var d = JSON.parse(e.data);
@@ -337,8 +343,18 @@ masterPoll();
     try {
       var d = JSON.parse(e.data);
       if (d.feature in featureEnabled) featureEnabled[d.feature] = !!d.enabled;
-      if (d.feature === 'scoreboard' && typeof sbHandleToggle === 'function') sbHandleToggle(!!d.enabled);
-      if (d.feature === 'playerui' && typeof puiHandleToggle === 'function') puiHandleToggle(!!d.enabled);
+    } catch {}
+  });
+  sse.addEventListener('scoreboard', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (typeof sbHandleToggle === 'function') sbHandleToggle(d.action === 'show');
+    } catch {}
+  });
+  sse.addEventListener('playerui', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (typeof puiHandleToggle === 'function') puiHandleToggle(d.action === 'show');
     } catch {}
   });
   sse.addEventListener('debugoff', function() {

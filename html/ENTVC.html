@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
-  <title>MPLFS Overlay</title>
+  <title>ENTVC — Waiting TVC (EN)</title>
   <style>
     @font-face {
       font-family: 'Anton';
@@ -373,8 +373,6 @@
       background-position: 150% 0;
       mix-blend-mode: screen;
       pointer-events: none;
-      -webkit-mask-image: var(--cot-mask); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
-      mask-image: var(--cot-mask); mask-size: 100% 100%; mask-repeat: no-repeat;
       animation: wsm-cot-shine 9s linear infinite;
     }
     .wlm-time.star { animation: wsm-cot-pulse-inv 9s ease-in-out infinite; }
@@ -763,10 +761,6 @@
     #mv-hero-img {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
       z-index: 11; object-fit: contain; object-position: 50% 100%; display: block;
-      /* Feather the bottom 50px so the hero art fades into #mv-box-bg
-         instead of cutting off with a hard edge. */
-      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 50px), transparent 100%);
-      mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 50px), transparent 100%);
     }
     #mv-photo {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
@@ -897,13 +891,6 @@
     }
     .ft-teambox-blue .ft-teambox-name { left: 145px; }
     .ft-teambox-red  .ft-teambox-name { left: 91px; }
-
-    /* MPL logo, centered between the two team boxes — own id so it's
-       independently drag/resizable from the dashboard Edit tab. */
-    #ft-mpl-logo {
-      position: absolute; left: 885px; top: 84px; width: 150px; height: 150px;
-      object-fit: contain; z-index: 4;
-    }
 
     /* Series score, "bar form" — same pip pattern as the in-game
        scoreboard's #sb-score-c1/c2 (see overlay-scoreboard.js) — lives
@@ -1379,7 +1366,6 @@
       position: absolute;
       left: 429px; top: 975px;
       width: 340px; height: 94px;
-      display: none; /* hidden for now — undecided whether Today's Schedule needs a sponsor loop */
     }
 
     /* ── TOMORROW'S SCHEDULE PAGE (same layout as Today's Schedule) ── */
@@ -1576,11 +1562,6 @@
       background-position: 150% 0;
       mix-blend-mode: screen;
       pointer-events: none;
-      /* clip the sheen to the blinker PNG's own alpha shape (it's a ribbon/
-         banner, not a plain rectangle) — --cot-mask is set inline per
-         match-type blinker asset in buildWsMatches/buildWlMatch. */
-      -webkit-mask-image: var(--cot-mask); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
-      mask-image: var(--cot-mask); mask-size: 100% 100%; mask-repeat: no-repeat;
       animation: wsm-cot-shine 9s linear infinite;
     }
     @keyframes wsm-cot-shine {
@@ -1699,6 +1680,20 @@
       left: 125px; top: 0px; width: 320px; height: 478px; justify-content: center; z-index: 2;
     }
     .ws-talent-photos.ws-talent-count-3 .ws-casters-slot-right {
+      left: 217px; top: 14px; width: 354px; height: 464px; justify-content: flex-end; z-index: 1;
+    }
+    /* EN Casters — same 3-up layout as Casters above, but its own class
+       names (ws-encasters-slot-*) so this page's EN Casters box can be
+       positioned independently from mplfs.html's real Casters box, whose
+       .ws-casters-slot-* rules and persisted Edit-tab position it must not
+       share (see populateWsTalentBox's slotPrefix param). */
+    .ws-talent-photos.ws-talent-count-3 .ws-encasters-slot-left {
+      left: 0px; top: 14px; width: 354px; height: 464px; justify-content: flex-start; z-index: 1;
+    }
+    .ws-talent-photos.ws-talent-count-3 .ws-encasters-slot-middle {
+      left: 125px; top: 0px; width: 320px; height: 478px; justify-content: center; z-index: 2;
+    }
+    .ws-talent-photos.ws-talent-count-3 .ws-encasters-slot-right {
       left: 217px; top: 14px; width: 354px; height: 464px; justify-content: flex-end; z-index: 1;
     }
     .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-left {
@@ -2338,7 +2333,6 @@
         <div class="ft-teambox-name" id="ft-red-name"></div>
         <div class="ft-teambox-scorebar" id="ft-scorebar-red"></div>
       </div>
-      <img id="ft-mpl-logo" src="/assets/postgame/mpl_logo.png" alt="MPL">
       <div class="ft-scorebar ft-scorebar-red" id="ft-scorebar-red"></div>
       <div id="ft-matchbar">
         <img id="ft-matchbar-bg" src="/assets/finalteam/finalteammatch.png" alt="">
@@ -2853,6 +2847,11 @@
     /* ── SSE — overlay trigger ── */
     let sseSource = null;
 
+    /* ENTVC.html — standalone Waiting TVC. Unlike mplfs.html this page
+       never switches or hides scenes in response to remote show/hide SSE
+       events; it only listens for live match-board updates ('match') so
+       hosts/casters/timer/schedule rows stay current while permanently
+       showing the Waiting Screen TVC scene (see restoreScene() below). */
     function connectSSE() {
       if (sseSource) sseSource.close();
       sseSource = new EventSource(buildUrl('/overlay/events'));
@@ -2866,225 +2865,14 @@
       };
 
       /* Fired by routes/overlayStyles.js after any Edit-tab Save — force
-         a hard reload so the new position/size overrides take effect
-         immediately, on every open tab/OBS browser source, without
-         waiting for someone to manually refresh. Safe to do unattended
-         since edits are never made while a scene is live. */
+         a hard reload so new position/size overrides apply immediately
+         (see mplfs.html's connectSSE() for the identical pattern). */
       sseSource.addEventListener('reload', () => { window.location.reload(); });
 
-      sseSource.addEventListener('post_hearts', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showPostHearts, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('post_itemline', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showItemTimeline, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('post_richguy', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(fetchAndShowRichguy, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('waiting_tvc', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showWaitingScreen, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('waiting_lobby', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showWaitingLobby, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('today_schedule', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showTodaySchedule, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('tomorrow_schedule', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showTomorrowSchedule, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('standings', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showStandings, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('team_hexagon', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showTeamHexagon, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('highlights', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showHighlights, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('mvp', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showMvpScene, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('credits', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showCreditsScene, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('final_team', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showFinalTeam, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('team_lineup_blue', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showTeamLineupBlue, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('team_lineup_red', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showTeamLineupRed, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('post_emblems', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showPostEmblems, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('post_items', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showPostItems, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('post_stats', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') {
-          document.getElementById('config-bar').classList.remove('debug-open');
-          setTimeout(showPostStats, 100);
-        } else if (msg.action === 'hide') hideActiveFeature();
-      });
-
-      sseSource.addEventListener('fs_hide', () => {
-        transitionTo(null);
-      });
-
-      sseSource.addEventListener('post_itemline_itemin', () => {
-        document.querySelectorAll('#item-timeline-page .itl-item-circle.t1, #item-timeline-page .itl-item-circle.t2').forEach(circle => {
-          const wrap = circle.parentElement;
-          wrap.style.animation = 'itl-nonT3-in 250ms cubic-bezier(0.34,1.56,0.64,1) both';
-        });
-      });
-
-      sseSource.addEventListener('post_itemline_itemout', () => {
-        document.querySelectorAll('#item-timeline-page .itl-item-circle.t1, #item-timeline-page .itl-item-circle.t2').forEach(circle => {
-          const wrap = circle.parentElement;
-          wrap.style.animation = 'itl-nonT3-out 250ms ease-in both';
-        });
-      });
-
-      sseSource.addEventListener('matchboard', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') showMatchBoard();
-        else if (msg.action === 'hide') hideMatchBoard();
-      });
-
-      sseSource.addEventListener('middleboard', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') showMiddleBoard();
-        else if (msg.action === 'hide') hideMiddleBoard();
-      });
-
-      sseSource.addEventListener('playerboard', (e) => {
-        const msg = JSON.parse(e.data);
-        if (msg.action === 'show') showPlayerBoard();
-        else if (msg.action === 'hide') hidePlayerBoard();
-      });
-
-      sseSource.addEventListener('fs_debugoff', () => {
-        const bar = document.getElementById('config-bar');
-        if (bar) bar.classList.remove('debug-open');
-      });
-      sseSource.addEventListener('debugoff', () => {
-        const bar = document.getElementById('config-bar');
-        if (bar) bar.classList.remove('debug-open');
-      });
-      sseSource.addEventListener('featuretoggle', (e) => {
-        try {
-          const d = JSON.parse(e.data);
-          if (d.feature === 'debugphotos') {
-            pbDebugPhotos = !!d.enabled;
-            // Re-render whatever's currently on screen right now, instead of
-            // waiting for the next poll tick — force past the poseKey cache
-            // so every seat's photo is re-resolved under the new mode.
-            if (pbVisible) { pbLastPoseKey = ''; fetchPlayerBoardData(); }
-          }
-        } catch {}
-      });
-
-      /* Match Board + Standings live updates — fanned out over this same
-         connection (named "match"/"standings" events) instead of each
-         opening its own EventSource, so this page holds only 1 persistent
-         connection instead of 3. See onMatchEvent/onStandingsEvent below. */
       sseSource.addEventListener('match', (e) => {
         let ms = null;
         try { ms = JSON.parse(e.data); } catch { return; }
         onMatchEvent(ms);
-      });
-      sseSource.addEventListener('standings', (e) => {
-        try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
-        if (activeFeature === 'standings') buildStandings();
       });
     }
 
@@ -3929,7 +3717,7 @@
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
             ? `<span class="wsm-band-time star">${m.time}</span>` +
-              `<div class="wsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+              `<div class="wsm-band-cot"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
             : `<span class="wsm-band-time">${m.time}</span>`) +
           `<span class="wsm-band-bo">${m.bo}</span>` +
           `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
@@ -4028,18 +3816,23 @@
     }
     /* Builds one talent box's innerHTML (Hosts or Casters); returns how many
        names were actually shown so the carousel can skip empty panels. */
-    function populateWsTalentBox(rootId, list, bgAsset, posOrder) {
+    function populateWsTalentBox(rootId, list, bgAsset, posOrder, slotPrefix) {
       const names = ((list) || []).filter(n => n && n !== 'None').slice(0, posOrder.length);
       const root = document.getElementById(rootId);
       if (names.length < 1) { root.innerHTML = ''; return 0; }
       /* 3-up gets crowded with a dashed divider — the blank NAMEBOX frame
          gives long names room to breathe (the auto-fit pass below still
          shrinks them further if needed). Every slot gets a stable
-         "<rootId>-slot-<pos>" class (e.g. ws-hosts-slot-left,
+         "<slotPrefix>-slot-<pos>" class (e.g. ws-hosts-slot-left,
          ws-casters-slot-middle) so the dashboard Edit panel can position/
-         size each one independently regardless of how many are showing. */
+         size each one independently regardless of how many are showing.
+         slotPrefix defaults to rootId — ENTVC.html's EN Casters box passes
+         a distinct prefix ('ws-encasters') so its slots can be positioned
+         independently of mplfs.html's real Casters, which share this same
+         function but keep the plain 'ws-casters' prefix. */
+      const prefix = slotPrefix || rootId;
       const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
-      const slotClass = i => `${rootId}-slot-${posOrder[i].toLowerCase()}`;
+      const slotClass = i => `${prefix}-slot-${posOrder[i].toLowerCase()}`;
       const photosHtml = names.map((n, i) => talentPhotoTag(n, posOrder[i], slotClass(i))).join('');
       const namesHtml = names.map(n => `<div class="ws-talent-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
@@ -4082,11 +3875,13 @@
     }
     let wsCastersCount = 0, wsCastersLastKey = null;
     function populateWsCasters(ms) {
-      const casters = ((ms && ms.casters) || []).filter(c => c && c !== 'None').slice(0, TALENT_CASTER_POS_ORDER.length);
+      // ENTVC.html sources the caster panel from EN Casters, not Casters —
+      // this is the one behavioral difference from mplfs.html's Waiting TVC.
+      const casters = ((ms && ms.enCasters) || []).filter(c => c && c !== 'None').slice(0, TALENT_CASTER_POS_ORDER.length);
       const key = casters.join('|');
       if (key === wsCastersLastKey) return;
       wsCastersLastKey = key;
-      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER);
+      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, 'ws-encasters');
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 
@@ -4368,7 +4163,7 @@
         `<span class="wlm-label">${m.label}</span>` +
         (typeAssets.blinker
           ? `<span class="wlm-time star">${m.time}</span>` +
-            `<div class="wlm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wlm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+            `<div class="wlm-band-cot"><img class="wlm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
           : `<span class="wlm-time">${m.time}</span>`) +
         `<span class="wlm-bo">${m.bo}</span>` +
         `<div class="wlm-slot wlm-tri wlm-tri-l">${m.left.tri}</div>` +
@@ -5546,17 +5341,6 @@
         `</div>`;
     }
 
-    /* Long IGNs would otherwise overflow the 183px-wide card (and get
-       cropped by .ft-card's overflow:hidden) — shrink to fit instead, same
-       pattern as the other fixed-width name/value fields. */
-    function ftFitName(el, maxSize, minSize) {
-      let size = maxSize;
-      el.style.fontSize = size + 'px';
-      while (el.scrollWidth > el.clientWidth && size > minSize) {
-        el.style.fontSize = (--size) + 'px';
-      }
-    }
-
     function buildFtCards(homeCamp, awayCamp) {
       const root = document.getElementById('ft-cards');
       const homeLive = ftLiveRoleMap(homeCamp);
@@ -5572,7 +5356,6 @@
         html += ftBuildCardHtml('red', 5 + i, key, awayLive[key]);
       });
       root.innerHTML = html;
-      root.querySelectorAll('.ft-card-name').forEach(el => ftFitName(el, 22, 11));
     }
 
     /* Series score "bar form" — identical pip pattern to the in-game
@@ -6203,11 +5986,11 @@
       div.className = `postbacker ${cls}${mirrored}`;
       div.id        = `emb-card-${n + 1}`;
       div.innerHTML = `<div class="emb-inner">
-        <img class="emb-main-rune" id="${id}-main" src="" alt="" style="display:none" onerror="this.style.display='none'">
+        <img class="emb-main-rune" id="${id}-main" src="" alt="">
         <div class="emb-subs">
-          <img class="emb-sub-rune" id="${id}-s1" src="" alt="" style="display:none" onerror="this.style.display='none'">
-          <img class="emb-sub-rune" id="${id}-s2" src="" alt="" style="display:none" onerror="this.style.display='none'">
-          <img class="emb-sub-rune" id="${id}-s3" src="" alt="" style="display:none" onerror="this.style.display='none'">
+          <img class="emb-sub-rune" id="${id}-s1" src="" alt="">
+          <img class="emb-sub-rune" id="${id}-s2" src="" alt="">
+          <img class="emb-sub-rune" id="${id}-s3" src="" alt="">
         </div>
       </div>`;
       canvas.appendChild(div);
@@ -6219,19 +6002,6 @@
       return buildUrl('/emblem/square_' + id + '_RUNES.png');
     }
 
-    /* No data (or a 404'd asset via onerror above) hides the img instead
-       of leaving a broken-link icon on screen. */
-    function embSetRune(el, id) {
-      if (!el) return;
-      if (id) {
-        el.src = embRuneUrl(id);
-        el.style.display = '';
-      } else {
-        el.removeAttribute('src');
-        el.style.display = 'none';
-      }
-    }
-
     function embFillSeats(seats, startN) {
       seats.forEach((s, i) => {
         const id  = `emb-${startN + i}`;
@@ -6239,32 +6009,24 @@
         const s1  = s.rune_map_1 || rm['1'] || 0;
         const s2  = s.rune_map_2 || rm['2'] || 0;
         const s3  = s.rune_map_3 || rm['3'] || 0;
-        embSetRune(document.getElementById(`${id}-main`), s.rune_id);
-        embSetRune(document.getElementById(`${id}-s1`), s1);
-        embSetRune(document.getElementById(`${id}-s2`), s2);
-        embSetRune(document.getElementById(`${id}-s3`), s3);
+        const mainEl = document.getElementById(`${id}-main`);
+        const s1El   = document.getElementById(`${id}-s1`);
+        const s2El   = document.getElementById(`${id}-s2`);
+        const s3El   = document.getElementById(`${id}-s3`);
+        if (mainEl && s.rune_id) mainEl.src = embRuneUrl(s.rune_id);
+        if (s1El && s1) s1El.src = embRuneUrl(s1);
+        if (s2El && s2) s2El.src = embRuneUrl(s2);
+        if (s3El && s3) s3El.src = embRuneUrl(s3);
       });
-    }
-
-    /* Blank every card before filling — otherwise a seat missing from
-       this fetch (fewer than 5 players on a camp) would keep showing
-       whatever rune was left over from the previous match/fetch. */
-    function embResetSeats() {
-      for (let n = 1; n <= 10; n++) {
-        ['main', 's1', 's2', 's3'].forEach(suffix => {
-          embSetRune(document.getElementById(`emb-${n}-${suffix}`), 0);
-        });
-      }
     }
 
     async function fetchEmblemData() {
       try {
         const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
-        if (!r.ok) { embResetSeats(); return; }
+        if (!r.ok) return;
         const json = await r.json();
         const gd = json.data;
-        if (!gd) { embResetSeats(); return; }
-        embResetSeats();
+        if (!gd) return;
         const camps = gd.camp_list || [];
         const c1 = camps.find(c => c.campid === 1);
         const c2 = camps.find(c => c.campid === 2);
@@ -6278,7 +6040,7 @@
             .map(k => c2[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
           embFillSeats(seats, 6);
         }
-      } catch { embResetSeats(); }
+      } catch {}
     }
 
     async function showPostEmblems() {
@@ -7094,32 +6856,11 @@
 
     startRichguyPoll();
 
+    /* ENTVC.html always shows the Waiting Screen TVC — it ignores whatever
+       scene is live elsewhere (mplfs.html's activeFeature) instead of
+       restoring it, since this page is a standalone Waiting TVC source. */
     async function restoreScene() {
-      try {
-        const r = await fetch(buildUrl('/overlay/mplfs-scene'));
-        const scene = await r.json();
-        if      (scene.activeFeature === 'hearts')   showPostHearts();
-        else if (scene.activeFeature === 'itemline') showItemTimeline();
-        else if (scene.activeFeature === 'emblems')  showPostEmblems();
-        else if (scene.activeFeature === 'items')    showPostItems();
-        else if (scene.activeFeature === 'stats')    showPostStats();
-        else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
-        else if (scene.activeFeature === 'waiting')  showWaitingScreen();
-        else if (scene.activeFeature === 'lobby')    showWaitingLobby();
-        else if (scene.activeFeature === 'hexagon')  showTeamHexagon();
-        else if (scene.activeFeature === 'highlights') showHighlights();
-        else if (scene.activeFeature === 'mvp')        showMvpScene();
-        else if (scene.activeFeature === 'credits')    showCreditsScene();
-        else if (scene.activeFeature === 'finalteam') showFinalTeam();
-        else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
-        else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
-        else if (scene.activeFeature === 'schedule') showTodaySchedule();
-        else if (scene.activeFeature === 'tomorrow') showTomorrowSchedule();
-        else if (scene.activeFeature === 'standings') showStandings();
-        else if (scene.matchboard)                   showMatchBoard();
-        if (scene.middleboard)                       showMiddleBoard();
-        if (scene.playerboard)                       showPlayerBoard();
-      } catch {}
+      showWaitingScreen();
     }
     restoreScene();
 

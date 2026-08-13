@@ -3,6 +3,7 @@ const express = require('express');
 const router  = express.Router();
 const fs      = require('fs');
 const path    = require('path');
+const state   = require('../lib/state');
 
 const STYLES_FILE = path.join(__dirname, '..', 'overlay_styles.json');
 
@@ -25,6 +26,12 @@ router.post('/api/overlay-styles', function (req, res) {
   var all    = load();
   all[file]  = styles;
   fs.writeFileSync(STYLES_FILE, JSON.stringify(all, null, 2));
+  /* Force every open overlay scene (mplfs.html, mploverlay_v7.html,
+     Draft.html, DraftIndex.html, ENTVC.html — anywhere the html is
+     loaded) to hard-reload so this save's position/size overrides take
+     effect immediately, instead of waiting for a manual refresh. Safe
+     to do unattended: edits are never made while a scene is live. */
+  state.overlayClients.forEach(function (c) { try { c.write('event: reload\ndata: {}\n\n'); } catch (e) {} });
   res.json({ ok: true });
 });
 

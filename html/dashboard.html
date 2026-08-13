@@ -721,7 +721,8 @@
 
 <!-- Page: Dynamic Content -->
 <div id="page-dynamic" class="page">
-  <div style="display:flex;align-items:center;justify-content:flex-end;padding-bottom:10px;flex-shrink:0;">
+  <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-bottom:10px;flex-shrink:0;">
+    <button class="btn btn-copy" id="dynamic-copy-route-btn" style="font-size:12px;padding:5px 14px;">Copy Route (vMix)</button>
     <a href="/html/dynamic.html" target="_blank" class="btn btn-open" style="font-size:12px;padding:5px 14px;text-decoration:none;">Open ↗</a>
   </div>
   <iframe src="/html/dynamic.html" style="width:100%;flex:1;border:none;min-height:0;"></iframe>
@@ -1123,9 +1124,10 @@
   }).catch(function(){});
 
   function toggleFeature(feature) {
+    /* No optimistic local flip — the button reflects whatever the SSE
+       'featuretoggle' listener below confirms actually happened, so it
+       stays correct even if state changed from somewhere else. */
     var enabled = !(featureStates[feature] !== false);
-    featureStates[feature] = enabled;
-    applyToggleBtn(feature, enabled);
     var action = enabled ? 'enable' : 'disable';
     fetch('/overlay/feature/' + encodeURIComponent(feature) + '/' + action).catch(function(){});
   }
@@ -1151,9 +1153,9 @@
   }).catch(function(){});
 
   function toggleCheckOverlay(key) {
+    /* No optimistic local flip — see toggleFeature above; the SSE
+       listeners below are the single source of truth for this button. */
     var shown = !checkOverlayStates[key];
-    checkOverlayStates[key] = shown;
-    applyCheckToggleBtn(key, shown);
     fetch('/overlay/' + encodeURIComponent(key) + '/' + (shown ? 'show' : 'hide')).catch(function(){});
   }
 
@@ -1216,6 +1218,10 @@
   loadMplfsScene();
 
   function toggleMplfsFeature(feat, key, body) {
+    /* No .then(loadMplfsScene) here — the SSE listeners below already
+       refetch the authoritative scene snapshot the instant any of
+       these routes broadcasts, so the button stays correct even when
+       the change came from elsewhere (another tab, Hide All, etc). */
     var shown = !mplfsFeatureShown(key);
     fetch(shown ? feat.show : feat.hide).then(function (r) {
       if (r.ok && body) {
@@ -1223,8 +1229,56 @@
         void body.offsetWidth;
         body.classList.add('flash-ok');
       }
-    }).catch(function(){}).then(loadMplfsScene);
+    }).catch(function(){});
   }
+
+  /* ── Live state sync ──────────────────────────────────────────
+     Every toggle above already broadcasts its show/hide over the
+     shared SSE stream (routes/overlay.js) for the overlay pages
+     themselves to react to. The dashboard listens to that same
+     stream so it reflects the ACTUAL current state regardless of what
+     triggered the change — its own buttons, a universal hide button,
+     another dashboard tab, or a raw request — instead of only trusting
+     whatever its own last click assumed happened. */
+  var dashboardSSE = new EventSource('/overlay/events');
+
+  dashboardSSE.addEventListener('featuretoggle', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      featureStates[d.feature] = !!d.enabled;
+      applyToggleBtn(d.feature, !!d.enabled);
+    } catch (err) {}
+  });
+
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui'].forEach(function (key) {
+    dashboardSSE.addEventListener(key, function (e) {
+      try {
+        var d = JSON.parse(e.data);
+        var shown = d.action === 'show';
+        checkOverlayStates[key] = shown;
+        applyCheckToggleBtn(key, shown);
+      } catch (err) {}
+    });
+  });
+
+  dashboardSSE.addEventListener('sidecheck', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      var shown = d.action === 'show';
+      checkOverlayStates[d.check] = shown;
+      applyCheckToggleBtn(d.check, shown);
+    } catch (err) {}
+  });
+
+  /* mplfs.html's scene state is one shared object (a single active
+     feature plus 3 board booleans), not a flat per-key map — a single
+     route like post_hearts/show flips 4 fields in one broadcast. Rather
+     than hand-decode every event's effect here, just refetch the
+     authoritative /overlay/mplfs-scene snapshot whenever any
+     scene-changing event fires. */
+  Object.keys(MPLFS_ACTIVE_FEATURE_MAP).concat(MPLFS_BOOL_KEYS, ['fs_hide']).forEach(function (name) {
+    dashboardSSE.addEventListener(name, loadMplfsScene);
+  });
 
   /* ── Overlay definitions ──────────────────────────────────── */
   var OVERLAYS = [
@@ -1232,6 +1286,8 @@
       id: 'draft',
       name: 'Draft Overlay',
       file: 'Draft.html',
+      show: '/overlay/draft/show',
+      hide: '/overlay/draft/hide',
       photoModeToggle: true,
     },
     {
@@ -1277,6 +1333,15 @@
       debugPhotosToggle: true,
     },
     {
+      id: 'entvc',
+      name: 'EN TVC (Waiting TVC)',
+      file: 'ENTVC.html',
+      /* No show/hide — this is a standalone always-on browser source, not
+         part of mplfs.html's scene switcher (see ENTVC.html's connectSSE()
+         and restoreScene() for why it ignores remote show/hide entirely).
+         This entry is just a link + live preview for OBS setup. */
+    },
+    {
       id: 'mploverlay7',
       name: 'MPL Player Overlay v7',
       file: 'mploverlay_v7.html',
@@ -1285,8 +1350,12 @@
       extraActions: [
         { label: 'Recap Show', action: '/overlay/fights/show' },
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
+        { label: 'Hide Bottom Overlays', action: '/overlay/bottomoverlays/hide' },
+        { label: 'Hide Side Overlays',   action: '/overlay/sideoverlays/hide'   },
       ],
       checkToggles: [
+        { name: 'Scoreboard',        key: 'scoreboard'       },
+        { name: 'Player UI',         key: 'playerui'         },
         { name: 'Item Check',        key: 'itemcheck'        },
         { name: 'Emblem Check',      key: 'emblemcheck'      },
         { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
@@ -1296,7 +1365,6 @@
         { name: 'Side Gold Check',   key: 'sidegoldcheck'    },
       ],
       featureToggles: [
-        { name: 'Scoreboard',  feature: 'scoreboard' },
         { name: 'Kill Events', feature: 'killevents' },
         { name: 'Item Pickup', feature: 'items'      },
         { name: 'Trinity',     feature: 'trinity'    },
@@ -1304,7 +1372,6 @@
         { name: 'Level 15',    feature: 'lvl15'      },
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
-        { name: 'Player UI',   feature: 'playerui'   },
       ],
     },
     {
@@ -1389,6 +1456,11 @@
       fallbackCopy();
     }
   }
+
+  (function () {
+    var b = document.getElementById('dynamic-copy-route-btn');
+    if (b) b.addEventListener('click', function () { copyRoute('/api/dynamic-content/vmix', 'Dynamic Content (vMix) route', b); });
+  })();
 
   function el(tag, cls, text) {
     var e = document.createElement(tag);
@@ -2348,15 +2420,37 @@
   ];
 
   /* ── Hosts (mplfs.html Waiting Screen TVC) element defaults ─────
-     2 photo slots, same 571×478 container as Casters. */
+     2 or 3 photo slots, same 571×478 container as Casters. The Left/Right
+     defaults below are the 2-host layout; Middle only ever renders (and
+     is only draggable/live) once a 3rd host is configured on the match
+     board, same as Casters' middle slot. */
   var HOST_DEFAULTS = {
-    '.ws-hosts-slot-left':  { left: 40,  top: 14, width: 300, height: 464 },
-    '.ws-hosts-slot-right': { left: 251, top: 14, width: 300, height: 464 },
+    '.ws-hosts-slot-left':   { left: 40,  top: 14, width: 300, height: 464 },
+    '.ws-hosts-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
+    '.ws-hosts-slot-right':  { left: 251, top: 14, width: 300, height: 464 },
   };
 
   var HOST_ELEMENTS = [
-    { group: 'Hosts', id: '.ws-hosts-slot-left',  name: 'Photo (Left)'  },
-    { group: 'Hosts', id: '.ws-hosts-slot-right', name: 'Photo (Right)' },
+    { group: 'Hosts', id: '.ws-hosts-slot-left',   name: 'Photo (Left)'   },
+    { group: 'Hosts', id: '.ws-hosts-slot-middle', name: 'Photo (Middle)' },
+    { group: 'Hosts', id: '.ws-hosts-slot-right',  name: 'Photo (Right)'  },
+  ];
+
+  /* ── EN Casters (ENTVC.html standalone Waiting TVC) element defaults ──
+     Same 3-up layout as Casters, but these selectors only exist inside
+     ENTVC.html's DOM (ws-encasters-slot-*, not ws-casters-slot-*), so they
+     can be dragged independently of the real Casters box in mplfs.html
+     even though both configs persist to the same 'mplfs' style bucket. */
+  var EN_CASTER_DEFAULTS = {
+    '.ws-encasters-slot-left':   { left: 0,   top: 14, width: 354, height: 464 },
+    '.ws-encasters-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
+    '.ws-encasters-slot-right':  { left: 217, top: 14, width: 354, height: 464 },
+  };
+
+  var EN_CASTER_ELEMENTS = [
+    { group: 'EN Casters', id: '.ws-encasters-slot-left',   name: 'Photo (Left)'   },
+    { group: 'EN Casters', id: '.ws-encasters-slot-middle', name: 'Photo (Middle)' },
+    { group: 'EN Casters', id: '.ws-encasters-slot-right',  name: 'Photo (Right)'  },
   ];
 
   /* ── MVP Highlights (mplfs.html) element defaults ───────────────
@@ -2453,6 +2547,17 @@
     { group: 'KP% Value', id: '#mv-kp',           name: 'KP% Value' },
   ];
 
+  /* ── Final Team (mplfs.html) element defaults ────────────────────
+     Only the MPL logo between the two team boxes is individually
+     editable for now — the rest of the scene (team boxes, cards) isn't
+     wired into the Edit tab yet. */
+  var FT_DEFAULTS = {
+    '#ft-mpl-logo': { left: 885, top: 84, width: 150, height: 150 },
+  };
+  var FT_ELEMENTS = [
+    { group: 'MPL Logo', id: '#ft-mpl-logo', name: 'MPL Logo' },
+  ];
+
   /* ── Credit Reel (mplfs.html) element defaults ───────────────────
      The reel's actual content (sponsor logos/titles, cast/crew text)
      is a data array in mplfs.html's script (CREDIT_REEL_ITEMS), not
@@ -2542,6 +2647,15 @@
       defaults:    HOST_DEFAULTS,
       showFn:      'showHostsForEdit',
     },
+    entvc_encasters: {
+      label:       'EN Casters · ENTVC',
+      file:        'ENTVC.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_entvc_encasters',
+      elements:    EN_CASTER_ELEMENTS,
+      defaults:    EN_CASTER_DEFAULTS,
+      showFn:      'showCastersForEdit',
+    },
     mplfs_highlights: {
       label:       'MVP Highlights · mplfs',
       file:        'mplfs.html',
@@ -2559,6 +2673,15 @@
       elements:    MV_ELEMENTS,
       defaults:    MV_DEFAULTS,
       showFn:      'showMvpScene',
+    },
+    mplfs_finalteam: {
+      label:       'Final Team · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_finalteam',
+      elements:    FT_ELEMENTS,
+      defaults:    FT_DEFAULTS,
+      showFn:      'showFinalTeam',
     },
     mplfs_credits: {
       label:       'Credit Reel · mplfs',
@@ -3466,7 +3589,10 @@
   /* ── Config dropdown ─────────────────────────────────────────── */
   (function buildConfigSelect() {
     var sel = document.getElementById('edit-config-select');
-    Object.keys(EDIT_CONFIGS).forEach(function(key) {
+    var keys = Object.keys(EDIT_CONFIGS).sort(function(a, b) {
+      return EDIT_CONFIGS[a].label.localeCompare(EDIT_CONFIGS[b].label);
+    });
+    keys.forEach(function(key) {
       var opt = document.createElement('option');
       opt.value = key;
       opt.textContent = EDIT_CONFIGS[key].label;

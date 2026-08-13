@@ -233,6 +233,96 @@ itself (no cross-tab/remote control), you can skip this whole section and
 use only the local debug card above. If it needs to work from the real
 dashboard on a different machine than the OBS tab, you need all 6 steps.
 
+## Simpler show/hide — the checkOverlays pattern
+
+Not every show/hide feature needs the full 6-layer mplfs-scene wiring
+above — that's specifically for scenes that share mplfs.html's mutually
+exclusive `activeFeature` slot. For a single independent on/off panel
+(Draft.html's whole-scene toggle; mploverlay_v7.html's scoreboard,
+player UI, item-check, emblem-check, gold-diff-check, and the four
+side-*-checks), use this simpler pattern instead:
+
+1. **Server state** — one boolean per key in `state.checkOverlays`
+   (`lib/state.js`), regardless of which overlay page it belongs to.
+2. **Server routes** — `GET /overlay/<key>/show` and `/hide` in
+   `routes/overlay.js`, each flipping `state.checkOverlays[key]` and
+   broadcasting a named SSE event (see itemcheck/emblemcheck/
+   golddiffcheck for the pattern). The four side-*-check panels share
+   ONE event name (`sidecheck`) with a `check` field naming the panel
+   instead of one event per panel — do that when you have a family of
+   near-identical panels, not for a one-off feature.
+3. **Restore-on-load** — `GET /overlay/check-overlays` returns the
+   whole `state.checkOverlays` object as-is; both the overlay page and
+   the dashboard fetch it once on load instead of guessing.
+4. **Client listener** — in the overlay's own JS (or
+   `overlay-debug.js`'s shared SSE block for mploverlay_v7.html),
+   `sse.addEventListener('<key>', ...)` toggling a CSS class that
+   drives the animation.
+5. **Dashboard control** — add `{ name, key }` to that overlay's
+   `checkToggles` array in `dashboard.html`'s `OVERLAYS` entry. This
+   auto-generates the toggle button AND both copy-route buttons next to
+   it — no per-feature dashboard code needed. For a single whole-scene
+   toggle with no "family" of panels, use the plain `show`/`hide` fields
+   on the `OVERLAYS` entry instead (see `draft` and `draftindex`) — same
+   copy-button behavior, just Show/Hide buttons instead of one on/off
+   toggle.
+
+**Default state matters for restore-on-load.** If a feature is normally
+*on* (scoreboard, player UI, Draft's whole scene), default its CSS to
+the SHOWN position with no modifier class, and only add a "hidden"
+class once told to hide. Do it the other way around — CSS hidden by
+default, "shown" class added once the restore-fetch resolves — and
+every page load flashes blank for the length of that fetch. This bit
+Draft.html and player-ui the first time they were wired up.
+
+**A hide animation must clear the WHOLE box, not just one element in
+it.** `#scoreboard-overlay` is a single 1920×1080 layer holding the top
+HUD bar AND the map box (which sits as low as top:210px) AND the
+sponsor loop — `translateY(-130px)` was tuned only for the top bar, so
+the map box stayed on-screen after "hiding". The fix was
+`translateY(-1080px)` — the layer's own full height, guaranteed to
+clear everything inside it regardless of where any individual child
+sits. When adding a new child element to an existing show/hide layer,
+re-check that the hide transform still clears its lowest point — don't
+assume the old offset still works.
+
+### Universal "hide all in a group" buttons
+
+To add a single button that hides several independent panels at once
+(e.g. `Hide Bottom Overlays` for item-check/emblem-check/gold-diff-check
+/fight-recap, `Hide Side Overlays` for all four side-*-checks): add ONE
+new route in `routes/overlay.js` that flips every key's state and
+re-broadcasts each panel's OWN existing event name/payload shape — do
+NOT invent a new event for this. Zero client-side changes are needed,
+since each panel already has a listener for its own event; the
+"universal" button is purely a server-side fan-out. Wire it into the
+dashboard via `extraActions` (auto-gets a copy button), not
+`checkToggles` — that's for individual on/off state, this is a
+fire-and-forget action with no "showing/hidden" indicator of its own.
+
+### The dashboard must live-sync via SSE too — this is the part that bit us
+
+`dashboard.html` keeps its own local cache of every toggle's state
+(`featureStates`, `checkOverlayStates`, `mplfsSceneState`) so a button
+can show "● Showing"/"○ Hidden" without re-fetching on every render. The
+first version of this only updated that cache when the dashboard's OWN
+button was clicked (an optimistic local flip on click) — so a universal
+hide button, another dashboard tab, or a raw curl call would change the
+real server state while the dashboard's indicator kept showing the
+stale value forever, until a full page reload.
+
+The fix: `dashboard.html` opens its own `EventSource('/overlay/events')`
+(`dashboardSSE`, declared right after `toggleMplfsFeature`) and listens
+for every toggle-relevant event, updating the cached state + button
+straight from the SSE payload instead of from whichever button was
+clicked. **Any new show/hide feature you add MUST get a matching
+listener added to this same `dashboardSSE` block**, or its toggle button
+will silently drift out of sync the exact same way — no error, it'll
+just be wrong forever after the first change that didn't come from that
+button. The click handlers (`toggleFeature`, `toggleCheckOverlay`,
+`toggleMplfsFeature`) no longer flip local state at all — they only
+fire the request and let the SSE echo-back update the UI.
+
 ## Data & assets
 
 - Player/match data: `hlFetchMvp()` / `hlExtractPlayer()` hit the

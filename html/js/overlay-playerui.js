@@ -134,20 +134,35 @@ function puiBuildPanel() {
 }
 puiBuildPanel();
 
-function puiApplyVisibility() {
-  const overlay = document.getElementById('player-ui-overlay');
-  if (overlay) overlay.style.display = featureEnabled.playerui !== false ? 'block' : 'none';
-}
-puiApplyVisibility();
+/* ── Show/hide with animation — cards slide in from off-screen, home
+   side from the left, away side from the right (reversed to hide).
+   The overlay container itself is always rendered; only the per-card
+   transform (driven by the .pui-hidden class on the parent, see
+   mploverlay_v7.css) moves them on/off canvas. Base CSS state (no
+   class) is SHOWN, so this defaults on with no flash before the fetch
+   below resolves — .pui-hidden is only added once we're told to hide. */
+let puiShouldShow = true;
 
-/* Called from overlay-debug.js's SSE 'featuretoggle' handler — same
-   pattern as sbHandleToggle for the scoreboard feature. */
-function puiHandleToggle() {
-  puiApplyVisibility();
+function puiSetShown(shown) {
+  puiShouldShow = shown;
+  const overlay = document.getElementById('player-ui-overlay');
+  if (overlay) overlay.classList.toggle('pui-hidden', !shown);
 }
+
+/* Called from overlay-debug.js's SSE 'playerui' handler. */
+function puiHandleToggle(shown) {
+  puiSetShown(shown);
+  if (shown && lastData) puiUpdate(lastData);
+}
+
+/* Apply real server-side shown/hidden state on load, so a (re)loaded
+   overlay restores instead of guessing (see checkOverlays.playerui). */
+fetch('/overlay/check-overlays').then(r => r.json()).then(d => {
+  puiSetShown(!(d && d.playerui === false));
+}).catch(() => puiSetShown(true));
 
 function puiUpdate(data) {
-  if (featureEnabled.playerui === false) return;
+  if (!puiShouldShow) return;
   for (let i = 1; i <= 10; i++) {
     const r   = getPlayer(data, i);
     const ref = puiRefs[i];
