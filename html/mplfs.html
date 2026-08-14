@@ -1586,7 +1586,13 @@
     @keyframes wsm-cot-shine {
       0%, 10% { background-position: 150% 0; }
       18%     { background-position: -50% 0; }
-      18.5%   { background-position: 150% 0; }
+      /* Instant reset (duplicate keyframe at the same offset, same trick
+         as wsm-cot-mask's 58%/58.5% pair) — a real, even if tiny, time
+         gap here would tween background-position from -50% back to
+         150%, which visibly re-sweeps the shine backward right after the
+         first pass. Landing on the exact same percentage makes the jump
+         a true 0-duration snap instead. */
+      18%     { background-position: 150% 0; }
       40%     { background-position: 150% 0; }
       48%     { background-position: -50% 0; }
       100%    { background-position: -50% 0; }
@@ -4176,10 +4182,13 @@
       return day === 3 ? { week: week + 1, day: 1 } : { week, day: day + 1 };
     }
 
-    /* Tomorrow's matches never carry live scores/star-match styling —
-       always the plain Regular_Match_Box + VS icon. Match count for the
-       previewed day follows the same 3-match-on-Day-2 rule as today's
-       schedule (see match-dashboard.html's renderTomorrowMatches). */
+    /* Tomorrow's matches never carry live scores — always the plain VS
+       icon — but DO carry star-match styling now, same as Today's
+       Schedule (m.star drives StarMatch_Match_Box.png vs
+       Regular_Match_Box.png in buildTwMatches below). Match count for
+       the previewed day follows the same 3-match-on-Day-2 rule as
+       today's schedule (see match-dashboard.html's
+       renderTomorrowMatches). */
     function msToTomorrowMatchRows(state) {
       if (!state || !Array.isArray(state.tomorrowMatches) || !state.tomorrowMatches.length) return null;
       const bo = (state.series || 'BO3').toUpperCase();
@@ -4189,6 +4198,7 @@
         label: 'MATCH ' + (i + 1),
         time:  m.time || '',
         bo,
+        star:  !!m.star,
         left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
         right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
       }));
@@ -4202,7 +4212,7 @@
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       root.innerHTML = rows.map(m => {
         const center = `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
-        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}Regular_Match_Box.png" alt="">` +
+        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}${m.star ? 'StarMatch_Match_Box' : 'Regular_Match_Box'}.png" alt="">` +
           `<span class="tsm-label">${m.label}</span>` +
           `<span class="tsm-time">${m.time}</span>` +
           `<span class="tsm-bo">${m.bo}</span>` +

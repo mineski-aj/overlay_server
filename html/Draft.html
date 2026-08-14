@@ -34,39 +34,6 @@
       background: transparent;
     }
 
-    /* ── Debug bar ─────────────────────────────────────────────── */
-    #debug-bar {
-      position: absolute;
-      top: 0; left: 0;
-      width: 1920px; height: 30px;
-      background: rgba(0,0,0,0.85);
-      display: flex; align-items: center;
-      padding: 0 14px; gap: 8px;
-      z-index: 9999;
-      font-family: 'Consolas', 'Courier New', monospace;
-      font-size: 12px; color: #bbb;
-    }
-    #debug-bar label { color: #888; white-space: nowrap; }
-    #api-url-input {
-      width: 380px; height: 22px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid #444; border-radius: 3px;
-      color: #eee; padding: 0 8px;
-      font-family: inherit; font-size: 12px; outline: none;
-    }
-    #api-url-input:focus { border-color: #777; }
-    #debug-apply {
-      height: 22px; padding: 0 10px;
-      background: #2a2a2a; border: 1px solid #555; border-radius: 3px;
-      color: #bbb; cursor: pointer; font-size: 12px;
-    }
-    #debug-apply:hover { background: #383838; color: #fff; }
-    #debug-status { padding: 2px 8px; border-radius: 3px; font-size: 11px; }
-    #debug-status.ok      { background: rgba(0,200,80,0.18);  color: #3f3; }
-    #debug-status.err     { background: rgba(220,0,0,0.22);   color: #f55; }
-    #debug-status.pending { background: rgba(220,220,0,0.15); color: #ff0; }
-    #debug-last { font-size: 11px; color: #555; }
-
     /* ── Scene ─────────────────────────────────────────────────── */
     #scene {
       position: absolute;
@@ -776,11 +743,6 @@
 </head>
 <body>
 
-<div id="debug-bar">
-  <span id="debug-status" class="pending">connecting…</span>
-  <span id="debug-last"></span>
-</div>
-
 <div id="scene"></div>
 
 <script>
@@ -913,8 +875,6 @@
   var C2_BAN_X = [0,1,2,3,4].map(function(i){ return 1525 - i * BAN_W; });
 
   /* ── DOM refs ──────────────────────────────────────────────── */
-  var statusEl = document.getElementById('debug-status');
-  var lastEl   = document.getElementById('debug-last');
   var scene    = document.getElementById('scene');
 
   var apiUrl = DEFAULT_URL;
@@ -2324,14 +2284,8 @@
         }
 
         updateStatus(json.data, allSeats);
-        statusEl.className   = 'ok';
-        statusEl.textContent = 'OK';
-        lastEl.textContent   = new Date().toLocaleTimeString();
       })
-      .catch(function (err) {
-        statusEl.className   = 'err';
-        statusEl.textContent = err.message;
-      });
+      .catch(function () {});
   }
 
   /* ── Whole-scene show/hide — slides upward to show, downward to hide
@@ -2370,10 +2324,6 @@
        hard reload so new position/size overrides apply immediately
        (see mplfs.html's connectSSE() for the identical pattern). */
     sse.addEventListener('reload', function() { window.location.reload(); });
-    sse.addEventListener('debugoff', function() {
-      var bar = document.getElementById('debug-bar');
-      if (bar) bar.style.display = 'none';
-    });
     sse.addEventListener('draftphotomode', function(ev) {
       try {
         var d = JSON.parse(ev.data);

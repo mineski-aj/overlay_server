@@ -1373,8 +1373,9 @@
 
     matches.forEach(function (m, i) {
       var disabled = (i === 0 && !isThreeMatch);
+      var mt = matchTypeOf(m);
       var card = document.createElement('div');
-      card.className = 'match-card' + (disabled ? ' disabled' : '');
+      card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');
 
       /* header */
       var hdr = document.createElement('div');
@@ -1393,6 +1394,25 @@
       }; })(i, timeInp));
       timeInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') timeInp.blur(); });
       hdr.appendChild(timeInp);
+
+      /* match type selector — same star/rivalry options as Today's
+         Matches; drives StarMatch_Match_Box.png in Tomorrow's Schedule */
+      var typeSel = document.createElement('select');
+      typeSel.className = 'match-type-sel' + (mt !== 'regular' ? ' on' : '');
+      MATCH_TYPES.forEach(function (opt) {
+        var o = document.createElement('option');
+        o.value = opt.value; o.textContent = opt.label;
+        if (opt.value === mt) o.selected = true;
+        typeSel.appendChild(o);
+      });
+      typeSel.addEventListener('change', function () {
+        var tm = getTomorrowMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { matchType: typeSel.value, star: typeSel.value !== 'regular' });
+        saveTomorrowMatches(tm);
+        typeSel.classList.toggle('on', typeSel.value !== 'regular');
+        card.classList.toggle('rivalry', typeSel.value !== 'regular');
+      });
+      hdr.appendChild(typeSel);
       card.appendChild(hdr);
 
       /* body: team1 | VS | team2 (no scores) */

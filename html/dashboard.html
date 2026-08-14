@@ -1298,6 +1298,14 @@
       hide: '/overlay/draftindex/hide',
     },
     {
+      id: 'sponsortv',
+      name: 'Sponsor TV',
+      file: 'sponsortv.html',
+      /* No show/hide — this is a standalone always-on browser source
+         (permanently on, no SSE), same as the ENTVC entry below. This
+         entry is just a link + live preview for OBS setup. */
+    },
+    {
       id: 'mplfs',
       name: 'MPL Full Screen',
       file: 'mplfs.html',
@@ -2601,6 +2609,19 @@
     { group: 'Stat Bars',     id: '#di-bars-container', name: 'Stat Bars Panel'   },
   ];
 
+  /* ── Sponsor TV (sponsortv.html) element defaults ─────────────────
+     Standalone Today's-Schedule-for-sponsors page: header removed,
+     match rows centered. Not individually editable — only the one
+     wrapping box is drag/resize-able (same philosophy as Credit Reel's
+     viewport), so dragging/resizing this single box moves and scales
+     the whole schedule as one group. */
+  var STV_DEFAULTS = {
+    '#stv-content': { left: 531, top: 184, width: 858, height: 712 },
+  };
+  var STV_ELEMENTS = [
+    { group: 'Schedule', id: '#stv-content', name: 'Schedule Block' },
+  ];
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -2744,6 +2765,14 @@
       elements:    DI_COMPARE_ELEMENTS,
       defaults:    DI_COMPARE_DEFAULTS,
       showFn:      'showDraftIndexCompareForEdit',
+    },
+    sponsortv: {
+      label:       'Sponsor TV',
+      file:        'sponsortv.html',
+      styleFile:   'sponsortv',
+      defaultsKey: 'sb_edit_defaults_sponsortv',
+      elements:    STV_ELEMENTS,
+      defaults:    STV_DEFAULTS,
     },
   };
   var currentConfigKey = 'mploverlay_v7';

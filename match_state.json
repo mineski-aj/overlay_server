@@ -1,71 +1,71 @@
 {
   "home": {
-    "teamId": "11149",
+    "teamId": "10764",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Kielvj",
-        "id": "774012304"
+        "ign": "Ryota",
+        "id": "915241466"
       },
       {
         "role": "JUNGLER",
-        "ign": "JamesPangks",
-        "id": "1475950942"
+        "ign": "K1NGKONG",
+        "id": "1373201049"
       },
       {
         "role": "MID LANER",
-        "ign": "Aqua",
-        "id": "1271650304"
+        "ign": "SuperFrince",
+        "id": "1271650280"
       },
       {
         "role": "ROAMER",
-        "ign": "Nova_",
-        "id": "1475950747"
+        "ign": "Brusko",
+        "id": "1582754254"
       },
       {
         "role": "GOLD LANER",
-        "ign": "shizou",
-        "id": "1373808356"
+        "ign": ".BLUFFZY",
+        "id": "1722728857"
       }
     ],
-    "name": "AP.BREN",
-    "short": "APBR",
+    "name": "ONIC PH",
+    "short": "ONIC",
     "score": 0,
-    "coach": "REGGIE"
+    "coach": ""
   },
   "away": {
-    "teamId": "10845",
+    "teamId": "10973",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Edward",
-        "id": "1271650071"
+        "ign": "Flap",
+        "id": "1271650054"
       },
       {
         "role": "JUNGLER",
-        "ign": "Demonkite",
-        "id": "1025593425"
+        "ign": "Kyle",
+        "id": "1582754321"
       },
       {
         "role": "MID LANER",
-        "ign": "Yue",
-        "id": "1373200860"
+        "ign": "Hadji",
+        "id": "1271650087"
       },
       {
         "role": "ROAMER",
-        "ign": "Light",
-        "id": "1478121262"
+        "ign": "Owgwen",
+        "id": "1271650065"
       },
       {
         "role": "GOLD LANER",
-        "ign": "Domengkite",
-        "id": "1373200918"
+        "ign": "SuperMarco",
+        "id": "1155835108"
       }
     ],
-    "name": "Aurora Gaming PH",
-    "short": "RORA",
+    "name": "Team Falcons",
+    "short": "FLCN",
     "score": 0,
-    "coach": "MASTER THE BASICS"
+    "coach": ""
   },
   "series": "BO3",
   "game": 1,
@@ -87,43 +87,43 @@
   "todayMatches": [
     {
       "team1Id": "11149",
-      "team2Id": "10845",
-      "score1": 0,
-      "score2": 0,
-      "time": "2:30 PM",
-      "team2Name": "Aurora Gaming PH",
-      "team2Short": "RORA",
-      "vsDisplay": "VS",
       "team1Name": "AP.BREN",
       "team1Short": "APBR",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
+      "score1": 0,
+      "score2": 0,
+      "vsDisplay": "VS",
+      "time": "2:30 PM",
       "star": true,
       "matchType": "epic"
     },
     {
-      "team1Id": "10764",
-      "team2Id": "10973",
+      "team1Id": "10845",
+      "team1Name": "Aurora Gaming PH",
+      "team1Short": "RORA",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
       "score1": 0,
       "score2": 0,
-      "time": "5:00 PM",
-      "team1Name": "ONIC PH",
-      "team1Short": "ONIC",
-      "team2Name": "Team Falcons",
-      "team2Short": "FLCN",
       "vsDisplay": "VS",
+      "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
     {
       "team1Id": "10765",
-      "team2Id": "11150",
-      "score1": 0,
-      "score2": 0,
-      "time": "7:30 PM",
       "team1Name": "TNC Pro Team PH",
       "team1Short": "TNC",
-      "team2Name": "Smart Omega",
-      "team2Short": "OMG",
+      "team2Id": "10973",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN",
+      "score1": 0,
+      "score2": 0,
       "vsDisplay": "VS",
+      "time": "7:30 PM",
       "star": false,
       "matchType": "regular"
     }
@@ -137,7 +137,9 @@
       "team2Name": "Team Liquid PH",
       "team2Short": "TLPH",
       "vsDisplay": "VS",
-      "time": "2:30 PM"
+      "time": "2:30 PM",
+      "star": true,
+      "matchType": "golden"
     },
     {
       "team1Id": "10845",
@@ -147,7 +149,9 @@
       "team2Name": "Team Liquid PH",
       "team2Short": "TLPH",
       "vsDisplay": "VS",
-      "time": "5:00 PM"
+      "time": "5:00 PM",
+      "star": true,
+      "matchType": "golden"
     },
     {
       "team1Id": "10765",
@@ -157,12 +161,14 @@
       "team2Name": "Team Falcons",
       "team2Short": "FLCN",
       "vsDisplay": "VS",
-      "time": "7:30 PM"
+      "time": "7:30 PM",
+      "star": false,
+      "matchType": "regular"
     }
   ],
   "countdownLabel": "SHOW RESUMES IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
-  "match": 3,
+  "match": 2,
   "countdownLabelAuto": true,
   "timer": {
     "running": true,

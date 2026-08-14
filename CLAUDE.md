@@ -36,6 +36,43 @@ Default port 3000 (autoPort in `.claude/launch.json`). Dashboard is at
   main-info API shape, and the `feedback_*` files for standing UI rules
   (animation timing, feature-toggle state, fetch caching) that apply here.
 
+## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
+
+`html/ENTVC.html` is a separate, mostly-duplicate copy of `mplfs.html`'s
+Waiting Screen TVC, Waiting Lobby, Today's Schedule, Tomorrow's Schedule,
+and Standings scenes, used for the English-language broadcast. It shares
+`mplfs.html`'s scene architecture, `showSceneVideo`/SSE wiring, and
+helpers like `msToMatchRows`/`buildTsMatches` almost byte-for-byte.
+
+**Standing rule: any change to Waiting TVC or Waiting Lobby content in
+`mplfs.html` — new features, CSS/animation fixes, graphics swaps,
+tunable settings, anything, including future updates not yet made —
+must be mirrored into `ENTVC.html` too. The one deliberate exception is
+EN Casters positioning: it uses its own `ws-encasters`-prefixed
+selectors and its own dashboard Edit config (`entvc_encasters`),
+independent of the regular Casters panel, precisely so it CAN be
+positioned differently per broadcast — don't fold it into the
+mirroring rule.**
+
+How the mirroring actually happens, two different ways depending on
+what changed:
+- **Position/size edits** (dashboard Edit tab drag/resize) — automatic,
+  no extra work needed. Both files write to and read from the SAME
+  `overlay_styles.json` bucket (`styleFile: 'mplfs'`) for any selector
+  that exists identically in both files' DOM — see
+  `routes/overlayStyles.js`. A selector that only exists in one file
+  (like EN Casters' `ws-encasters-slot-*`) only ever affects that file.
+- **Everything else** (new JS features, CSS/animation fixes, new
+  tunable settings, structural HTML changes) — must be hand-ported to
+  both files, since they're independent `<script>` blocks, not shared
+  modules. When asked to change one, check whether the same code exists
+  in the other and update both. For a new shared *tunable* value (not a
+  position/size), follow the small-dedicated-JSON-file-and-route
+  pattern already used for `credits_speed.json` (`/api/credits-speed`)
+  — both files fetch the same endpoint fresh each time the scene is
+  shown, so tuning it once (from either file's Edit panel) affects
+  both.
+
 ## Scene architecture (how every overlay page is built)
 
 Each "scene" (MVP Highlights, MVP Scene, Final Team, etc.) is one
