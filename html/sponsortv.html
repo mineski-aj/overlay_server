@@ -171,9 +171,21 @@
       });
     }
 
+    /* Guards against rebuilding on every 3s poll tick when nothing actually
+       changed — innerHTML rebuild destroys and recreates every <img>, which
+       (combined with cache-bust.js's ?v= busting + /logos/'s no-store
+       Cache-Control) forces a real network re-fetch of every team logo each
+       time. Invisible over localhost's near-zero latency, but a visible
+       flicker once vMix on another PC is pulling those images over the LAN
+       every cycle. Same "unchanged — don't disturb" pattern as mplfs.html's
+       populateWsHosts/populateWsCasters. */
+    let stvLastKey = null;
     function buildStvMatches(state) {
       const root = document.getElementById('stv-matches');
       const rows = msToMatchRows(state) || TS_MATCHES;
+      const key = JSON.stringify(rows);
+      if (key === stvLastKey) return;
+      stvLastKey = key;
       const logo = (m, side) =>
         `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;

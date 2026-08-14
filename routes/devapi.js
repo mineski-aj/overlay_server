@@ -384,7 +384,11 @@ router.get('/api/lineuprate-data', async (req, res) => {
     let stored;
     try { stored = JSON.parse(fs.readFileSync(LINEUPRATE_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || LINEUPRATE_URL_DEFAULT).trim();
-    const r = await fetch(url);
+    // Upstream has hung/errored for extended periods before (Cloudflare 530s
+    // seen against theapi.dpdns.org) — a plain fetch() with no timeout would
+    // leave this request (and every client awaiting it, e.g. DraftIndex.html's
+    // Phase 2 reveal) hanging indefinitely instead of failing fast.
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);

@@ -20,6 +20,7 @@ app.use((req, res, next) => {
 // Match state — inline so no router indirection
 const fs         = require('fs');
 const matchState = require('./lib/matchState');
+const teamLineups = require('./lib/teamLineups');
 
 function getMatchPassword() {
   try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')).dashboard_password || ''; }
@@ -119,6 +120,22 @@ app.post('/api/roster', function (req, res) {
   }
 });
 
+// Last-used per-team role assignment (bench swaps) — restored the next time
+// that team is picked instead of resetting to mainroster.json's role-sorted
+// default. Public read (the dashboard needs it right after picking a team),
+// same dashboard password as match/standings state for the write.
+app.get('/match/team-lineups', function (req, res) {
+  res.json(teamLineups.getAll());
+});
+
+app.post('/match/team-lineups', function (req, res) {
+  var body  = req.body || {};
+  var token = body.token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  teamLineups.set(body.teamId, body.lineup);
+  res.json({ ok: true });
+});
+
 // Static assets — HTML files served fresh, other assets cached for 1 day
 app.use(express.static(path.join(__dirname), {
   maxAge: '1d',
@@ -183,6 +200,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`             → POST http://localhost:${PORT}/match/state  (auth)`);
   console.log(`             → GET  http://localhost:${PORT}/match/events  (SSE)`);
   console.log(`  Timer      → POST http://localhost:${PORT}/match/timer  { action: start|pause|set, seconds }`);
+  console.log(`  Lineups    → GET  http://localhost:${PORT}/match/team-lineups`);
+  console.log(`             → POST http://localhost:${PORT}/match/team-lineups  (auth)`);
   console.log(`  Sponsors   → GET  http://localhost:${PORT}/api/sponsors`);
   console.log(`             → GET  http://localhost:${PORT}/api/sponsors-config`);
   console.log(`             → POST http://localhost:${PORT}/api/sponsors-config  (auth)`);

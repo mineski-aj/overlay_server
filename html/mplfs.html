@@ -498,7 +498,9 @@
     }
     .wl-namebox-blue .wl-namebox-logo { left: 6px; }
     .wl-namebox-red  .wl-namebox-logo { right: 6px; }
-    .wl-namebox-logo img { width: 40px; height: 40px; object-fit: contain; }
+    /* Role icon PNGs on disk are tan/gray, not black — force it regardless
+       of source color (brightness(0) zeroes RGB, alpha/shape untouched). */
+    .wl-namebox-logo img { width: 40px; height: 40px; object-fit: contain; filter: brightness(0); }
     .wl-namebox-name {
       position: absolute; top: 0; width: 285px; height: 62px;
       display: flex; align-items: center; justify-content: center;
@@ -1353,6 +1355,24 @@
     .tsm-label { left: 22px; }
     .tsm-time  { left: 0; width: 100%; justify-content: center; }
     .tsm-bo    { right: 22px; }
+    /* Rivalry blinker band — same masked-shine loop as the Waiting Screen
+       TVC's .wsm-band-cot (see @keyframes wsm-cot-*), just resized/recentered
+       to this row's 858×232 band instead of duplicating the animation. */
+    .tsm-row .tsm-band-cot     { position: absolute; left: 254px; top: 0; width: 350px; height: 48px; animation: wsm-cot-mask 9s ease-in-out infinite; }
+    .tsm-row .tsm-band-cot-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .tsm-row .tsm-band-cot::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%);
+      background-size: 300% 100%;
+      background-position: 150% 0;
+      mix-blend-mode: screen;
+      pointer-events: none;
+      -webkit-mask-image: var(--cot-mask); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
+      mask-image: var(--cot-mask); mask-size: 100% 100%; mask-repeat: no-repeat;
+      animation: wsm-cot-shine 9s linear infinite;
+    }
+    .tsm-time.star { animation: wsm-cot-pulse-inv 9s ease-in-out infinite; }
     .tsm-slot {
       position: absolute; top: 48px; height: 184px;
       display: flex; align-items: center; justify-content: center;
@@ -4148,29 +4168,40 @@
       WS_PANEL_IDS.forEach(id => document.getElementById(id).classList.remove('ws-panel-out', 'ws-panel-in'));
     }
 
-    /* Today's Schedule rows — one Regular_Match_Box asset per match.
-       Bound to the Match Board state (todayMatches, tricodes only);
-       falls back to the TS_MATCHES placeholders when no state is available. */
-    const TS_ASSET = "/assets/Today's Schedule/";
+    /* Today's Schedule rows — bound to the Match Board state (todayMatches,
+       tricodes only); falls back to the TS_MATCHES placeholders when no
+       state is available. */
+    /* Shared row markup for Today's/Tomorrow's Schedule — background art and
+       pulsing rivalry band now follow the same match-type → asset mapping as
+       the Waiting Screen TVC (WS_MATCH_TYPE_ASSETS), just resized to this
+       row's 858×232 box, instead of a plain star/regular toggle. */
+    function tsmRowHtml(m, centerHtml) {
+      const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
+      const logo = (side) =>
+        `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
+        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
+      return `<div class="tsm-row"><img class="tsm-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+        `<span class="tsm-label">${m.label}</span>` +
+        (typeAssets.blinker
+          ? `<span class="tsm-time star">${m.time}</span>` +
+            `<div class="tsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="tsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+          : `<span class="tsm-time">${m.time}</span>`) +
+        `<span class="tsm-bo">${m.bo}</span>` +
+        `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
+        logo('l') +
+        `<div class="tsm-slot tsm-center">${centerHtml}</div>` +
+        logo('r') +
+        `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
+    }
+
     function buildTsMatches(state) {
       const root = document.getElementById('ts-matches');
       const rows = msToMatchRows(state) || TS_MATCHES;
-      const logo = (m, side) =>
-        `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
-        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       root.innerHTML = rows.map(m => {
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
           : `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
-        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}${m.star ? 'StarMatch_Match_Box' : 'Regular_Match_Box'}.png" alt="">` +
-          `<span class="tsm-label">${m.label}</span>` +
-          `<span class="tsm-time">${m.time}</span>` +
-          `<span class="tsm-bo">${m.bo}</span>` +
-          `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
-          logo(m, 'l') +
-          `<div class="tsm-slot tsm-center">${center}</div>` +
-          logo(m, 'r') +
-          `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
+        return tsmRowHtml(m, center);
       }).join('');
     }
     buildTsMatches();
@@ -4183,12 +4214,10 @@
     }
 
     /* Tomorrow's matches never carry live scores — always the plain VS
-       icon — but DO carry star-match styling now, same as Today's
-       Schedule (m.star drives StarMatch_Match_Box.png vs
-       Regular_Match_Box.png in buildTwMatches below). Match count for
-       the previewed day follows the same 3-match-on-Day-2 rule as
-       today's schedule (see match-dashboard.html's
-       renderTomorrowMatches). */
+       icon — but DO carry the same matchType-driven box art/rivalry band as
+       Today's Schedule (see tsmRowHtml above). Match count for the
+       previewed day follows the same 3-match-on-Day-2 rule as today's
+       schedule (see match-dashboard.html's renderTomorrowMatches). */
     function msToTomorrowMatchRows(state) {
       if (!state || !Array.isArray(state.tomorrowMatches) || !state.tomorrowMatches.length) return null;
       const bo = (state.series || 'BO3').toUpperCase();
@@ -4198,7 +4227,7 @@
         label: 'MATCH ' + (i + 1),
         time:  m.time || '',
         bo,
-        star:  !!m.star,
+        matchType: m.matchType || (m.star ? 'clash' : 'regular'),
         left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
         right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
       }));
@@ -4207,21 +4236,7 @@
     function buildTwMatches(state) {
       const root = document.getElementById('tw-matches');
       const rows = msToTomorrowMatchRows(state) || TS_MATCHES;
-      const logo = (m, side) =>
-        `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
-        `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      root.innerHTML = rows.map(m => {
-        const center = `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
-        return `<div class="tsm-row"><img class="tsm-bg" src="${TS_ASSET}${m.star ? 'StarMatch_Match_Box' : 'Regular_Match_Box'}.png" alt="">` +
-          `<span class="tsm-label">${m.label}</span>` +
-          `<span class="tsm-time">${m.time}</span>` +
-          `<span class="tsm-bo">${m.bo}</span>` +
-          `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
-          logo(m, 'l') +
-          `<div class="tsm-slot tsm-center">${center}</div>` +
-          logo(m, 'r') +
-          `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
-      }).join('');
+      root.innerHTML = rows.map(m => tsmRowHtml(m, `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`)).join('');
     }
     buildTwMatches();
 
@@ -4495,16 +4510,21 @@
       return '/hires/' + folder + '/' + encodeURIComponent(ign + '_' + folder + '.png');
     }
 
-    function wlApplyPlayer(side, ign) {
+    function wlApplyPlayer(side, player) {
+      const ign  = player && player.ign;
+      const role = player && player.role;
       const nameEl  = document.getElementById('wl-' + side + '-name');
       const logoEl  = document.getElementById('wl-' + side + '-logo');
       const nameEls = [nameEl, logoEl];
 
-      // Name/logo: scoreboard-style — out slides down + fades, in starts
+      // Name/role: scoreboard-style — out slides down + fades, in starts
       // above and slides down + fades in.
       nameEls.forEach(el => el.classList.add('wl-slide-out'));
       setTimeout(() => {
         nameEl.textContent = ign || '';
+        logoEl.onerror = () => { logoEl.style.display = 'none'; };
+        logoEl.style.display = '';
+        logoEl.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
         nameEls.forEach(el => { el.classList.add('wl-no-transition'); el.classList.remove('wl-slide-out'); el.classList.add('wl-slide-in'); });
         void nameEl.offsetWidth; // force reflow so the jump is applied before we transition back
         nameEls.forEach(el => el.classList.remove('wl-no-transition', 'wl-slide-in'));
@@ -4547,26 +4567,17 @@
       wlPhotoLayer[side] = next;
     }
 
-    function wlApplyLogo(side, tri) {
-      const logoEl = document.getElementById('wl-' + side + '-logo');
-      logoEl.onerror = () => { logoEl.style.display = 'none'; };
-      logoEl.style.display = '';
-      logoEl.src = tri ? '/logos/' + encodeURIComponent(tri) + '.png' : '';
-    }
-
     function wlShowPlayers(idx) {
       const blue = wlLineupBlue[idx % (wlLineupBlue.length || 1)];
       const red  = wlLineupRed[idx % (wlLineupRed.length || 1)];
-      wlApplyPlayer('blue', blue && blue.ign);
-      wlApplyPlayer('red', red && red.ign);
+      wlApplyPlayer('blue', blue);
+      wlApplyPlayer('red', red);
     }
 
     function startWlPlayerCycle(state) {
       clearInterval(wlPlayerInt);
       wlLineupBlue = (state && state.home && state.home.lineup) || [];
       wlLineupRed  = (state && state.away && state.away.lineup) || [];
-      wlApplyLogo('blue', state && state.home && state.home.short);
-      wlApplyLogo('red', state && state.away && state.away.short);
       wlPlayerIdx = 0;
       wlShowPlayers(wlPlayerIdx);
       if (wlLineupBlue.length > 1 || wlLineupRed.length > 1) {

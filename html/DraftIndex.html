@@ -458,6 +458,21 @@
       .catch(function () { return null; });
   }
 
+  /* Line-Up Rate's upstream (theapi.dpdns.org) has hung/errored for extended
+     periods before — the server route now times out at 5s, but this races
+     the whole data fetch client-side too, so a hang anywhere in the chain
+     (including this page's own request to the local server) can never
+     freeze Phase 2's reveal forever: it just reveals with whatever data (or
+     null/null, rendered as 0.0/blank) resolved within the window. */
+  var DI_DATA_TIMEOUT_MS = 6000;
+  function diFetchPhase2Data() {
+    var dataPromise = Promise.all([diFetchMatchState(), diFetchLineupRate()]);
+    var timeoutPromise = new Promise(function (resolve) {
+      setTimeout(function () { resolve([null, null]); }, DI_DATA_TIMEOUT_MS);
+    });
+    return Promise.race([dataPromise, timeoutPromise]);
+  }
+
   /* t1/t2 → blue/red: this codebase's universal convention is camp1 =
      blue = home (see CLAUDE.md campid note), and unlike the Team Head
      to Head API, the Line-Up Rate API doesn't return a tricode to
@@ -590,7 +605,7 @@
       diRedBox.style.opacity = '1';
       diRedBox.style.transform = 'translateX(0)';
       diBarsContainer.style.opacity = '1';
-      Promise.all([diFetchMatchState(), diFetchLineupRate()]).then(function (r) {
+      diFetchPhase2Data().then(function (r) {
         if (token !== sceneToken) return;
         diApplyPhase2Data(r[0], r[1], false);
       });
@@ -614,7 +629,7 @@
        much of a head start as the title card's runway allows. Same
        shape as Team Hexagon's showTeamHexagon(), which starts its
        /match/state fetch before the transition even begins. */
-    var dataPromise = Promise.all([diFetchMatchState(), diFetchLineupRate()]);
+    var dataPromise = diFetchPhase2Data();
 
     diPreload([diLogoP1], 500).then(function () {
       if (token !== sceneToken) return;
@@ -696,7 +711,7 @@
     diRedBox.style.opacity = '1';
     diRedBox.style.transform = 'translateX(0)';
     diBarsContainer.style.opacity = '1';
-    Promise.all([diFetchMatchState(), diFetchLineupRate()]).then(function (r) {
+    diFetchPhase2Data().then(function (r) {
       if (token !== sceneToken) return;
       diApplyPhase2Data(r[0], r[1], false);
     });

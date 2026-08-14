@@ -551,6 +551,7 @@
   var ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER'];
   var token       = sessionStorage.getItem('match_token') || '';
   var roster      = null;
+  var teamLineups = {}; // last-used role assignment per teamId — see /match/team-lineups
   var dragData    = null;
   var localState  = {
     home:    { teamId: '', name: 'Home Team', short: 'HME', score: 0, lineup: [] },
@@ -585,7 +586,7 @@
           token = pw;
           sessionStorage.setItem('match_token', token);
           document.getElementById('login-err').textContent = '';
-          loadRoster().then(function () { showApp(); connectSSE(); startTimerTick(); });
+          Promise.all([loadRoster(), loadTeamLineups()]).then(function () { showApp(); connectSSE(); startTimerTick(); });
         } else {
           document.getElementById('login-err').textContent = 'Incorrect password.';
         }
@@ -598,6 +599,26 @@
       .then(function (r) { return r.json(); })
       .then(function (data) { roster = data; populateTeamDropdowns(); populateTalentSelects(); })
       .catch(function () { console.warn('Could not load mainroster.json'); });
+  }
+
+  /* Last-used role assignment per team (bench swaps) — restored the next
+     time that team is picked instead of resetting to the roster's
+     role-sorted default. See server.js's /match/team-lineups. */
+  function loadTeamLineups() {
+    return fetch('/match/team-lineups', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (data) { teamLineups = data || {}; })
+      .catch(function () { console.warn('Could not load team lineups'); });
+  }
+
+  function saveTeamLineup(teamId, lineup) {
+    if (!teamId) return;
+    teamLineups[teamId] = lineup;
+    fetch('/match/team-lineups', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, teamId: teamId, lineup: lineup }),
+    }).catch(function () {});
   }
 
   function populateTalentSelects() {
@@ -911,6 +932,7 @@
     renderRoster(targetSide);
     var patch = {}; patch[targetSide] = { lineup: lineup };
     push(patch);
+    saveTeamLineup(st.teamId, lineup);
   }
 
   /* ── PUSH ── */
@@ -939,7 +961,8 @@
     var teamId = document.getElementById(side + '-sel').value;
     if (!teamId || !roster) return;
     var team   = roster.teams[teamId] || {};
-    var lineup = buildDefaultLineup(teamId);
+    var saved  = teamLineups[teamId];
+    var lineup = (saved && saved.length) ? saved : buildDefaultLineup(teamId);
     localState[side] = { teamId: teamId, name: team.name || '', short: team.tag || '', score: localState[side].score || 0, lineup: lineup, coach: team.coach || '' };
     renderRoster(side);
     updatePreview();
@@ -1459,11 +1482,34 @@
      patch-input, since 'change' on a text field only fires on blur
      anyway and this also commits an Enter keypress immediately. */
   function bindTalentInput(el, apply) {
+    var savedValue = el.value;
     function commit() {
       apply(el.value);
       el.blur();
     }
-    el.addEventListener('blur', function () { apply(el.value); });
+    /* Browsers filter a <input list="datalist"> dropdown against whatever
+       text is already in the field, so a field already set to "Thea" only
+       ever shows "Thea" — clearing the value gives the datalist nothing to
+       filter against, so it shows every talent every time. Restored on
+       blur if the user didn't type/pick anything, since '' is never a real
+       value here (fields use the literal string "None").
+       Triggered on mousedown, not just focus: picking one option and then
+       clicking the dropdown arrow again to change it never re-fires focus
+       (the field never lost it), so a focus-only clear only ever worked
+       the first time a field was visited — mousedown fires on every click
+       regardless of whether the field is already focused. The `el.value
+       !== ''` guard stops the focus event that immediately follows a
+       mousedown from re-saving the already-cleared value over the real one. */
+    function prepOpen() {
+      if (el.value !== '') savedValue = el.value;
+      el.value = '';
+    }
+    el.addEventListener('mousedown', prepOpen);
+    el.addEventListener('focus', prepOpen);
+    el.addEventListener('blur', function () {
+      if (el.value === '') el.value = savedValue;
+      apply(el.value);
+    });
     el.addEventListener('keydown', function (e) { if (e.key === 'Enter') commit(); });
   }
   [0, 1, 2].forEach(function (i) {
