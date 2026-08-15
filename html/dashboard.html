@@ -698,6 +698,7 @@
 
 <nav id="tab-bar">
   <button class="tab-btn" data-page="matchboard">Match Board</button>
+  <button class="tab-btn" data-page="mapselection">Map Selection</button>
   <button class="tab-btn" data-page="standings">Standings</button>
   <button class="tab-btn active" data-page="control">Control</button>
   <button class="tab-btn" data-page="dynamic">Dynamic</button>
@@ -710,6 +711,12 @@
 <!-- Page 0: Match Board -->
 <div id="page-matchboard" class="page">
   <iframe id="matchboard-iframe" src="/html/match-dashboard.html" allow="autoplay"
+    style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Map Selection -->
+<div id="page-mapselection" class="page">
+  <iframe id="mapselection-iframe" src="/html/map-selection-dashboard.html" allow="autoplay"
     style="width:100%;flex:1;border:none;min-height:0;"></iframe>
 </div>
 
@@ -911,12 +918,47 @@
   var tabBtns = document.querySelectorAll('.tab-btn');
   tabBtns.forEach(function(btn) {
     btn.addEventListener('click', function() {
+      var wasControl = document.getElementById('page-control').classList.contains('active');
+      var wasEdit    = document.getElementById('page-edit').classList.contains('active');
+      var leavingControl = wasControl && btn.dataset.page !== 'control';
+      var leavingEdit     = wasEdit    && btn.dataset.page !== 'edit';
+
       tabBtns.forEach(function(b) { b.classList.remove('active'); });
       document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
       btn.classList.add('active');
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'control' && document.getElementById('layout').classList.contains('split')) {
         requestAnimationFrame(scalePreview);
+      }
+      // Returning to the Edit tab after it was released below — the
+      // dropdown still shows the last-picked config, so reload that same
+      // one instead of leaving the iframe blank.
+      if (btn.dataset.page === 'edit' && !editIfLoaded) {
+        loadConfig(document.getElementById('edit-config-select').value);
+      }
+
+      /* Release the Control tab's preview iframe / Edit tab's edit iframe
+         once navigated away from them — unlike Match Board/Map Selection
+         /Standings (always-mounted by design, meant to keep syncing in
+         the background), these two just show "whatever I'm currently
+         looking at / editing", and every distinct overlay file they've
+         ever loaded (each holding its own SSE connection to
+         /overlay/events) stays connected indefinitely otherwise. Across
+         a long dashboard session that clicks through several Control
+         entries and Edit configs, those add up against the browser's
+         ~6-connections-per-host cap until the whole dashboard hangs —
+         this is what caused the "have to close and reopen the tab"
+         lockup after the Map Selection tab's own always-on connection
+         used up the safety margin that used to absorb this. Re-picking
+         the same sidebar item / config on return reloads it fresh,
+         exactly like selecting it for the first time would. */
+      if (leavingControl) {
+        previewIframe.src = 'about:blank';
+        if (activeItem) { activeItem.classList.remove('active'); activeItem = null; }
+      }
+      if (leavingEdit) {
+        editIframe.src = 'about:blank';
+        editIfLoaded = false;
       }
     });
   });
@@ -1232,6 +1274,31 @@
     }).catch(function(){});
   }
 
+  /* ── MPL L3 (mpltag.html) — Map Selection tag state ──────────
+     Not a simple on/off toggle: /overlay/mapselecttag/show reveals ONE
+     more game each time it's called (and can be blocked server-side if
+     that game's map-selection data isn't locked yet), so it keeps its
+     own real Show/Hide buttons rather than becoming a single toggle
+     button like the families above. This is just the read-only
+     "● Showing (N)" / "○ Hidden" status pill next to those buttons. */
+  var mapSelectTagState = { revealedGames: 0 };
+  var mapSelectTagBadge = null;
+
+  function applyMapSelectTagBadge() {
+    if (!mapSelectTagBadge) return;
+    var n = mapSelectTagState.revealedGames || 0;
+    var shown = n > 0;
+    mapSelectTagBadge.textContent = shown ? ('● Showing (' + n + ')') : '○ Hidden';
+    mapSelectTagBadge.className   = 'btn btn-toggle ' + (shown ? 'btn-toggle-on' : 'btn-toggle-off');
+  }
+
+  function loadMapSelectTagState() {
+    return fetch('/overlay/mapselecttag-state', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      mapSelectTagState = d || mapSelectTagState;
+      applyMapSelectTagBadge();
+    }).catch(function(){});
+  }
+
   /* ── Live state sync ──────────────────────────────────────────
      Every toggle above already broadcasts its show/hide over the
      shared SSE stream (routes/overlay.js) for the overlay pages
@@ -1278,6 +1345,73 @@
      scene-changing event fires. */
   Object.keys(MPLFS_ACTIVE_FEATURE_MAP).concat(MPLFS_BOOL_KEYS, ['fs_hide']).forEach(function (name) {
     dashboardSSE.addEventListener(name, loadMplfsScene);
+  });
+
+  dashboardSSE.addEventListener('mapselecttag', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show' && typeof d.gameIndex === 'number') mapSelectTagState.revealedGames = d.gameIndex + 1;
+      else if (d.action === 'hide') mapSelectTagState.revealedGames = 0;
+      applyMapSelectTagBadge();
+    } catch (err) {}
+  });
+
+  /* ── Consolidated live-data relay for always-mounted tabs ──────
+     Match Board, Map Selection, and Standings iframes used to each open
+     their own persistent EventSource (/match/events, /mapselection/events,
+     /standings/events) for the entire life of the dashboard tab, since
+     those iframes are never torn down (see the .page markup above).
+     Every such connection permanently occupies one of the browser's
+     ~6-connections-per-host slots alongside whatever the Control tab's
+     preview iframe or the Edit tab's edit iframe currently holds — Map
+     Selection's own connection is what pushed that always-on baseline
+     high enough to lock the whole dashboard up after a few tab switches
+     (see CLAUDE.md for the incident and the two stopgap fixes that
+     preceded this one).
+     Now only the PARENT opens these three connections — fixed at
+     exactly 3, regardless of how many always-mounted tabs exist or how
+     the Control/Edit tabs are used — and relays data down to whichever
+     iframe(s) care via postMessage (see html/js/relay-client.js for the
+     iframe side). A future always-mounted tab that reuses one of these
+     same channels costs zero new connections; a genuinely new channel
+     costs exactly one, held here, never per-tab. */
+  var relayCache = { match: null, mapselection: null, standings: null };
+  var relayIframeIds = {
+    match:        ['matchboard-iframe', 'mapselection-iframe'], // Map Selection wants match/series changes too, instead of its own poll
+    mapselection: ['mapselection-iframe'],
+    standings:    ['standings-iframe'],
+  };
+
+  function relaySend(channel, data, ok) {
+    (relayIframeIds[channel] || []).forEach(function (id) {
+      var f = document.getElementById(id);
+      if (f && f.contentWindow) {
+        f.contentWindow.postMessage({ type: 'relay-data', channel: channel, data: data, ok: ok }, window.location.origin);
+      }
+    });
+  }
+
+  function openRelay(channel, path) {
+    var es = new EventSource(path);
+    es.onmessage = function (e) {
+      try { relayCache[channel] = JSON.parse(e.data); relaySend(channel, relayCache[channel], true); } catch (err) {}
+    };
+    es.onerror = function () { relaySend(channel, relayCache[channel], false); };
+  }
+  openRelay('match', '/match/events');
+  openRelay('mapselection', '/mapselection/events');
+  openRelay('standings', '/standings/events');
+
+  // Bootstrap request: an iframe that just finished loading (and logging
+  // in) asks for whatever this parent currently has cached, instead of
+  // waiting for the next live change to get its first snapshot.
+  window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) return;
+    var msg = e.data;
+    if (!msg || msg.type !== 'relay-request') return;
+    if (relayCache[msg.channel] != null && e.source) {
+      e.source.postMessage({ type: 'relay-data', channel: msg.channel, data: relayCache[msg.channel], ok: true }, window.location.origin);
+    }
   });
 
   /* ── Overlay definitions ──────────────────────────────────── */
@@ -1348,6 +1482,24 @@
          part of mplfs.html's scene switcher (see ENTVC.html's connectSSE()
          and restoreScene() for why it ignores remote show/hide entirely).
          This entry is just a link + live preview for OBS setup. */
+    },
+    {
+      id: 'mpltag',
+      name: 'MPL L3',
+      file: 'mpltag.html',
+      show: '/overlay/mapselecttag/show',
+      hide: '/overlay/mapselecttag/hide',
+      /* "Show" reveals one more game's recap (blocked server-side until
+         that game's map-selection data is locked), not a plain on/off
+         toggle — see mapSelectTagState above — so it keeps real
+         Show/Hide buttons plus a read-only status pill instead of the
+         mplfs-style single toggle button. */
+      mapSelectTagStatus: true,
+      /* "◈ Preview" calls window.previewTrigger('mapselecttag', action)
+         inside the loaded preview iframe directly — same as mplfs's
+         per-feature preview buttons — so it only animates in the
+         Control tab's preview pane, never the real broadcast/OBS state. */
+      previewButton: true,
     },
     {
       id: 'mploverlay7',
@@ -1868,9 +2020,24 @@
     if (_hrmSwapTimer) { clearInterval(_hrmSwapTimer); _hrmSwapTimer = null; }
     var body = controlPanelBody;
     body.innerHTML = '';
+    mapSelectTagBadge = null; // body.innerHTML just wiped any previous badge element
 
     if (ov.ingameControls)    { buildIngameControls(body);    return; }
     if (ov.ingameHrmControls) { buildIngameHrmControls(body, ov.ingameHrmControls); return; }
+
+    /* Status pill (currently only mpltag/"MPL L3" opts in) */
+    if (ov.mapSelectTagStatus) {
+      var statusRow = el('div', 'feature-row');
+      statusRow.appendChild(el('div', 'feature-name', 'Status'));
+      var statusBtns = el('div', 'feature-btns');
+      mapSelectTagBadge = el('button', 'btn btn-toggle btn-toggle-off', '○ Hidden');
+      mapSelectTagBadge.disabled = true;
+      statusBtns.appendChild(mapSelectTagBadge);
+      statusRow.appendChild(statusBtns);
+      body.appendChild(statusRow);
+      applyMapSelectTagBadge();
+      loadMapSelectTagState();
+    }
 
     /* Show / Hide row */
     if (ov.show || ov.hide || ov.globalHide) {
@@ -1908,6 +2075,25 @@
           b.addEventListener('click', function () { copyRoute(path, 'Hide All route', b); });
         })(ov.globalHide, ghCb);
         row.appendChild(ghCb);
+      }
+      if (ov.previewButton && (ov.show || ov.hide)) {
+        var tlpvb = document.createElement('button');
+        tlpvb.className = 'btn btn-preview-live';
+        tlpvb.textContent = '◈ Preview';
+        (function (o) {
+          var previewActive = false;
+          tlpvb.addEventListener('click', function () {
+            previewActive = !previewActive;
+            tlpvb.classList.toggle('active', previewActive);
+            var iw = previewIframe && previewIframe.contentWindow;
+            if (!iw || typeof iw.previewTrigger !== 'function') return;
+            var route = o.show || o.hide;
+            var parts = route.split('/');
+            var eventName = parts[parts.length - 2];
+            iw.previewTrigger(eventName, previewActive ? 'show' : 'hide');
+          });
+        })(ov);
+        row.appendChild(tlpvb);
       }
       body.appendChild(row);
     }
@@ -2444,6 +2630,40 @@
     { group: 'Hosts', id: '.ws-hosts-slot-right',  name: 'Photo (Right)'  },
   ];
 
+  /* ── Map Selection tag (mpltag.html) element defaults ──────────
+     Class selectors, not IDs — mpltag.html repeats these once per game
+     in the series, so one saved override (a CSS rule keyed by the bare
+     class) applies to every game block at once, current and future.
+     .ms-win-text has no left/top/width/height here since it's meant to
+     always fill its parent box exactly (100%/100%) — only its fontSize
+     is exposed, matching the .draft-map-name-text precedent below of
+     only registering the keys that should actually be editable. */
+  var MPLTAG_DEFAULTS = {
+    '.ms-sidebox':      { left: 29,  top: 747,  width: 353, height: 154 },
+    '.ms-title':        { left: 15,  top: 5,    width: 176, height: 22,  fontSize: 18 },
+    '.ms-toss-logo':    { left: 17,  top: 41,   width: 103, height: 103 },
+    '.ms-toss-tricode': { left: 174, top: 41,   width: 166, height: 103, fontSize: 92 },
+    '.ms-mapbox':       { left: 29,  top: 898,  width: 353, height: 123 },
+    '.ms-map-icon':     { left: 10,  top: 27,   width: 64,  height: 64  },
+    '.ms-map-name':     { left: 115, top: 44,   width: 230, height: 31,  fontSize: 34 },
+    '.ms-map-label':    { left: 115, top: 76,   width: 230, height: 18,  fontSize: 17 },
+    '.ms-winbox':       { left: 30,  top: 1020, width: 139, height: 31 },
+    '.ms-win-text':     { fontSize: 24 },
+  };
+
+  var MPLTAG_ELEMENTS = [
+    { group: 'Side Select', id: '.ms-sidebox',      name: 'Side Select Box' },
+    { group: 'Side Select', id: '.ms-title',        name: 'Match/Game Title' },
+    { group: 'Side Select', id: '.ms-toss-logo',    name: 'Toss Winner Logo' },
+    { group: 'Side Select', id: '.ms-toss-tricode', name: 'Toss Winner Tricode' },
+    { group: 'Map Select',  id: '.ms-mapbox',       name: 'Map Select Box' },
+    { group: 'Map Select',  id: '.ms-map-icon',     name: 'Map Icon' },
+    { group: 'Map Select',  id: '.ms-map-name',     name: 'Map Name' },
+    { group: 'Map Select',  id: '.ms-map-label',    name: 'Map Selected Label' },
+    { group: 'Win Banner',  id: '.ms-winbox',       name: 'Win Banner Box' },
+    { group: 'Win Banner',  id: '.ms-win-text',     name: 'Win Banner Text' },
+  ];
+
   /* ── EN Casters (ENTVC.html standalone Waiting TVC) element defaults ──
      Same 3-up layout as Casters, but these selectors only exist inside
      ENTVC.html's DOM (ws-encasters-slot-*, not ws-casters-slot-*), so they
@@ -2773,6 +2993,15 @@
       defaultsKey: 'sb_edit_defaults_sponsortv',
       elements:    STV_ELEMENTS,
       defaults:    STV_DEFAULTS,
+    },
+    mpltag_mapselect: {
+      label:       'Map Selection · mpltag',
+      file:        'mpltag.html',
+      styleFile:   'mpltag',
+      defaultsKey: 'sb_edit_defaults_mpltag_mapselect',
+      elements:    MPLTAG_ELEMENTS,
+      defaults:    MPLTAG_DEFAULTS,
+      showFn:      'showMpltagForEdit',
     },
   };
   var currentConfigKey = 'mploverlay_v7';

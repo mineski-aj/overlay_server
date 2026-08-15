@@ -101,6 +101,48 @@ app.post('/standings/state', function (req, res) {
   res.json({ ok: true, state: standingsState.get() });
 });
 
+// Map Selection state — coin toss / side / map / winner per game, own
+// dashboard tab. Same dashboard password as match/standings state.
+const mapSelectionState = require('./lib/mapSelectionState');
+
+app.get('/mapselection/state', function (req, res) {
+  res.json(mapSelectionState.get());
+});
+
+app.get('/mapselection/events', function (req, res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  mapSelectionState.addClient(res);
+  req.on('close', function () { mapSelectionState.removeClient(res); });
+});
+
+app.post('/mapselection/auth', function (req, res) {
+  var token = (req.body || {}).token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ ok: false });
+  res.json({ ok: true });
+});
+
+app.post('/mapselection/action', function (req, res) {
+  var body   = req.body || {};
+  var token  = body.token;
+  if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
+  var action = body.action;
+  var game   = body.game;
+  switch (action) {
+    case 'toss':   mapSelectionState.setToss(game, body.winner); break;
+    case 'side':   mapSelectionState.setSide(game, body.side); break;
+    case 'map':    mapSelectionState.setMap(game, body.map); break;
+    case 'winner': mapSelectionState.setWinner(game, body.winner); break;
+    case 'reopen': mapSelectionState.reopenGame(game); break;
+    case 'resetGame': mapSelectionState.resetGame(game); break;
+    case 'resetAll':  mapSelectionState.resetAll(); break;
+    default: return res.status(400).json({ error: 'Unknown action' });
+  }
+  res.json({ ok: true, state: mapSelectionState.get() });
+});
+
 // Team roster — mainroster.json. Reads go through the existing static
 // file serving (GET /mainroster.json, already no-cache'd below); this is
 // just the write side, same dashboard password as match/standings state.
@@ -202,6 +244,9 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`  Timer      → POST http://localhost:${PORT}/match/timer  { action: start|pause|set, seconds }`);
   console.log(`  Lineups    → GET  http://localhost:${PORT}/match/team-lineups`);
   console.log(`             → POST http://localhost:${PORT}/match/team-lineups  (auth)`);
+  console.log(`  MapSelect  → GET  http://localhost:${PORT}/mapselection/state`);
+  console.log(`             → POST http://localhost:${PORT}/mapselection/action  (auth)`);
+  console.log(`             → GET  http://localhost:${PORT}/mapselection/events  (SSE)`);
   console.log(`  Sponsors   → GET  http://localhost:${PORT}/api/sponsors`);
   console.log(`             → GET  http://localhost:${PORT}/api/sponsors-config`);
   console.log(`             → POST http://localhost:${PORT}/api/sponsors-config  (auth)`);

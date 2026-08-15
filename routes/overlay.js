@@ -715,6 +715,64 @@ router.get('/overlay/killevent', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, video, playerName, role, camp });
 });
 
+// Map Selection tag (html/mpltag.html) — sequential per-game reveal.
+// Each "show" call does ONE of, in priority order:
+//   1. If an already-revealed game is still waiting on its winner, and
+//      the winner has since been picked — reveal just that game's win
+//      banner (phase 3) and stop there.
+//   2. Otherwise, reveal the next game's side+map recap (phases 1-2),
+//      gated on toss winner + side + map being picked (the winner is
+//      NOT required — it can be left open). If that game's winner
+//      already happens to be known at reveal time, its win banner is
+//      included in the same reveal instead of requiring an extra press.
+// "hide" clears everything at once and resets both counters so the
+// next show cycle starts back at game 1.
+const mapSelectionState = require('../lib/mapSelectionState');
+
+router.get('/overlay/mapselecttag-state', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.mapSelectTag);
+});
+
+router.get('/overlay/mapselecttag/show', (req, res) => {
+  const ms  = mapSelectionState.get();
+  const tag = state.mapSelectTag;
+
+  // Priority 1 — catch up a pending win for an already-revealed game.
+  if (tag.revealedWins < tag.revealedGames) {
+    const idx = tag.revealedWins;
+    const pending = ms.games[idx];
+    if (pending && pending.winner) {
+      tag.revealedWins = idx + 1;
+      const payload = JSON.stringify({ action: 'showWinner', gameIndex: idx, game: pending, match: ms.match, home: ms.home, away: ms.away });
+      state.overlayClients.forEach(c => { try { c.write(`event: mapselecttag\ndata: ${payload}\n\n`); } catch {} });
+      return res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, action: 'showWinner', gameIndex: idx });
+    }
+  }
+
+  // Priority 2 — reveal the next new game's side + map.
+  const nextIdx = tag.revealedGames;
+  const game = ms.games[nextIdx];
+  const ready = game && game.tossWinner && game.tossSide && game.map;
+  if (nextIdx >= ms.maxGames || !ready) {
+    return res.set({ 'Cache-Control': 'no-store' }).json({
+      ok: false, blocked: true,
+      reason: (nextIdx >= ms.maxGames) ? 'All games in this series are already revealed.' : `Game ${nextIdx + 1}'s team and map selection isn't complete yet.`,
+    });
+  }
+  tag.revealedGames = nextIdx + 1;
+  if (game.winner) tag.revealedWins = tag.revealedGames; // winner already known — include it in this same reveal
+  const payload = JSON.stringify({ action: 'show', gameIndex: nextIdx, game: game, match: ms.match, home: ms.home, away: ms.away });
+  state.overlayClients.forEach(c => { try { c.write(`event: mapselecttag\ndata: ${payload}\n\n`); } catch {} });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, action: 'show', gameIndex: nextIdx });
+});
+
+router.get('/overlay/mapselecttag/hide', (req, res) => {
+  state.mapSelectTag.revealedGames = 0;
+  state.mapSelectTag.revealedWins  = 0;
+  state.overlayClients.forEach(c => { try { c.write('event: mapselecttag\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, action: 'hide' });
+});
+
 // GET/POST /overlay/:slot — generic show/hide slot handler (must be LAST)
 router.all('/overlay/:slot', (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }

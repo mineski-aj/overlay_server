@@ -21,10 +21,25 @@ Default port 3000 (autoPort in `.claude/launch.json`). Dashboard is at
 - `html/mplfs.html` — the main scoreboard/scene overlay (this is the file
   that gets extended with new "scenes" — MVP Highlights, MVP Scene, Final
   Team, Waiting Lobby, Team Line-Up, Casters, Hosts, Standings...).
+- `html/mpltag.html` — lower thirds and other "tag" overlays (small,
+  self-contained broadcast graphics that sit on top of the main feed —
+  e.g. Map Selection) as opposed to `mplfs.html`'s full-screen scenes.
+  Same 1920x1080 transparent-canvas broadcast-overlay conventions as
+  `mplfs.html` (see "Scene architecture" below), but each tag is much
+  smaller and simpler than a full scene, and multiple tags can in
+  principle be on screen at once since they don't share `mplfs.html`'s
+  mutually-exclusive `activeFeature` slot. New tags get added here.
 - `html/dashboard.html` — control panel: SHOW/HIDE/PREVIEW buttons per
   feature, plus the **Edit tab** (drag/resize/font-size editor for every
   overlay element, persisted to `overlay_styles.json` via
   `routes/overlayStyles.js`).
+- `html/match-dashboard.html`, `html/map-selection-dashboard.html`,
+  `html/standings-dashboard.html` — Match Board / Map Selection /
+  Standings tabs, each a static always-mounted iframe inside
+  `dashboard.html` (see "Dashboard architecture" below for why they
+  share a connection budget and must use `html/js/relay-client.js`
+  instead of their own `EventSource`, not just for these three but for
+  any future tab of the same kind).
 - `heromvp/`, `herohighlights/`, `hero/`, `items/`, `role/`, `logos/`,
   `emblem/`, `photos/`, `hires/` — image asset folders, one per asset type
   (see naming conventions below).
@@ -35,6 +50,80 @@ Default port 3000 (autoPort in `.claude/launch.json`). Dashboard is at
   cross-project memory. Check `reference_mlbb_api.md` for the live
   main-info API shape, and the `feedback_*` files for standing UI rules
   (animation timing, feature-toggle state, fetch caching) that apply here.
+
+## Dashboard architecture — tabs, iframes, and the connection budget
+
+`html/dashboard.html` is one page with several `.page` divs (Match
+Board, Map Selection, Standings, Roster, Sponsors, Dynamic, Control,
+Edit, Settings), switched by CSS class toggling on click — **not** by
+navigating away, so most of them stay mounted (scripts still running)
+for the entire life of the dashboard tab:
+
+- **Always-mounted, by design** — Match Board (`match-dashboard.html`),
+  Map Selection (`map-selection-dashboard.html`), Standings
+  (`standings-dashboard.html`) each sit in a static `<iframe>` in the
+  markup and are never torn down when you switch tabs, so their live
+  state keeps syncing in the background.
+- **Released on navigate-away** — the Control tab's `#preview-iframe`
+  and the Edit tab's `#edit-iframe` show "whatever is currently
+  selected/being edited", not a fixed thing, so their `src` resets to
+  `about:blank` the moment you switch to a different top-level tab
+  (the `tabBtns` click handler). Returning to Edit reloads the
+  last-picked config automatically; returning to Control needs a fresh
+  sidebar click.
+
+**Why this matters — the browser's per-host connection cap.** Plain
+HTTP/1.1 (this server, no HTTP/2) caps a browser at ~6 concurrent
+connections to one host. Every persistent `EventSource` an
+always-mounted tab holds open permanently occupies one of those 6
+slots for as long as the dashboard tab stays open. Add Control/Edit's
+own connection on top and it's easy to hit the ceiling — when that
+happens, the 7th+ request from that tab (including the tab's own
+refresh) just queues forever with no error, which reads as "the whole
+dashboard hangs, only fixable by closing and reopening the tab". This
+actually happened: adding the Map Selection tab (a 4th always-mounted
+SSE connection, plus a redundant 5th it briefly opened by mistake) ate
+the safety margin that used to absorb Control+Edit's own connections,
+and locked the dashboard up after a few tab switches.
+
+**The fix — one shared connection per backend channel, held by the
+parent, not by each tab.** `dashboard.html` now opens exactly 3 fixed
+`EventSource` connections itself (`/match/events`, `/mapselection/events`,
+`/standings/events`) and relays data down to whichever iframe(s) need
+it via `postMessage` — see `html/js/relay-client.js` (the iframe side:
+`connectRelay(channel, onData, onStatus)`, which also sends an initial
+`relay-request` so the iframe gets a snapshot immediately instead of
+waiting for the next live change) and `dashboard.html`'s `relayCache` /
+`relayIframeIds` / `openRelay` / `relaySend` (the parent side). **Match
+Board, Map Selection, and Standings no longer open their own
+EventSource at all** — they call `connectRelay(...)` instead. This
+caps the always-mounted connection count at a fixed 3 forever,
+regardless of how many such tabs exist or get added later; a
+brand-new always-mounted tab that reuses one of these 3 channels costs
+zero new connections, and a genuinely new channel costs exactly one,
+added to the parent's fixed set — never per-tab.
+
+**If you add a new always-mounted dashboard tab that needs live data,
+do NOT give it its own `new EventSource(...)`.** Either reuse one of
+the 3 existing channels (add its iframe id to `relayIframeIds` in
+`dashboard.html`) or add a 4th channel there (a new
+`openRelay(name, path)` call) — the tab's own script should only ever
+call `connectRelay(channel, onData, onStatus)` from
+`html/js/relay-client.js`. This relay setup assumes the iframe is
+always loaded inside `dashboard.html` (it posts to `window.parent`) —
+these 3 dashboard sub-pages aren't meant to be opened standalone/
+directly by URL.
+
+Control/Edit's connections weren't consolidated the same way — they
+load real dual-purpose overlay files (`mplfs.html`, `Draft.html`,
+`mpltag.html`) that must also work standalone as real OBS browser
+sources with no parent dashboard to relay from, so the
+release-on-navigate-away fix above is what protects them instead.
+Consolidating those too (having them detect "am I embedded in the
+dashboard's preview right now vs. running standalone" and pick
+postMessage vs. their own EventSource accordingly) is a reasonable
+future improvement, but a riskier one since it touches the same code
+path real broadcasts depend on — hasn't been done yet.
 
 ## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
 
@@ -72,6 +161,23 @@ what changed:
   — both files fetch the same endpoint fresh each time the scene is
   shown, so tuning it once (from either file's Edit panel) affects
   both.
+
+## Working from pasted design-tool CSS
+
+The user often pastes CSS blocks exported from a design tool (layer
+names like `.Layer_10`, `.Rectangle_2_copy`, `.Triangle_1_copy_2`) to
+spec out a new overlay element's placement. **Extract only `left`,
+`top`, `width`, and `height` (the position/size) from each block —
+ignore everything else in it**: `background-color`/`background-image`
+values, `z-index`, border-radius, etc. are placeholder/export noise
+from the design tool, not real styling intent (the actual background
+is almost always a real asset the user names separately, e.g. "this
+container's background is `mapselectblue.png`"; the placeholder fill
+color in the pasted CSS is not that asset's color). Nesting matters
+though: when the user says "inside this container, .Foo goes here",
+`.Foo`'s `left`/`top` are relative to that parent container, not the
+overall 1920x1080 canvas — build it as a positioned child, not another
+absolute-to-canvas sibling.
 
 ## Scene architecture (how every overlay page is built)
 

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <script src="js/cache-bust.js"></script>
+  <script src="js/relay-client.js"></script>
   <title>Standings Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -245,11 +246,9 @@
     });
   });
 
-  /* ── SSE ── */
+  /* ── SSE (relayed via the parent dashboard — see html/js/relay-client.js) ── */
   function connectSSE() {
-    var es = new EventSource('/standings/events');
-    es.onmessage = function (e) { applyState(JSON.parse(e.data)); setSyncStatus(true); };
-    es.onerror   = function ()  { setSyncStatus(false); };
+    connectRelay('standings', applyState, setSyncStatus);
   }
   function setSyncStatus(ok) {
     document.getElementById('sync-dot').className     = ok ? 'ok' : 'err';
