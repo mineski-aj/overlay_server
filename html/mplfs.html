@@ -2884,7 +2884,13 @@
       sseSource = new EventSource(buildUrl('/overlay/events'));
 
       sseSource.onopen = () => {
+        const wasDisconnected = sseDot.className === 'error';
         sseDot.className = 'connected';
+        // Only the FIRST open is the initial page-load connection (handled
+        // by the unconditional restoreScene() call below); every open after
+        // an 'error' is a genuine reconnect, so re-sync in case a show/hide
+        // fired during the gap.
+        if (wasDisconnected) restoreScene(true);
       };
       sseSource.onerror = () => {
         sseDot.className = 'error';
@@ -6140,6 +6146,18 @@
        FEATURE SWITCHER — only one feature live at a time
     ════════════════════════════════════════════════ */
     let activeFeature = null;
+    // activeFeature is only written at the END of transitionToImpl, after
+    // awaiting the previous scene's hide-out — so a second transitionTo()
+    // call landing while that's still in flight can't tell "already
+    // showing/being shown" from "genuinely different", since activeFeature
+    // hasn't caught up yet. requestedFeature is the same information but
+    // written synchronously the instant transitionTo() is called, so
+    // restoreScene()'s reconnect guard (see below) always compares against
+    // an up-to-date target instead of a lagging one. This is what caused a
+    // real "looping waiting screen" bug: two reconnects landing close
+    // together both saw a stale activeFeature, both decided the scene
+    // needed to be (re)shown, and each queued its own full hide→reshow.
+    let requestedFeature = null;
 
     /* Add new Post scene names here — match board follows automatically */
     const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats']);
@@ -6167,6 +6185,7 @@
     let transitionChain = Promise.resolve();
 
     function transitionTo(newFeature) {
+      requestedFeature = newFeature;
       return transitionChain = transitionChain.then(() => transitionToImpl(newFeature));
     }
 
@@ -6186,6 +6205,7 @@
       if (!activeFeature) return Promise.resolve();
       const prev = activeFeature;
       activeFeature = null;
+      requestedFeature = null;
       if (prev === 'hearts')   return hidePostHearts();
       if (prev === 'richguy')  return hidePostRichguy();
       if (prev === 'waiting')  return hideWaitingScreen();
@@ -7115,31 +7135,46 @@
 
     startRichguyPoll();
 
-    async function restoreScene() {
+    // isReconnect: true when called from the SSE onopen handler after a
+    // dropped connection, as opposed to the unconditional first call at
+    // page load. EventSource auto-reconnects the transport on its own, but
+    // never replays whatever show/hide event happened to fire during the
+    // gap — without this, a network blip during a live 12h broadcast could
+    // leave the overlay silently stuck on a stale scene until someone
+    // notices. On a reconnect, only touch what actually drifted from what's
+    // already showing: showMatchBoard/showMiddleBoard/showPlayerBoard are
+    // idempotent (mbVisible/mdbVisible/pbVisible-guarded), safe to call
+    // either way, but the exclusive activeFeature slot's show functions are
+    // NOT — transitionToImpl() unconditionally hides-then-reshows, so
+    // blindly recalling one that's already correct would flicker live.
+    async function restoreScene(isReconnect) {
       try {
         const r = await fetch(buildUrl('/overlay/mplfs-scene'));
         const scene = await r.json();
-        if      (scene.activeFeature === 'hearts')   showPostHearts();
-        else if (scene.activeFeature === 'itemline') showItemTimeline();
-        else if (scene.activeFeature === 'emblems')  showPostEmblems();
-        else if (scene.activeFeature === 'items')    showPostItems();
-        else if (scene.activeFeature === 'stats')    showPostStats();
-        else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
-        else if (scene.activeFeature === 'waiting')  showWaitingScreen();
-        else if (scene.activeFeature === 'lobby')    showWaitingLobby();
-        else if (scene.activeFeature === 'hexagon')  showTeamHexagon();
-        else if (scene.activeFeature === 'highlights') showHighlights();
-        else if (scene.activeFeature === 'mvp')        showMvpScene();
-        else if (scene.activeFeature === 'credits')    showCreditsScene();
-        else if (scene.activeFeature === 'finalteam') showFinalTeam();
-        else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
-        else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
-        else if (scene.activeFeature === 'schedule') showTodaySchedule();
-        else if (scene.activeFeature === 'tomorrow') showTomorrowSchedule();
-        else if (scene.activeFeature === 'standings') showStandings();
-        else if (scene.matchboard)                   showMatchBoard();
-        if (scene.middleboard)                       showMiddleBoard();
-        if (scene.playerboard)                       showPlayerBoard();
+        if (!isReconnect || scene.activeFeature !== requestedFeature) {
+          if      (scene.activeFeature === 'hearts')   showPostHearts();
+          else if (scene.activeFeature === 'itemline') showItemTimeline();
+          else if (scene.activeFeature === 'emblems')  showPostEmblems();
+          else if (scene.activeFeature === 'items')    showPostItems();
+          else if (scene.activeFeature === 'stats')    showPostStats();
+          else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
+          else if (scene.activeFeature === 'waiting')  showWaitingScreen();
+          else if (scene.activeFeature === 'lobby')    showWaitingLobby();
+          else if (scene.activeFeature === 'hexagon')  showTeamHexagon();
+          else if (scene.activeFeature === 'highlights') showHighlights();
+          else if (scene.activeFeature === 'mvp')        showMvpScene();
+          else if (scene.activeFeature === 'credits')    showCreditsScene();
+          else if (scene.activeFeature === 'finalteam') showFinalTeam();
+          else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
+          else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
+          else if (scene.activeFeature === 'schedule') showTodaySchedule();
+          else if (scene.activeFeature === 'tomorrow') showTomorrowSchedule();
+          else if (scene.activeFeature === 'standings') showStandings();
+          else if (!scene.activeFeature)                hideActiveFeature();
+        }
+        if (scene.matchboard)  showMatchBoard();  else hideMatchBoard();
+        if (scene.middleboard) showMiddleBoard(); else hideMiddleBoard();
+        if (scene.playerboard) showPlayerBoard(); else hidePlayerBoard();
       } catch {}
     }
     restoreScene();

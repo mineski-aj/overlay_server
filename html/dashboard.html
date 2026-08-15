@@ -1363,18 +1363,27 @@
      those iframes are never torn down (see the .page markup above).
      Every such connection permanently occupies one of the browser's
      ~6-connections-per-host slots alongside whatever the Control tab's
-     preview iframe or the Edit tab's edit iframe currently holds — Map
-     Selection's own connection is what pushed that always-on baseline
-     high enough to lock the whole dashboard up after a few tab switches
-     (see CLAUDE.md for the incident and the two stopgap fixes that
-     preceded this one).
-     Now only the PARENT opens these three connections — fixed at
-     exactly 3, regardless of how many always-mounted tabs exist or how
-     the Control/Edit tabs are used — and relays data down to whichever
-     iframe(s) care via postMessage (see html/js/relay-client.js for the
-     iframe side). A future always-mounted tab that reuses one of these
-     same channels costs zero new connections; a genuinely new channel
-     costs exactly one, held here, never per-tab. */
+     preview iframe or the Edit tab's edit iframe currently holds — AND
+     alongside any OTHER tab open in the same browser to this same host
+     (the 6-connection cap is per-origin for the whole browser, not
+     per-tab). An earlier version of this fix gave the dashboard tab its
+     own 3 dedicated connections on top of dashboardSSE below — fixed
+     count regardless of navigation, but still 4 permanent connections
+     from the dashboard tab ALONE, leaving only 2 spare for the entire
+     rest of the browser. That's why opening just one more tab (e.g.
+     mplfs.html, which needs its own /overlay/events connection) could
+     still tip the whole browser over the cap and hang everything.
+     matchState.js already fans its broadcasts out over the SAME shared
+     /overlay/events stream (named "match") purely so pages don't need a
+     dedicated connection just for this — standingsState.js and
+     mapSelectionState.js now do the same (named "standings"/
+     "mapselection"). So instead of 3 extra connections, this listens
+     for those 3 named events on the dashboardSSE connection this page
+     already has open — one connection total for the whole dashboard
+     tab's live data, not four. A brand-new always-mounted tab that
+     needs live data should make its backend module forward onto
+     overlayClients the same way, then just add a listener here — never
+     open its own EventSource. */
   var relayCache = { match: null, mapselection: null, standings: null };
   var relayIframeIds = {
     match:        ['matchboard-iframe', 'mapselection-iframe'], // Map Selection wants match/series changes too, instead of its own poll
@@ -1391,16 +1400,41 @@
     });
   }
 
-  function openRelay(channel, path) {
-    var es = new EventSource(path);
-    es.onmessage = function (e) {
-      try { relayCache[channel] = JSON.parse(e.data); relaySend(channel, relayCache[channel], true); } catch (err) {}
-    };
-    es.onerror = function () { relaySend(channel, relayCache[channel], false); };
+  // dashboardSSE's own connection carries no per-channel snapshot on
+  // connect (unlike the dedicated /match/events-style endpoints, which
+  // always write one immediately) — seed each channel with one plain GET
+  // each so an iframe's bootstrap relay-request has something to return
+  // immediately instead of waiting for the next live change.
+  function seedRelay(channel, path) {
+    fetch(path, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (data) {
+      relayCache[channel] = data;
+      relaySend(channel, data, true);
+    }).catch(function () {});
   }
-  openRelay('match', '/match/events');
-  openRelay('mapselection', '/mapselection/events');
-  openRelay('standings', '/standings/events');
+  seedRelay('match', '/match/state');
+  seedRelay('mapselection', '/mapselection/state');
+  seedRelay('standings', '/standings/state');
+
+  dashboardSSE.addEventListener('match', function (e) {
+    try { relayCache.match = JSON.parse(e.data); relaySend('match', relayCache.match, true); } catch (err) {}
+  });
+  dashboardSSE.addEventListener('mapselection', function (e) {
+    try { relayCache.mapselection = JSON.parse(e.data); relaySend('mapselection', relayCache.mapselection, true); } catch (err) {}
+  });
+  dashboardSSE.addEventListener('standings', function (e) {
+    // "standings" is also used (with a {action:'show'|'hide'} payload, no
+    // .teams) for mplfs.html's Standings SCENE toggle on this exact same
+    // shared stream — ignore anything that isn't the team-rankings shape.
+    try {
+      var msg = JSON.parse(e.data);
+      if (!msg || !Array.isArray(msg.teams)) return;
+      relayCache.standings = msg;
+      relaySend('standings', msg, true);
+    } catch (err) {}
+  });
+  dashboardSSE.addEventListener('error', function () {
+    ['match', 'mapselection', 'standings'].forEach(function (ch) { relaySend(ch, relayCache[ch], false); });
+  });
 
   // Bootstrap request: an iframe that just finished loading (and logging
   // in) asks for whatever this parent currently has cached, instead of

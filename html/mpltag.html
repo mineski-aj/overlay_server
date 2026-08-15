@@ -361,6 +361,14 @@
   // Edit tab depends on.
   var editModeActive = false;
 
+  // Also called again on SSE reconnect (see connectSSE below) to re-sync
+  // after a network gap — EventSource auto-reconnects the transport but
+  // never replays a show/hide that fired while disconnected. Safe to call
+  // repeatedly: showGame()/showWinner() only add CSS classes that may
+  // already be present (a no-op, not a re-animation), unlike mplfs.html's
+  // exclusive-scene transitions. The one case that needs an explicit
+  // check is a missed HIDE — revealedGames back at 0 while this page is
+  // still showing something from before the gap.
   function restore() {
     Promise.all([
       fetch('/mapselection/state', { cache: 'no-store' }).then(function (r) { return r.json(); }),
@@ -370,6 +378,7 @@
       var ms = results[0], tagState = results[1];
       var revealedGames = tagState.revealedGames || 0;
       var revealedWins  = tagState.revealedWins  || 0;
+      if (revealedGames === 0) { if (pageOn) hideAll(); return; }
       for (var i = 0; i < revealedGames; i++) {
         var game = ms.games[i];
         if (!game) continue;
@@ -380,8 +389,14 @@
   }
 
   /* ── SSE ── */
+  var _sseWasDisconnected = false;
   function connectSSE() {
     var es = new EventSource('/overlay/events');
+    es.onopen = function () {
+      if (_sseWasDisconnected && !editModeActive) restore();
+      _sseWasDisconnected = false;
+    };
+    es.onerror = function () { _sseWasDisconnected = true; };
     es.addEventListener('mapselecttag', function (e) {
       if (editModeActive) return; // real show/hide from elsewhere must not touch the Edit tab's sample block
       var msg = JSON.parse(e.data);
