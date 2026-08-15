@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <script src="js/cache-bust.js"></script>
+  <script src="js/overlay-sse-shim.js"></script>
   <title>Overlay Dashboard</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -1307,7 +1308,10 @@
      triggered the change — its own buttons, a universal hide button,
      another dashboard tab, or a raw request — instead of only trusting
      whatever its own last click assumed happened. */
-  var dashboardSSE = new EventSource('/overlay/events');
+  // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js) —
+  // this page opens zero real connections of its own, same as every other
+  // overlay page now; see CLAUDE.md's "Dashboard architecture" section.
+  var dashboardSSE = createOverlaySSE();
 
   dashboardSSE.addEventListener('featuretoggle', function (e) {
     try {

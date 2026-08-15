@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPLFS Overlay</title>
   <style>
     @font-face {
@@ -2881,7 +2882,11 @@
 
     function connectSSE() {
       if (sseSource) sseSource.close();
-      sseSource = new EventSource(buildUrl('/overlay/events'));
+      // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js)
+      // — this page opens zero real connections of its own now, so having
+      // several overlay browser sources/tabs open at once no longer eats
+      // into the browser's shared connection pool per page.
+      sseSource = createOverlaySSE();
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';

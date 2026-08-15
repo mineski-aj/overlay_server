@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPL Tags Overlay</title>
   <style>
     @font-face {
@@ -389,9 +390,13 @@
   }
 
   /* ── SSE ── */
+  // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js) —
+  // this page opens zero real connections of its own now, so having
+  // several overlay browser sources/tabs open at once no longer eats into
+  // the browser's shared connection pool per page.
   var _sseWasDisconnected = false;
   function connectSSE() {
-    var es = new EventSource('/overlay/events');
+    var es = createOverlaySSE();
     es.onopen = function () {
       if (_sseWasDisconnected && !editModeActive) restore();
       _sseWasDisconnected = false;

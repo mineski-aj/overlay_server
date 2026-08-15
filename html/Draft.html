@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
   <title>Draft Overlay</title>
   <style>
     @font-face {
@@ -2319,7 +2320,11 @@
   /* SSE — listen for global debug hide.
      Opened after a short delay so Chrome's tab throbber settles on load. */
   setTimeout(function() {
-    var sse = new EventSource('/overlay/events');
+    // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js)
+    // — this page opens zero real connections of its own now, so having
+    // several overlay browser sources/tabs open at once no longer eats
+    // into the browser's shared connection pool per page.
+    var sse = createOverlaySSE();
     /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
        hard reload so new position/size overrides apply immediately
        (see mplfs.html's connectSSE() for the identical pattern). */

@@ -40,6 +40,14 @@ Default port 3000 (autoPort in `.claude/launch.json`). Dashboard is at
   share a connection budget and must use `html/js/relay-client.js`
   instead of their own `EventSource`, not just for these three but for
   any future tab of the same kind).
+- `html/js/overlay-shared-worker.js` + `html/js/overlay-sse-shim.js` —
+  the ONE real `/overlay/events` connection for the entire browser,
+  shared across every overlay page via `SharedWorker` (see "Dashboard
+  architecture" below). Every overlay page's own SSE connection
+  (`dashboard.html`, `mplfs.html`, `ENTVC.html`, `mpltag.html`,
+  `Draft.html`, `DraftIndex.html`, `mploverlay_v7.html`) goes through
+  this — use `createOverlaySSE()` for any new page, never
+  `new EventSource(...)` directly.
 - `heromvp/`, `herohighlights/`, `hero/`, `items/`, `role/`, `logos/`,
   `emblem/`, `photos/`, `hires/` — image asset folders, one per asset type
   (see naming conventions below).
@@ -86,44 +94,77 @@ SSE connection, plus a redundant 5th it briefly opened by mistake) ate
 the safety margin that used to absorb Control+Edit's own connections,
 and locked the dashboard up after a few tab switches.
 
-**The fix — one shared connection per backend channel, held by the
-parent, not by each tab.** `dashboard.html` now opens exactly 3 fixed
-`EventSource` connections itself (`/match/events`, `/mapselection/events`,
-`/standings/events`) and relays data down to whichever iframe(s) need
-it via `postMessage` — see `html/js/relay-client.js` (the iframe side:
-`connectRelay(channel, onData, onStatus)`, which also sends an initial
-`relay-request` so the iframe gets a snapshot immediately instead of
-waiting for the next live change) and `dashboard.html`'s `relayCache` /
-`relayIframeIds` / `openRelay` / `relaySend` (the parent side). **Match
-Board, Map Selection, and Standings no longer open their own
-EventSource at all** — they call `connectRelay(...)` instead. This
-caps the always-mounted connection count at a fixed 3 forever,
-regardless of how many such tabs exist or get added later; a
-brand-new always-mounted tab that reuses one of these 3 channels costs
-zero new connections, and a genuinely new channel costs exactly one,
-added to the parent's fixed set — never per-tab.
+**First fix tried (superseded, keep reading) — one shared connection
+per backend channel, held by dashboard.html's own parent page, not by
+each of its iframes.** `dashboard.html` opened 3 fixed `EventSource`
+connections itself (`/match/events`, `/mapselection/events`,
+`/standings/events`) and relayed data down to whichever iframe(s)
+needed it via `postMessage` (`html/js/relay-client.js`'s
+`connectRelay(...)` on the iframe side; `dashboard.html`'s
+`relayCache`/`relayIframeIds`/`relaySend` on the parent side — these
+still exist and still work, see below). This capped the
+*always-mounted-within-the-dashboard-tab* connection count at a fixed
+low number — **but it only helped connections inside one page.** It
+did nothing for the case that actually matters most in production:
+**vMix (or a normal browser) loading several SEPARATE overlay pages as
+independent browser sources/tabs at once** — `mplfs.html`,
+`ENTVC.html`, `mploverlay_v7.html`, `mpltag.html`, `Draft.html`, etc.
+The 6-connections-per-host cap is shared across the **whole browser**,
+not per-tab/per-source, so each of those pages still opened its own
+`EventSource('/overlay/events')`, and opening even a handful of them
+side by side reproduced the exact same hang — this is what actually
+happened: dashboard.html open on the control PC plus a single
+`mplfs.html` tab was enough to exhaust the pool.
 
-**If you add a new always-mounted dashboard tab that needs live data,
-do NOT give it its own `new EventSource(...)`.** Either reuse one of
-the 3 existing channels (add its iframe id to `relayIframeIds` in
-`dashboard.html`) or add a 4th channel there (a new
-`openRelay(name, path)` call) — the tab's own script should only ever
-call `connectRelay(channel, onData, onStatus)` from
-`html/js/relay-client.js`. This relay setup assumes the iframe is
-always loaded inside `dashboard.html` (it posts to `window.parent`) —
-these 3 dashboard sub-pages aren't meant to be opened standalone/
-directly by URL.
+**The real fix — a `SharedWorker` holding the ONE real connection for
+the entire browser, no matter how many overlay pages are open.** A
+`SharedWorker` is a browser feature where one script instance is
+automatically shared across every tab/window of the same origin.
+`html/js/overlay-shared-worker.js` is that script: it holds the single
+real `EventSource('/overlay/events')` and rebroadcasts every named
+event to every connected page over `postMessage`.
+`html/js/overlay-sse-shim.js` is the client-side half —
+`createOverlaySSE()` returns an object exposing the same subset of the
+`EventSource` API every page already used (`addEventListener`,
+`.onopen`, `.onerror`, `.close()`), backed by the worker instead of a
+real connection, so **no page's existing `sse.addEventListener('foo',
+fn)` call sites needed to change** — only the one line that used to
+say `new EventSource('/overlay/events')` became
+`createOverlaySSE()`. Migrated: `dashboard.html`, `mplfs.html`,
+`ENTVC.html`, `mpltag.html`, `Draft.html`, `DraftIndex.html`, and
+`html/js/overlay-debug.js` (mploverlay_v7.html's shared SSE block).
+Verified live: opening all 7 of those simultaneously in one browser
+produces exactly **one** `GET /overlay/events` request server-side,
+regardless of how many are open.
 
-Control/Edit's connections weren't consolidated the same way — they
-load real dual-purpose overlay files (`mplfs.html`, `Draft.html`,
-`mpltag.html`) that must also work standalone as real OBS browser
-sources with no parent dashboard to relay from, so the
-release-on-navigate-away fix above is what protects them instead.
-Consolidating those too (having them detect "am I embedded in the
-dashboard's preview right now vs. running standalone" and pick
-postMessage vs. their own EventSource accordingly) is a reasonable
-future improvement, but a riskier one since it touches the same code
-path real broadcasts depend on — hasn't been done yet.
+**Not yet migrated — `html/fights.html` and
+`html/heart_stopping_moment_v14.html`.** Both use non-standard
+connection patterns (an explicit `host`/`baseUrl` variable instead of
+same-origin, plus their own manual reconnect-on-error logic) that need
+individual verification of same-origin assumptions before swapping in
+the shim — deliberately deferred rather than migrated blind.
+
+**dashboard.html's own internal relay (previous section) still
+exists and composes with this cleanly** — `dashboardSSE` is now itself
+a `createOverlaySSE()` shim instead of a raw `EventSource`, so its
+`relayIframeIds`/`relaySend` system for Match Board/Map
+Selection/Standings keeps working unchanged, just riding on the shared
+worker's one connection instead of a dedicated one. Layer boundary:
+the **SharedWorker** solves "how many real connections exist across
+the whole browser" (always exactly 1 now); dashboard.html's **own
+relay** solves a separate, narrower problem — fanning a single page's
+one connection out to its own several always-mounted iframes via
+`postMessage`, which the SharedWorker doesn't replace.
+
+**If you add a brand-new overlay page that needs live SSE data, do
+NOT give it its own `new EventSource(...)`.** Include
+`html/js/overlay-sse-shim.js` and call `createOverlaySSE()` instead —
+same for any NEW named event: add it to `KNOWN_EVENTS` in
+`html/js/overlay-shared-worker.js` (EventSource requires an explicit
+`addEventListener(name, ...)` per named event, so the worker has to
+know every name up front; there's no generic "any event" API) or it
+will silently never reach any page no matter how many
+`addEventListener('yourNewEvent', ...)` calls exist client-side.
 
 ## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
 

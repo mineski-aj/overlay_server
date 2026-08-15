@@ -315,7 +315,13 @@ masterPoll();
 
 /* ── SSE — fight show/hide (instant) + debugoff ── */
 (function() {
-  var sse = new EventSource('/overlay/events');
+  // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js) —
+  // this page opens zero real connections of its own now, so having
+  // several overlay browser sources/tabs open at once no longer eats into
+  // the browser's shared connection pool per page. mploverlay_v7.html must
+  // load html/js/overlay-sse-shim.js before this file for createOverlaySSE
+  // to exist.
+  var sse = createOverlaySSE();
 
   /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
      hard reload so new position/size overrides apply immediately (see
