@@ -264,6 +264,240 @@
     .psb-mirrored .psb-num-dark, .psb-mirrored .psb-num-light { padding-left:0; padding-right:10px; justify-content:flex-end; }
     .psb-mirrored .psb-num-light { clip-path:inset(0 0 0 100%); }
 
+    /* ── CONSOLIDATED POST ROW — merges Post Items/Stats/Emblem/Playerboard
+       into one per-player row. Children are positioned relative to .cp-row
+       (730×107), NOT the canvas — see CLAUDE.md "nesting matters". Rows
+       1-5 are blue/home (left column), 6-10 are red/away (.cp-mirrored,
+       right column) — every child's left mirrors within the row via
+       x' = 730 - x - width, and the 3-item groups additionally reverse
+       left-to-right order, same convention as .pib-mirrored/.emb-mirrored/
+       .psb-mirrored above. */
+    .cp-row {
+      position: absolute;
+      width: 730px; height: 107px;
+      overflow: hidden;
+      opacity: 0;
+      transform: perspective(600px) rotateY(90deg);
+      pointer-events: none;
+    }
+    .cp-row.ph-visible { opacity: 1; transform: perspective(600px) rotateY(0deg); pointer-events: auto; }
+    .cp-row.ph-in  { animation: ph-flip-in 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: auto; }
+    .cp-row.ph-out { animation: ph-flip-out 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .cp-row { background-repeat: no-repeat; background-size: 730px 107px; background-position: 0 0; }
+    .cp-row:not(.cp-mirrored) { background-image: url('/assets/consolidated_post/consoblue.png'); }
+    .cp-row.cp-mirrored       { background-image: url('/assets/consolidated_post/consored.png'); }
+
+    /* blue — left column, zero gap: pitch == row height (107px) */
+    .cp-row-1 { left: 59px; top: 193px; z-index: 3; }
+    .cp-row-2 { left: 59px; top: 300px; z-index: 3; }
+    .cp-row-3 { left: 59px; top: 407px; z-index: 3; }
+    .cp-row-4 { left: 59px; top: 514px; z-index: 3; }
+    .cp-row-5 { left: 59px; top: 621px; z-index: 3; }
+    /* red — right column, mirrored: left = 1920 - 59 - 730 */
+    .cp-row-6  { left: 1131px; top: 193px; z-index: 4; }
+    .cp-row-7  { left: 1131px; top: 300px; z-index: 4; }
+    .cp-row-8  { left: 1131px; top: 407px; z-index: 4; }
+    .cp-row-9  { left: 1131px; top: 514px; z-index: 4; }
+    .cp-row-10 { left: 1131px; top: 621px; z-index: 4; }
+
+    .cp-hero, .cp-photo, .cp-spell, .cp-role,
+    .cp-rune-main, .cp-rune-1, .cp-rune-2, .cp-rune-3, .cp-item {
+      position: absolute; display: block;
+    }
+    .cp-hero  { left: 0px;  top: 0px;  width: 69px;  height: 85px; object-fit: cover; z-index: 2; }
+    .cp-photo { left: 69px; top: 0px;  width: 128px; height: 85px; object-fit: cover; object-position: top center; z-index: 1; }
+    .cp-spell { left: 3px;  top: 60px; width: 22px;  height: 22px; object-fit: contain; z-index: 3; }
+    .cp-role  { left: 73px; top: 89px; width: 15px;  height: 15px; object-fit: contain; filter: brightness(0); z-index: 3; }
+
+    .cp-level, .cp-name {
+      position: absolute;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; color: #fff;
+      line-height: 1; white-space: nowrap; overflow: hidden;
+    }
+    .cp-level { left: 3px;   top: 88px; width: 63px; height: 17px; font-size: 15px; }
+    .cp-name  { left: 100px; top: 88px; width: 95px; height: 17px; font-size: 15px; transform-origin: center center; }
+
+    .cp-rune-main { left: 211px; top: 6px;  width: 20px; height: 20px; object-fit: contain; }
+    .cp-rune-1    { left: 211px; top: 31px; width: 20px; height: 20px; object-fit: contain; }
+    .cp-rune-2    { left: 211px; top: 56px; width: 20px; height: 20px; object-fit: contain; }
+    .cp-rune-3    { left: 211px; top: 81px; width: 20px; height: 20px; object-fit: contain; }
+
+    .cp-stats {
+      position: absolute; left: 249px; top: 0px; width: 113px; height: 107px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    }
+    .cp-stat-row   { display: flex; flex-direction: column; align-items: center; }
+    .cp-stat-label { font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 10px; color: #111; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; }
+    .cp-stat-value { font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 18px; color: #111; line-height: 1.25; white-space: nowrap; }
+
+    /* Damage taken/dealt — same layout+technique as Post Stats' .psb-*
+       (label above the bar, dual dark/light overlapping numbers where
+       .cp-dmg-num-light is clip-path-masked to the bar's fill %, so the
+       number reads white over the filled portion and dark over the
+       unfilled track — "inverts" as the bar sweeps past it), just
+       resized to this row's 187×22 box instead of the postbacker card. */
+    .cp-dmg-label {
+      position: absolute; left: 372px; width: 187px; height: 14px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 9px; color: #111;
+      letter-spacing: 0.06em; text-transform: uppercase; line-height: 14px;
+    }
+    .cp-dmg-taken-label { top: 10px; }
+    .cp-dmg-dealt-label { top: 57px; }
+
+    .cp-dmg-taken, .cp-dmg-dealt {
+      position: absolute; left: 372px; width: 187px; height: 22px;
+      background: rgba(0,0,0,0.15); overflow: hidden;
+    }
+    .cp-dmg-taken { top: 26px; }
+    .cp-dmg-dealt { top: 73px; }
+    .cp-dmg-bar   { position: absolute; top: 0; left: 0; height: 100%; width: 0%; }
+    .cp-dmg-taken .cp-dmg-bar { background: linear-gradient(to right, #1540d0, #2d6ef5); }
+    .cp-dmg-dealt .cp-dmg-bar { background: #111; }
+    .cp-dmg-num-dark, .cp-dmg-num-light {
+      position: absolute; inset: 0; display: flex; align-items: center; padding-left: 8px;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 13px; line-height: 1;
+      pointer-events: none; white-space: nowrap; overflow: hidden;
+    }
+    .cp-dmg-num-dark  { color: #111; z-index: 1; }
+    .cp-dmg-num-light { color: #fff; z-index: 2; clip-path: inset(0 100% 0 0); }
+
+    /* .cp-items wraps all 6 slots so the whole grid drags as one group;
+       item positions below are relative to THIS wrapper, not .cp-row. */
+    .cp-items { position: absolute; left: 580px; top: 8px; width: 144px; height: 92px; }
+    .cp-item  { width: 44px; height: 44px; object-fit: cover; background: #1c1c1c; }
+    .cp-item-0, .cp-item-3 { left: 0px; }
+    .cp-item-1, .cp-item-4 { left: 50px; }
+    .cp-item-2, .cp-item-5 { left: 100px; }
+    .cp-item-0, .cp-item-1, .cp-item-2 { top: 0px; }
+    .cp-item-3, .cp-item-4, .cp-item-5 { top: 48px; }
+
+    /* mirrored (red side) — x' = 730 - x - width per element */
+    .cp-mirrored .cp-hero  { left: 661px; }
+    .cp-mirrored .cp-photo { left: 533px; }
+    .cp-mirrored .cp-spell { left: 705px; }
+    .cp-mirrored .cp-level { left: 664px; }
+    .cp-mirrored .cp-role  { left: 642px; }
+    .cp-mirrored .cp-name  { left: 535px; }
+    .cp-mirrored .cp-rune-main,
+    .cp-mirrored .cp-rune-1,
+    .cp-mirrored .cp-rune-2,
+    .cp-mirrored .cp-rune-3 { left: 499px; }
+    .cp-mirrored .cp-stats { left: 368px; }
+    .cp-mirrored .cp-dmg-label,
+    .cp-mirrored .cp-dmg-taken,
+    .cp-mirrored .cp-dmg-dealt { left: 171px; }
+    .cp-mirrored .cp-dmg-label { text-align: right; justify-content: flex-end; }
+    .cp-mirrored .cp-dmg-bar        { left: auto; right: 0; }
+    .cp-mirrored .cp-dmg-taken .cp-dmg-bar { background: linear-gradient(to left, #1540d0, #2d6ef5); }
+    .cp-mirrored .cp-dmg-dealt .cp-dmg-bar { background: #111; }
+    .cp-mirrored .cp-dmg-num-dark, .cp-mirrored .cp-dmg-num-light { padding-left: 0; padding-right: 8px; justify-content: flex-end; }
+    .cp-mirrored .cp-dmg-num-light { clip-path: inset(0 0 0 100%); }
+    .cp-mirrored .cp-items { left: 6px; }
+    /* item order reverses left-to-right within the wrapper: item-0 ends up rightmost */
+    .cp-mirrored .cp-item-0, .cp-mirrored .cp-item-3 { left: 100px; }
+    .cp-mirrored .cp-item-1, .cp-mirrored .cp-item-4 { left: 50px; }
+    .cp-mirrored .cp-item-2, .cp-mirrored .cp-item-5 { left: 0px; }
+
+    /* ── CONSOLIDATED MIDDLE BOARD — Middleboard's objectives relocated
+       into Consolidated Post, canvas-absolute (not nested in a row).
+       consomiddle.png already bakes in the header bar, row dividers, and
+       all 6 objective icons — only text is overlaid on top. Row bands
+       measured directly off consomiddleguide.png. */
+    #cmb-board {
+      position: absolute; left: 805px; top: 169px; width: 311px; height: 338px;
+      background-image: url('/assets/consolidated_post/consomiddle.png');
+      background-size: 311px 338px; background-repeat: no-repeat;
+      z-index: 25;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #cmb-board.cmb-visible { opacity: 1; }
+
+    .cmb-header {
+      position: absolute; left: 0; top: 0; width: 311px; height: 22px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cmb-header span {
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 12px;
+      color: #fff; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    .cmb-gametime-label {
+      position: absolute; left: 20px; top: 22px; width: 140px; height: 43px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 13px; color: #111; text-transform: uppercase;
+    }
+    .cmb-gametime-value {
+      position: absolute; right: 20px; top: 22px; width: 120px; height: 43px;
+      display: flex; align-items: center; justify-content: flex-end;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 28px; color: #111;
+    }
+    .cmb-row { position: absolute; left: 0; width: 311px; }
+    .cmb-row-gold       { top: 65px;  height: 47px; }
+    .cmb-row-tower      { top: 112px; height: 45px; }
+    .cmb-row-lord       { top: 157px; height: 47px; }
+    .cmb-row-turtle     { top: 204px; height: 47px; }
+    .cmb-row-redbuff    { top: 251px; height: 46px; }
+    .cmb-row-purplebuff { top: 297px; height: 41px; }
+    .cmb-num {
+      position: absolute; top: 0; height: 100%; width: 110px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px;
+    }
+    .cmb-num-l { left: 0;  color: rgb(0,86,215); }
+    .cmb-num-r { right: 0; color: #e40000; }
+
+    /* ── CONSOLIDATED KILL MAP — sits directly under #cmb-board in the
+       same center column (169+338=507, this starts at 517 — a 10px gap).
+       consomapback.png is the exact 310×211 container background;
+       consomap.png (512×512 square) is a fixed decorative graphic,
+       cropped by object-fit:cover — NOT swapped per selected map. Only
+       the small icon + name text are dynamic, from /match/state's
+       `map` field (same source Middleboard/map-selection already use). */
+    #ckm-board {
+      position: absolute; left: 805px; top: 517px; width: 310px; height: 211px;
+      background-image: url('/assets/consolidated_post/consomapback.png');
+      background-size: 310px 211px; background-repeat: no-repeat;
+      z-index: 56;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #ckm-board.ckm-visible { opacity: 1; }
+    .ckm-label, .ckm-name {
+      position: absolute; left: 3px; width: 99px; height: 59px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: 'Anton', sans-serif; font-size: 21px; line-height: 1.05; color: #0a0a0a;
+    }
+    .ckm-label { top: 6px; }
+    .ckm-name  { top: 141px; }
+    .ckm-icon  { position: absolute; left: 31px; top: 78px; width: 43px; height: 43px; object-fit: contain; }
+    .ckm-graphic { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; object-fit: cover; }
+    .ckm-kills   { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; overflow: hidden; }
+    .ckm-kill-dot { fill-opacity: 0.88; stroke: rgba(255,255,255,0.5); stroke-width: 0.6; }
+
+    /* ── CONSOLIDATED POST GRAPH — gold-difference area/line chart (blue
+       above zero, red below, color switches exactly at zero-crossings —
+       same technique as Desktop/gold_difference_zero_line.html, hand-built
+       in SVG here instead of Chart.js so this overlay has no external/CDN
+       runtime dependency) plus 3 event-tick rows (Lord/Turtle/Kill) below
+       it, all sharing the chart's own time axis. Data: /positions' gold
+       field aggregated per camp per tick for the chart, /events'
+       lord/turtle/kill entries for the tick rows. */
+    #cpg-board {
+      position: absolute; left: 59px; top: 745px; width: 1800px; height: 270px;
+      border-radius: 1px;
+      background: linear-gradient(90deg, rgb(231,231,231) 0%, rgb(255,255,255) 100%);
+      z-index: 89;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #cpg-board.cpg-visible { opacity: 1; }
+    #cpg-chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .cpg-axis-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 11px; fill: #555; }
+    .cpg-diff-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 12px; }
+    .cpg-row-label  { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 11px; fill: #111; letter-spacing: 0.04em; text-transform: uppercase; }
+
     /* ── BPM ROW LAYOUT ── */
     .bpm-row {
       display: flex;
@@ -918,11 +1152,12 @@
     }
     .ft-teambox-blue .ft-teambox-scorebar { left: 362px; }
     .ft-teambox-red  .ft-teambox-scorebar { left: -6px; }
-    /* Sits directly on the team's own colored fill, so pips use white
-       (won) vs. opaque dark grey (not yet) instead of the in-game
-       version's brand-blue/red-on-white scheme. */
+    /* Filled pips use the same brand blue/red as the Match Board's own
+       score bar (.mb-score-bar.scored) — blue on the home/left box, red
+       on the away/right box, rather than one flat color for both sides. */
     .ft-score-bar { width: 9px; height: 100%; background: #3a3a3a; flex-shrink: 0; }
-    .ft-score-bar.filled { background: #fff; }
+    .ft-teambox-blue .ft-score-bar.filled { background: #1E64FF; }
+    .ft-teambox-red  .ft-score-bar.filled { background: #FF3232; }
 
     /* Match bar — bicolor strip between the team boxes and the card row;
        shows which match this lineup is for (dashboard Match Board state). */
@@ -1991,6 +2226,17 @@
     .mb-score-bar { width:14px; height:50px; background:#1a1a1a; flex-shrink:0; }
     #mb-camp1 .mb-score-bar.scored { background:#1E64FF; }
     #mb-camp2 .mb-score-bar.scored { background:#FF3232; }
+    /* Consolidated Post's matchboard variant only — other scenes (Post
+       Items/Stats/Emblem) keep the regular Matchboard untouched. Toggled
+       by showConsolidatedPost()/hideConsolidatedPost() (see #cmb-board). */
+    #mb-tournament-cp { display:none; }
+    #match-board.cp-compact #mb-camp1,
+    #match-board.cp-compact #mb-camp2 { top: 70px; } /* 106 - 36 */
+    #match-board.cp-compact #mb-tournament    { display:none; }
+    #match-board.cp-compact #mb-tournament-cp {
+      display:block; position:absolute; left:882px; top:18px; width:154px; height:135px;
+      background:url('/assets/mpl2026logo.png') center/contain no-repeat; z-index:172;
+    }
     @keyframes mb-in  { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
     @keyframes mb-out { from { opacity:1; transform:translateY(0); }     to { opacity:0; transform:translateY(-14px); } }
 
@@ -2238,6 +2484,15 @@
       <div class="feature-card-btns">
         <button class="dbg-btn show" onclick="showPostStats()">▶ SHOW</button>
         <button class="dbg-btn hide" onclick="hidePostStats()">■ HIDE</button>
+      </div>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card-label">Consolidated Post</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showConsolidatedPost()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideConsolidatedPost()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-consolidated_post" onclick="toggleLocalPreview('consolidated_post', this)">◈ PREVIEW</button>
       </div>
     </div>
 
@@ -2584,6 +2839,7 @@
       <div id="mb-camp1"></div>
       <div id="mb-camp2"></div>
       <div id="mb-tournament"></div>
+      <div id="mb-tournament-cp"></div>
     </div>
     <div id="middleboard">
       <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-gold-l">0</span><img src="/assets/postgame/gold.png"       alt="gold"><span class="mdb-num mdb-num-r" id="mdb-gold-r">0</span></div>
@@ -2595,6 +2851,48 @@
       <div id="mdb-game-time-label">GAME TIME</div>
       <div id="mdb-game-time-value">00:00</div>
       <div id="mdb-game-label-bar"><span id="mdb-game-label-text">GAME 1 - MATCH 1</span></div>
+    </div>
+
+    <div id="cmb-board">
+      <div class="cmb-header"><span id="cmb-game-label">GAME 1 - MATCH 1</span></div>
+      <div class="cmb-gametime-label">GAME TIME</div>
+      <div class="cmb-gametime-value" id="cmb-game-time-value">00:00</div>
+      <div class="cmb-row cmb-row-gold">
+        <span class="cmb-num cmb-num-l" id="cmb-gold-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-gold-r">0</span>
+      </div>
+      <div class="cmb-row cmb-row-tower">
+        <span class="cmb-num cmb-num-l" id="cmb-tower-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-tower-r">0</span>
+      </div>
+      <div class="cmb-row cmb-row-lord">
+        <span class="cmb-num cmb-num-l" id="cmb-lord-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-lord-r">0</span>
+      </div>
+      <div class="cmb-row cmb-row-turtle">
+        <span class="cmb-num cmb-num-l" id="cmb-turtle-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-turtle-r">0</span>
+      </div>
+      <div class="cmb-row cmb-row-redbuff">
+        <span class="cmb-num cmb-num-l" id="cmb-redbuff-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-redbuff-r">0</span>
+      </div>
+      <div class="cmb-row cmb-row-purplebuff">
+        <span class="cmb-num cmb-num-l" id="cmb-purplebuff-l">0</span>
+        <span class="cmb-num cmb-num-r" id="cmb-purplebuff-r">0</span>
+      </div>
+    </div>
+
+    <div id="ckm-board">
+      <div class="ckm-label">KILL MAP</div>
+      <img class="ckm-icon" id="ckm-icon" src="" alt="">
+      <div class="ckm-name" id="ckm-name"></div>
+      <img class="ckm-graphic" src="/assets/consolidated_post/consomap.png" alt="">
+      <svg class="ckm-kills" id="ckm-kills" viewBox="0 0 205 211"></svg>
+    </div>
+
+    <div id="cpg-board">
+      <svg id="cpg-chart" viewBox="0 0 1800 270" preserveAspectRatio="none"></svg>
     </div>
 
     <div id="playerboard">
@@ -3050,6 +3348,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showPostStats, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('consolidated_post', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showConsolidatedPost, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -3815,6 +4121,7 @@
       highlights: '/assets/bgloopwaves.webm',
       mvp:        '/assets/bgloopwaves.webm',
       credits:    '/assets/bgloopwaves.webm',
+      consolidated_post: '/assets/bgloopwaves.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -6164,8 +6471,17 @@
     // needed to be (re)shown, and each queued its own full hide→reshow.
     let requestedFeature = null;
 
+    // True only while transitionToImpl is actively tearing down the
+    // previous feature to switch to ANOTHER post feature (matchboard etc.
+    // must stay put across that switch, just re-snap non-compact — see
+    // hideConsolidatedPost). False the rest of the time, including when
+    // hideActiveFeature() is invoked directly from an SSE 'hide' event
+    // with no transitionToImpl in flight — that's a genuine standalone
+    // hide, where Consolidated Post's matchboard should animate out too.
+    let cpDuringPostTransition = false;
+
     /* Add new Post scene names here — match board follows automatically */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post']);
 
     /* Central transition: manages match board + middleboard based on Post vs non-Post */
     // Everything that must finish animating OUT before timeline animates IN.
@@ -6198,9 +6514,14 @@
       if (POST_FEATURES.has(newFeature)) {
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
+        else if (newFeature === 'consolidated_post') { /* rows already show photos; skip middle/player board */ }
         else { showMiddleBoard(); showPlayerBoard(); }
-        if (newFeature !== 'timeline') await hideActiveFeature();
+        if (newFeature !== 'timeline') {
+          cpDuringPostTransition = true;
+          try { await hideActiveFeature(); } finally { cpDuringPostTransition = false; }
+        }
       } else {
+        cpDuringPostTransition = false;
         await Promise.all([hideMatchBoard(), hideMiddleBoard(), hidePlayerBoard(), hideActiveFeature()]);
       }
       activeFeature = newFeature;
@@ -6229,6 +6550,7 @@
       if (prev === 'emblems')  return hidePostEmblems();
       if (prev === 'items')    return hidePostItems();
       if (prev === 'stats')    return hidePostStats();
+      if (prev === 'consolidated_post') return hideConsolidatedPost();
       return Promise.resolve();
     }
 
@@ -6512,6 +6834,621 @@
     }
 
     /* ════════════════════════════════════════════════
+       CONSOLIDATED POST — merges Post Items/Stats/Emblem/Playerboard's
+       per-player data into one row per player (see .cp-row CSS above).
+    ════════════════════════════════════════════════ */
+    const CP_ROW_CLASSES = [
+      'cp-row-1','cp-row-2','cp-row-3','cp-row-4','cp-row-5',
+      'cp-row-6','cp-row-7','cp-row-8','cp-row-9','cp-row-10',
+    ];
+
+    function buildCpRowHTML(id) {
+      const itemSlots = [0,1,2,3,4,5]
+        .map(i => `<img class="cp-item cp-item-${i}" id="${id}-item-${i}" src="" alt="">`).join('');
+      return `
+        <img class="cp-hero" id="${id}-hero" src="" alt="">
+        <img class="cp-photo" id="${id}-photo" src="" alt="">
+        <img class="cp-spell" id="${id}-spell" src="" alt="" style="display:none">
+        <div class="cp-level" id="${id}-level"></div>
+        <img class="cp-role" id="${id}-role" src="" alt="" style="display:none">
+        <div class="cp-name" id="${id}-name"></div>
+        <img class="cp-rune-main" id="${id}-rune-main" src="" alt="" style="display:none">
+        <img class="cp-rune-1" id="${id}-rune-1" src="" alt="" style="display:none">
+        <img class="cp-rune-2" id="${id}-rune-2" src="" alt="" style="display:none">
+        <img class="cp-rune-3" id="${id}-rune-3" src="" alt="" style="display:none">
+        <div class="cp-stats">
+          <div class="cp-stat-row">
+            <span class="cp-stat-label">KDA</span>
+            <span class="cp-stat-value" id="${id}-kda">-/-/-</span>
+          </div>
+          <div class="cp-stat-row">
+            <span class="cp-stat-label">GOLD EARNED</span>
+            <span class="cp-stat-value" id="${id}-gold">-</span>
+          </div>
+        </div>
+        <div class="cp-dmg-label cp-dmg-taken-label">DAMAGE TAKEN</div>
+        <div class="cp-dmg-taken">
+          <div class="cp-dmg-bar" id="${id}-taken-bar"></div>
+          <div class="cp-dmg-num-dark"  id="${id}-taken-numD">0</div>
+          <div class="cp-dmg-num-light" id="${id}-taken-numL">0</div>
+        </div>
+        <div class="cp-dmg-label cp-dmg-dealt-label">DAMAGE DEALT</div>
+        <div class="cp-dmg-dealt">
+          <div class="cp-dmg-bar" id="${id}-dealt-bar"></div>
+          <div class="cp-dmg-num-dark"  id="${id}-dealt-numD">0</div>
+          <div class="cp-dmg-num-light" id="${id}-dealt-numL">0</div>
+        </div>
+        <div class="cp-items">${itemSlots}</div>
+      `;
+    }
+
+    CP_ROW_CLASSES.forEach((cls, n) => {
+      const id       = `cp-${n + 1}`;
+      const mirrored = n >= 5 ? ' cp-mirrored' : '';
+      const div      = document.createElement('div');
+      div.className  = `cp-row ${cls}${mirrored}`;
+      div.id         = `cp-row-el-${n + 1}`;
+      div.innerHTML  = buildCpRowHTML(id);
+      canvas.appendChild(div);
+    });
+
+    let cpVisible = false;
+    let cpData    = [];
+
+    function cpFitLabel(el) {
+      el.style.transform = '';
+      const w = el.parentElement.clientWidth;
+      if (w > 0 && el.scrollWidth > w) el.style.transform = 'scaleX(' + (w / el.scrollWidth) + ')';
+    }
+
+    function cpApplyRow(s, id) {
+      const heroEl  = document.getElementById(`${id}-hero`);
+      const spellEl = document.getElementById(`${id}-spell`);
+      const levelEl = document.getElementById(`${id}-level`);
+      const roleEl  = document.getElementById(`${id}-role`);
+      const nameEl  = document.getElementById(`${id}-name`);
+      const kdaEl   = document.getElementById(`${id}-kda`);
+      const goldEl  = document.getElementById(`${id}-gold`);
+
+      if (heroEl) heroEl.src = buildUrl('/hero/HERO_' + s.heroid + '_KOTAK.png');
+
+      const spellUrl = ftSpellUrl(s.skillid);
+      if (spellEl) { spellEl.src = spellUrl ? buildUrl(spellUrl) : ''; spellEl.style.display = spellUrl ? '' : 'none'; }
+
+      if (levelEl) levelEl.textContent = s.level != null ? `LVL. ${s.level}` : '';
+
+      if (roleEl) {
+        const rf = roleFile(s.role);
+        roleEl.src = rf ? buildUrl('/role/' + encodeURIComponent(rf) + '.png') : '';
+        roleEl.style.display = rf ? '' : 'none';
+      }
+
+      if (nameEl) { nameEl.textContent = s.name || ''; cpFitLabel(nameEl); }
+
+      if (kdaEl)  kdaEl.textContent  = `${s.kill_num}/${s.dead_num}/${s.assist_num}`;
+      if (goldEl) goldEl.textContent = s.extra_param ? s.extra_param.goldk.toUpperCase() : '-';
+
+      [ ['rune-main', s.rune_id], ['rune-1', s.rune_map_1], ['rune-2', s.rune_map_2], ['rune-3', s.rune_map_3] ]
+        .forEach(([slot, runeId]) => {
+          const el = document.getElementById(`${id}-${slot}`);
+          if (!el) return;
+          if (runeId) { el.src = embRuneUrl(runeId); el.style.display = ''; }
+          else        { el.src = ''; el.style.display = 'none'; }
+        });
+
+      const items = s.equip_list || [];
+      for (let j = 0; j < 6; j++) {
+        const el = document.getElementById(`${id}-item-${j}`);
+        if (!el) continue;
+        el.onerror = () => { el.onerror = null; el.src = buildUrl('/photos/placeholder.png'); };
+        if (items[j] && items[j].value) { el.src = buildUrl('/items/' + items[j].value + '.png'); el.style.visibility = ''; }
+        else                            { el.src = buildUrl('/photos/placeholder.png'); el.style.visibility = 'hidden'; }
+      }
+    }
+
+    function cpAnimateDmgBar(id, mirrored, takenVal, takenPct, dealtVal, dealtPct) {
+      const takenBar   = document.getElementById(`${id}-taken-bar`);
+      const takenDark  = document.getElementById(`${id}-taken-numD`);
+      const takenLight = document.getElementById(`${id}-taken-numL`);
+      const dealtBar   = document.getElementById(`${id}-dealt-bar`);
+      const dealtDark  = document.getElementById(`${id}-dealt-numD`);
+      const dealtLight = document.getElementById(`${id}-dealt-numL`);
+      if (!takenBar) return;
+      const DURATION = 1000;
+      const start = performance.now();
+      function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+      function tick(now) {
+        if (!cpVisible) return;
+        const t  = Math.min((now - start) / DURATION, 1);
+        const e  = easeOut(t);
+        const tp = takenPct * e;
+        const dp = dealtPct * e;
+        const tv = Math.round(takenVal * e);
+        const dv = Math.round(dealtVal * e);
+        takenBar.style.width = tp + '%';
+        dealtBar.style.width = dp + '%';
+        const ts = tv.toLocaleString();
+        const ds = dv.toLocaleString();
+        takenDark.textContent = ts; takenLight.textContent = ts;
+        dealtDark.textContent = ds; dealtLight.textContent = ds;
+        if (mirrored) {
+          takenLight.style.clipPath = `inset(0 0 0 ${100 - tp}%)`;
+          dealtLight.style.clipPath = `inset(0 0 0 ${100 - dp}%)`;
+        } else {
+          takenLight.style.clipPath = `inset(0 ${100 - tp}% 0 0)`;
+          dealtLight.style.clipPath = `inset(0 ${100 - dp}% 0 0)`;
+        }
+        if (t < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+
+    async function cpSetPhoto(photoEl, name, pose) {
+      const url = pbPhotoUrl(name, pose);
+      photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = buildUrl('/photos/placeholder.png'); };
+      photoEl.src = url ? buildUrl(url) : buildUrl('/photos/placeholder.png');
+    }
+
+    async function fetchConsolidatedPostData() {
+      cpData = Array(10).fill(null);
+      try {
+        await pbLoadManifest();
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        const winCamp = gd.win_camp || 0;
+        const pose1 = winCamp === 0 || winCamp === 1 ? 'VICTORY' : 'DEFEAT';
+        const pose2 = winCamp === 0 || winCamp === 2 ? 'VICTORY' : 'DEFEAT';
+        const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
+          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+        if (c1) extractSeats(c1).forEach((s, i) => { cpData[i]     = { s, pose: pose1 }; });
+        if (c2) extractSeats(c2).forEach((s, i) => { cpData[5 + i] = { s, pose: pose2 }; });
+
+        const maxTaken = Math.max(...cpData.map(d => d ? (d.s.total_hurt || 0) : 0), 1);
+        const maxDealt = Math.max(...cpData.map(d => d ? (d.s.total_damage || 0) : 0), 1);
+
+        cpData.forEach((d, i) => {
+          const id = `cp-${i + 1}`;
+          if (!d) return;
+          cpApplyRow(d.s, id);
+          const photoEl = document.getElementById(`${id}-photo`);
+          if (photoEl) cpSetPhoto(photoEl, d.s.name, d.pose);
+          d.takenPct = ((d.s.total_hurt || 0) / maxTaken) * 100;
+          d.dealtPct = ((d.s.total_damage || 0) / maxDealt) * 100;
+        });
+      } catch {}
+    }
+
+    /* Middleboard's objectives, relocated into this scene's own compact
+       #cmb-board layout (consomiddle.png). Same field sourcing as
+       fetchMiddleBoardData — see routes/overlay's /api/gamedata-proxy and
+       /match/state — just written to cmb-* ids instead of mdb-*. A
+       one-time fetch on show, matching the rest of Consolidated Post
+       being a static end-of-match snapshot (no polling). */
+    let cmbVisible = false;
+
+    async function fetchCmbData() {
+      try {
+        const [gameR, msR] = await Promise.allSettled([
+          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const gd = gameR.value?.data ?? null;
+        const ms = msR.value ?? null;
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+        if (gd) {
+          const camps = gd.camp_list || [];
+          const c1 = camps.find(c => c.campid === 1);
+          const c2 = camps.find(c => c.campid === 2);
+          if (c1 && c2) {
+            const sumBuff = (camp, key) => (camp.enemy_area_get && camp.enemy_area_get[key]) || 0;
+            set('cmb-gold-l',       fmtGold(c1.total_money));
+            set('cmb-gold-r',       fmtGold(c2.total_money));
+            set('cmb-tower-l',      c1.kill_tower || 0);
+            set('cmb-tower-r',      c2.kill_tower || 0);
+            set('cmb-lord-l',       c1.kill_lord || 0);
+            set('cmb-lord-r',       c2.kill_lord || 0);
+            set('cmb-turtle-l',     c1.kill_tortoise || 0);
+            set('cmb-turtle-r',     c2.kill_tortoise || 0);
+            set('cmb-redbuff-l',    sumBuff(c1, 'orange_buffer_num'));
+            set('cmb-redbuff-r',    sumBuff(c2, 'orange_buffer_num'));
+            set('cmb-purplebuff-l', sumBuff(c1, 'purple_buffer_num'));
+            set('cmb-purplebuff-r', sumBuff(c2, 'purple_buffer_num'));
+          }
+          set('cmb-game-time-value', fmtGameTime(gd.game_time));
+        }
+        if (ms) {
+          const gameNum  = ms.game  || 1;
+          const matchNum = ms.match || 1;
+          set('cmb-game-label', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
+
+          const mapName = ms.map || '';
+          const iconEl  = document.getElementById('ckm-icon');
+          const nameEl  = document.getElementById('ckm-name');
+          if (iconEl) iconEl.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
+          if (nameEl)  nameEl.innerHTML = mapName ? mapName.toUpperCase().replace(' ', '<br>') : '';
+        }
+      } catch {}
+    }
+
+    /* Kill Map dots — plots the whole game's kills as blue/red circles.
+       consomap.png is a fixed decorative graphic, not a calibrated real
+       map texture (by design, per the user), so this transform is
+       necessarily approximate: it reuses the same 45°-rotated
+       scale-and-center formula as the reference heatmap tool
+       (Desktop/heatmap/mlbb_heatmap.html) — MLBB's raw /positions x/y
+       are game-world units roughly ±47 on each axis, blue base toward
+       one corner and red base toward the opposite corner — just rescaled
+       to this box's 205×211 instead of that tool's 560×560 canvas. Good
+       for "which side of the map" placement, not pixel-true terrain
+       alignment. */
+    const CKM_W = 205, CKM_H = 211;
+    const CKM_CENTER_X = CKM_W / 2;
+    const CKM_CENTER_Y = CKM_H / 2;
+    const CKM_SCALE = 1.6;
+    function ckmGameToLocal(gx, gy) {
+      const margin = 6;
+      return {
+        x: Math.max(margin, Math.min(CKM_W - margin, CKM_CENTER_X + (gx + gy) * CKM_SCALE)),
+        y: Math.max(margin, Math.min(CKM_H - margin, CKM_CENTER_Y + (-gx + gy) * CKM_SCALE)),
+      };
+    }
+
+    function renderCkmKills(points) {
+      const svg = document.getElementById('ckm-kills');
+      if (!svg) return;
+      svg.innerHTML = points.map(p =>
+        `<circle class="ckm-kill-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.camp === 1 ? '#0458ef' : '#f41100'}"></circle>`
+      ).join('');
+    }
+
+    async function fetchCkmKills() {
+      try {
+        const [evR, posR] = await Promise.allSettled([
+          fetch(buildUrl('/events'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/positions'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const kills  = (evR.value?.events || []).filter(e => e.type === 'kill');
+        const posLog = posR.value?.positions || [];
+        if (!kills.length) { renderCkmKills([]); return; }
+
+        // Group positions by camp-seat, sorted by time, for nearest-tick lookup.
+        const byKey = {};
+        posLog.forEach(p => { (byKey[`${p.camp}-${p.seat}`] ||= []).push(p); });
+        Object.values(byKey).forEach(arr => arr.sort((a, b) => a.game_time_s - b.game_time_s));
+
+        function nearestPos(camp, seat, t) {
+          const arr = byKey[`${camp}-${seat}`];
+          if (!arr || !arr.length) return null;
+          let lo = 0, hi = arr.length - 1, best = arr[0];
+          while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (arr[mid].game_time_s <= t) { best = arr[mid]; lo = mid + 1; }
+            else hi = mid - 1;
+          }
+          return best;
+        }
+
+        const points = [];
+        kills.forEach(k => {
+          const camp = k.camp === 'camp1' ? 1 : k.camp === 'camp2' ? 2 : null;
+          if (!camp) return;
+          const pos = nearestPos(camp, k.seat, k.time_s);
+          if (!pos || (pos.x === 0 && pos.y === 0)) return; // pre-spawn zero coords
+          points.push({ camp, ...ckmGameToLocal(pos.x, pos.y) });
+        });
+        renderCkmKills(points);
+      } catch {}
+    }
+
+    /* ── Consolidated Post Graph — gold-difference chart + Lord/Turtle/
+       Kill event rows, sharing one time axis. First pass — layout is
+       reasonable but not yet fine-tuned. ── */
+    const CPG_LEFT = 90, CPG_RIGHT = 1780;
+    const CPG_CHART_TOP = 14, CPG_CHART_BOTTOM = 170;
+    // 4 rows, fit into the same vertical space the 3-row layout used —
+    // Lord+Turtle share one row now (icon per event tells them apart),
+    // Tower gets its own row (no icon asset yet, plain dot), and Kill
+    // splits into a blue-only row and a red-only row, each row LABEL
+    // colored to match its team.
+    const CPG_ROWS = [
+      { key: 'lordturtle', label: 'LORD/TURTLE', y: 190, types: ['lord', 'turtle'], marker: 'icon' },
+      { key: 'tower',      label: 'TOWER',       y: 208, types: ['tower'],          marker: 'icon' },
+      { key: 'kill_blue',  label: 'KILL',        y: 227, types: ['kill'], campOnly: 'camp1', marker: 'x', labelColor: '#5096d7' },
+      { key: 'kill_red',   label: 'KILL',        y: 245, types: ['kill'], campOnly: 'camp2', marker: 'x', labelColor: '#f41100' },
+    ];
+    const CPG_BLUE = '#5096d7', CPG_RED = '#f41100';
+    const CPG_ICONS = {
+      lord:   '/assets/consolidated_post/consolord.png',
+      turtle: '/assets/consolidated_post/consoturtle.png',
+      tower:  '/assets/consolidated_post/consotower.png',
+    };
+
+    function cpgBuildRow(row, events) {
+      const marks = events
+        .filter(e => row.types.includes(e.type) && (e.camp === 'camp1' || e.camp === 'camp2'))
+        .filter(e => !row.campOnly || e.camp === row.campOnly)
+        .map(e => {
+          const x     = CPG_LEFT + (e.time_s / cpgDuration) * (CPG_RIGHT - CPG_LEFT);
+          const color = e.camp === 'camp1' ? CPG_BLUE : CPG_RED;
+          if (row.marker === 'x') {
+            return `<path d="M${(x-4).toFixed(1)},${row.y-4} L${(x+4).toFixed(1)},${row.y+4} `
+                 + `M${(x-4).toFixed(1)},${row.y+4} L${(x+4).toFixed(1)},${row.y-4}" `
+                 + `stroke="${color}" stroke-width="2" stroke-linecap="round"></path>`;
+          }
+          if (row.marker === 'icon') {
+            const tintFilter = e.camp === 'camp1' ? 'url(#cpgTintBlue)' : 'url(#cpgTintRed)';
+            return `<image x="${(x-8).toFixed(1)}" y="${row.y-8}" width="16" height="16" href="${CPG_ICONS[e.type]}" filter="${tintFilter}"></image>`;
+          }
+          // 'dot' — Tower has no icon asset yet, plain colored circle.
+          return `<circle cx="${x.toFixed(1)}" cy="${row.y}" r="4" fill="${color}" stroke="rgba(255,255,255,0.5)" stroke-width="0.6"></circle>`;
+        }).join('');
+      const labelStyle = row.labelColor ? ` style="fill:${row.labelColor}"` : '';
+      const label = `<text class="cpg-row-label" x="13" y="${row.y + 4}" text-anchor="start"${labelStyle}>${row.label}</text>`;
+      return label + marks;
+    }
+
+    let cpgDuration = 1; // seconds — module-scope so cpgBuildRow can read it without threading it through
+
+    function cpgInterpolate(series, t) {
+      if (t <= series[0].t) return series[0].diff;
+      const last = series[series.length - 1];
+      if (t >= last.t) return last.diff;
+      for (let i = 0; i < series.length - 1; i++) {
+        const a = series[i], b = series[i + 1];
+        if (t >= a.t && t <= b.t) {
+          const frac = (b.t === a.t) ? 0 : (t - a.t) / (b.t - a.t);
+          return a.diff + (b.diff - a.diff) * frac;
+        }
+      }
+      return last.diff;
+    }
+
+    function cpgFmtDiff(v) {
+      return (v >= 0 ? '+' : '-') + (Math.abs(v) / 1000).toFixed(1) + 'k';
+    }
+
+    function renderCpgChart(series, events) {
+      const svg = document.getElementById('cpg-chart');
+      if (!svg) return;
+      if (!series.length) { svg.innerHTML = ''; return; }
+
+      cpgDuration = series[series.length - 1].t || 1;
+      const diffs  = series.map(s => s.diff);
+      const rawMax = Math.max(...diffs, 0);
+      const rawMin = Math.min(...diffs, 0);
+      const pad    = Math.max((rawMax - rawMin) * 0.15, 500);
+      const yMax   = rawMax + pad;
+      const yMin   = rawMin - pad;
+
+      const xScale = t => CPG_LEFT + (t / cpgDuration) * (CPG_RIGHT - CPG_LEFT);
+      const yScale = v => CPG_CHART_BOTTOM - ((v - yMin) / (yMax - yMin)) * (CPG_CHART_BOTTOM - CPG_CHART_TOP);
+      const zeroY  = yScale(0);
+
+      const linePts = series.map(s => `${xScale(s.t).toFixed(1)},${yScale(s.diff).toFixed(1)}`);
+      const lineD   = 'M' + linePts.join(' L');
+      const areaD   = `${lineD} L${xScale(cpgDuration).toFixed(1)},${zeroY.toFixed(1)} L${xScale(0).toFixed(1)},${zeroY.toFixed(1)} Z`;
+
+      // Gradient color-switches exactly at zero-crossings, same trick as
+      // Desktop/gold_difference_zero_line.html's canvas gradient, ported
+      // to an SVG linearGradient (userSpaceOnUse, x = pixel position).
+      const stops = [];
+      let isBlue = series[0].diff >= 0;
+      stops.push({ x: xScale(0), blue: isBlue });
+      for (let i = 0; i < series.length - 1; i++) {
+        const a = series[i].diff, b = series[i + 1].diff;
+        if ((a >= 0 && b < 0) || (a < 0 && b >= 0)) {
+          const frac = a / (a - b);
+          const tCross = series[i].t + frac * (series[i + 1].t - series[i].t);
+          const x = xScale(tCross);
+          stops.push({ x: x - 0.5, blue: isBlue });
+          isBlue = !isBlue;
+          stops.push({ x: x + 0.5, blue: isBlue });
+        }
+      }
+      stops.push({ x: xScale(cpgDuration), blue: isBlue });
+      // <stop offset> — like Canvas's addColorStop — is a 0..1 FRACTION
+      // along the gradient vector, not a pixel coordinate. Passing raw
+      // pixel x here (as this used to) clamps every offset to ~1, which
+      // is why the line never actually turned red past a crossing.
+      const gradStops = stops.map(s => {
+        const frac = Math.max(0, Math.min(1, (s.x - CPG_LEFT) / (CPG_RIGHT - CPG_LEFT)));
+        return `<stop offset="${frac.toFixed(4)}" stop-color="${s.blue ? CPG_BLUE : CPG_RED}"></stop>`;
+      }).join('');
+
+      // 6 evenly-spaced time marks spanning the WHOLE game, regardless of
+      // how long it ran (not a fixed every-5-min step) — each rounded to
+      // the nearest minute, with the gold-diff value AT that instant
+      // (interpolated from the series) labeled right where the line
+      // crosses that mark.
+      let gridSvg = '';
+      for (let i = 1; i <= 6; i++) {
+        const minuteMark = Math.round((cpgDuration * i / 6) / 60);
+        const t = Math.max(0, Math.min(cpgDuration, minuteMark * 60));
+        const x = xScale(t);
+        const diffAtT = cpgInterpolate(series, t);
+        const y = yScale(diffAtT);
+        const color = diffAtT >= 0 ? CPG_BLUE : CPG_RED;
+        gridSvg += `<line x1="${x.toFixed(1)}" y1="${CPG_CHART_TOP}" x2="${x.toFixed(1)}" y2="${CPG_ROWS[CPG_ROWS.length - 1].y + 10}" stroke="rgba(0,0,0,0.1)" stroke-width="1"></line>`;
+        gridSvg += `<text class="cpg-axis-label" x="${x.toFixed(1)}" y="${CPG_CHART_TOP - 4}" text-anchor="middle">${minuteMark}Min.</text>`;
+        const labelY = Math.max(CPG_CHART_TOP + 10, y - 10);
+        gridSvg += `<text class="cpg-diff-label" x="${x.toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" fill="${color}">${cpgFmtDiff(diffAtT)}</text>`;
+      }
+
+      const rowsSvg = CPG_ROWS.map(row => cpgBuildRow(row, events)).join('');
+
+      svg.innerHTML = `
+        <defs>
+          <linearGradient id="cpgGrad" gradientUnits="userSpaceOnUse" x1="${CPG_LEFT}" y1="0" x2="${CPG_RIGHT}" y2="0">
+            ${gradStops}
+          </linearGradient>
+          <filter id="cpgTintBlue" x="-20%" y="-20%" width="140%" height="140%">
+            <feFlood flood-color="${CPG_BLUE}"></feFlood>
+            <feComposite in2="SourceGraphic" operator="in"></feComposite>
+          </filter>
+          <filter id="cpgTintRed" x="-20%" y="-20%" width="140%" height="140%">
+            <feFlood flood-color="${CPG_RED}"></feFlood>
+            <feComposite in2="SourceGraphic" operator="in"></feComposite>
+          </filter>
+        </defs>
+        ${gridSvg}
+        <text class="cpg-axis-label" x="${CPG_LEFT - 10}" y="${CPG_CHART_TOP + 8}" text-anchor="end">${(yMax / 1000).toFixed(0)}K</text>
+        <text class="cpg-axis-label" x="${CPG_LEFT - 10}" y="${(zeroY + 4).toFixed(1)}" text-anchor="end">0</text>
+        <path d="${areaD}" fill="url(#cpgGrad)" opacity="0.18"></path>
+        <path d="${lineD}" fill="none" stroke="url(#cpgGrad)" stroke-width="2"></path>
+        <line x1="${CPG_LEFT}" y1="${zeroY.toFixed(1)}" x2="${CPG_RIGHT}" y2="${zeroY.toFixed(1)}" stroke="rgba(0,0,0,0.25)" stroke-width="1"></line>
+        ${rowsSvg}
+      `;
+    }
+
+    async function fetchCpgData() {
+      try {
+        const [posR, evR] = await Promise.allSettled([
+          fetch(buildUrl('/positions'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/events'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const posLog = posR.value?.positions || [];
+        const events = evR.value?.events || [];
+
+        // Sum gold per camp for each exact tick, then downsample onto a
+        // clean 30s grid so the chart isn't jittery / isn't O(thousands).
+        const byExactTick = {};
+        posLog.forEach(p => {
+          const rec = byExactTick[p.game_time_s] || (byExactTick[p.game_time_s] = { c1: 0, c2: 0 });
+          if (p.camp === 1) rec.c1 += p.gold || 0;
+          else if (p.camp === 2) rec.c2 += p.gold || 0;
+        });
+        const allTicks = Object.keys(byExactTick).map(Number).sort((a, b) => a - b);
+        if (!allTicks.length) { renderCpgChart([], events); return; }
+
+        const duration = allTicks[allTicks.length - 1];
+        const SAMPLE_INTERVAL = 30;
+        const series = [];
+        let ptr = 0;
+        for (let t = 0; t <= duration; t += SAMPLE_INTERVAL) {
+          while (ptr + 1 < allTicks.length && allTicks[ptr + 1] <= t) ptr++;
+          const rec = byExactTick[allTicks[ptr]];
+          series.push({ t, diff: rec.c1 - rec.c2 });
+        }
+        const lastRec = byExactTick[duration];
+        series.push({ t: duration, diff: lastRec.c1 - lastRec.c2 });
+
+        renderCpgChart(series, events);
+      } catch {}
+    }
+
+    let cpgVisible = false;
+    function showCpgBoard() {
+      if (cpgVisible) return;
+      cpgVisible = true;
+      fetchCpgData();
+      document.getElementById('cpg-board').classList.add('cpg-visible');
+    }
+    function hideCpgBoard() {
+      if (!cpgVisible) return;
+      cpgVisible = false;
+      document.getElementById('cpg-board').classList.remove('cpg-visible');
+    }
+
+    function showCmbBoard() {
+      if (cmbVisible) return;
+      cmbVisible = true;
+      fetchCmbData();
+      fetchCkmKills();
+      document.getElementById('cmb-board').classList.add('cmb-visible');
+      document.getElementById('ckm-board').classList.add('ckm-visible');
+    }
+
+    function hideCmbBoard() {
+      if (!cmbVisible) return;
+      cmbVisible = false;
+      document.getElementById('cmb-board').classList.remove('cmb-visible');
+      document.getElementById('ckm-board').classList.remove('ckm-visible');
+    }
+
+    async function showConsolidatedPost() {
+      if (cpVisible) return;
+      // Applied BEFORE transitionTo/showMatchBoard run, so the compact
+      // top/logo CSS is already in effect the instant the mb-in animation
+      // starts — adding this after would mean the entrance animation runs
+      // at the old position, then visibly snaps to the compact one.
+      document.getElementById('match-board').classList.add('cp-compact');
+      await transitionTo('consolidated_post');
+      await fetchConsolidatedPostData();
+      if (activeFeature !== 'consolidated_post') return; /* superseded while awaiting data */
+      await preloadMedia(document.querySelectorAll('[id^="cp-row-el-"] img'), 900);
+      if (activeFeature !== 'consolidated_post') return; /* superseded while preloading */
+      cpVisible = true;
+      showSceneVideo('consolidated_post');
+      showCmbBoard();
+      showCpgBoard();
+      CP_ROW_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`cp-row-el-${i + 1}`);
+        el.style.willChange = 'transform, opacity';
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out', 'ph-visible');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-in');
+        setTimeout(() => {
+          if (cpVisible) {
+            el.classList.remove('ph-in');
+            el.classList.add('ph-visible');
+            el.style.animationDelay = '';
+            const d = cpData[i];
+            if (d) setTimeout(() => { if (cpVisible) cpAnimateDmgBar(`cp-${i + 1}`, i >= 5, d.s.total_hurt || 0, d.takenPct, d.s.total_damage || 0, d.dealtPct); }, 50);
+          }
+        }, 700 + delay);
+      });
+    }
+
+    function hideConsolidatedPost() {
+      if (!cpVisible) return Promise.resolve();
+      cpVisible = false;
+      hideCmbBoard();
+      hideCpgBoard();
+      if (cpDuringPostTransition) {
+        // Switching straight to another post feature — matchboard stays
+        // up (that feature's own showMatchBoard() is a no-op since it's
+        // already visible), just snap it back out of compact mode.
+        document.getElementById('match-board').classList.remove('cp-compact');
+      } else {
+        // Genuine standalone hide — animate matchboard out with it, then
+        // drop compact mode once it's actually invisible (no visual snap).
+        hideMatchBoard().then(() => {
+          document.getElementById('match-board').classList.remove('cp-compact');
+        });
+      }
+      CP_ROW_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`cp-row-el-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-out');
+      });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!cpVisible) {
+            CP_ROW_CLASSES.forEach((cls, i) => {
+              const el = document.getElementById(`cp-row-el-${i + 1}`);
+              el.classList.remove('ph-out', 'ph-visible');
+              el.style.animationDelay = '';
+              el.style.willChange = '';
+            });
+            hideSceneVideo();
+          }
+          resolve();
+        }, 950);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
        POST_STATS
     ════════════════════════════════════════════════ */
 
@@ -6737,7 +7674,7 @@
       fetchMatchBoardData();
       const mb = document.getElementById('match-board');
       mb.style.display = 'block';
-      ['mb-camp1', 'mb-camp2', 'mb-tournament'].forEach((id, i) => {
+      ['mb-camp1', 'mb-camp2', 'mb-tournament', 'mb-tournament-cp'].forEach((id, i) => {
         const el = document.getElementById(id);
         el.style.animation = '';
         void el.offsetWidth;
@@ -6749,7 +7686,7 @@
       if (!mbVisible) return Promise.resolve();
       mbVisible = false;
       return new Promise(resolve => {
-        const els = ['mb-camp1', 'mb-camp2', 'mb-tournament'].map(id => document.getElementById(id));
+        const els = ['mb-camp1', 'mb-camp2', 'mb-tournament', 'mb-tournament-cp'].map(id => document.getElementById(id));
         els.forEach((el, i) => { el.style.animation = `mb-out 250ms ease-in ${i * 20}ms both`; });
         setTimeout(() => {
           if (!mbVisible) {
@@ -7162,6 +8099,7 @@
           else if (scene.activeFeature === 'emblems')  showPostEmblems();
           else if (scene.activeFeature === 'items')    showPostItems();
           else if (scene.activeFeature === 'stats')    showPostStats();
+          else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
           else if (scene.activeFeature === 'waiting')  showWaitingScreen();
           else if (scene.activeFeature === 'lobby')    showWaitingLobby();
@@ -7213,6 +8151,7 @@
         if (feature === 'standings') showStandings();
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
+        if (feature === 'consolidated_post') showConsolidatedPost();
       }
     }
 

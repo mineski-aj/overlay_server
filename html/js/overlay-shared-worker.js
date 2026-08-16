@@ -26,9 +26,9 @@
 // actually broadcast. Extend this list, not each page's own code, when a
 // new named event is introduced anywhere in the system.
 const KNOWN_EVENTS = [
-  'credits', 'debugoff', 'draft', 'draftindex', 'draftphotomode', 'draftpredict',
-  'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
-  'golddiffcheck', 'highlights', 'itemcheck', 'killevent', 'led_draftpred',
+  'consolidated_post', 'credits', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
+  'draftpredict', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
+  'golddiffcheck', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerui',
   'post_emblems', 'post_hearts', 'post_itemline', 'post_itemline_itemin',

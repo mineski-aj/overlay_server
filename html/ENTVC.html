@@ -905,11 +905,12 @@
     }
     .ft-teambox-blue .ft-teambox-scorebar { left: 362px; }
     .ft-teambox-red  .ft-teambox-scorebar { left: -6px; }
-    /* Sits directly on the team's own colored fill, so pips use white
-       (won) vs. opaque dark grey (not yet) instead of the in-game
-       version's brand-blue/red-on-white scheme. */
+    /* Filled pips use the same brand blue/red as the Match Board's own
+       score bar (.mb-score-bar.scored) — blue on the home/left box, red
+       on the away/right box, rather than one flat color for both sides. */
     .ft-score-bar { width: 9px; height: 100%; background: #3a3a3a; flex-shrink: 0; }
-    .ft-score-bar.filled { background: #fff; }
+    .ft-teambox-blue .ft-score-bar.filled { background: #1E64FF; }
+    .ft-teambox-red  .ft-score-bar.filled { background: #FF3232; }
 
     /* Match bar — bicolor strip between the team boxes and the card row;
        shows which match this lineup is for (dashboard Match Board state). */

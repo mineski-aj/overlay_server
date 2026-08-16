@@ -1232,6 +1232,7 @@
     final_team:     'finalteam',
     team_lineup_blue: 'lineupblue',
     team_lineup_red:  'lineupred',
+    consolidated_post: 'consolidated_post',
   };
 
   function mplfsFeatureShown(key) {
@@ -1338,6 +1339,18 @@
       var shown = d.action === 'show';
       checkOverlayStates[d.check] = shown;
       applyCheckToggleBtn(d.check, shown);
+    } catch (err) {}
+  });
+
+  // Ingame Blue/Red per-player HRM on/off — keeps the Control-tab panel's
+  // LIVE/OFF buttons correct even when the state changed elsewhere (a
+  // universal action, curl, or another dashboard tab), not just from this
+  // panel's own click.
+  var hrmRowRefs = {};
+  dashboardSSE.addEventListener('hrm', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (hrmRowRefs[d.slot]) hrmRowRefs[d.slot](!!d.isOff);
     } catch (err) {}
   });
 
@@ -1491,6 +1504,7 @@
         { name: 'Post Emblem',   show: '/overlay/post_emblems/show',  hide: '/overlay/post_emblems/hide'  },
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
+        { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
         { name: 'Rich Guy',      show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
@@ -1922,10 +1936,11 @@
     var SLOTS = ['player1','player2','player3','player4','player5',
                  'player6','player7','player8','player9','player10'];
 
+    hrmRowRefs = {};
+
     SLOTS.forEach(function(slot, i) {
       var pid   = i + 1;
-      var saved = JSON.parse(localStorage.getItem('ekg_p'+pid) || 'null') || { manualBpm:60, isManual:false };
-      var isOff = !!saved.isManual;
+      var isOff = false; // placeholder until the live-state fetch below resolves
 
       var pRow = el('div', '');
       pRow.style.cssText = 'display:flex;align-items:center;gap:4px;margin-bottom:3px;';
@@ -1945,20 +1960,15 @@
         offBtn.style.cssText  = togBase + ( isOff ? 'background:#d2001e;color:#fff;border-color:#d2001e;' : 'background:#2a2a2a;color:#777;border-color:#444;');
       }
       refreshToggles();
+      hrmRowRefs[slot] = function(off) { isOff = off; refreshToggles(); };
 
-      liveBtn.addEventListener('click', (function(s, p) { return function() {
-        isOff = false;
-        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:saved.manualBpm||60,isManual:false}));
-        refreshToggles();
-        ekgCall('setHrmPlayer', [s, false]);
-      }; })(slot, pid));
+      liveBtn.addEventListener('click', (function(s) { return function() {
+        fetch('/overlay/hrm/' + s + '/show').catch(function(){});
+      }; })(slot));
 
-      offBtn.addEventListener('click', (function(s, p) { return function() {
-        isOff = true;
-        localStorage.setItem('ekg_p'+p, JSON.stringify({manualBpm:saved.manualBpm||60,isManual:true}));
-        refreshToggles();
-        ekgCall('setHrmPlayer', [s, true]);
-      }; })(slot, pid));
+      offBtn.addEventListener('click', (function(s) { return function() {
+        fetch('/overlay/hrm/' + s + '/hide').catch(function(){});
+      }; })(slot));
 
       pRow.appendChild(teamDot);
       pRow.appendChild(pidSpan);
@@ -1967,6 +1977,16 @@
       body.appendChild(pRow);
       playerRows.push({ pid: pid, dot: teamDot });
     });
+
+    // Read live server state on open instead of assuming everything is LIVE
+    // (memory: feedback_feature_toggle_state.md).
+    fetch('/overlay/hrm-state', { cache: 'no-store' })
+      .then(function(r){ return r.json(); })
+      .then(function(d) {
+        SLOTS.forEach(function(slot) {
+          if (hrmRowRefs[slot]) hrmRowRefs[slot](!!d[slot]);
+        });
+      }).catch(function(){});
 
     function updateSwap() {
       fetch('/match/state', { cache: 'no-store' })
@@ -2880,6 +2900,101 @@
     { group: 'Schedule', id: '#stv-content', name: 'Schedule Block' },
   ];
 
+  /* ── Consolidated Post (mplfs.html) element defaults ──────────────
+     10 per-player rows (5 blue, 5 red-mirrored) share one CSS template
+     per field, so editing is per-field-type-per-team: dragging e.g.
+     "Hero Image (Blue)" nudges all 5 blue rows' hero art together via
+     the shared `.cp-row:not(.cp-mirrored) .cp-hero` selector, same for
+     the red side via `.cp-mirrored .cp-hero`. Row containers are each
+     their own entry (not a shared selector) so a "Row Position" group
+     drag preserves each row's own vertical offset instead of collapsing
+     all 5 onto one position — see CP_ROW_ELEMENTS below. */
+  var CP_FIELD_DEFAULTS_BLUE = {
+    hero:      { left: 0,   top: 0,  width: 69,  height: 85 },
+    photo:     { left: 69,  top: 0,  width: 128, height: 85 },
+    spell:     { left: 3,   top: 60, width: 22,  height: 22 },
+    level:     { left: 3,   top: 88, width: 63,  height: 17, fontSize: 15 },
+    role:      { left: 73,  top: 89, width: 15,  height: 15 },
+    name:      { left: 100, top: 88, width: 95,  height: 17, fontSize: 15 },
+    'rune-main': { left: 211, top: 6,  width: 20, height: 20 },
+    'rune-1':    { left: 211, top: 31, width: 20, height: 20 },
+    'rune-2':    { left: 211, top: 56, width: 20, height: 20 },
+    'rune-3':    { left: 211, top: 81, width: 20, height: 20 },
+    stats:     { left: 249, top: 0,  width: 113, height: 107 },
+    'dmg-taken-label': { left: 372, top: 10, width: 187, height: 14, fontSize: 9 },
+    'dmg-taken': { left: 372, top: 26, width: 187, height: 22 },
+    'dmg-dealt-label': { left: 372, top: 57, width: 187, height: 14, fontSize: 9 },
+    'dmg-dealt': { left: 372, top: 73, width: 187, height: 22 },
+    items:     { left: 580, top: 8,  width: 144, height: 92 },
+  };
+  var CP_FIELD_DEFAULTS_RED = {
+    hero:      { left: 661, top: 0,  width: 69,  height: 85 },
+    photo:     { left: 533, top: 0,  width: 128, height: 85 },
+    spell:     { left: 705, top: 60, width: 22,  height: 22 },
+    level:     { left: 664, top: 88, width: 63,  height: 17, fontSize: 15 },
+    role:      { left: 642, top: 89, width: 15,  height: 15 },
+    name:      { left: 535, top: 88, width: 95,  height: 17, fontSize: 15 },
+    'rune-main': { left: 499, top: 6,  width: 20, height: 20 },
+    'rune-1':    { left: 499, top: 31, width: 20, height: 20 },
+    'rune-2':    { left: 499, top: 56, width: 20, height: 20 },
+    'rune-3':    { left: 499, top: 81, width: 20, height: 20 },
+    stats:     { left: 368, top: 0,  width: 113, height: 107 },
+    'dmg-taken-label': { left: 171, top: 10, width: 187, height: 14, fontSize: 9 },
+    'dmg-taken': { left: 171, top: 26, width: 187, height: 22 },
+    'dmg-dealt-label': { left: 171, top: 57, width: 187, height: 14, fontSize: 9 },
+    'dmg-dealt': { left: 171, top: 73, width: 187, height: 22 },
+    items:     { left: 6,   top: 8,  width: 144, height: 92 },
+  };
+  var CP_FIELD_NAMES = {
+    hero: 'Hero Image', photo: 'Player Photo', spell: 'Battle Spell', level: 'Level',
+    role: 'Role Icon', name: 'Player Name', 'rune-main': 'Main Rune',
+    'rune-1': 'Sub Rune 1', 'rune-2': 'Sub Rune 2', 'rune-3': 'Sub Rune 3',
+    stats: 'KDA / Gold',
+    'dmg-taken-label': 'Damage Taken Label', 'dmg-taken': 'Damage Taken Bar',
+    'dmg-dealt-label': 'Damage Dealt Label', 'dmg-dealt': 'Damage Dealt Bar',
+    items: 'Item Grid',
+  };
+
+  var CP_DEFAULTS = {};
+  var CP_ELEMENTS = [];
+  Object.keys(CP_FIELD_DEFAULTS_BLUE).forEach(function (field) {
+    var blueSel = '.cp-row:not(.cp-mirrored) .cp-' + field;
+    var redSel  = '.cp-mirrored .cp-' + field;
+    CP_DEFAULTS[blueSel] = CP_FIELD_DEFAULTS_BLUE[field];
+    CP_DEFAULTS[redSel]  = CP_FIELD_DEFAULTS_RED[field];
+    CP_ELEMENTS.push({ group: CP_FIELD_NAMES[field] + ' (Blue)', id: blueSel, name: CP_FIELD_NAMES[field] + ' · Blue' });
+    CP_ELEMENTS.push({ group: CP_FIELD_NAMES[field] + ' (Red)',  id: redSel,  name: CP_FIELD_NAMES[field] + ' · Red'  });
+  });
+
+  var CP_ROW_POSITIONS = [
+    [59, 193], [59, 300], [59, 407], [59, 514], [59, 621],
+    [1131, 193], [1131, 300], [1131, 407], [1131, 514], [1131, 621],
+  ];
+  CP_ROW_POSITIONS.forEach(function (pos, i) {
+    var n   = i + 1;
+    var sel = '.cp-row-' + n;
+    CP_DEFAULTS[sel] = { left: pos[0], top: pos[1], width: 730, height: 107 };
+    CP_ELEMENTS.push({
+      group: n <= 5 ? 'Row Position · Blue' : 'Row Position · Red',
+      id: sel,
+      name: 'Row ' + n,
+    });
+  });
+
+  /* Consolidated Middle Board — relocated Middleboard objectives, one
+     fixed canvas-absolute box (not per-row), same "whole box only"
+     philosophy as Credit Reel's viewport. */
+  CP_DEFAULTS['#cmb-board'] = { left: 805, top: 169, width: 311, height: 338 };
+  CP_ELEMENTS.push({ group: 'Middle Board', id: '#cmb-board', name: 'Middle Board' });
+
+  /* Consolidated Kill Map — sits directly under the Middle Board. */
+  CP_DEFAULTS['#ckm-board'] = { left: 805, top: 517, width: 310, height: 211 };
+  CP_ELEMENTS.push({ group: 'Kill Map', id: '#ckm-board', name: 'Kill Map' });
+
+  /* Consolidated Post Graph — gold-diff chart + Lord/Turtle/Kill rows. */
+  CP_DEFAULTS['#cpg-board'] = { left: 59, top: 745, width: 1800, height: 270 };
+  CP_ELEMENTS.push({ group: 'Post Graph', id: '#cpg-board', name: 'Post Graph' });
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -2961,6 +3076,15 @@
       elements:    FT_ELEMENTS,
       defaults:    FT_DEFAULTS,
       showFn:      'showFinalTeam',
+    },
+    mplfs_consolidated_post: {
+      label:       'Consolidated Post · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_consolidated_post',
+      elements:    CP_ELEMENTS,
+      defaults:    CP_DEFAULTS,
+      showFn:      'showConsolidatedPost',
     },
     mplfs_credits: {
       label:       'Credit Reel · mplfs',

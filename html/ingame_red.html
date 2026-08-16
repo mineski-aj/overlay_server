@@ -944,8 +944,18 @@ function setBpmOff(key, isOff) {
   if (h.kdagoldEl)  h.kdagoldEl.style.display  = isOff ? 'block' : 'none';
 }
 
+let hrmOffState = {};
+async function pollHrmState() {
+  try {
+    const r = await fetch(window.location.origin + '/overlay/hrm-state', { cache: 'no-store' });
+    if (r.ok) hrmOffState = await r.json();
+  } catch {}
+}
+pollHrmState();
+setInterval(pollHrmState, 1000);
+
 function hrmGetSaved(feedNum) {
-  try { return JSON.parse(localStorage.getItem('ekg_p' + feedNum)) || {}; } catch(e) { return {}; }
+  return { isManual: !!hrmOffState['player' + feedNum] };
 }
 
 async function pollBpmFeed() {
@@ -974,22 +984,12 @@ async function pollBpmFeed() {
   }
 }
 
-/* Dashboard's Live/Off toggle for this player (isOff replaces the old isManual+bpm pair) */
+/* Local debug console helper — real cross-browser control goes through
+   /overlay/hrm/:slot/show|hide (server state), which pollHrmState() above
+   already picks up on its own 1s cycle. */
 window.setHrmPlayer = function(slot, isOff) {
-  const feedNum = parseInt(slot.replace('player', ''));
-  const saved = hrmGetSaved(feedNum);
-  localStorage.setItem('ekg_p' + feedNum, JSON.stringify({ manualBpm: saved.manualBpm || 60, isManual: !!isOff }));
-  const slots = bpmSwapped ? BPM_SWAP_SLOTS : BPM_MY_SLOTS;
-  const idx   = slots.indexOf(slot);
-  if (idx === -1) return;
-  const key = 'p' + (idx + 1);
-  setBpmOff(key, !!isOff);
-  if (isOff) { bpmPlayers[key].bpm = 0; bpmPlayers[key].connected = false; }
+  fetch(window.location.origin + '/overlay/hrm/' + slot + '/' + (isOff ? 'hide' : 'show')).catch(() => {});
 };
-
-window.addEventListener('storage', function(e) {
-  if (e.key && e.key.startsWith('ekg_p')) pollBpmFeed();
-});
 
 (function initBpm() {
   for (let i = 1; i <= 5; i++) {

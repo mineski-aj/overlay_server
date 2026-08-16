@@ -214,6 +214,35 @@ router.get('/overlay/playerui/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/hrm-state — current per-player heart-rate meter on/off
+// state (ingame_red.html / ingame_blue.html), so any page (dashboard,
+// ingame overlays on a different browser/machine, vMix) can poll the
+// same source of truth instead of relying on each browser's own
+// localStorage, which never syncs across separate machines.
+router.get('/overlay/hrm-state', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.hrmOff);
+});
+
+// GET /overlay/hrm/:slot/show — turn the BPM meter back on (LIVE) for one player
+router.get('/overlay/hrm/:slot/show', (req, res) => {
+  const slot = req.params.slot;
+  if (!(slot in state.hrmOff)) return res.status(400).json({ ok: false, error: 'unknown slot' });
+  state.hrmOff[slot] = false;
+  const payload = JSON.stringify({ slot, isOff: false });
+  state.overlayClients.forEach(c => { try { c.write(`event: hrm\ndata: ${payload}\n\n`); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, slot, isOff: false });
+});
+
+// GET /overlay/hrm/:slot/hide — turn the BPM meter off (swap to KDA + Gold) for one player
+router.get('/overlay/hrm/:slot/hide', (req, res) => {
+  const slot = req.params.slot;
+  if (!(slot in state.hrmOff)) return res.status(400).json({ ok: false, error: 'unknown slot' });
+  state.hrmOff[slot] = true;
+  const payload = JSON.stringify({ slot, isOff: true });
+  state.overlayClients.forEach(c => { try { c.write(`event: hrm\ndata: ${payload}\n\n`); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, slot, isOff: true });
+});
+
 // "Side *check" ranking panels (exp, damage taken, and future ones)
 // all broadcast over ONE shared SSE event — 'sidecheck' — with a
 // `check` field identifying which panel, instead of a separate named
@@ -650,6 +679,36 @@ router.get('/overlay/post_stats/show', (req, res) => {
 router.get('/overlay/post_stats/hide', (req, res) => {
   state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: post_stats\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/consolidated_post/show
+router.get('/overlay/consolidated_post/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'consolidated_post';
+  // Deliberately do NOT also broadcast a standalone 'matchboard' event here.
+  // mplfs.html has its own independent 'matchboard' SSE listener (for the
+  // Control tab's standalone Matchboard toggle) that calls showMatchBoard()
+  // directly with no idea cp-compact is about to be applied — broadcasting
+  // it here raced against showConsolidatedPost()'s own properly-sequenced
+  // internal showMatchBoard() call, so the board would animate in at its
+  // normal (non-compact) position first, then jump 36px once
+  // showConsolidatedPost() finally added cp-compact. The dashboard's own
+  // Matchboard toggle indicator still stays in sync without this broadcast:
+  // it refetches the full /overlay/mplfs-scene snapshot (which includes
+  // this matchboard flag) off the 'consolidated_post' event alone.
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: consolidated_post\ndata: {"action":"show"}\n\n');
+    } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/consolidated_post/hide
+router.get('/overlay/consolidated_post/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: consolidated_post\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
