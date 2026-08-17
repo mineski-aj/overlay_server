@@ -12,21 +12,21 @@
     },
     {
       "game": 2,
-      "tossWinner": "away",
+      "tossWinner": "home",
       "tossSide": "red",
-      "homeSide": "blue",
-      "awaySide": "red",
-      "map": "Expanding Rivers",
-      "winner": null,
-      "locked": false
+      "homeSide": "red",
+      "awaySide": "blue",
+      "map": "Flying Cloud",
+      "winner": "away",
+      "locked": true
     },
     {
       "game": 3,
-      "tossWinner": null,
-      "tossSide": null,
-      "homeSide": null,
-      "awaySide": null,
-      "map": null,
+      "tossWinner": "home",
+      "tossSide": "blue",
+      "homeSide": "blue",
+      "awaySide": "red",
+      "map": "Broken Walls",
       "winner": null,
       "locked": false
     },
