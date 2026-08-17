@@ -611,6 +611,290 @@
       "top": "5px",
       "width": "270px",
       "height": "270px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-hero": {
+      "left": "0px",
+      "top": "0px",
+      "width": "69px",
+      "height": "85px"
+    },
+    ".cp-mirrored .cp-hero": {
+      "left": "661px",
+      "top": "0px",
+      "width": "69px",
+      "height": "85px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-photo": {
+      "left": "69px",
+      "top": "0px",
+      "width": "128px",
+      "height": "85px"
+    },
+    ".cp-mirrored .cp-photo": {
+      "left": "533px",
+      "top": "0px",
+      "width": "128px",
+      "height": "85px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-spell": {
+      "left": "3px",
+      "top": "60px",
+      "width": "22px",
+      "height": "22px"
+    },
+    ".cp-mirrored .cp-spell": {
+      "left": "705px",
+      "top": "60px",
+      "width": "22px",
+      "height": "22px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-level": {
+      "left": "3px",
+      "top": "88px",
+      "width": "63px",
+      "height": "17px",
+      "fontSize": "15px"
+    },
+    ".cp-mirrored .cp-level": {
+      "left": "664px",
+      "top": "88px",
+      "width": "63px",
+      "height": "17px",
+      "fontSize": "15px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-role": {
+      "left": "73px",
+      "top": "89px",
+      "width": "15px",
+      "height": "15px"
+    },
+    ".cp-mirrored .cp-role": {
+      "left": "642px",
+      "top": "89px",
+      "width": "15px",
+      "height": "15px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-name": {
+      "left": "100px",
+      "top": "88px",
+      "width": "95px",
+      "height": "17px",
+      "fontSize": "15px"
+    },
+    ".cp-mirrored .cp-name": {
+      "left": "535px",
+      "top": "88px",
+      "width": "95px",
+      "height": "17px",
+      "fontSize": "15px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-rune-main": {
+      "left": "211px",
+      "top": "6px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-mirrored .cp-rune-main": {
+      "left": "499px",
+      "top": "6px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-rune-1": {
+      "left": "211px",
+      "top": "31px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-mirrored .cp-rune-1": {
+      "left": "499px",
+      "top": "31px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-rune-2": {
+      "left": "211px",
+      "top": "56px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-mirrored .cp-rune-2": {
+      "left": "499px",
+      "top": "56px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-rune-3": {
+      "left": "211px",
+      "top": "81px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-mirrored .cp-rune-3": {
+      "left": "499px",
+      "top": "81px",
+      "width": "20px",
+      "height": "20px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-stats": {
+      "left": "249px",
+      "top": "0px",
+      "width": "113px",
+      "height": "107px"
+    },
+    ".cp-mirrored .cp-stats": {
+      "left": "368px",
+      "top": "0px",
+      "width": "113px",
+      "height": "107px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-dmg-taken-label": {
+      "left": "372px",
+      "top": "10px",
+      "width": "187px",
+      "height": "14px",
+      "fontSize": "9px"
+    },
+    ".cp-mirrored .cp-dmg-taken-label": {
+      "left": "171px",
+      "top": "10px",
+      "width": "187px",
+      "height": "14px",
+      "fontSize": "9px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-dmg-taken": {
+      "left": "372px",
+      "top": "26px",
+      "width": "187px",
+      "height": "22px"
+    },
+    ".cp-mirrored .cp-dmg-taken": {
+      "left": "171px",
+      "top": "26px",
+      "width": "187px",
+      "height": "22px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-dmg-dealt-label": {
+      "left": "372px",
+      "top": "57px",
+      "width": "187px",
+      "height": "14px",
+      "fontSize": "9px"
+    },
+    ".cp-mirrored .cp-dmg-dealt-label": {
+      "left": "171px",
+      "top": "57px",
+      "width": "187px",
+      "height": "14px",
+      "fontSize": "9px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-dmg-dealt": {
+      "left": "372px",
+      "top": "73px",
+      "width": "187px",
+      "height": "22px"
+    },
+    ".cp-mirrored .cp-dmg-dealt": {
+      "left": "171px",
+      "top": "73px",
+      "width": "187px",
+      "height": "22px"
+    },
+    ".cp-row:not(.cp-mirrored) .cp-items": {
+      "left": "580px",
+      "top": "8px",
+      "width": "144px",
+      "height": "92px"
+    },
+    ".cp-mirrored .cp-items": {
+      "left": "6px",
+      "top": "8px",
+      "width": "144px",
+      "height": "92px"
+    },
+    ".cp-row-1": {
+      "left": "59px",
+      "top": "193px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-2": {
+      "left": "59px",
+      "top": "300px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-3": {
+      "left": "59px",
+      "top": "407px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-4": {
+      "left": "59px",
+      "top": "514px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-5": {
+      "left": "59px",
+      "top": "621px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-6": {
+      "left": "1131px",
+      "top": "193px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-7": {
+      "left": "1131px",
+      "top": "300px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-8": {
+      "left": "1131px",
+      "top": "407px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-9": {
+      "left": "1131px",
+      "top": "514px",
+      "width": "730px",
+      "height": "107px"
+    },
+    ".cp-row-10": {
+      "left": "1131px",
+      "top": "621px",
+      "width": "730px",
+      "height": "107px"
+    },
+    "#cmb-board": {
+      "left": "805px",
+      "top": "169px",
+      "width": "311px",
+      "height": "338px"
+    },
+    "#ckm-board": {
+      "left": "805px",
+      "top": "517px",
+      "width": "310px",
+      "height": "211px"
+    },
+    "#ckm-bounds": {
+      "left": "85px",
+      "top": "-21px",
+      "width": "245px",
+      "height": "251.1px"
+    },
+    "#cpg-board": {
+      "left": "59px",
+      "top": "745px",
+      "width": "1800px",
+      "height": "270px"
     }
   },
   "Draft": {

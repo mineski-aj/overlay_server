@@ -119,6 +119,13 @@
   <!-- [FEATURE: player-ui] built dynamically via puiBuildPanel() -->
   <div id="player-ui-overlay"></div>
 
+  <!-- [FEATURE: objective-spawn] full-canvas video, plays once when the
+       Lord or Turtle timer actually counts down to 0 (spawn moment).
+       Highest layer in the scene — see mploverlay_v7.css. -->
+  <div id="objective-spawn-overlay">
+    <video id="objective-spawn-video" preload="auto" muted></video>
+  </div>
+
   <div id="debug-area">
     <div id="url-row">
       <span class="debug-label">API URL</span>
@@ -133,6 +140,7 @@
       <button class="tab-btn"        data-tab="trinity">TRINITY</button>
       <button class="tab-btn"        data-tab="swap">SWAP</button>
       <button class="tab-btn"        data-tab="killevents">KILL EVENTS</button>
+      <button class="tab-btn"        data-tab="objectivespawn">OBJECTIVE SPAWN</button>
     </div>
 
     <!-- Level 15 tab -->
@@ -172,6 +180,12 @@
       <div class="debug-team" id="kill-event-btns" style="flex-wrap:wrap;gap:5px;justify-content:center;"></div>
     </div>
 
+    <!-- Objective spawn tab [FEATURE: objective-spawn] -->
+    <div id="tab-objectivespawn" class="tab-content">
+      <span class="section-note">MANUALLY TRIGGER SPAWN VIDEOS — LIVE TRIGGER IS THE GAME_TIME/TORTOISE_LEFT_TIME/LORD_LEFT_TIME FIELDS COUNTING DOWN TO 0</span>
+      <div class="debug-team" id="objectivespawn-btns" style="flex-wrap:wrap;gap:5px;justify-content:center;"></div>
+    </div>
+
     <!-- Conceal tab [FEATURE: conceal-overlay] -->
     <div id="tab-conceal" class="tab-content">
       <span class="section-note">CAMP 1 — LEFT</span>
@@ -195,6 +209,7 @@
 <script src="html/js/overlay-swap.js"></script>
 <script src="html/js/overlay-conceal.js"></script>
 <script src="html/js/overlay-killevents.js"></script>
+<script src="html/js/overlay-objectivespawn.js"></script>
 <script src="html/js/overlay-fights.js"></script>
 <script src="html/js/overlay-itemcheck.js"></script>
 <script src="html/js/overlay-emblemcheck.js"></script>

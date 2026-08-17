@@ -1991,3 +1991,19 @@
   .pui-ulti-locked { background: #4a4a4a; }
   .pui-ulti-ready  { background: rgb(0, 239, 79); }
   .pui-ulti-locked.on, .pui-ulti-pie.on, .pui-ulti-ready.on { opacity: 1; }
+
+  /* ── [FEATURE: objective-spawn] ── full-canvas video, plays once the
+     Lord or Turtle timer counts down to spawn. Highest layer in the
+     scene — above .sidecheck-clip (z-index:500), the previous highest. */
+  #objective-spawn-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 1080px;
+    z-index: 900;
+    pointer-events: none;
+    display: none;
+  }
+  #objective-spawn-video {
+    width: 100%; height: 100%;
+    display: block;
+  }

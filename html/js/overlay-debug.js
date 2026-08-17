@@ -309,6 +309,20 @@ KILL_DEBUG_BTNS.forEach(({ label, video, priority }) => {
   killBtnRow.appendChild(btn);
 });
 
+/* ── Objective spawn debug buttons ── */
+const OBJ_SPAWN_DEBUG_BTNS = [
+  { label: 'LORD SPAWN',   kind: 'lord'   },
+  { label: 'TURTLE SPAWN', kind: 'turtle' },
+];
+const objSpawnBtnRow = document.getElementById('objectivespawn-btns');
+OBJ_SPAWN_DEBUG_BTNS.forEach(({ label, kind }) => {
+  const btn = document.createElement('button');
+  btn.className = 'debug-btn';
+  btn.textContent = `▶ ${label}`;
+  btn.addEventListener('click', () => objSpawnEnqueue(kind));
+  objSpawnBtnRow.appendChild(btn);
+});
+
 /* ── Start polling ── */
 setInterval(masterPoll, 1000);
 masterPoll();

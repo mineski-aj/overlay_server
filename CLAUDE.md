@@ -517,8 +517,7 @@ fire the request and let the SSE echo-back update the UI.
   `reference_mlbb_api.md`).
 - Asset path conventions (all indexed by `heroid` or an id from the API,
   not hardcoded):
-  - `/heromvp/MVP_<heroid>.png` — hero art for MVP Scene (two files are
-    typo'd `MPV_129.png`/`MPV_130.png`, handled as a special case).
+  - `/heromvp/MVP_<heroid>.png` — hero art for MVP Scene.
   - `/herohighlights/<heroid>heromvp.png` — hero art for MVP Highlights.
   - `/items/<id>.png`, `/role/<role>.png`, `/logos/<TRICODE>.png`,
     `/emblem/square_<id>_RUNES.png`.

@@ -473,8 +473,18 @@
     .ckm-name  { top: 141px; }
     .ckm-icon  { position: absolute; left: 31px; top: 78px; width: 43px; height: 43px; object-fit: contain; }
     .ckm-graphic { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; object-fit: cover; }
-    .ckm-kills   { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; overflow: hidden; }
+    /* overflow:visible (not hidden) — #ckm-bounds can legitimately be sized
+       larger than this SVG's own nominal 205x211 box to spread dots
+       across more of consomap.png; clipping it here would silently hide
+       exactly the part of that adjustment the user is trying to see. */
+    .ckm-kills   { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; overflow: visible; }
     .ckm-kill-dot { fill-opacity: 0.88; stroke: rgba(255,255,255,0.5); stroke-width: 0.6; }
+    /* [FEATURE: kill-map-bounds] Invisible, edit-tab-only box — defines the
+       sub-region of consomap.png that kill dots actually plot into. Not
+       part of the visual graphic; see ckmGameToLocal() in the script below.
+       Default matches .ckm-graphic/.ckm-kills exactly, so it's a no-op
+       until someone drags/resizes it from the dashboard Edit tab. */
+    #ckm-bounds { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; pointer-events: none; }
 
     /* ── CONSOLIDATED POST GRAPH — gold-difference area/line chart (blue
        above zero, red below, color switches exactly at zero-crossings —
@@ -2889,6 +2899,7 @@
       <div class="ckm-name" id="ckm-name"></div>
       <img class="ckm-graphic" src="/assets/consolidated_post/consomap.png" alt="">
       <svg class="ckm-kills" id="ckm-kills" viewBox="0 0 205 211"></svg>
+      <div id="ckm-bounds"></div>
     </div>
 
     <div id="cpg-board">
@@ -5480,12 +5491,10 @@
     }
 
     /* heromvp/ is indexed by heroid like everywhere else, just prefixed
-       "MVP_" instead of suffixed — except two files in that folder that
-       are typo'd "MPV_129.png"/"MPV_130.png". */
+       "MVP_" instead of suffixed. */
     function mvHeroImgUrl(heroid) {
       if (!heroid) return '';
-      const prefix = (heroid === 129 || heroid === 130) ? 'MPV_' : 'MVP_';
-      return '/heromvp/' + prefix + heroid + '.png';
+      return '/heromvp/MVP_' + heroid + '.png';
     }
 
     /* Centered, starts near the box height, shrinks to fit the box width
@@ -7083,19 +7092,57 @@
        scale-and-center formula as the reference heatmap tool
        (Desktop/heatmap/mlbb_heatmap.html) — MLBB's raw /positions x/y
        are game-world units roughly ±47 on each axis, blue base toward
-       one corner and red base toward the opposite corner — just rescaled
-       to this box's 205×211 instead of that tool's 560×560 canvas. Good
-       for "which side of the map" placement, not pixel-true terrain
-       alignment. */
-    const CKM_W = 205, CKM_H = 211;
-    const CKM_CENTER_X = CKM_W / 2;
-    const CKM_CENTER_Y = CKM_H / 2;
+       one corner and red base toward the opposite corner. Good for
+       "which side of the map" placement, not pixel-true terrain alignment.
+
+       The plotting region is #ckm-bounds (registered in the dashboard
+       Edit tab as "Kill Map Bounds") instead of a hardcoded box, so the
+       user can drag/resize it to line the dots up with consomap.png's
+       actual art without a code change. #ckm-bounds is invisible and
+       does not move/scale the graphic itself — it only feeds this
+       transform. Read once per render via getBoundingClientRect and
+       converted into #ckm-kills' own SVG viewBox units (0..205, 0..211),
+       which is what renderCkmKills' cx/cy are drawn in.
+
+       CKM_SCALE below is a PIXEL-PER-GAME-UNIT rate, tuned against the
+       original hardcoded 205×211 box — it does NOT automatically get
+       bigger just because #ckm-bounds does. ckmGameToLocal rescales it
+       by (bounds size / original size) so resizing #ckm-bounds actually
+       spreads the dots out to fill the new box, instead of just adding
+       empty margin around the same tight cluster (which is what a plain
+       reposition/clamp-only box did — the clamp only ever kicks in for
+       the few kills near the map's edge, so most points never reached
+       it regardless of how big the box was). */
+    const CKM_ORIG_W = 205, CKM_ORIG_H = 211;
     const CKM_SCALE = 1.6;
-    function ckmGameToLocal(gx, gy) {
-      const margin = 6;
+    function getCkmBounds() {
+      const svgEl    = document.getElementById('ckm-kills');
+      const boundsEl = document.getElementById('ckm-bounds');
+      const fallback = { left: 0, top: 0, width: CKM_ORIG_W, height: CKM_ORIG_H };
+      if (!svgEl || !boundsEl) return fallback;
+      const svgRect    = svgEl.getBoundingClientRect();
+      const boundsRect = boundsEl.getBoundingClientRect();
+      if (!svgRect.width || !svgRect.height) return fallback;
+      const scaleX = CKM_ORIG_W / svgRect.width;
+      const scaleY = CKM_ORIG_H / svgRect.height;
       return {
-        x: Math.max(margin, Math.min(CKM_W - margin, CKM_CENTER_X + (gx + gy) * CKM_SCALE)),
-        y: Math.max(margin, Math.min(CKM_H - margin, CKM_CENTER_Y + (-gx + gy) * CKM_SCALE)),
+        left:   (boundsRect.left - svgRect.left) * scaleX,
+        top:    (boundsRect.top  - svgRect.top)  * scaleY,
+        width:  boundsRect.width  * scaleX,
+        height: boundsRect.height * scaleY,
+      };
+    }
+    function ckmGameToLocal(gx, gy, bounds) {
+      const b = bounds || getCkmBounds();
+      const scaleX = CKM_SCALE * (b.width  / CKM_ORIG_W);
+      const scaleY = CKM_SCALE * (b.height / CKM_ORIG_H);
+      const marginX = Math.min(6, b.width  * 0.1);
+      const marginY = Math.min(6, b.height * 0.1);
+      const centerX = b.left + b.width  / 2;
+      const centerY = b.top  + b.height / 2;
+      return {
+        x: Math.max(b.left + marginX, Math.min(b.left + b.width  - marginX, centerX + (gx + gy) * scaleX)),
+        y: Math.max(b.top  + marginY, Math.min(b.top  + b.height - marginY, centerY + (-gx + gy) * scaleY)),
       };
     }
 
@@ -7134,13 +7181,14 @@
           return best;
         }
 
+        const bounds = getCkmBounds();
         const points = [];
         kills.forEach(k => {
           const camp = k.camp === 'camp1' ? 1 : k.camp === 'camp2' ? 2 : null;
           if (!camp) return;
           const pos = nearestPos(camp, k.seat, k.time_s);
           if (!pos || (pos.x === 0 && pos.y === 0)) return; // pre-spawn zero coords
-          points.push({ camp, ...ckmGameToLocal(pos.x, pos.y) });
+          points.push({ camp, ...ckmGameToLocal(pos.x, pos.y, bounds) });
         });
         renderCkmKills(points);
       } catch {}

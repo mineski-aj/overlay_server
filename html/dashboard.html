@@ -1584,6 +1584,7 @@
         { name: 'Level 15',    feature: 'lvl15'      },
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
+        { name: 'Objective Spawn', feature: 'objectivespawn' },
       ],
     },
     {
@@ -2990,6 +2991,14 @@
   /* Consolidated Kill Map — sits directly under the Middle Board. */
   CP_DEFAULTS['#ckm-board'] = { left: 805, top: 517, width: 310, height: 211 };
   CP_ELEMENTS.push({ group: 'Kill Map', id: '#ckm-board', name: 'Kill Map' });
+
+  /* Kill Map Bounds — invisible box that defines the sub-region of
+     consomap.png kill dots actually plot into (see ckmGameToLocal() in
+     mplfs.html). Separate group from Kill Map itself on purpose: it's a
+     child of #ckm-board, so moving #ckm-board already carries it along
+     for free; a shared group would double-move it on arrow-key nudges. */
+  CP_DEFAULTS['#ckm-bounds'] = { left: 105, top: 0, width: 205, height: 211 };
+  CP_ELEMENTS.push({ group: 'Kill Map Bounds', id: '#ckm-bounds', name: 'Kill Map Bounds' });
 
   /* Consolidated Post Graph — gold-diff chart + Lord/Turtle/Kill rows. */
   CP_DEFAULTS['#cpg-board'] = { left: 59, top: 745, width: 1800, height: 270 };
