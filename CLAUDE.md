@@ -174,15 +174,19 @@ and Standings scenes, used for the English-language broadcast. It shares
 `mplfs.html`'s scene architecture, `showSceneVideo`/SSE wiring, and
 helpers like `msToMatchRows`/`buildTsMatches` almost byte-for-byte.
 
-**Standing rule: any change to Waiting TVC or Waiting Lobby content in
-`mplfs.html` — new features, CSS/animation fixes, graphics swaps,
-tunable settings, anything, including future updates not yet made —
-must be mirrored into `ENTVC.html` too. The one deliberate exception is
-EN Casters positioning: it uses its own `ws-encasters`-prefixed
-selectors and its own dashboard Edit config (`entvc_encasters`),
-independent of the regular Casters panel, precisely so it CAN be
-positioned differently per broadcast — don't fold it into the
-mirroring rule.**
+**Standing rule: any change to Waiting TVC content in `mplfs.html` — new
+features, CSS/animation fixes, graphics swaps, tunable settings,
+anything, including future updates not yet made — must be mirrored
+into `ENTVC.html` too. Waiting Lobby is NOT covered by this rule —
+despite ENTVC.html also having its own copy of that scene, edits to
+Waiting Lobby stay mplfs.html-only unless the user separately asks for
+ENTVC.html to be updated too (confirmed explicitly after the
+Waiting Lobby `redcorner.webm` accent was mirrored in by mistake). The
+other deliberate exception is EN Casters positioning: it uses its own
+`ws-encasters`-prefixed selectors and its own dashboard Edit config
+(`entvc_encasters`), independent of the regular Casters panel,
+precisely so it CAN be positioned differently per broadcast — don't
+fold it into the mirroring rule either.**
 
 How the mirroring actually happens, two different ways depending on
 what changed:

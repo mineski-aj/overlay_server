@@ -718,6 +718,9 @@
     }
     .wl-player-blue { left: 635px !important; top: 130px !important; width: 1080px !important; height: 1080px !important; z-index: 2; }
     .wl-player-red  { left: 1190px !important; top: 130px !important; width: 1080px !important; height: 1080px !important; z-index: 1; }
+    /* [FEATURE: waiting-lobby-redcorner] full 1920x1080 canvas, above both
+       player photos (z-index 1/2) and the namebox plates (z-index 3). */
+    #wl-redcorner { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 5; pointer-events: none; }
     /* Two stacked layers per side (see wlApplyPlayer) — opacity/transform
        for the cross-fade are driven entirely from JS with inline styles. */
     .wl-player-photo {
@@ -2557,6 +2560,10 @@
         <img class="wl-player-photo" id="wl-red-photo-0" src="" alt="">
         <img class="wl-player-photo" id="wl-red-photo-1" src="" alt="">
       </div>
+      <!-- [FEATURE: waiting-lobby-redcorner] full-canvas accent, in front of
+           both player photos. Kept frame-synced to the shared scene
+           background video (bgloopsun.webm) — see showWaitingLobby(). -->
+      <video id="wl-redcorner" loop muted playsinline preload="auto"></video>
       <div class="wl-namebox wl-namebox-blue">
         <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
         <div class="wl-namebox-logo"><img class="wl-slide-el" id="wl-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
@@ -4935,6 +4942,28 @@
       startWlPlayerCycle(ms);
     }
 
+    const WL_REDCORNER_SRC = WL_ASSET + 'redcorner.webm';
+    const wlRedcornerEl = document.getElementById('wl-redcorner');
+
+    /* redcorner.webm and bgloopsun.webm are the same 10s/60fps duration by
+       design (specifically so they can stay loop-locked) with synced visual
+       beats, per the user. bgloopsun.webm is the shared scene background
+       video (see showSceneVideo above) and may already be mid-loop when
+       Waiting Lobby appears — e.g. the previous scene (Waiting Screen TVC,
+       Today's/Tomorrow's Schedule, Final Team) reuses the exact same file,
+       so it never restarts on that transition. Re-stamping currentTime from
+       the active scene-video layer on every show (not just the first time)
+       keeps the two frame-aligned regardless of which scene played before,
+       and self-corrects for any tiny independent-decode drift on repeat
+       shows. Never paused on hide, same as the shared scene video itself —
+       it just keeps looping in the background so phase never resets. */
+    function syncWlRedcorner() {
+      if (wlRedcornerEl.getAttribute('src') !== WL_REDCORNER_SRC) wlRedcornerEl.src = WL_REDCORNER_SRC;
+      const activeSceneVideoEl = sceneVideoEls[sceneVideoLayer];
+      wlRedcornerEl.currentTime = activeSceneVideoEl.currentTime || 0;
+      wlRedcornerEl.play().catch(() => {});
+    }
+
     async function showWaitingLobby() {
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
@@ -4943,6 +4972,7 @@
       if (activeFeature !== 'lobby') return; /* superseded while awaiting match state */
       updateWlFromState(ms);
       showSceneVideo('lobby');
+      syncWlRedcorner();
       startWlTimer();
       startWlSponsorLoop();
       wlPage.classList.add('wl-on');
