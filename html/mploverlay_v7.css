@@ -927,11 +927,13 @@
     left: 645px;
     top: 58px;
     transform: translate(-100%, -50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-family: 'General Sans', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: #161616;
-    text-align: right;
     white-space: nowrap;
     line-height: 1;
     pointer-events: none;
@@ -942,15 +944,27 @@
     left: 1230px;
     top: 58px;
     transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     font-family: 'General Sans', sans-serif;
     font-size: 18px;
     font-weight: 700;
     color: #161616;
-    text-align: left;
     white-space: nowrap;
     line-height: 1;
     pointer-events: none;
     opacity: 0;
+  }
+  /* Sized in em against the parent's own font-size (18px default, dashboard
+     Edit-tab editable) so resizing "Gold Lead" text also scales this icon
+     in lockstep — no separate icon-size control needed. Width is left to
+     auto so the 17x16 asset's aspect ratio is preserved automatically. */
+  .sb-goldlead-icon {
+    height: 0.85em;
+    width: auto;
+    display: block;
+    object-fit: contain;
   }
   @keyframes sb-gl-out-c1 {
     from { transform: translate(-100%, -50%);              opacity: 1; }

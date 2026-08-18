@@ -77,12 +77,27 @@
   tu2.textContent = '0';
   overlay.appendChild(tu2);
 
-  var gl1 = document.createElement('div');
-  gl1.id = 'sb-goldlead-c1';
+  /* Icon + amount span, not plain text — see sbUpdateGoldLead below,
+     which only ever writes to the .sb-goldlead-amount span so the icon
+     (ingameitemgold.png) survives every update instead of being wiped by
+     a textContent overwrite. */
+  function buildGoldLeadEl(id) {
+    var el = document.createElement('div');
+    el.id = id;
+    var icon = document.createElement('img');
+    icon.className = 'sb-goldlead-icon';
+    icon.src = 'assets/ingame/ingameitemgold.png';
+    icon.alt = '';
+    var amount = document.createElement('span');
+    amount.className = 'sb-goldlead-amount';
+    el.appendChild(icon);
+    el.appendChild(amount);
+    return el;
+  }
+  var gl1 = buildGoldLeadEl('sb-goldlead-c1');
   overlay.appendChild(gl1);
 
-  var gl2 = document.createElement('div');
-  gl2.id = 'sb-goldlead-c2';
+  var gl2 = buildGoldLeadEl('sb-goldlead-c2');
   overlay.appendChild(gl2);
 
   var ms1 = document.createElement('div');
@@ -397,6 +412,8 @@ function sbUpdateGoldLead(total1, total2) {
   var el1 = document.getElementById('sb-goldlead-c1');
   var el2 = document.getElementById('sb-goldlead-c2');
   if (!el1 || !el2) return;
+  var amt1 = el1.querySelector('.sb-goldlead-amount');
+  var amt2 = el2.querySelector('.sb-goldlead-amount');
 
   var diff    = total1 - total2;
   var newSide = diff > 0 ? 'c1' : diff < 0 ? 'c2' : null;
@@ -412,10 +429,11 @@ function sbUpdateGoldLead(total1, total2) {
     return;
   }
 
-  var newEl = newSide === 'c1' ? el1 : el2;
+  var newEl  = newSide === 'c1' ? el1  : el2;
+  var newAmt = newSide === 'c1' ? amt1 : amt2;
 
   if (newSide === _glSide) {
-    newEl.textContent = amount;
+    if (newAmt) newAmt.textContent = amount;
     return;
   }
 
@@ -427,11 +445,11 @@ function sbUpdateGoldLead(total1, total2) {
     oldEl.style.animation = 'sb-gl-out-' + oldSide + ' 0.3s ease-in forwards';
     setTimeout(function() {
       oldEl.style.animation = 'none';
-      newEl.textContent = amount;
+      if (newAmt) newAmt.textContent = amount;
       newEl.style.animation = 'sb-gl-in-' + newSide + ' 0.4s ease-out forwards';
     }, 320);
   } else {
-    newEl.textContent = amount;
+    if (newAmt) newAmt.textContent = amount;
     newEl.style.animation = 'sb-gl-in-' + newSide + ' 0.4s ease-out forwards';
   }
 }
@@ -561,7 +579,16 @@ setInterval(sbPollMatchState, 3000);
     .then(function(r) { return r.json(); })
     .then(function(styles) {
       if (!styles || !Object.keys(styles).length) return;
-      var css = Object.keys(styles).map(function(sel) {
+      var css = Object.keys(styles).filter(function(sel) {
+        /* .sidecheck-name's saved size is read directly by
+           overlay-sidecheck-core.js (SIDECHECK_NAME_FONT_CEILING) instead
+           of being injected as a blanket override here — a `!important`
+           rule would always win over that script's own inline font-size
+           assignment, permanently defeating its shrink-to-fit-the-box
+           protection for long names. See the SIDECHECK_DEFAULTS comment
+           in dashboard.html for the full reasoning. */
+        return sel !== '.sidecheck-name';
+      }).map(function(sel) {
         var props = styles[sel];
         var decls = Object.keys(props).map(function(prop) {
           var cssProp = prop === 'fontSize' ? 'font-size' : prop;

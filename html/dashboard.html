@@ -920,6 +920,17 @@
     </div>
   </div>
 
+  <div class="settings-section">
+    <div class="settings-section-hdr">Overlay Pages</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>All Pages</label>
+        <button id="btn-force-reload-overlays">Force-Refresh All Overlays</button>
+        <span id="force-reload-status"></span>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -1174,6 +1185,26 @@
 
   document.getElementById('btn-debugoff').addEventListener('click', function() {
     fetch('/overlay/debugoff').catch(function(){});
+  });
+
+  /* Hard-reloads every open overlay page at once (mplfs.html, ENTVC.html,
+     DraftIndex.html, Draft.html, mpltag.html, mploverlay_v7.html) via the
+     same 'reload' SSE event a dashboard Edit-tab save already triggers —
+     see GET /overlay/force-reload in routes/overlay.js. Saves going to
+     each production browser source by hand after an edit. */
+  document.getElementById('btn-force-reload-overlays').addEventListener('click', function() {
+    var statusEl = document.getElementById('force-reload-status');
+    fetch('/overlay/force-reload')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        statusEl.textContent = 'Refreshed ' + (d.clients || 0) + ' page(s) ✓';
+        statusEl.style.color = '#44cc88';
+        setTimeout(function() { statusEl.textContent = ''; }, 3000);
+      })
+      .catch(function() {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#ff4455';
+      });
   });
 
   var KILL_PRIORITIES = {
@@ -2549,18 +2580,42 @@
   /* ── Side-check family (mploverlay_v7.html) ───────────────────────
      Exp/Taken/Damage/Gold checks share one factory (createSideCheck in
      overlay-sidecheck-core.js) and one set of .sidecheck-* CSS classes
-     — editing these two selectors once reflects to all four panels.
-     Player name (.sidecheck-name) is deliberately excluded: its size is
-     driven by sidecheckFitName()'s own hardcoded 7-10px shrink-to-fit
-     search, which a CSS override would desync rather than cooperate
-     with. */
+     — editing these selectors once reflects to all four panels.
+     .sidecheck-role-icon is a plain <img>, so its width/height go
+     through the normal generic CSS-override mechanism unchanged (it's
+     just an image getting resized — "scale" is the aspect-lock
+     width+height combo already available on every element).
+     .sidecheck-name is special: its rendered size is driven by
+     sidecheckFitName()'s shrink-to-fit search (overlay-sidecheck-
+     core.js), which needs to keep controlling the actual inline
+     font-size so long names still shrink to fit their 103px box — a
+     blanket `!important` CSS override would always win over that inline
+     assignment and permanently defeat the shrink protection. So this
+     selector's saved fontSize is deliberately EXCLUDED from the normal
+     CSS-injection path in both applyToEditIframe() (dashboard.html) and
+     loadSbOverrides() (overlay-scoreboard.js) — instead
+     overlay-sidecheck-core.js fetches it directly and uses it as the
+     shrink-to-fit's own ceiling (SIDECHECK_NAME_FONT_CEILING), so the
+     size you set is respected right up until a name is too long to fit,
+     same safety net as before. One consequence: unlike every other
+     property in this app, dragging this number won't live-preview in
+     the Edit-tab iframe — it takes effect once Saved (which reloads
+     every open overlay page, same as Credit Reel's heading/body size
+     fields, which have the same no-live-preview trait for the same
+     reason). Also note .sidecheck-name only shows real text while a
+     match is actually live/polling — with no game data the row is
+     blank, so sizing it is easiest to verify during a live match. */
   var SIDECHECK_DEFAULTS = {
-    '.sidecheck-header':    { fontSize: 24 },
-    '.sidecheck-stat-text': { fontSize: 14 },
+    '.sidecheck-header':     { fontSize: 24 },
+    '.sidecheck-stat-text':  { fontSize: 14 },
+    '.sidecheck-name':       { fontSize: 10 },
+    '.sidecheck-role-icon':  { width: 11, height: 11 },
   };
   var SIDECHECK_ELEMENTS = [
     { group: 'Side Check Text', id: '.sidecheck-header',    name: 'Panel Title Size' },
     { group: 'Side Check Text', id: '.sidecheck-stat-text', name: 'Stat Value Size'  },
+    { group: 'Player Name',     id: '.sidecheck-name',      name: 'Player Name Size' },
+    { group: 'Role Icons',      id: '.sidecheck-role-icon', name: 'Role Icon Scale'  },
   ];
 
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
@@ -3652,7 +3707,12 @@
     if (!editIfLoaded) return;
     var doc = editIframe.contentDocument;
     if (!doc || !doc.head) return;
-    var css = Object.keys(editValues).map(function(sel) {
+    var css = Object.keys(editValues).filter(function(sel) {
+      /* .sidecheck-name is deliberately excluded from live CSS-injection
+         preview — see the SIDECHECK_DEFAULTS note in this file for why a
+         blanket override would fight its own shrink-to-fit script. */
+      return sel !== '.sidecheck-name';
+    }).map(function(sel) {
       var p = editValues[sel];
       var d = [];
       var native = TW_MATCHES_SCALE_NATIVE[sel];

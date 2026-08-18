@@ -30,10 +30,30 @@ function sidecheckFormatK(v) {
   return ((v || 0) / 1000).toFixed(1) + 'K';
 }
 
+/* User-editable ceiling for the name shrink-to-fit search below (dashboard
+   Edit tab: Side Events · mploverlay_v7 → Player Name → Player Name Size).
+   Fetched directly instead of via the normal `!important` CSS-override
+   injection (see loadSbOverrides in overlay-scoreboard.js) because that
+   would always beat this function's own inline font-size assignment and
+   permanently break the shrink-on-overflow protection for long names. */
+let SIDECHECK_NAME_FONT_CEILING = 10;
+(function loadSidecheckNameFontSize() {
+  fetch('/api/overlay-styles?file=mploverlay_v7')
+    .then(r => r.json())
+    .then(styles => {
+      const v = styles && styles['.sidecheck-name'] && styles['.sidecheck-name'].fontSize;
+      const n = v && parseFloat(v);
+      if (n) SIDECHECK_NAME_FONT_CEILING = n;
+    })
+    .catch(() => {});
+})();
+
 function sidecheckFitName(el) {
-  el.style.fontSize = '10px';
+  const hi0 = SIDECHECK_NAME_FONT_CEILING;
+  const lo0 = Math.max(5, hi0 * 0.7);
+  el.style.fontSize = hi0 + 'px';
   if (el.scrollWidth <= SIDECHECK_NAME_MAX_W) return;
-  let lo = 7, hi = 10;
+  let lo = lo0, hi = hi0;
   while (hi - lo > 0.5) {
     const mid = (lo + hi) / 2;
     el.style.fontSize = mid + 'px';

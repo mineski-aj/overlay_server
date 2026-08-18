@@ -30,6 +30,19 @@ router.get('/api/player-photos', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ names: _playerPhotoNames });
 });
 
+// GET /overlay/force-reload — hard-reload every open overlay page (mplfs.html,
+// ENTVC.html, DraftIndex.html, Draft.html, mpltag.html, mploverlay_v7.html) at
+// once, so production browser sources don't need to be refreshed by hand
+// after a dashboard Edit-tab save or any other change. Reuses the exact
+// 'reload' SSE event routes/overlayStyles.js already broadcasts after a
+// style save — every overlay page already listens for it, so no client-side
+// changes were needed to wire this up. See dashboard.html's Settings page
+// ("Overlay Pages" section) for the button that calls this.
+router.get('/overlay/force-reload', (req, res) => {
+  state.overlayClients.forEach(c => { try { c.write('event: reload\ndata: {}\n\n'); } catch {} });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, clients: state.overlayClients.length });
+});
+
 // GET /overlay/draft-photo-mode — current player-photo source ('live' | 'random')
 router.get('/overlay/draft-photo-mode', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ mode: state.draftPhotoMode });
