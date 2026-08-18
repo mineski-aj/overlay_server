@@ -899,6 +899,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Post-Info API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="postinfo-api-input">Base URL</label>
+        <input type="text" id="postinfo-api-input" placeholder="http://10.88.120.60:5001/api/post-info/" spellcheck="false" autocomplete="off" />
+        <button id="postinfo-api-apply">Apply</button>
+        <span id="postinfo-api-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Debug</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1131,6 +1143,34 @@
 
   luApiApply.addEventListener('click', saveLineupRateApiUrl);
   luApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveLineupRateApiUrl(); });
+
+  /* ── Post-Info API URL ────────────────────────────────────── */
+  var piApiInput  = document.getElementById('postinfo-api-input');
+  var piApiApply  = document.getElementById('postinfo-api-apply');
+  var piApiStatus = document.getElementById('postinfo-api-status');
+
+  fetch('/api/post-info-url').then(function(r){ return r.json(); }).then(function(d){
+    piApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function savePostInfoApiUrl() {
+    var url = piApiInput.value.trim();
+    fetch('/api/post-info-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      piApiStatus.textContent = 'Saved ✓';
+      piApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ piApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      piApiStatus.textContent = 'Error';
+      piApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  piApiApply.addEventListener('click', savePostInfoApiUrl);
+  piApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') savePostInfoApiUrl(); });
 
   document.getElementById('btn-debugoff').addEventListener('click', function() {
     fetch('/overlay/debugoff').catch(function(){});

@@ -7085,19 +7085,20 @@
 
     async function fetchCmbData() {
       try {
-        const [gameR, msR] = await Promise.allSettled([
+        const [gameR, msR, piR] = await Promise.allSettled([
           fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
         const gd = gameR.value?.data ?? null;
         const ms = msR.value ?? null;
+        const pi = piR.value?.data ?? null;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         if (gd) {
           const camps = gd.camp_list || [];
           const c1 = camps.find(c => c.campid === 1);
           const c2 = camps.find(c => c.campid === 2);
           if (c1 && c2) {
-            const sumBuff = (camp, key) => (camp.enemy_area_get && camp.enemy_area_get[key]) || 0;
             set('cmb-gold-l',       fmtGold(c1.total_money));
             set('cmb-gold-r',       fmtGold(c2.total_money));
             set('cmb-tower-l',      c1.kill_tower || 0);
@@ -7106,12 +7107,22 @@
             set('cmb-lord-r',       c2.kill_lord || 0);
             set('cmb-turtle-l',     c1.kill_tortoise || 0);
             set('cmb-turtle-r',     c2.kill_tortoise || 0);
-            set('cmb-redbuff-l',    sumBuff(c1, 'orange_buffer_num'));
-            set('cmb-redbuff-r',    sumBuff(c2, 'orange_buffer_num'));
-            set('cmb-purplebuff-l', sumBuff(c1, 'purple_buffer_num'));
-            set('cmb-purplebuff-r', sumBuff(c2, 'purple_buffer_num'));
           }
           set('cmb-game-time-value', fmtGameTime(gd.game_time));
+        }
+        // Buff counts come from the separate Post-Info API — the live
+        // sub-info feed (gamedata-proxy) has no enemy_area_get at all.
+        // enemy_area_get is an array of per-time-window deltas, so sum
+        // across all of them for a running total, not a single lookup.
+        if (pi) {
+          const piCamps = pi.camp_list || [];
+          const pc1 = piCamps.find(c => c.campid === 1);
+          const pc2 = piCamps.find(c => c.campid === 2);
+          const sumBuff = (camp, key) => (camp && camp.enemy_area_get || []).reduce((sum, e) => sum + (e[key] || 0), 0);
+          set('cmb-redbuff-l',    sumBuff(pc1, 'orange_buffer_num'));
+          set('cmb-redbuff-r',    sumBuff(pc2, 'orange_buffer_num'));
+          set('cmb-purplebuff-l', sumBuff(pc1, 'purple_buffer_num'));
+          set('cmb-purplebuff-r', sumBuff(pc2, 'purple_buffer_num'));
         }
         if (ms) {
           const gameNum  = ms.game  || 1;
@@ -7530,6 +7541,11 @@
               el.classList.remove('ph-out', 'ph-visible');
               el.style.animationDelay = '';
               el.style.willChange = '';
+              const id = `cp-${i + 1}`;
+              const tb = document.getElementById(`${id}-taken-bar`);
+              const db = document.getElementById(`${id}-dealt-bar`);
+              if (tb) tb.style.width = '0%';
+              if (db) db.style.width = '0%';
             });
             hideSceneVideo();
           }
@@ -7821,19 +7837,20 @@
 
     async function fetchMiddleBoardData() {
       try {
-        const [gameR, msR] = await Promise.allSettled([
+        const [gameR, msR, piR] = await Promise.allSettled([
           fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
         const gd = gameR.value?.data ?? null;
         const ms = msR.value ?? null;
+        const pi = piR.value?.data ?? null;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         if (gd) {
           const camps = gd.camp_list || [];
           const c1 = camps.find(c => c.campid === 1);
           const c2 = camps.find(c => c.campid === 2);
           if (c1 && c2) {
-            const sumBuff = (camp, key) => (camp.enemy_area_get && camp.enemy_area_get[key]) || 0;
             set('mdb-gold-l',       fmtGold(c1.total_money));
             set('mdb-gold-r',       fmtGold(c2.total_money));
             set('mdb-tower-l',      c1.kill_tower || 0);
@@ -7842,12 +7859,22 @@
             set('mdb-lord-r',       c2.kill_lord || 0);
             set('mdb-turtle-l',     c1.kill_tortoise || 0);
             set('mdb-turtle-r',     c2.kill_tortoise || 0);
-            set('mdb-redbuff-l',    sumBuff(c1, 'orange_buffer_num'));
-            set('mdb-redbuff-r',    sumBuff(c2, 'orange_buffer_num'));
-            set('mdb-purplebuff-l', sumBuff(c1, 'purple_buffer_num'));
-            set('mdb-purplebuff-r', sumBuff(c2, 'purple_buffer_num'));
           }
           set('mdb-game-time-value', fmtGameTime(gd.game_time));
+        }
+        // Buff counts come from the separate Post-Info API — the live
+        // sub-info feed (gamedata-proxy) has no enemy_area_get at all.
+        // enemy_area_get is an array of per-time-window deltas, so sum
+        // across all of them for a running total, not a single lookup.
+        if (pi) {
+          const piCamps = pi.camp_list || [];
+          const pc1 = piCamps.find(c => c.campid === 1);
+          const pc2 = piCamps.find(c => c.campid === 2);
+          const sumBuff = (camp, key) => (camp && camp.enemy_area_get || []).reduce((sum, e) => sum + (e[key] || 0), 0);
+          set('mdb-redbuff-l',    sumBuff(pc1, 'orange_buffer_num'));
+          set('mdb-redbuff-r',    sumBuff(pc2, 'orange_buffer_num'));
+          set('mdb-purplebuff-l', sumBuff(pc1, 'purple_buffer_num'));
+          set('mdb-purplebuff-r', sumBuff(pc2, 'purple_buffer_num'));
         }
         if (ms) {
           const gameNum  = ms.game  || 1;

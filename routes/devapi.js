@@ -276,6 +276,48 @@ router.get('/api/gamedata-proxy', async (req, res) => {
   }
 });
 
+// Post-Info API base URL — GET to read, POST { url } to update. Separate
+// feed from the main Game API: the live sub-info feed has no orange/purple
+// jungle-buff counts, but this one does, in camp_list[].enemy_area_get
+// (an array of per-time-window deltas — sum them for a running total, see
+// mplfs.html's fetchCmbData/fetchMiddleBoardData).
+const POST_INFO_URL_FILE    = path.join(__dirname, '..', 'post_info_api_url.json');
+const POST_INFO_URL_DEFAULT = 'http://10.88.120.60:5001/api/post-info/';
+
+router.get('/api/post-info-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(POST_INFO_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: POST_INFO_URL_DEFAULT });
+  }
+});
+
+router.post('/api/post-info-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(POST_INFO_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — serves the post-info payload lib/pollers.js polls
+// (state.lastPostInfoData), same caching pattern as /api/gamedata-proxy.
+router.get('/api/postinfo-proxy', async (req, res) => {
+  if (state.lastPostInfoData) {
+    return res.set('Cache-Control', 'no-store').json(state.lastPostInfoData);
+  }
+  try {
+    let stored;
+    try { stored = JSON.parse(fs.readFileSync(POST_INFO_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
+    const url = (stored.url || POST_INFO_URL_DEFAULT).trim();
+    if (!url) return res.status(404).json({ error: 'no post-info URL configured' });
+    const r = await fetch(url);
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // HRM Server (heartrate ingestion) base URL — GET to read, POST { url } to update
 const HRM_URL_FILE    = path.join(__dirname, '..', 'hrm_api_url.json');
 const HRM_URL_DEFAULT = 'http://<HRM-SERVER-IP>:5055';
