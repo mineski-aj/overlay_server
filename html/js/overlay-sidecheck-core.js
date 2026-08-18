@@ -32,10 +32,18 @@ function sidecheckFormatK(v) {
 
 /* User-editable ceiling for the name shrink-to-fit search below (dashboard
    Edit tab: Side Events · mploverlay_v7 → Player Name → Player Name Size).
-   Fetched directly instead of via the normal `!important` CSS-override
-   injection (see loadSbOverrides in overlay-scoreboard.js) because that
+   A blanket `!important` CSS override (the normal mechanism every other
+   editable property uses — see loadSbOverrides in overlay-scoreboard.js)
    would always beat this function's own inline font-size assignment and
-   permanently break the shrink-on-overflow protection for long names. */
+   permanently break the shrink-on-overflow protection for long names — so
+   this one property instead has dashboard.html's applyToEditIframe() call
+   sidecheckSetNameFontCeiling() below directly (same cross-frame-call
+   pattern as config.showFn), which updates the ceiling AND immediately
+   re-fits every name on screen, so dragging the value still live-previews
+   normally, just through the fit algorithm instead of around it. Real
+   page loads (not the edit iframe) get the saved value from
+   loadSidecheckNameFontSize()'s fetch below instead, since there's no
+   dashboard connection to call into. */
 let SIDECHECK_NAME_FONT_CEILING = 10;
 (function loadSidecheckNameFontSize() {
   fetch('/api/overlay-styles?file=mploverlay_v7')
@@ -61,6 +69,18 @@ function sidecheckFitName(el) {
   }
   el.style.fontSize = lo + 'px';
 }
+
+/* Called from dashboard.html's applyToEditIframe() while dragging/typing
+   the Player Name Size field — updates the ceiling every sidecheckFitName
+   call uses, then immediately re-fits every name currently on screen
+   (across all four side-check panels, since they share this one ceiling)
+   so the change is visible right away instead of only after Save. */
+window.sidecheckSetNameFontCeiling = function(v) {
+  const n = parseFloat(v);
+  if (!n) return;
+  SIDECHECK_NAME_FONT_CEILING = n;
+  document.querySelectorAll('.sidecheck-name-inner').forEach(sidecheckFitName);
+};
 
 function createSideCheck(opts) {
   let shouldShow = false;
@@ -92,6 +112,7 @@ function createSideCheck(opts) {
     const nameOuter = document.createElement('div');
     nameOuter.className = 'sidecheck-name';
     const nameInner = document.createElement('span');
+    nameInner.className = 'sidecheck-name-inner';
     nameOuter.appendChild(nameInner);
     row.appendChild(nameOuter);
 

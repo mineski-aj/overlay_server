@@ -579,18 +579,20 @@ setInterval(sbPollMatchState, 3000);
     .then(function(r) { return r.json(); })
     .then(function(styles) {
       if (!styles || !Object.keys(styles).length) return;
-      var css = Object.keys(styles).filter(function(sel) {
-        /* .sidecheck-name's saved size is read directly by
+      var css = Object.keys(styles).map(function(sel) {
+        var props = styles[sel];
+        /* .sidecheck-name's saved font-size (only — left/top go through
+           the normal path below) is read directly by
            overlay-sidecheck-core.js (SIDECHECK_NAME_FONT_CEILING) instead
            of being injected as a blanket override here — a `!important`
            rule would always win over that script's own inline font-size
            assignment, permanently defeating its shrink-to-fit-the-box
            protection for long names. See the SIDECHECK_DEFAULTS comment
            in dashboard.html for the full reasoning. */
-        return sel !== '.sidecheck-name';
-      }).map(function(sel) {
-        var props = styles[sel];
-        var decls = Object.keys(props).map(function(prop) {
+        var skipFontSize = (sel === '.sidecheck-name');
+        var decls = Object.keys(props).filter(function(prop) {
+          return !(skipFontSize && prop === 'fontSize');
+        }).map(function(prop) {
           var cssProp = prop === 'fontSize' ? 'font-size' : prop;
           return cssProp + ':' + props[prop] + ' !important';
         }).join(';');

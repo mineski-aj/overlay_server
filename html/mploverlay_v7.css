@@ -1830,6 +1830,8 @@
     position: absolute;
     left: 77px; top: 8px;
     width: 107px; height: 13px;
+    display: flex;
+    align-items: center;
     font-family: 'General Sans', sans-serif;
     font-weight: 700;
     font-size: 10px;

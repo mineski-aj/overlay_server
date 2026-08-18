@@ -2591,30 +2591,34 @@
      font-size so long names still shrink to fit their 103px box — a
      blanket `!important` CSS override would always win over that inline
      assignment and permanently defeat the shrink protection. So this
-     selector's saved fontSize is deliberately EXCLUDED from the normal
-     CSS-injection path in both applyToEditIframe() (dashboard.html) and
-     loadSbOverrides() (overlay-scoreboard.js) — instead
-     overlay-sidecheck-core.js fetches it directly and uses it as the
-     shrink-to-fit's own ceiling (SIDECHECK_NAME_FONT_CEILING), so the
-     size you set is respected right up until a name is too long to fit,
-     same safety net as before. One consequence: unlike every other
-     property in this app, dragging this number won't live-preview in
-     the Edit-tab iframe — it takes effect once Saved (which reloads
-     every open overlay page, same as Credit Reel's heading/body size
-     fields, which have the same no-live-preview trait for the same
-     reason). Also note .sidecheck-name only shows real text while a
-     match is actually live/polling — with no game data the row is
-     blank, so sizing it is easiest to verify during a live match. */
+     selector's saved fontSize is excluded from the normal CSS-injection
+     path in both applyToEditIframe() (dashboard.html) and
+     loadSbOverrides() (overlay-scoreboard.js); instead
+     applyToEditIframe() calls sidecheckSetNameFontCeiling() directly
+     inside the iframe (same cross-frame-call pattern as config.showFn),
+     which updates the ceiling AND immediately re-fits every name on
+     screen — so it still live-previews normally like every other field,
+     just through the fit algorithm instead of around it. On a real page
+     load (not the edit iframe), overlay-sidecheck-core.js fetches the
+     saved value itself and uses it the same way. Note .sidecheck-name
+     only shows real text while a match is actually live/polling — with
+     no game data the row is blank, so sizing it is easiest to verify
+     during a live match. */
   var SIDECHECK_DEFAULTS = {
     '.sidecheck-header':     { fontSize: 24 },
     '.sidecheck-stat-text':  { fontSize: 14 },
-    '.sidecheck-name':       { fontSize: 10 },
+    /* left/top are relative to each row's own 277x49 box (same as every
+       row's other children, e.g. .sidecheck-portrait) — since this is one
+       shared class across all 10 rows in all 4 panels, editing it nudges
+       the name's position identically in every row at once, same as the
+       font-size edit already does. */
+    '.sidecheck-name':       { left: 77, top: 8, fontSize: 10 },
     '.sidecheck-role-icon':  { width: 11, height: 11 },
   };
   var SIDECHECK_ELEMENTS = [
     { group: 'Side Check Text', id: '.sidecheck-header',    name: 'Panel Title Size' },
     { group: 'Side Check Text', id: '.sidecheck-stat-text', name: 'Stat Value Size'  },
-    { group: 'Player Name',     id: '.sidecheck-name',      name: 'Player Name Size' },
+    { group: 'Player Name',     id: '.sidecheck-name',      name: 'Player Name'      },
     { group: 'Role Icons',      id: '.sidecheck-role-icon', name: 'Role Icon Scale'  },
   ];
 
@@ -3707,15 +3711,21 @@
     if (!editIfLoaded) return;
     var doc = editIframe.contentDocument;
     if (!doc || !doc.head) return;
-    var css = Object.keys(editValues).filter(function(sel) {
-      /* .sidecheck-name is deliberately excluded from live CSS-injection
-         preview — see the SIDECHECK_DEFAULTS note in this file for why a
-         blanket override would fight its own shrink-to-fit script. */
-      return sel !== '.sidecheck-name';
-    }).map(function(sel) {
+    /* .sidecheck-name's fontSize (only — left/top go through the normal
+       path below like everything else) is excluded from the generic
+       CSS-injection loop: a blanket `!important` rule would fight its own
+       shrink-to-fit script (see the SIDECHECK_DEFAULTS note above), so
+       this calls straight into the iframe's own fit function instead,
+       same cross-frame-call pattern as config.showFn. This is what makes
+       it live-preview like every other field despite the special case. */
+    if (editValues['.sidecheck-name'] && editValues['.sidecheck-name'].fontSize !== undefined) {
+      try { editIframe.contentWindow.sidecheckSetNameFontCeiling(editValues['.sidecheck-name'].fontSize); } catch (e) {}
+    }
+    var css = Object.keys(editValues).map(function(sel) {
       var p = editValues[sel];
       var d = [];
       var native = TW_MATCHES_SCALE_NATIVE[sel];
+      var skipFontSize = (sel === '.sidecheck-name');
       if (p.left !== undefined) d.push('left:' + p.left + 'px !important');
       if (p.top  !== undefined) d.push('top:'  + p.top  + 'px !important');
       if (native && (p.width !== undefined || p.height !== undefined)) {
@@ -3729,7 +3739,7 @@
         if (p.width  !== undefined) d.push('width:'  + p.width  + 'px !important');
         if (p.height !== undefined) d.push('height:' + p.height + 'px !important');
       }
-      if (p.fontSize !== undefined) d.push('font-size:' + p.fontSize + 'px !important');
+      if (p.fontSize !== undefined && !skipFontSize) d.push('font-size:' + p.fontSize + 'px !important');
       return sel + '{' + d.join(';') + '}';
     }).join('\n');
     var s = doc.getElementById('sb-live-edit');
@@ -4201,6 +4211,15 @@
         statusEl.textContent = 'Saved ✓';
         statusEl.style.color = '#44cc88';
         setTimeout(function() { statusEl.textContent = ''; }, 2000);
+        /* Saving triggers a server-side SSE 'reload' broadcast so every
+           OTHER open overlay page/tab picks up the change — but that same
+           broadcast also hard-reloads THIS edit iframe (it's just another
+           instance of the same page), which lands back on a blank/hidden
+           scene since nothing re-calls the config's showFn afterward.
+           Re-loading it here (which re-runs showFn on load, same as the
+           first time this config was selected) keeps the scene visible
+           for a final post-save check instead of it just vanishing. */
+        if (EDIT_CONFIGS[currentConfigKey].showFn) loadIframe(EDIT_CONFIGS[currentConfigKey]);
       }).catch(function() {
         statusEl.textContent = 'Error';
         statusEl.style.color = '#ff4455';
