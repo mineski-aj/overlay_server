@@ -2546,6 +2546,23 @@
     { group: 'Logos',      id: '#sb-logo-c2',            name: 'Logo (Team 2)'    },
   ];
 
+  /* ── Side-check family (mploverlay_v7.html) ───────────────────────
+     Exp/Taken/Damage/Gold checks share one factory (createSideCheck in
+     overlay-sidecheck-core.js) and one set of .sidecheck-* CSS classes
+     — editing these two selectors once reflects to all four panels.
+     Player name (.sidecheck-name) is deliberately excluded: its size is
+     driven by sidecheckFitName()'s own hardcoded 7-10px shrink-to-fit
+     search, which a CSS override would desync rather than cooperate
+     with. */
+  var SIDECHECK_DEFAULTS = {
+    '.sidecheck-header':    { fontSize: 24 },
+    '.sidecheck-stat-text': { fontSize: 14 },
+  };
+  var SIDECHECK_ELEMENTS = [
+    { group: 'Side Check Text', id: '.sidecheck-header',    name: 'Panel Title Size' },
+    { group: 'Side Check Text', id: '.sidecheck-stat-text', name: 'Stat Value Size'  },
+  ];
+
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
   var WL_DEFAULTS = {
     '#wl-header':         { left: 40,   top: 80,  width: 967, height: 150 },
@@ -2556,6 +2573,12 @@
     '.wl-player-red':     { left: 1420, top: 40,  width: 500, height: 800 },
     '.wl-namebox-blue':   { left: 860,  top: 830 },
     '.wl-namebox-red':    { left: 1580, top: 715 },
+    /* Match Card text — grouped by shared class, so one fontSize edit
+       resizes every instance of that text family at once (label/time/BO
+       share one class already, same for the L/R team code and score). */
+    '.wlm-label, .wlm-time, .wlm-bo': { fontSize: 22 },
+    '.wlm-tri':                       { fontSize: 46 },
+    '.wlm-score-l, .wlm-score-r':     { fontSize: 44 },
   };
 
   var WL_ELEMENTS = [
@@ -2567,6 +2590,9 @@
     { group: 'Players', id: '.wl-player-red',   name: 'Photo (Red)'     },
     { group: 'Players', id: '.wl-namebox-blue', name: 'Name Box (Blue)' },
     { group: 'Players', id: '.wl-namebox-red',  name: 'Name Box (Red)'  },
+    { group: 'Match Card Text', id: '.wlm-label, .wlm-time, .wlm-bo', name: 'Header Text Size' },
+    { group: 'Match Card Text', id: '.wlm-tri',                       name: 'Team Code Size'   },
+    { group: 'Match Card Text', id: '.wlm-score-l, .wlm-score-r',     name: 'Score Size'       },
   ];
 
   /* ── Today's / Tomorrow's Schedule (mplfs.html) element defaults ──
@@ -2579,6 +2605,13 @@
     '#ts-week':    { fontSize: 20 },
     '#ts-matches': { left: 170, top: 255, width: 858 },
     '#ts-sponsor': { left: 429, top: 975, width: 340, height: 94 },
+    /* .tsm-* classes are shared verbatim with Tomorrow's Schedule (same
+       CSS rules), so these same three selectors are also registered in
+       TW_ELEMENTS below — editing from either scene updates the one
+       shared value, matching how the CSS already ties them together. */
+    '.tsm-label, .tsm-time, .tsm-bo': { fontSize: 26 },
+    '.tsm-tri':                       { fontSize: 46 },
+    '.tsm-score-l, .tsm-score-r':     { fontSize: 48 },
   };
   var TS_ELEMENTS = [
     { group: 'Header',  id: '#ts-header',  name: 'Title / Season / Week (position)' },
@@ -2587,6 +2620,9 @@
     { group: 'Header',  id: '#ts-week',    name: 'Week Chip Font Size' },
     { group: 'Matches', id: '#ts-matches', name: 'Match Rows'            },
     { group: 'Sponsor', id: '#ts-sponsor', name: 'Sponsor Box'           },
+    { group: 'Match Row Text', id: '.tsm-label, .tsm-time, .tsm-bo', name: 'Header Text Size' },
+    { group: 'Match Row Text', id: '.tsm-tri',                       name: 'Team Code Size'   },
+    { group: 'Match Row Text', id: '.tsm-score-l, .tsm-score-r',     name: 'Score Size'       },
   ];
 
   var TW_DEFAULTS = {
@@ -2596,6 +2632,10 @@
     '#tw-week':    { fontSize: 20 },
     '#tw-matches': { left: 170, top: 255, width: 858 },
     '#tw-sponsor': { left: 429, top: 975, width: 340, height: 94 },
+    /* Same shared .tsm-* selectors as TS_DEFAULTS above — see that note. */
+    '.tsm-label, .tsm-time, .tsm-bo': { fontSize: 26 },
+    '.tsm-tri':                       { fontSize: 46 },
+    '.tsm-score-l, .tsm-score-r':     { fontSize: 48 },
   };
   var TW_ELEMENTS = [
     { group: 'Header',  id: '#tw-header',  name: 'Title / Season / Week (position)' },
@@ -2604,6 +2644,88 @@
     { group: 'Header',  id: '#tw-week',    name: 'Week Chip Font Size' },
     { group: 'Matches', id: '#tw-matches', name: 'Match Rows'            },
     { group: 'Sponsor', id: '#tw-sponsor', name: 'Sponsor Box'           },
+    { group: 'Match Row Text', id: '.tsm-label, .tsm-time, .tsm-bo', name: 'Header Text Size' },
+    { group: 'Match Row Text', id: '.tsm-tri',                       name: 'Team Code Size'   },
+    { group: 'Match Row Text', id: '.tsm-score-l, .tsm-score-r',     name: 'Score Size'       },
+  ];
+
+  /* ── Waiting Screen TVC — Today's Matches panel (mplfs.html) ──────
+     No prior EDIT_CONFIGS entry covered #ws-matches at all (only its
+     Casters/Hosts carousel sub-panels did) — this adds grouped
+     font-size-only controls for the .wsm-* match-row text, same
+     shared-class trick as Waiting Lobby/Today's Schedule above. */
+  var WS_MATCHES_DEFAULTS = {
+    '.wsm-band-label, .wsm-band-time, .wsm-band-bo': { fontSize: 19 },
+    '.wsm-tri':                                      { fontSize: 34 },
+    '.wsm-score-l, .wsm-score-r':                    { fontSize: 32 },
+  };
+  var WS_MATCHES_ELEMENTS = [
+    { group: 'Match Row Text', id: '.wsm-band-label, .wsm-band-time, .wsm-band-bo', name: 'Header Text Size' },
+    { group: 'Match Row Text', id: '.wsm-tri',                                      name: 'Team Code Size'   },
+    { group: 'Match Row Text', id: '.wsm-score-l, .wsm-score-r',                    name: 'Score Size'       },
+  ];
+
+  /* ── Today's / Tomorrow's Schedule — per-match-count layout ───────
+     buildTsMatches/buildTwMatches (mplfs.html) tag BOTH #ts-matches/
+     #tw-matches AND the whole #today-schedule-page/#tomorrow-schedule-
+     page with a runtime 'tsm-count-2'/'tsm-count-3' class reflecting the
+     real row count for that day. The page-level class lets sibling
+     elements (header, sponsor box) be targeted per-scenario too, not
+     just the match rows themselves. These four configs let each count
+     scenario be positioned independently — every class-qualified
+     selector only takes effect once saved; until then the plain
+     '#ts-header'/'#ts-matches'/etc position above still applies to
+     both scenarios. */
+  var TS_COUNT2_DEFAULTS = {
+    '#ts-matches.tsm-count-2':                       { left: 170, top: 255, width: 858 },
+    '#today-schedule-page.tsm-count-2 #ts-header':   { left: 170, top: 98,  width: 858 },
+  };
+  var TS_COUNT2_ELEMENTS = [
+    { group: 'Header', id: '#today-schedule-page.tsm-count-2 #ts-header', name: 'Header Block'     },
+    { group: 'Matches', id: '#ts-matches.tsm-count-2',                    name: 'Match Rows Block'  },
+  ];
+  var TS_COUNT3_DEFAULTS = {
+    '#ts-matches.tsm-count-3':                       { left: 170, top: 255, width: 858 },
+    '#today-schedule-page.tsm-count-3 #ts-header':   { left: 170, top: 98,  width: 858 },
+  };
+  var TS_COUNT3_ELEMENTS = [
+    { group: 'Header', id: '#today-schedule-page.tsm-count-3 #ts-header', name: 'Header Block'     },
+    { group: 'Matches', id: '#ts-matches.tsm-count-3',                    name: 'Match Rows Block'  },
+  ];
+  /* Match Rows Block's width/height are NOT plain CSS box dimensions —
+     .tsm-row is a fixed 858x232 asset, so literally resizing the flex
+     container would just clip/underfill it, not resize anything inside.
+     Instead these two selectors get special-cased in applyToEditIframe()
+     (dashboard.html) and loadMplfsOverrides() (mplfs.html): width/height
+     are read as a target box, converted to a transform:scale() against
+     the natural size below (858 wide; 472 tall for 2 rows, 712 for 3 —
+     row height 232 + 8px gap), so resizing the block visually scales
+     every row, all their text, and logos together as one unit. Defaults
+     equal the natural size (scale = 1, no visible change until edited). */
+  var TW_MATCHES_SCALE_NATIVE = {
+    '#tw-matches.tsm-count-2': { w: 858, h: 472 },
+    '#tw-matches.tsm-count-3': { w: 858, h: 712 },
+  };
+
+  var TW_COUNT2_DEFAULTS = {
+    '#tw-matches.tsm-count-2':                          { left: 170, top: 255, width: 858, height: 472 },
+    '#tomorrow-schedule-page.tsm-count-2 #tw-header':   { left: 170, top: 98,  width: 858 },
+    '#tomorrow-schedule-page.tsm-count-2 #tw-sponsor':  { left: 429, top: 975, width: 340, height: 94 },
+  };
+  var TW_COUNT2_ELEMENTS = [
+    { group: 'Header',  id: '#tomorrow-schedule-page.tsm-count-2 #tw-header',  name: 'Header Block'    },
+    { group: 'Matches', id: '#tw-matches.tsm-count-2',                         name: 'Match Rows Block' },
+    { group: 'Sponsor', id: '#tomorrow-schedule-page.tsm-count-2 #tw-sponsor', name: 'Sponsor Box'      },
+  ];
+  var TW_COUNT3_DEFAULTS = {
+    '#tw-matches.tsm-count-3':                          { left: 170, top: 255, width: 858, height: 712 },
+    '#tomorrow-schedule-page.tsm-count-3 #tw-header':   { left: 170, top: 98,  width: 858 },
+    '#tomorrow-schedule-page.tsm-count-3 #tw-sponsor':  { left: 429, top: 975, width: 340, height: 94 },
+  };
+  var TW_COUNT3_ELEMENTS = [
+    { group: 'Header',  id: '#tomorrow-schedule-page.tsm-count-3 #tw-header',  name: 'Header Block'    },
+    { group: 'Matches', id: '#tw-matches.tsm-count-3',                         name: 'Match Rows Block' },
+    { group: 'Sponsor', id: '#tomorrow-schedule-page.tsm-count-3 #tw-sponsor', name: 'Sponsor Box'      },
   ];
 
   /* ── Standings (mplfs.html) ──────────────────────────────────
@@ -2663,6 +2785,7 @@
      .lu-teambar-*) — so this one editor pass, saved under the shared
      "mplfs" style file, repositions both sides identically. */
   var LU_DEFAULTS = {
+    '.lu-group-photo':    { left: 0,    top: 0,   width: 1920, height: 1080 },
     '.lu-title':          { left: 660,  top: 46,  width: 600, height: 96 },
     '.lu-player-1':       { left: -50,  top: 110, width: 900, height: 900 },
     '.lu-player-2':       { left: 230,  top: 110, width: 900, height: 900 },
@@ -2680,6 +2803,7 @@
   };
 
   var LU_ELEMENTS = [
+    { group: 'Group Photo', id: '.lu-group-photo', name: 'Group Photo (Phase 1)' },
     { group: 'Title',    id: '.lu-title',          name: 'Smart Logo + Title' },
     { group: 'Players',  id: '.lu-player-1',       name: 'Photo 1'            },
     { group: 'Players',  id: '.lu-player-2',       name: 'Photo 2'            },
@@ -2742,11 +2866,11 @@
     '.ms-title':        { left: 15,  top: 5,    width: 176, height: 22,  fontSize: 18 },
     '.ms-toss-logo':    { left: 17,  top: 41,   width: 103, height: 103 },
     '.ms-toss-tricode': { left: 174, top: 41,   width: 166, height: 103, fontSize: 92 },
-    '.ms-mapbox':       { left: 29,  top: 898,  width: 353, height: 123 },
+    '.ms-mapbox-mask':  { left: 29,  top: 898,  width: 353, height: 123 },
     '.ms-map-icon':     { left: 10,  top: 27,   width: 64,  height: 64  },
     '.ms-map-name':     { left: 115, top: 44,   width: 230, height: 31,  fontSize: 34 },
     '.ms-map-label':    { left: 115, top: 76,   width: 230, height: 18,  fontSize: 17 },
-    '.ms-winbox':       { left: 30,  top: 1020, width: 139, height: 31 },
+    '.ms-winbox-mask':  { left: 30,  top: 1020, width: 139, height: 31 },
     '.ms-win-text':     { fontSize: 24 },
   };
 
@@ -2755,11 +2879,11 @@
     { group: 'Side Select', id: '.ms-title',        name: 'Match/Game Title' },
     { group: 'Side Select', id: '.ms-toss-logo',    name: 'Toss Winner Logo' },
     { group: 'Side Select', id: '.ms-toss-tricode', name: 'Toss Winner Tricode' },
-    { group: 'Map Select',  id: '.ms-mapbox',       name: 'Map Select Box' },
+    { group: 'Map Select',  id: '.ms-mapbox-mask',  name: 'Map Select Box' },
     { group: 'Map Select',  id: '.ms-map-icon',     name: 'Map Icon' },
     { group: 'Map Select',  id: '.ms-map-name',     name: 'Map Name' },
     { group: 'Map Select',  id: '.ms-map-label',    name: 'Map Selected Label' },
-    { group: 'Win Banner',  id: '.ms-winbox',       name: 'Win Banner Box' },
+    { group: 'Win Banner',  id: '.ms-winbox-mask',  name: 'Win Banner Box' },
     { group: 'Win Banner',  id: '.ms-win-text',     name: 'Win Banner Text' },
   ];
 
@@ -2920,12 +3044,25 @@
     '#di-blue-box':      { left: 166, top: 340, width: 285, height: 414 },
     '#di-red-box':       { left: 1429, top: 342, width: 285, height: 414 },
     '#di-bars-container': { left: 634, top: 370, width: 622, height: 420 },
+    /* Grouped fonts — each selector is a class shared by every instance
+       of that text family (blue+red names, all 4 stat rows, all 7 bar
+       rows), so one fontSize edit resizes them all at once. */
+    '.di-team-name span': { fontSize: 34 },
+    '.di-stat-label':     { fontSize: 12 },
+    '.di-stat-value':     { fontSize: 30 },
+    '.di-bar-label':      { fontSize: 14 },
+    '.di-bar-num':        { fontSize: 22 },
   };
   var DI_COMPARE_ELEMENTS = [
     { group: 'Smart Logo',    id: '#di-smart-logo-p2',  name: 'Smart Logo (Mini)' },
     { group: 'Blue Team',     id: '#di-blue-box',       name: 'Blue Team Panel'   },
     { group: 'Red Team',      id: '#di-red-box',        name: 'Red Team Panel'    },
     { group: 'Stat Bars',     id: '#di-bars-container', name: 'Stat Bars Panel'   },
+    { group: 'Team Name Font',  id: '.di-team-name span', name: 'Team Name Size'  },
+    { group: 'Stat Label Font', id: '.di-stat-label',     name: 'Stat Label Size' },
+    { group: 'Stat Value Font', id: '.di-stat-value',     name: 'Stat Value Size' },
+    { group: 'Bar Label Font',  id: '.di-bar-label',      name: 'Bar Label Size'  },
+    { group: 'Bar Number Font', id: '.di-bar-num',        name: 'Bar Number Size' },
   ];
 
   /* ── Sponsor TV (sponsortv.html) element defaults ─────────────────
@@ -3054,6 +3191,15 @@
       elements:    SB_ELEMENTS,
       defaults:    SB_DEFAULTS,
     },
+    mploverlay_v7_sidecheck: {
+      label:       'Side Events · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_sidecheck',
+      elements:    SIDECHECK_ELEMENTS,
+      defaults:    SIDECHECK_DEFAULTS,
+      showFn:      'secAnimateIn',
+    },
     mplfs_lobby: {
       label:       'Waiting Lobby · mplfs',
       file:        'mplfs.html',
@@ -3161,6 +3307,51 @@
       elements:    TW_ELEMENTS,
       defaults:    TW_DEFAULTS,
       showFn:      'showTomorrowSchedule',
+    },
+    mplfs_wsmatches: {
+      label:       "Today's Matches · Waiting TVC",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_wsmatches',
+      elements:    WS_MATCHES_ELEMENTS,
+      defaults:    WS_MATCHES_DEFAULTS,
+      showFn:      'showWsMatchesForEdit',
+    },
+    mplfs_todayschedule_2m: {
+      label:       "Today's Schedule — 2 Matches",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_todayschedule_2m',
+      elements:    TS_COUNT2_ELEMENTS,
+      defaults:    TS_COUNT2_DEFAULTS,
+      showFn:      'showTodayScheduleEdit2',
+    },
+    mplfs_todayschedule_3m: {
+      label:       "Today's Schedule — 3 Matches",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_todayschedule_3m',
+      elements:    TS_COUNT3_ELEMENTS,
+      defaults:    TS_COUNT3_DEFAULTS,
+      showFn:      'showTodayScheduleEdit3',
+    },
+    mplfs_tomorrowschedule_2m: {
+      label:       "Tomorrow's Schedule — 2 Matches",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_tomorrowschedule_2m',
+      elements:    TW_COUNT2_ELEMENTS,
+      defaults:    TW_COUNT2_DEFAULTS,
+      showFn:      'showTomorrowScheduleEdit2',
+    },
+    mplfs_tomorrowschedule_3m: {
+      label:       "Tomorrow's Schedule — 3 Matches",
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_tomorrowschedule_3m',
+      elements:    TW_COUNT3_ELEMENTS,
+      defaults:    TW_COUNT3_DEFAULTS,
+      showFn:      'showTomorrowScheduleEdit3',
     },
     draft_mapbug: {
       label:       'Map Bug · Draft',
@@ -3464,10 +3655,20 @@
     var css = Object.keys(editValues).map(function(sel) {
       var p = editValues[sel];
       var d = [];
-      if (p.left     !== undefined) d.push('left:'      + p.left     + 'px !important');
-      if (p.top      !== undefined) d.push('top:'       + p.top      + 'px !important');
-      if (p.width    !== undefined) d.push('width:'     + p.width    + 'px !important');
-      if (p.height   !== undefined) d.push('height:'    + p.height   + 'px !important');
+      var native = TW_MATCHES_SCALE_NATIVE[sel];
+      if (p.left !== undefined) d.push('left:' + p.left + 'px !important');
+      if (p.top  !== undefined) d.push('top:'  + p.top  + 'px !important');
+      if (native && (p.width !== undefined || p.height !== undefined)) {
+        /* See TW_MATCHES_SCALE_NATIVE note above — width/height here mean
+           "target box", not literal CSS box dimensions. */
+        var w = p.width  !== undefined ? p.width  : native.w;
+        var h = p.height !== undefined ? p.height : native.h;
+        d.push('transform:scale(' + (w / native.w) + ',' + (h / native.h) + ') !important');
+        d.push('transform-origin:left top !important');
+      } else {
+        if (p.width  !== undefined) d.push('width:'  + p.width  + 'px !important');
+        if (p.height !== undefined) d.push('height:' + p.height + 'px !important');
+      }
       if (p.fontSize !== undefined) d.push('font-size:' + p.fontSize + 'px !important');
       return sel + '{' + d.join(';') + '}';
     }).join('\n');

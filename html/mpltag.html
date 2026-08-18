@@ -102,9 +102,12 @@
       white-space: nowrap; line-height: 1;
     }
 
-    /* Map-select box (map icon + name) */
+    /* Map-select box (map icon + name) — lives inside .ms-mapbox-mask
+       (see the reveal-mask block below), which owns the real position/
+       size and clips it; this box just fills that mask at 0/0/100%/100%
+       and slides via translateY inside it. */
     .ms-mapbox {
-      left: 29px; top: 898px; width: 353px; height: 123px;
+      left: 0; top: 0; width: 100%; height: 100%;
       background-image: url('/assets/mapselect/mapbacker.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
@@ -126,12 +129,62 @@
       color: #000; text-align: center; letter-spacing: .04em;
     }
 
-    /* Win box */
+    /* Win box — same "lives inside a mask" deal as the map box above. */
     .ms-winbox {
-      left: 30px; top: 1020px; width: 139px; height: 31px;
+      left: 0; top: 0; width: 100%; height: 100%;
       background-image: url('/assets/mapselect/mapwin.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
+
+    /* ── Phase 2/3 "emerge from behind" reveal (ENTRANCE ONLY — hiding
+       still uses the exact same fade-left-and-out as every other box,
+       see below) ──
+       Map box (phase 2) and win box (phase 3) slide out from directly
+       behind the box above them instead of the default fade+slide-from-
+       left, and must never be visible above that box's bottom edge
+       while they do — that box can still be mid fade-in itself (partly
+       translucent), which let phase 2's opaque backer bleed through
+       before this masking was added.
+
+       Each box gets a non-transforming `.ms-*-mask` wrapper, positioned/
+       sized to the box's own FINAL resting rect with `overflow: hidden`.
+       The box itself lives inside at left:0/top:0/100%/100% and slides
+       via translateY — since the mask's own top edge IS that resting
+       top, anything still above local y:0 (still above the mask's top
+       edge, i.e. still overlapping the box above) is clipped away
+       entirely regardless of z-index/opacity, and only what has slid
+       down past that line is ever painted. z-index (side > map > win)
+       is kept too, as a second line of defense for the few px the boxes
+       legitimately overlap at rest.
+
+       `.ms-box-enter`/`.ms-content-enter` mark the PRE-FIRST-REVEAL-ONLY
+       starting position — flush with the top edge of the box above (so
+       fully within its mask, fully clipped/invisible). The script below
+       strips both classes for good the instant the box is first
+       revealed, so hiding it afterwards (hideAll) falls through to the
+       plain `.ms-box`/`.ms-content` rules instead — unchanged from every
+       other box's fade-left-and-out. */
+    .ms-reveal-mask {
+      position: absolute;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    .ms-sidebox { z-index: 3; }
+    .ms-mapbox-mask { left: 29px; top: 898px; width: 353px; height: 123px; z-index: 2; }
+    .ms-winbox-mask { left: 30px; top: 1020px; width: 139px; height: 31px; z-index: 1; }
+
+    .ms-mapbox.ms-box-enter {
+      opacity: 1;
+      transform: translateY(-151px); /* ms-sidebox top (747) - ms-mapbox top (898) */
+    }
+    .ms-mapbox .ms-content.ms-content-enter { transform: none; }
+
+    .ms-winbox.ms-box-enter {
+      opacity: 1;
+      transform: translateY(-122px); /* ms-mapbox top (898) - ms-winbox top (1020) */
+    }
+    .ms-winbox .ms-content.ms-content-enter { transform: none; }
+
     .ms-win-text {
       position: absolute; left: 0; top: 0; width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
@@ -198,13 +251,19 @@
   function teamName(side, homeTeam, awayTeam) { return side === 'home' ? (homeTeam.name || 'Home Team') : (awayTeam.name || 'Away Team'); }
   function teamShort(side, homeTeam, awayTeam) { return side === 'home' ? (homeTeam.short || 'HME') : (awayTeam.short || 'AWY'); }
 
-  function boxWithContent(boxClass) {
+  function boxWithContent(boxClass, maskClass) {
     var box = document.createElement('div');
-    box.className = 'ms-box ' + boxClass;
+    box.className = 'ms-box ms-box-enter ' + boxClass;
     var content = document.createElement('div');
-    content.className = 'ms-content';
+    content.className = 'ms-content ms-content-enter';
     box.appendChild(content);
-    return { box: box, content: content };
+    var outer = box;
+    if (maskClass) {
+      outer = document.createElement('div');
+      outer.className = 'ms-reveal-mask ' + maskClass;
+      outer.appendChild(box);
+    }
+    return { box: box, content: content, outer: outer };
   }
 
   function populateWinBox(rec, game, homeTeam, awayTeam) {
@@ -238,7 +297,7 @@
     tossTricode.textContent = teamShort(game.tossWinner, homeTeam, awayTeam);
     side.content.appendChild(title); side.content.appendChild(tossLogo); side.content.appendChild(tossTricode);
 
-    var map = boxWithContent('ms-mapbox');
+    var map = boxWithContent('ms-mapbox', 'ms-mapbox-mask');
     var mapIcon = document.createElement('div');
     mapIcon.className = 'ms-map-icon';
     mapIcon.style.backgroundImage = "url('" + mapIconUrl(game.map) + "')";
@@ -250,12 +309,12 @@
     mapLabel.textContent = 'MAP SELECTED';
     map.content.appendChild(mapIcon); map.content.appendChild(mapName); map.content.appendChild(mapLabel);
 
-    var win = boxWithContent('ms-winbox');
+    var win = boxWithContent('ms-winbox', 'ms-winbox-mask');
     var winText = document.createElement('div');
     winText.className = 'ms-win-text';
     win.content.appendChild(winText);
 
-    wrap.appendChild(side.box); wrap.appendChild(map.box); wrap.appendChild(win.box);
+    wrap.appendChild(side.outer); wrap.appendChild(map.outer); wrap.appendChild(win.outer);
     MAPSEL_PAGE.appendChild(wrap);
 
     var rec = {
@@ -289,19 +348,21 @@
 
   function revealPhase(box, content, cb) {
     box.classList.remove('ms-no-anim');
-    void box.offsetWidth;
+    void box.offsetWidth; /* flush the .ms-box-enter starting position before changing it */
+    box.classList.remove('ms-box-enter');
     box.classList.add('ms-box-visible');
     setTimeout(function () {
       content.classList.remove('ms-no-anim');
       void content.offsetWidth;
+      content.classList.remove('ms-content-enter');
       content.classList.add('ms-content-visible');
     }, CONTENT_DELAY);
     if (cb) setTimeout(cb, CONTENT_DELAY + CONTENT_DURATION + PHASE_GAP);
   }
 
   function revealPhaseInstant(box, content) {
-    box.classList.add('ms-no-anim'); box.classList.add('ms-box-visible');
-    content.classList.add('ms-no-anim'); content.classList.add('ms-content-visible');
+    box.classList.add('ms-no-anim'); box.classList.add('ms-box-visible'); box.classList.remove('ms-box-enter');
+    content.classList.add('ms-no-anim'); content.classList.add('ms-content-visible'); content.classList.remove('ms-content-enter');
   }
 
   /* Side → map → (win, only if the winner is already known). */

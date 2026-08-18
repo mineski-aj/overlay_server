@@ -93,6 +93,12 @@
     "#sb-logo-c2": {
       "left": "1431px",
       "top": "5px"
+    },
+    ".sidecheck-header": {
+      "fontSize": "24px"
+    },
+    ".sidecheck-stat-text": {
+      "fontSize": "19px"
     }
   },
   "mplfs": {
@@ -895,6 +901,68 @@
       "top": "745px",
       "width": "1800px",
       "height": "270px"
+    },
+    "#ts-matches.tsm-count-2": {
+      "left": "170px",
+      "top": "363px",
+      "width": "858px"
+    },
+    "#today-schedule-page.tsm-count-2 #ts-header": {
+      "left": "170px",
+      "top": "206px",
+      "width": "858px"
+    },
+    "#tw-matches.tsm-count-2": {
+      "left": "170px",
+      "top": "334px",
+      "width": "858px",
+      "height": "472px"
+    },
+    "#tomorrow-schedule-page.tsm-count-2 #tw-header": {
+      "left": "170px",
+      "top": "170px",
+      "width": "858px"
+    },
+    "#tomorrow-schedule-page.tsm-count-2 #tw-sponsor": {
+      "left": "429px",
+      "top": "865px",
+      "width": "340px",
+      "height": "94px"
+    },
+    ".wsm-band-label, .wsm-band-time, .wsm-band-bo": {
+      "fontSize": "23px"
+    },
+    ".wsm-tri": {
+      "fontSize": "34px"
+    },
+    ".wsm-score-l, .wsm-score-r": {
+      "fontSize": "32px"
+    },
+    "#tw-matches.tsm-count-3": {
+      "left": "220px",
+      "top": "229px",
+      "width": "810px",
+      "height": "672.2px"
+    },
+    "#tomorrow-schedule-page.tsm-count-3 #tw-header": {
+      "left": "191px",
+      "top": "77px",
+      "width": "858px"
+    },
+    "#tomorrow-schedule-page.tsm-count-3 #tw-sponsor": {
+      "left": "437px",
+      "top": "927px",
+      "width": "340px",
+      "height": "94px"
+    },
+    ".wlm-label, .wlm-time, .wlm-bo": {
+      "fontSize": "29px"
+    },
+    ".wlm-tri": {
+      "fontSize": "46px"
+    },
+    ".wlm-score-l, .wlm-score-r": {
+      "fontSize": "59px"
     }
   },
   "Draft": {
@@ -955,7 +1023,7 @@
       "height": "103px",
       "fontSize": "80px"
     },
-    ".ms-mapbox": {
+    ".ms-mapbox-mask": {
       "left": "29px",
       "top": "898px",
       "width": "353px",
@@ -981,7 +1049,7 @@
       "height": "18px",
       "fontSize": "17px"
     },
-    ".ms-winbox": {
+    ".ms-winbox-mask": {
       "left": "30px",
       "top": "1020px",
       "width": "139px",
@@ -989,6 +1057,47 @@
     },
     ".ms-win-text": {
       "fontSize": "24px"
+    }
+  },
+  "DraftIndex": {
+    "#di-smart-logo-p2": {
+      "left": "874px",
+      "top": "301px",
+      "width": "172px",
+      "height": "63px"
+    },
+    "#di-blue-box": {
+      "left": "166px",
+      "top": "340px",
+      "width": "285px",
+      "height": "414px"
+    },
+    "#di-red-box": {
+      "left": "1429px",
+      "top": "342px",
+      "width": "285px",
+      "height": "414px"
+    },
+    "#di-bars-container": {
+      "left": "634px",
+      "top": "370px",
+      "width": "622px",
+      "height": "420px"
+    },
+    ".di-team-name span": {
+      "fontSize": "34px"
+    },
+    ".di-stat-label": {
+      "fontSize": "15px"
+    },
+    ".di-stat-value": {
+      "fontSize": "36px"
+    },
+    ".di-bar-label": {
+      "fontSize": "18px"
+    },
+    ".di-bar-num": {
+      "fontSize": "31px"
     }
   }
 }

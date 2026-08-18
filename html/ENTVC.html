@@ -1487,12 +1487,16 @@
       white-space: nowrap;
     }
     /* Full-canvas decorative frame (season tickers in the corners) — mostly
-       transparent, sits above every panel */
-    #ws-hud {
+       transparent. Lives as the last child of #canvas (not inside any one
+       scene's -page div) so it sits above EVERY scene, not just Waiting
+       Screen TVC where it originated — a new scene added later gets it
+       for free, nothing to remember to wire in. */
+    #global-hud {
       position: absolute;
       left: 29px; top: 25px;
       width: 1862px; height: 1031px;
       pointer-events: none;
+      z-index: 9999;
     }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
@@ -2267,7 +2271,6 @@
         <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
-      <img id="ws-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
     </div>
     <div id="waiting-lobby-page">
       <div id="wl-header">
@@ -2676,6 +2679,7 @@
         <div class="pb-name"><span id="pb-r5-name"></span></div>
       </div>
     </div>
+    <img id="global-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
   </div>
 
   <script>

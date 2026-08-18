@@ -1270,6 +1270,91 @@
     #team-lineup-red-page.lur-on { display: block; }
     #team-lineup-red-page.lur-visible { opacity: 1; }
 
+    /* ── Phase 1 — group photo intro ──
+       Full-bleed 1920×1080 team photo (see /photos/Group/<TRICODE>_GROUP.png)
+       that plays before Phase 2 (the per-player reveal below) — and ONLY the
+       photo, nothing else from the scene. Split across 3 layers so the
+       button-in/out transition and the idle float animation never fight
+       over the same element's transform (that's what made the old
+       single-layer version's button-out snap/skip):
+         .lu-group-photo        — bounds/z-index only, no transform
+         .lu-group-photo-stage  — button IN (opacity + scale/rotate, 700ms) / OUT (opacity +
+                                   a small scale-down only, no translate/rotate, quick — 220ms)
+         .lu-group-photo-img    — idle float/wiggle (transform animation only)
+         .lu-group-photo-flash  — camera-flash pulse timed to the button-in
+       Buttoning out is also the cue that kicks off Phase 2 (see
+       luPlayGroupPhotoIntro). .lu-title/.lu-teambar-* stay hidden
+       (opacity 0, see below) until Phase 2 explicitly reveals them via the
+       .lu-phase2 class, so nothing but the photo is ever visible here.
+
+       Performance note: this used to also do a 3D (perspective/rotateX/Y/
+       translateZ) float plus a filter: blur() + upward translate + rotate
+       on button-out. All got cut — animating filter: blur() forces a full
+       re-rasterize of this whole 1920×1080 layer every frame (the actual
+       source of the Phase 1 button-out hangs), and the 3D perspective
+       forced the browser to keep maintaining a 3D compositing context for
+       a barely-visible depth effect at this amplitude. Button-out is now
+       just opacity + scale (both compositor-only, no repaint), and the
+       float is 2D translate+rotate only — same motion, cheaper to
+       composite. */
+    .lu-group-photo {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      z-index: 40; overflow: hidden;
+    }
+    .lu-group-photo-stage {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      transform-origin: 50% 62%;
+      opacity: 0; transform: scale(0.42) translateY(160px) rotateZ(-11deg);
+      transition: opacity 320ms ease-out,
+                  transform 700ms cubic-bezier(0.34, 1.61, 0.64, 1);
+    }
+    .lu-group-photo.lu-group-in .lu-group-photo-stage {
+      opacity: 1; transform: scale(1) translateY(0) rotateZ(0deg);
+    }
+    .lu-group-photo.lu-group-out .lu-group-photo-stage {
+      opacity: 0; transform: scale(0.94);
+      transition: opacity 220ms ease-in, transform 220ms ease-in;
+    }
+    .lu-group-photo-img {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+    @keyframes lu-group-float {
+      0%   { transform: translate(0px, 0px)    rotate(0deg);    }
+      25%  { transform: translate(9px, -7px)   rotate(0.6deg);  }
+      50%  { transform: translate(0px, 8px)    rotate(0deg);    }
+      75%  { transform: translate(-9px, -6px)  rotate(-0.6deg); }
+      100% { transform: translate(0px, 0px)    rotate(0deg);    }
+    }
+    .lu-group-photo.lu-group-float .lu-group-photo-img {
+      animation: lu-group-float 4.2s ease-in-out infinite;
+    }
+    .lu-group-photo-flash {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      background: #fff; opacity: 0; pointer-events: none;
+    }
+    @keyframes lu-group-flash-pop {
+      0%   { opacity: 0; }
+      12%  { opacity: 0.95; }
+      100% { opacity: 0; }
+    }
+    .lu-group-photo.lu-group-in .lu-group-photo-flash {
+      animation: lu-group-flash-pop 550ms ease-out;
+    }
+
+    /* Hidden until Phase 2 explicitly reveals them (.lu-phase2, set by
+       luPlayGroupPhotoIntro the moment the group photo buttons out) — keeps
+       Phase 1 to just the photo, no title/team-bar bleeding through any
+       transparent part of the photo underneath it. */
+    .lu-title, .lu-teambar-logo, .lu-teambar-season, .lu-teambar-match {
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    .lu-phase2 .lu-title, .lu-phase2 .lu-teambar-logo,
+    .lu-phase2 .lu-teambar-season, .lu-phase2 .lu-teambar-match {
+      opacity: 1;
+    }
+
     .lu-title {
       position: absolute; left: 660px; top: 46px; width: 600px; height: 96px;
       z-index: 10;
@@ -1748,12 +1833,16 @@
       white-space: nowrap;
     }
     /* Full-canvas decorative frame (season tickers in the corners) — mostly
-       transparent, sits above every panel */
-    #ws-hud {
+       transparent. Lives as the last child of #canvas (not inside any one
+       scene's -page div) so it sits above EVERY scene, not just Waiting
+       Screen TVC where it originated — a new scene added later gets it
+       for free, nothing to remember to wire in. */
+    #global-hud {
       position: absolute;
       left: 29px; top: 25px;
       width: 1862px; height: 1031px;
       pointer-events: none;
+      z-index: 9999;
     }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
@@ -2539,7 +2628,6 @@
         <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
-      <img id="ws-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
     </div>
     <div id="waiting-lobby-page">
       <div id="wl-header">
@@ -2648,6 +2736,12 @@
       <div id="ft-cards"></div>
     </div>
     <div id="team-lineup-blue-page">
+      <div class="lu-group-photo" id="lub-group-photo">
+        <div class="lu-group-photo-stage">
+          <img class="lu-group-photo-img" id="lub-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
+        </div>
+        <div class="lu-group-photo-flash"></div>
+      </div>
       <div class="lu-title" id="lub-title">
         <img class="lu-title-logo" src="/assets/lineup/lineupsmart.png" alt="Smart">
         <span class="lu-title-text">TEAM LINE-UP</span>
@@ -2702,6 +2796,12 @@
       <div class="lu-teambar-match" id="lub-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
     </div>
     <div id="team-lineup-red-page">
+      <div class="lu-group-photo" id="lur-group-photo">
+        <div class="lu-group-photo-stage">
+          <img class="lu-group-photo-img" id="lur-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
+        </div>
+        <div class="lu-group-photo-flash"></div>
+      </div>
       <div class="lu-title" id="lur-title">
         <img class="lu-title-logo" src="/assets/lineup/lineupsmart.png" alt="Smart">
         <span class="lu-title-text">TEAM LINE-UP</span>
@@ -2997,6 +3097,7 @@
         <div class="pb-name"><span id="pb-r5-name"></span></div>
       </div>
     </div>
+    <img id="global-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
   </div>
 
   <script>
@@ -4543,6 +4644,21 @@
     function buildTsMatches(state) {
       const root = document.getElementById('ts-matches');
       const rows = msToMatchRows(state) || TS_MATCHES;
+      /* Tags the match container AND the whole page with the live match
+         count so the dashboard Edit tab can save a separate layout per
+         2-match/3-match day (see mplfs_todayschedule_2m/3m in
+         dashboard.html) — the page-level class lets sibling elements
+         like #ts-header be targeted too, not just #ts-matches itself.
+         Queried fresh (not the tsPage const below) since this runs at
+         load time before that const is initialized. */
+      const countClass = 'tsm-count-' + rows.length;
+      root.classList.remove('tsm-count-2', 'tsm-count-3');
+      root.classList.add(countClass);
+      const page = document.getElementById('today-schedule-page');
+      if (page) {
+        page.classList.remove('tsm-count-2', 'tsm-count-3');
+        page.classList.add(countClass);
+      }
       root.innerHTML = rows.map(m => {
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
@@ -4582,6 +4698,16 @@
     function buildTwMatches(state) {
       const root = document.getElementById('tw-matches');
       const rows = msToTomorrowMatchRows(state) || TS_MATCHES;
+      /* Same page+matches count-tagging as buildTsMatches above — see
+         mplfs_tomorrowschedule_2m/3m in dashboard.html. */
+      const countClass = 'tsm-count-' + rows.length;
+      root.classList.remove('tsm-count-2', 'tsm-count-3');
+      root.classList.add(countClass);
+      const page = document.getElementById('tomorrow-schedule-page');
+      if (page) {
+        page.classList.remove('tsm-count-2', 'tsm-count-3');
+        page.classList.add(countClass);
+      }
       root.innerHTML = rows.map(m => tsmRowHtml(m, `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`)).join('');
     }
     buildTwMatches();
@@ -4671,6 +4797,13 @@
       await showWaitingScreen();
       stopWsPanelCycle();
       wsSwapPanel(WS_MATCHES_IDX, WS_HOSTS_IDX);
+    }
+    /* Matches panel is already the default (wsPanelCurrent starts and
+       resets to WS_MATCHES_IDX) — just stop the carousel so it doesn't
+       rotate away mid-edit. Used by mplfs_wsmatches in dashboard.html. */
+    async function showWsMatchesForEdit() {
+      await showWaitingScreen();
+      stopWsPanelCycle();
     }
 
     function hideWaitingScreen() {
@@ -6110,6 +6243,13 @@
       }
     }
 
+    function luApplyGroupPhoto(side, teamObj) {
+      const s = LU_SIDES[side];
+      const imgEl = document.getElementById(s.prefix + '-group-photo-img');
+      imgEl.style.visibility = '';
+      imgEl.src = (teamObj && teamObj.short) ? '/photos/Group/' + encodeURIComponent(teamObj.short) + '_GROUP.png' : '';
+    }
+
     function luApplyTeamBar(side, teamObj, ms) {
       const s = LU_SIDES[side];
       const logoEl = document.getElementById(s.prefix + '-teambar-logo');
@@ -6132,6 +6272,8 @@
         document.getElementById(s.prefix + '-nametag-' + n).classList.remove('lu-tag-in');
         document.getElementById(s.prefix + '-photo-final-' + n).classList.remove('lu-bounce');
       }
+      document.getElementById(s.prefix + '-group-photo').classList.remove('lu-group-in', 'lu-group-float', 'lu-group-out');
+      s.page.classList.remove('lu-phase2');
     }
 
     /* Entrance: signature poses pop in front-to-back by layering depth
@@ -6162,6 +6304,39 @@
       }
     }
 
+    /* Phase 1 timing — button-in duration matches the CSS transition on
+       .lu-group-photo-stage, FLOAT_MS is how long it idles before buttoning
+       back out. Phase 2 (the existing luPlayAnimation reveal + revealing
+       .lu-title/.lu-teambar-* via the .lu-phase2 class) doesn't start the
+       instant the photo buttons out — PHASE2_DELAY_MS gives the photo a
+       beat to visibly start leaving first, instead of both happening in
+       the same tick. */
+    const LU_GROUP_BUTTON_IN_MS = 700;
+    const LU_GROUP_FLOAT_MS     = 1000;
+    const LU_PHASE2_DELAY_MS    = 200;
+
+    function luPlayGroupPhotoIntro(side, feature) {
+      const s = LU_SIDES[side];
+      const groupEl = document.getElementById(s.prefix + '-group-photo');
+      groupEl.classList.add('lu-group-in');
+      setTimeout(() => {
+        if (activeFeature !== feature) return; /* superseded mid-intro */
+        groupEl.classList.add('lu-group-float');
+      }, LU_GROUP_BUTTON_IN_MS);
+
+      setTimeout(() => {
+        if (activeFeature !== feature) return; /* superseded mid-intro */
+        groupEl.classList.remove('lu-group-float');
+        groupEl.classList.add('lu-group-out');
+      }, LU_GROUP_BUTTON_IN_MS + LU_GROUP_FLOAT_MS);
+
+      setTimeout(() => {
+        if (activeFeature !== feature) return; /* superseded mid-intro */
+        s.page.classList.add('lu-phase2');
+        luPlayAnimation(side);
+      }, LU_GROUP_BUTTON_IN_MS + LU_GROUP_FLOAT_MS + LU_PHASE2_DELAY_MS);
+    }
+
     async function showTeamLineup(side) {
       const s = LU_SIDES[side];
       const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
@@ -6175,6 +6350,7 @@
       const lineup  = (teamObj && teamObj.lineup) || [];
       luApplyPlayers(side, lineup);
       luApplyTeamBar(side, teamObj, ms);
+      luApplyGroupPhoto(side, teamObj);
       luResetAnimation(side);
 
       // Wait for every signature/left/right photo + logo/plate image to be
@@ -6187,7 +6363,7 @@
       s.page.classList.add(s.onClass);
       void s.page.offsetWidth; /* force reflow so the opacity transition runs */
       s.page.classList.add(s.visClass);
-      luPlayAnimation(side);
+      luPlayGroupPhotoIntro(side, feature);
     }
 
     function hideTeamLineup(side) {
@@ -6322,6 +6498,30 @@
       tsPage.classList.add('ts-visible');
     }
 
+    /* Dashboard Edit-panel hooks — force a specific match count so the
+       user can edit the 2-match and 3-match layouts independently
+       regardless of what the live Match Board actually has configured
+       right now (see mplfs_todayschedule_2m/3m in dashboard.html). Reuses
+       showTodaySchedule()'s real transition/video, then overrides the
+       rows with synthetic data that deterministically hits msToMatchRows'
+       existing isDay2 ? 3 : 2 branch. */
+    const TS_EDIT_PREVIEW = {
+      week: 1, series: 'BO3',
+      todayMatches: [
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '14:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'FLCN', time: '16:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '18:30 GMT +8' },
+      ],
+    };
+    async function showTodayScheduleEdit2() {
+      await showTodaySchedule();
+      buildTsMatches({ ...TS_EDIT_PREVIEW, day: 1 });
+    }
+    async function showTodayScheduleEdit3() {
+      await showTodaySchedule();
+      buildTsMatches({ ...TS_EDIT_PREVIEW, day: 2 });
+    }
+
     function hideTodaySchedule() {
       activeFeature = null;
       tsSponsorLoop.stop();
@@ -6370,6 +6570,28 @@
       twPage.classList.add('tw-on');
       void twPage.offsetWidth; /* force reflow so the opacity transition runs */
       twPage.classList.add('tw-visible');
+    }
+
+    /* Dashboard Edit-panel hooks — same forced-count trick as
+       showTodayScheduleEdit2/3 above, but computeTomorrowWeekDay flips
+       today's day into tomorrow's day first, so the day values that hit
+       msToTomorrowMatchRows' isThreeMatch branch are inverted: day 2
+       (tomorrow=day 3) gives 2 matches, day 1 (tomorrow=day 2) gives 3. */
+    const TW_EDIT_PREVIEW = {
+      week: 1, series: 'BO3',
+      tomorrowMatches: [
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '14:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'FLCN', time: '16:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '18:30 GMT +8' },
+      ],
+    };
+    async function showTomorrowScheduleEdit2() {
+      await showTomorrowSchedule();
+      buildTwMatches({ ...TW_EDIT_PREVIEW, day: 2 });
+    }
+    async function showTomorrowScheduleEdit3() {
+      await showTomorrowSchedule();
+      buildTwMatches({ ...TW_EDIT_PREVIEW, day: 1 });
     }
 
     function hideTomorrowSchedule() {
@@ -8309,12 +8531,37 @@
 
     /* ── Load saved position/size overrides from dashboard editor ── */
     (function loadMplfsOverrides() {
+      /* Tomorrow's "Match Rows Block" is a fixed-px asset (.tsm-row is
+         858x232), so a plain width/height override on the flex container
+         would just clip/underfill it, not resize anything inside. Reading
+         its saved width/height as a target box and converting to
+         transform:scale() against this natural size instead makes the
+         whole block — every row, all its text and logos — scale together
+         as one unit (matches dashboard.html's TW_MATCHES_SCALE_NATIVE /
+         applyToEditIframe, which does the same conversion for the live
+         Edit-tab preview). */
+      var TW_MATCHES_SCALE_NATIVE = {
+        '#tw-matches.tsm-count-2': { w: 858, h: 472 },
+        '#tw-matches.tsm-count-3': { w: 858, h: 712 },
+      };
       fetch(buildUrl('/api/overlay-styles?file=mplfs'))
         .then(function(r) { return r.json(); })
         .then(function(styles) {
           if (!styles || !Object.keys(styles).length) return;
           var css = Object.keys(styles).map(function(sel) {
             var props = styles[sel];
+            var native = TW_MATCHES_SCALE_NATIVE[sel];
+            if (native && (props.width !== undefined || props.height !== undefined)) {
+              var decls = Object.keys(props).filter(function(p) { return p !== 'width' && p !== 'height'; }).map(function(prop) {
+                var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+                return cssProp + ':' + props[prop] + ' !important';
+              });
+              var w = props.width  !== undefined ? parseFloat(props.width)  : native.w;
+              var h = props.height !== undefined ? parseFloat(props.height) : native.h;
+              decls.push('transform:scale(' + (w / native.w) + ',' + (h / native.h) + ') !important');
+              decls.push('transform-origin:left top !important');
+              return sel + '{' + decls.join(';') + '}';
+            }
             var decls = Object.keys(props).map(function(prop) {
               var cssProp = prop === 'fontSize' ? 'font-size' : prop;
               return cssProp + ':' + props[prop] + ' !important';
