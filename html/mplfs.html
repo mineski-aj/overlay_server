@@ -4219,9 +4219,19 @@
     const wsTimerValue = document.getElementById('ws-timer-value');
     let wsTimerInt = null;
 
+    /* endAt is the server's absolute epoch-ms clock; a machine whose own
+       system clock is skewed from the server's would otherwise show a wildly
+       wrong countdown (e.g. hours off) even though the server's state is
+       correct. serverNow (sent with every /match/state response) lets us
+       measure and cancel out that skew instead of trusting Date.now() raw. */
+    let clockOffset = 0;
+    function syncClockOffset(ms) {
+      if (ms && typeof ms.serverNow === 'number') clockOffset = ms.serverNow - Date.now();
+    }
+
     function renderTimerFromState(el, t) {
       const remain = (t && t.running && t.endAt)
-        ? Math.max(0, Math.round((t.endAt - Date.now()) / 1000))
+        ? Math.max(0, Math.round((t.endAt - (Date.now() + clockOffset)) / 1000))
         : Math.max(0, (t && t.remaining) || 0);
       const m = Math.floor(remain / 60), s = remain % 60;
       el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
@@ -4615,6 +4625,7 @@
     /* Week/day chip + match rows + countdown label follow the Match Board state */
     function updateWsFromState(ms) {
       if (!ms) return;
+      syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
         document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
       }
@@ -4930,6 +4941,7 @@
 
     function updateWlFromState(ms) {
       if (!ms) return;
+      syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
         document.getElementById('wl-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
       }

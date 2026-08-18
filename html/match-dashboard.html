@@ -233,6 +233,8 @@
     .timer-btn-start:not(:disabled):hover { background: #23964c; }
     .timer-btn-pause { background: #7a3a1e; color: #ffe4d7; }
     .timer-btn-pause:not(:disabled):hover { background: #964923; }
+    .timer-btn-reset { background: #3a1e1e; color: #ffd7d7; }
+    .timer-btn-reset:not(:disabled):hover { background: #5a2323; }
     .timer-status { font-size: 9px; color: #444; text-transform: uppercase; letter-spacing: .06em; }
     .timer-status.on { color: #23c463; }
 
@@ -454,6 +456,7 @@
         <div class="timer-btn-group">
           <button type="button" class="timer-btn timer-btn-start" id="timer-start-btn">▶ Start</button>
           <button type="button" class="timer-btn timer-btn-pause" id="timer-pause-btn">❚❚ Pause</button>
+          <button type="button" class="timer-btn timer-btn-reset" id="timer-reset-btn">⟲ Reset</button>
           <span class="timer-status" id="timer-status">Paused</span>
         </div>
       </div>
@@ -686,6 +689,7 @@
       };
     }
     localState = s;
+    syncClockOffset(s);
     renderAll();
   }
 
@@ -1056,11 +1060,27 @@
   document.getElementById('countdown-sec').addEventListener('change', pushTimerRemaining);
   document.getElementById('timer-start-btn').addEventListener('click', function () { pushTimerAction('start'); });
   document.getElementById('timer-pause-btn').addEventListener('click', function () { pushTimerAction('pause'); });
+  document.getElementById('timer-reset-btn').addEventListener('click', function () {
+    document.getElementById('countdown-min').value = 0;
+    document.getElementById('countdown-sec').value = 0;
+    pushTimerAction('pause');
+    pushTimerAction('set', { seconds: 0 });
+  });
+
+  /* endAt is the server's absolute epoch-ms clock; a machine whose own
+     system clock is skewed from the server's would otherwise show a wildly
+     wrong countdown (e.g. hours off) even though the server's state is
+     correct. serverNow (sent with every state push) lets us measure and
+     cancel out that skew instead of trusting Date.now() raw. */
+  var clockOffset = 0;
+  function syncClockOffset(s) {
+    if (s && typeof s.serverNow === 'number') clockOffset = s.serverNow - Date.now();
+  }
 
   var timerTickInt = null;
   function renderTimerControls() {
     var t = (localState.timer) || { running: false, endAt: null, remaining: 30 * 60 + 30 };
-    var remain = (t.running && t.endAt) ? Math.max(0, Math.round((t.endAt - Date.now()) / 1000)) : Math.max(0, t.remaining || 0);
+    var remain = (t.running && t.endAt) ? Math.max(0, Math.round((t.endAt - (Date.now() + clockOffset)) / 1000)) : Math.max(0, t.remaining || 0);
     var minEl = document.getElementById('countdown-min');
     var secEl = document.getElementById('countdown-sec');
     if (minEl && secEl && document.activeElement !== minEl && document.activeElement !== secEl) {
