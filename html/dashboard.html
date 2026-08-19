@@ -620,7 +620,7 @@
     }
     .edit-no-sel { font-size: 12px; color: #444; font-style: italic; }
 
-    #edit-content-panel {
+    #edit-content-panel, #edit-itemcheck-panel {
       border-top: 1px solid #1e1e2c;
       padding: 14px 16px;
       flex-shrink: 0;
@@ -814,6 +814,35 @@
         <div class="edit-content-actions">
           <button class="edit-btn" id="edit-credits-save" style="background:#1a3a2a;border-color:#2a5a3a;color:#44cc88;margin-left:auto;">Save</button>
           <span id="edit-credits-status"></span>
+        </div>
+      </div>
+      <div id="edit-itemcheck-panel" style="display:none;">
+        <div class="edit-content-hint">
+          Gold Gap is the vertical space between gold-amount rows. Blue/Red
+          Offset X/Y shift every element on that side (portraits, items,
+          gold) together, so the whole half can be nudged in one edit
+          instead of repositioning each row by hand.
+        </div>
+        <div class="edit-content-actions" style="flex-wrap:wrap;">
+          <label for="edit-itemcheck-gold-gap" class="edit-ctrl-label" style="width:auto;">Gold Gap</label>
+          <input type="number" id="edit-itemcheck-gold-gap" class="edit-ctrl-input" style="width:60px;" min="0" max="200" step="1" />
+          <span class="edit-ctrl-unit">px</span>
+        </div>
+        <div class="edit-content-actions" style="flex-wrap:wrap;">
+          <label for="edit-itemcheck-home-x" class="edit-ctrl-label" style="width:auto;">Blue Offset X</label>
+          <input type="number" id="edit-itemcheck-home-x" class="edit-ctrl-input" style="width:60px;" min="-400" max="400" step="1" />
+          <label for="edit-itemcheck-home-y" class="edit-ctrl-label" style="width:auto;">Y</label>
+          <input type="number" id="edit-itemcheck-home-y" class="edit-ctrl-input" style="width:60px;" min="-400" max="400" step="1" />
+        </div>
+        <div class="edit-content-actions" style="flex-wrap:wrap;">
+          <label for="edit-itemcheck-away-x" class="edit-ctrl-label" style="width:auto;">Red Offset X</label>
+          <input type="number" id="edit-itemcheck-away-x" class="edit-ctrl-input" style="width:60px;" min="-400" max="400" step="1" />
+          <label for="edit-itemcheck-away-y" class="edit-ctrl-label" style="width:auto;">Y</label>
+          <input type="number" id="edit-itemcheck-away-y" class="edit-ctrl-input" style="width:60px;" min="-400" max="400" step="1" />
+        </div>
+        <div class="edit-content-actions">
+          <button class="edit-btn" id="edit-itemcheck-save" style="background:#1a3a2a;border-color:#2a5a3a;color:#44cc88;margin-left:auto;">Save</button>
+          <span id="edit-itemcheck-status"></span>
         </div>
       </div>
     </div>
@@ -1304,6 +1333,7 @@
     team_lineup_blue: 'lineupblue',
     team_lineup_red:  'lineupred',
     consolidated_post: 'consolidated_post',
+    consolidated_post_2: 'consolidated_post_2',
     post4key:       'post4key',
   };
 
@@ -1577,6 +1607,7 @@
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
         { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
+        { name: 'Consolidated Post 2', show: '/overlay/consolidated_post_2/show', hide: '/overlay/consolidated_post_2/hide' },
         { name: 'Post 4 Key',    show: '/overlay/post4key/show',        hide: '/overlay/post4key/hide'        },
         { name: 'Rich Guy',      show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
@@ -2553,6 +2584,8 @@
     '#sb-sponsor-loop':       { left: 1689,    top: 7  },
     '#sb-logo-c1':            { left: 424,     top: 5  },
     '#sb-logo-c2':            { left: 1431,    top: 5  },
+    '#sb-mi-patch':           { left: 1508,    top: 108, width: 133, height: 19, fontSize: 13 },
+    '#sb-mi-casters':         { left: 1641,    top: 108, width: 279, height: 19, fontSize: 13 },
   };
   var ARROW_MAP = { ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1] };
 
@@ -2577,6 +2610,8 @@
     { group: 'Sponsor',    id: '#sb-sponsor-loop',       name: 'Sponsor Box'      },
     { group: 'Logos',      id: '#sb-logo-c1',            name: 'Logo (Team 1)'    },
     { group: 'Logos',      id: '#sb-logo-c2',            name: 'Logo (Team 2)'    },
+    { group: 'Patch Box',   id: '#sb-mi-patch',          name: 'Patch Box'        },
+    { group: 'Caster Box',  id: '#sb-mi-casters',        name: 'Caster Box'       },
   ];
 
   /* ── Side-check family (mploverlay_v7.html) ───────────────────────
@@ -3274,6 +3309,109 @@
   CP_DEFAULTS['#cpg-board'] = { left: 59, top: 745, width: 1800, height: 270 };
   CP_ELEMENTS.push({ group: 'Post Graph', id: '#cpg-board', name: 'Post Graph' });
 
+  /* ── Consolidated Post 2 (mplfs.html) element defaults ────────────
+     Resized/repositioned duplicate of Consolidated Post above (backup-
+     safe variant) — taller 730×154 rows, no Player Photo field (baked
+     into consoblue2.png/consored2.png), KDA/Gold Earned/damage
+     label+bar split into their own editable fields instead of one
+     shared "stats" block, and NO Post Graph (intentionally dropped).
+     Shares the same #cmb-board (Middle Board) as Consolidated Post —
+     that's the same physical DOM node, just also listed here since it's
+     part of what's on screen when this scene shows. Kill Map is NOT
+     shared though — Post 2 has its own #ckm2-board/#ckm2-bounds (taller
+     311×426 layout, its own consomapback2.png), independent of Post 1's
+     #ckm-board. */
+  var CP2_FIELD_DEFAULTS_BLUE = {
+    hero:      { left: 0,   top: 0,   width: 69,  height: 132 },
+    photo:     { left: 69,  top: 0,   width: 138, height: 132 },
+    spell:     { left: 4,   top: 97,  width: 30,  height: 30 },
+    level:     { left: 0,   top: 132, width: 69,  height: 22, fontSize: 15 },
+    role:      { left: 71,  top: 134, width: 19,  height: 19 },
+    name:      { left: 98,  top: 132, width: 99,  height: 22, fontSize: 12.4 },
+    'rune-main': { left: 207, top: 11, width: 39, height: 39 },
+    'rune-1':    { left: 252, top: 17, width: 28, height: 28 },
+    'rune-2':    { left: 286, top: 17, width: 28, height: 28 },
+    'rune-3':    { left: 320, top: 17, width: 28, height: 28 },
+    'kda-label':  { left: 207, top: 52,  width: 141, height: 14, fontSize: 12 },
+    'kda-value':  { left: 207, top: 68,  width: 141, height: 28, fontSize: 24.8 },
+    'gold-label': { left: 207, top: 96,  width: 141, height: 14, fontSize: 12 },
+    'gold-value': { left: 207, top: 112, width: 141, height: 28, fontSize: 24.8 },
+    'dmg-taken-label': { left: 372, top: 10, width: 170, height: 14, fontSize: 12 },
+    'dmg-taken': { left: 372, top: 26, width: 170, height: 34 },
+    'dmg-dealt-label': { left: 549, top: 10, width: 170, height: 14, fontSize: 12 },
+    'dmg-dealt': { left: 549, top: 26, width: 170, height: 34 },
+    items:     { left: 372, top: 81, width: 348, height: 53 },
+  };
+  var CP2_FIELD_DEFAULTS_RED = {
+    hero:      { left: 661, top: 0,   width: 69,  height: 132 },
+    photo:     { left: 523, top: 0,   width: 138, height: 132 },
+    spell:     { left: 696, top: 97,  width: 30,  height: 30 },
+    level:     { left: 661, top: 132, width: 69,  height: 22, fontSize: 15 },
+    role:      { left: 640, top: 134, width: 19,  height: 19 },
+    name:      { left: 533, top: 132, width: 99,  height: 22, fontSize: 12.4 },
+    'rune-main': { left: 484, top: 11, width: 39, height: 39 },
+    'rune-1':    { left: 450, top: 17, width: 28, height: 28 },
+    'rune-2':    { left: 416, top: 17, width: 28, height: 28 },
+    'rune-3':    { left: 382, top: 17, width: 28, height: 28 },
+    'kda-label':  { left: 382, top: 52,  width: 141, height: 14, fontSize: 12 },
+    'kda-value':  { left: 382, top: 68,  width: 141, height: 28, fontSize: 24.8 },
+    'gold-label': { left: 382, top: 96,  width: 141, height: 14, fontSize: 12 },
+    'gold-value': { left: 382, top: 112, width: 141, height: 28, fontSize: 24.8 },
+    'dmg-taken-label': { left: 188, top: 10, width: 170, height: 14, fontSize: 12 },
+    'dmg-taken': { left: 188, top: 26, width: 170, height: 34 },
+    'dmg-dealt-label': { left: 11,  top: 10, width: 170, height: 14, fontSize: 12 },
+    'dmg-dealt': { left: 11,  top: 26, width: 170, height: 34 },
+    items:     { left: 10,  top: 81, width: 348, height: 53 },
+  };
+  var CP2_FIELD_NAMES = {
+    hero: 'Hero Image', photo: 'Player Photo', spell: 'Battle Spell', level: 'Level',
+    role: 'Role Icon', name: 'Player Name', 'rune-main': 'Main Rune',
+    'rune-1': 'Sub Rune 1', 'rune-2': 'Sub Rune 2', 'rune-3': 'Sub Rune 3',
+    'kda-label': 'KDA Label', 'kda-value': 'KDA Value',
+    'gold-label': 'Gold Earned Label', 'gold-value': 'Gold Earned Value',
+    'dmg-taken-label': 'Damage Taken Label', 'dmg-taken': 'Damage Taken Bar',
+    'dmg-dealt-label': 'Damage Dealt Label', 'dmg-dealt': 'Damage Dealt Bar',
+    items: 'Item Grid',
+  };
+
+  var CP2_DEFAULTS = {};
+  var CP2_ELEMENTS = [];
+  Object.keys(CP2_FIELD_DEFAULTS_BLUE).forEach(function (field) {
+    var blueSel = '.cp2-row:not(.cp2-mirrored) .cp2-' + field;
+    var redSel  = '.cp2-mirrored .cp2-' + field;
+    CP2_DEFAULTS[blueSel] = CP2_FIELD_DEFAULTS_BLUE[field];
+    CP2_DEFAULTS[redSel]  = CP2_FIELD_DEFAULTS_RED[field];
+    CP2_ELEMENTS.push({ group: CP2_FIELD_NAMES[field] + ' (Blue)', id: blueSel, name: CP2_FIELD_NAMES[field] + ' · Blue' });
+    CP2_ELEMENTS.push({ group: CP2_FIELD_NAMES[field] + ' (Red)',  id: redSel,  name: CP2_FIELD_NAMES[field] + ' · Red'  });
+  });
+
+  var CP2_ROW_POSITIONS = [
+    [59, 193], [59, 358], [59, 523], [59, 688], [59, 853],
+    [1131, 193], [1131, 358], [1131, 523], [1131, 688], [1131, 853],
+  ];
+  CP2_ROW_POSITIONS.forEach(function (pos, i) {
+    var n   = i + 1;
+    var sel = '.cp2-row-' + n;
+    CP2_DEFAULTS[sel] = { left: pos[0], top: pos[1], width: 730, height: 154 };
+    CP2_ELEMENTS.push({
+      group: n <= 5 ? 'Row Position · Blue' : 'Row Position · Red',
+      id: sel,
+      name: 'Row ' + n,
+    });
+  });
+
+  CP2_DEFAULTS['#cmb-board'] = { left: 805, top: 169, width: 311, height: 338 };
+  CP2_ELEMENTS.push({ group: 'Middle Board', id: '#cmb-board', name: 'Middle Board' });
+  CP2_DEFAULTS['#ckm2-board'] = { left: 805, top: 521, width: 311, height: 426 };
+  CP2_ELEMENTS.push({ group: 'Kill Map', id: '#ckm2-board', name: 'Kill Map' });
+  CP2_DEFAULTS['#ckm2-bounds'] = { left: 0, top: 110, width: 311, height: 316 };
+  CP2_ELEMENTS.push({ group: 'Kill Map Bounds', id: '#ckm2-bounds', name: 'Kill Map Bounds' });
+
+  /* Sponsor loop below the Kill Map — same Tomorrow's-Schedule-style
+     frame (bg + category label + sliding logo), whole box only. */
+  CP2_DEFAULTS['#cp2-sponsor'] = { left: 805, top: 957, width: 340, height: 94 };
+  CP2_ELEMENTS.push({ group: 'Sponsor Loop', id: '#cp2-sponsor', name: 'Sponsor Loop' });
+
   /* Post 4 Key — four cards, each spotlighting the game's leader in one
      stat (GPM / damage dealt / damage taken / assists). Sub-element
      positions (title, photo, crop, name bar, stat box) are identical
@@ -3325,6 +3463,15 @@
       elements:    SIDECHECK_ELEMENTS,
       defaults:    SIDECHECK_DEFAULTS,
       showFn:      'secAnimateIn',
+    },
+    mploverlay_v7_itemcheck: {
+      label:       'Item Check Layout · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_itemcheck',
+      elements:    [],
+      defaults:    {},
+      showFn:      'icAnimateIn',
     },
     mplfs_lobby: {
       label:       'Waiting Lobby · mplfs',
@@ -3406,6 +3553,15 @@
       elements:    CP_ELEMENTS,
       defaults:    CP_DEFAULTS,
       showFn:      'showConsolidatedPost',
+    },
+    mplfs_consolidated_post_2: {
+      label:       'Consolidated Post 2 · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_consolidated_post_2',
+      elements:    CP2_ELEMENTS,
+      defaults:    CP2_DEFAULTS,
+      showFn:      'showConsolidatedPost2',
     },
     mplfs_post4key: {
       label:       'Post 4 Key · mplfs',
@@ -3806,11 +3962,23 @@
     if (editValues['.sidecheck-name'] && editValues['.sidecheck-name'].fontSize !== undefined) {
       try { editIframe.contentWindow.sidecheckSetNameFontCeiling(editValues['.sidecheck-name'].fontSize); } catch (e) {}
     }
+    /* Patch Box/Caster Box fontSize — same reasoning as .sidecheck-name
+       above (see SB_MI_FIT_CONFIG in overlay-scoreboard.js): a blanket
+       !important font-size on the container never reaches the child text
+       span, since sbFitText() sets that span's font-size inline on every
+       poll tick. Width is NOT excluded below — it's still a real CSS box
+       dimension, in addition to also feeding the fit budget here. */
+    var SB_MI_FIT_SELECTORS = { '#sb-mi-patch': 'patch', '#sb-mi-casters': 'casters' };
+    Object.keys(SB_MI_FIT_SELECTORS).forEach(function(sel) {
+      var p = editValues[sel];
+      if (!p || (p.width === undefined && p.fontSize === undefined)) return;
+      try { editIframe.contentWindow.sbSetMiFit(SB_MI_FIT_SELECTORS[sel], { width: p.width, fontSize: p.fontSize }); } catch (e) {}
+    });
     var css = Object.keys(editValues).map(function(sel) {
       var p = editValues[sel];
       var d = [];
       var native = TW_MATCHES_SCALE_NATIVE[sel];
-      var skipFontSize = (sel === '.sidecheck-name');
+      var skipFontSize = (sel === '.sidecheck-name' || sel === '#sb-mi-patch' || sel === '#sb-mi-casters');
       if (p.left !== undefined) d.push('left:' + p.left + 'px !important');
       if (p.top  !== undefined) d.push('top:'  + p.top  + 'px !important');
       if (native && (p.width !== undefined || p.height !== undefined)) {
@@ -4378,6 +4546,22 @@
       contentPanel.style.display = 'none';
     }
 
+    var itemcheckPanel = document.getElementById('edit-itemcheck-panel');
+    if (key === 'mploverlay_v7_itemcheck') {
+      itemcheckPanel.style.display = 'block';
+      fetch('/api/itemcheck-layout', { cache: 'no-store' })
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+          document.getElementById('edit-itemcheck-gold-gap').value = d.goldGap     || 0;
+          document.getElementById('edit-itemcheck-home-x').value   = d.homeOffsetX || 0;
+          document.getElementById('edit-itemcheck-home-y').value   = d.homeOffsetY || 0;
+          document.getElementById('edit-itemcheck-away-x').value   = d.awayOffsetX || 0;
+          document.getElementById('edit-itemcheck-away-y').value   = d.awayOffsetY || 0;
+        });
+    } else {
+      itemcheckPanel.style.display = 'none';
+    }
+
     fetch('/api/overlay-styles?file=' + config.styleFile)
       .then(function(r) { return r.json(); })
       .then(function(saved) { mergeSaved(saved); loadIframe(config); })
@@ -4413,6 +4597,58 @@
         statusEl.style.color = '#44cc88';
         setTimeout(function() { statusEl.textContent = ''; }, 2000);
         if (editIfLoaded) { try { editIframe.contentWindow.showCreditsScene(); } catch (e) {} }
+      })
+      .catch(function() {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#ff4455';
+      });
+  });
+
+  /* ── Item Check Layout live preview ──────────────────────────────
+     Same cross-frame-call pattern as sidecheckSetNameFontCeiling()
+     (see SIDECHECK_DEFAULTS comment) — the field values apply straight
+     into the edit iframe on every keystroke, ahead of Save, since
+     goldGap/offsets aren't plain left/top/width/height overrides the
+     generic applyToEditIframe() CSS-injection path understands. */
+  var ITEMCHECK_FIELD_IDS = [
+    'edit-itemcheck-gold-gap', 'edit-itemcheck-home-x', 'edit-itemcheck-home-y',
+    'edit-itemcheck-away-x',   'edit-itemcheck-away-y',
+  ];
+  function icPreviewFromFields() {
+    if (!editIfLoaded) return;
+    var partial = {
+      goldGap:     Number(document.getElementById('edit-itemcheck-gold-gap').value) || 0,
+      homeOffsetX: Number(document.getElementById('edit-itemcheck-home-x').value)   || 0,
+      homeOffsetY: Number(document.getElementById('edit-itemcheck-home-y').value)   || 0,
+      awayOffsetX: Number(document.getElementById('edit-itemcheck-away-x').value)   || 0,
+      awayOffsetY: Number(document.getElementById('edit-itemcheck-away-y').value)   || 0,
+    };
+    try { editIframe.contentWindow.icPreviewLayout(partial); } catch (e) {}
+  }
+  ITEMCHECK_FIELD_IDS.forEach(function(id) {
+    document.getElementById(id).addEventListener('input', icPreviewFromFields);
+  });
+
+  /* ── Item Check Layout content Save ──────────────────────────── */
+  document.getElementById('edit-itemcheck-save').addEventListener('click', function() {
+    var statusEl = document.getElementById('edit-itemcheck-status');
+    var layout = {
+      goldGap:     Number(document.getElementById('edit-itemcheck-gold-gap').value) || 0,
+      homeOffsetX: Number(document.getElementById('edit-itemcheck-home-x').value)   || 0,
+      homeOffsetY: Number(document.getElementById('edit-itemcheck-home-y').value)   || 0,
+      awayOffsetX: Number(document.getElementById('edit-itemcheck-away-x').value)   || 0,
+      awayOffsetY: Number(document.getElementById('edit-itemcheck-away-y').value)   || 0,
+    };
+    fetch('/api/itemcheck-layout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(layout),
+    })
+      .then(function() {
+        statusEl.textContent = 'Saved ✓';
+        statusEl.style.color = '#44cc88';
+        setTimeout(function() { statusEl.textContent = ''; }, 2000);
+        if (editIfLoaded) { try { editIframe.contentWindow.icAnimateIn(); } catch (e) {} }
       })
       .catch(function() {
         statusEl.textContent = 'Error';

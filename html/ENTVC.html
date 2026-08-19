@@ -3586,7 +3586,7 @@
        Two stacked <video> layers behind all 5 scenes below instead of one
        per scene:
          - Back-to-back scenes using the SAME file (e.g. Waiting Lobby →
-           Waiting Screen TVC, both bgloopsun.webm) — untouched, just keeps
+           Waiting Screen TVC, both bgloopsun2.webm) — untouched, just keeps
            playing, no reload.
          - Same file after a gap (scene hidden, then a scene using that
            same file shows again later) — the already-loaded layer just
@@ -3597,18 +3597,18 @@
     ════════════════════════════════════════════════ */
     const sceneVideoEls = [document.getElementById('scene-video-0'), document.getElementById('scene-video-1')];
     const SCENE_VIDEO_SRC = {
-      waiting:   '/assets/bgloopsun.webm',
-      lobby:     '/assets/bgloopsun.webm',
+      waiting:   '/assets/bgloopsun2.webm',
+      lobby:     '/assets/bgloopsun2.webm',
       hexagon:   '/assets/bgloop.webm',
-      schedule:  '/assets/bgloopsun.webm',
-      tomorrow:  '/assets/bgloopsun.webm',
-      standings: '/assets/bgloopwaves.webm',
-      finalteam: '/assets/bgloopsun.webm',
-      lineupblue: '/assets/bgloopwaves.webm',
-      lineupred:  '/assets/bgloopwaves.webm',
-      highlights: '/assets/bgloopwaves.webm',
-      mvp:        '/assets/bgloopwaves.webm',
-      credits:    '/assets/bgloopwaves.webm',
+      schedule:  '/assets/bgloopsun2.webm',
+      tomorrow:  '/assets/bgloopsun2.webm',
+      standings: '/assets/bgloopwaves2.webm',
+      finalteam: '/assets/bgloopsun2.webm',
+      lineupblue: '/assets/bgloopwaves2.webm',
+      lineupred:  '/assets/bgloopwaves2.webm',
+      highlights: '/assets/bgloopwaves2.webm',
+      mvp:        '/assets/bgloopwaves2.webm',
+      credits:    '/assets/bgloopwaves2.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -4103,7 +4103,7 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
       }
       buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
       populateWsHosts(ms);

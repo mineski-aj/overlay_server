@@ -725,6 +725,26 @@ router.get('/overlay/consolidated_post/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/consolidated_post_2/show
+router.get('/overlay/consolidated_post_2/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'consolidated_post_2';
+  // Same reasoning as consolidated_post/show above: no standalone
+  // 'matchboard' broadcast — showConsolidatedPost2() sequences the
+  // cp-compact class itself before its own showMatchBoard() call.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: consolidated_post_2\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/consolidated_post_2/hide
+router.get('/overlay/consolidated_post_2/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: consolidated_post_2\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/post4key/show
 router.get('/overlay/post4key/show', (req, res) => {
   state.mplfsScene.matchboard = true;

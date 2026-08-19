@@ -6,7 +6,7 @@
 
   var bg = document.createElement('img');
   bg.id  = 'scoreboard-bg';
-  bg.src = 'assets/ingame/ingamepng.png';
+  bg.src = 'assets/ingame/ingamepng2.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -469,6 +469,43 @@ function sbFitText(el, maxWidth, maxPx) {
   el.style.fontSize = lo + 'px';
 }
 
+/* Patch/caster box text-fit budget — NOT a plain CSS font-size, because
+   sbFitText() above sets an inline font-size on the text span every poll
+   tick, and an inline style always beats an inherited value no matter how
+   the inherited value was set (even via !important on the box), so a
+   blanket CSS override on #sb-mi-patch/#sb-mi-casters would never actually
+   reach .sb-mi-patch-text/.sb-mi-casters-text. Same reasoning as
+   .sidecheck-name's SIDECHECK_NAME_FONT_CEILING (see dashboard.html) — the
+   Edit tab's saved fontSize/width become the ceiling sbFitText starts
+   from, not a fixed size, so it can still shrink further for long
+   strings instead of overflowing. The width offsets below (20/38px)
+   reproduce the original hardcoded 113/241 maxWidth values exactly at the
+   default 133/279 box widths, then scale proportionally from there. */
+var SB_MI_WIDTH_OFFSET = { patch: 20, casters: 38 };
+var SB_MI_FIT_CONFIG = {
+  patch:   { maxWidth: 113, maxPx: 13 },
+  casters: { maxWidth: 241, maxPx: 13 },
+};
+function sbMiTextBudget(which, containerWidth) {
+  return Math.max(10, containerWidth - (SB_MI_WIDTH_OFFSET[which] || 0));
+}
+function sbRefitMi() {
+  var miPatchTxt   = document.querySelector('#sb-mi-patch .sb-mi-patch-text');
+  var miCastersTxt = document.querySelector('#sb-mi-casters .sb-mi-casters-text');
+  if (miPatchTxt)   sbFitText(miPatchTxt,   SB_MI_FIT_CONFIG.patch.maxWidth,   SB_MI_FIT_CONFIG.patch.maxPx);
+  if (miCastersTxt) sbFitText(miCastersTxt, SB_MI_FIT_CONFIG.casters.maxWidth, SB_MI_FIT_CONFIG.casters.maxPx);
+}
+/* Called from the Edit tab (dashboard.html's applyToEditIframe, cross-
+   frame) and from loadSbOverrides below (real page load) whenever the
+   saved width/fontSize for one of these two boxes changes. */
+window.sbSetMiFit = function(which, opts) {
+  var cfg = SB_MI_FIT_CONFIG[which];
+  if (!cfg || !opts) return;
+  if (opts.width    !== undefined) cfg.maxWidth = sbMiTextBudget(which, opts.width);
+  if (opts.fontSize !== undefined) cfg.maxPx    = opts.fontSize;
+  sbRefitMi();
+};
+
 /* ── Match score bars ── */
 function sbRenderBars(container, total, scored, fromRight) {
   container.innerHTML = '';
@@ -499,17 +536,18 @@ function sbPollMatchState() {
       if (miWeek)  miWeek.textContent  = 'WEEK '  + (s.week  != null ? s.week  : 1) + ' - DAY '  + (s.day   != null ? s.day   : 1);
       if (miMatch) miMatch.textContent = 'MATCH ' + (s.match != null ? s.match : 1) + ' - GAME ' + (s.game  != null ? s.game  : 1);
 
-      /* Available widths below are the box width minus its 9px
-         left/right padding (and, for casters, the mic icon + gap). */
+      /* maxWidth/maxPx come from SB_MI_FIT_CONFIG (see sbFitText above) —
+         driven by the saved Patch Box/Caster Box width+fontSize, not
+         hardcoded, so an Edit-tab resize actually changes what fits. */
       var miPatchTxt   = document.querySelector('#sb-mi-patch .sb-mi-patch-text');
       var miCastersTxt = document.querySelector('#sb-mi-casters .sb-mi-casters-text');
       if (miPatchTxt) {
         miPatchTxt.textContent = s.patch || '';
-        sbFitText(miPatchTxt, 113, 13);
+        sbFitText(miPatchTxt, SB_MI_FIT_CONFIG.patch.maxWidth, SB_MI_FIT_CONFIG.patch.maxPx);
       }
       if (miCastersTxt) {
         miCastersTxt.textContent = (s.casters || []).filter(Boolean).join(' | ').toUpperCase();
-        sbFitText(miCastersTxt, 241, 13);
+        sbFitText(miCastersTxt, SB_MI_FIT_CONFIG.casters.maxWidth, SB_MI_FIT_CONFIG.casters.maxPx);
       }
 
       var mapVal     = s.map || 'Broken Walls';
@@ -579,6 +617,17 @@ setInterval(sbPollMatchState, 3000);
     .then(function(r) { return r.json(); })
     .then(function(styles) {
       if (!styles || !Object.keys(styles).length) return;
+      /* Seed SB_MI_FIT_CONFIG from the saved Patch Box/Caster Box
+         width+fontSize (see sbFitText above for why these two skip the
+         blanket !important path below). */
+      ['patch', 'casters'].forEach(function(which) {
+        var props = styles[which === 'patch' ? '#sb-mi-patch' : '#sb-mi-casters'];
+        if (!props) return;
+        var opts = {};
+        if (props.width    !== undefined) opts.width    = parseFloat(props.width);
+        if (props.fontSize !== undefined) opts.fontSize = parseFloat(props.fontSize);
+        if (opts.width !== undefined || opts.fontSize !== undefined) window.sbSetMiFit(which, opts);
+      });
       var css = Object.keys(styles).map(function(sel) {
         var props = styles[sel];
         /* .sidecheck-name's saved font-size (only — left/top go through
@@ -588,8 +637,12 @@ setInterval(sbPollMatchState, 3000);
            rule would always win over that script's own inline font-size
            assignment, permanently defeating its shrink-to-fit-the-box
            protection for long names. See the SIDECHECK_DEFAULTS comment
-           in dashboard.html for the full reasoning. */
-        var skipFontSize = (sel === '.sidecheck-name');
+           in dashboard.html for the full reasoning. #sb-mi-patch/
+           #sb-mi-casters' saved font-size is excluded the same way and
+           for the same reason (see SB_MI_FIT_CONFIG above) — their width
+           is NOT excluded, since it's still a real CSS box dimension on
+           top of also feeding the fit budget. */
+        var skipFontSize = (sel === '.sidecheck-name' || sel === '#sb-mi-patch' || sel === '#sb-mi-casters');
         var decls = Object.keys(props).filter(function(prop) {
           return !(skipFontSize && prop === 'fontSize');
         }).map(function(prop) {

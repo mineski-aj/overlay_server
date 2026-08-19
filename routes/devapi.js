@@ -166,6 +166,37 @@ router.post('/api/credits-style', (req, res) => {
   res.json({ ok: true, headingSize, bodySize });
 });
 
+// Item Check panel layout tuning (mploverlay_v7's item-check panel) —
+// goldGap is the vertical space between gold-amount rows (px added on top
+// of each row's own 31px height); homeOffsetX/Y and awayOffsetY/Y shift
+// every element on that side (portraits, items, gold) together, so the
+// whole blue/red half can be nudged in one edit instead of repositioning
+// each row by hand. GET to read, POST the full object to update.
+const ITEMCHECK_LAYOUT_FILE = path.join(__dirname, '..', 'itemcheck_layout.json');
+const ITEMCHECK_LAYOUT_DEFAULTS = { goldGap: 26, homeOffsetX: 0, homeOffsetY: 0, awayOffsetX: 0, awayOffsetY: 0 };
+
+router.get('/api/itemcheck-layout', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(ITEMCHECK_LAYOUT_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json(ITEMCHECK_LAYOUT_DEFAULTS);
+  }
+});
+
+router.post('/api/itemcheck-layout', (req, res) => {
+  const b = req.body || {};
+  const clampNum = (v, d, lo, hi) => Math.max(lo, Math.min(hi, Number(v) || d));
+  const layout = {
+    goldGap:     clampNum(b.goldGap,     26, 0,    200),
+    homeOffsetX: clampNum(b.homeOffsetX, 0,  -400, 400),
+    homeOffsetY: clampNum(b.homeOffsetY, 0,  -400, 400),
+    awayOffsetX: clampNum(b.awayOffsetX, 0,  -400, 400),
+    awayOffsetY: clampNum(b.awayOffsetY, 0,  -400, 400),
+  };
+  fs.writeFileSync(ITEMCHECK_LAYOUT_FILE, JSON.stringify(layout));
+  res.json({ ok: true, ...layout });
+});
+
 // Game API base URL — GET to read, POST { url } to update
 const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
 
