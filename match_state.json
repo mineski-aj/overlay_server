@@ -30,8 +30,8 @@
     ],
     "name": "Aurora Gaming PH",
     "short": "RORA",
-    "score": 1,
-    "coach": "Master the Basics"
+    "score": 0,
+    "coach": "Master The Basics"
   },
   "away": {
     "teamId": "10764",
@@ -68,8 +68,8 @@
     "coach": "PHEWW"
   },
   "series": "BO3",
-  "game": 2,
-  "swapped": true,
+  "game": 1,
+  "swapped": false,
   "official": true,
   "week": 1,
   "day": 2,
@@ -171,11 +171,11 @@
   "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": true,
-    "endAt": 1787036471875,
-    "remaining": 90
+    "running": false,
+    "endAt": null,
+    "remaining": 900
   },
-  "map": "Dangerous Grass",
+  "map": "Expanding Rivers",
   "enCasters": [
     "Hans",
     "Renmar",
