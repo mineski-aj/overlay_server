@@ -7,6 +7,11 @@
 // page already uses (addEventListener, .onopen, .onerror, .close()), so
 // existing `sse.addEventListener('foo', fn)` call sites don't need to
 // change — only the one line that used to say `new EventSource(...)`.
+// Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
+// logic change, etc.) — see the comment at its `new SharedWorker(...)` call
+// below for why this exists. Current bump: added 'post4key'.
+const OVERLAY_WORKER_VERSION = 2;
+
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {
     // Shouldn't happen in Chromium/CEF (what vMix and every browser this
@@ -19,7 +24,18 @@ function createOverlaySSE() {
   let onopenFn = null;
   let onerrorFn = null;
 
-  const worker = new SharedWorker('/html/js/overlay-shared-worker.js');
+  // SharedWorkers are keyed by their exact script URL — a tab that already
+  // holds a running worker for that URL reuses it, even if the file on
+  // disk changed, even across page reloads (it only actually respawns once
+  // every tab/browser-source using the old URL has closed). That silently
+  // strands any tab open from before a KNOWN_EVENTS change: it keeps
+  // talking to the OLD worker, which never learned the new event name, so
+  // the new feature just never fires for that tab — no error, no hint why.
+  // OVERLAY_WORKER_VERSION forces a fresh worker on the next reload instead
+  // of requiring every open tab/OBS browser-source to be closed at once:
+  // bump it whenever overlay-shared-worker.js's KNOWN_EVENTS or logic
+  // changes (see that file).
+  const worker = new SharedWorker('/html/js/overlay-shared-worker.js?v=' + OVERLAY_WORKER_VERSION);
   worker.port.onmessage = (e) => {
     const msg = e.data;
     if (!msg) return;

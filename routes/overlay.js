@@ -725,6 +725,28 @@ router.get('/overlay/consolidated_post/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/post4key/show
+router.get('/overlay/post4key/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'post4key';
+  // Same reasoning as consolidated_post/show above: no standalone
+  // 'matchboard' broadcast — mplfs.html's own transitionTo() already
+  // calls showMatchBoard() internally, and the dashboard's Matchboard
+  // toggle stays in sync via the /overlay/mplfs-scene refetch triggered
+  // off the 'post4key' event alone.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post4key\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post4key/hide
+router.get('/overlay/post4key/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post4key\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/draftpredict/show|hide|poll
 router.get('/overlay/draftpredict/:cmd', (req, res) => {
   const cmd = req.params.cmd;

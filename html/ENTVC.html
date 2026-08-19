@@ -1486,18 +1486,6 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    /* Full-canvas decorative frame (season tickers in the corners) — mostly
-       transparent. Lives as the last child of #canvas (not inside any one
-       scene's -page div) so it sits above EVERY scene, not just Waiting
-       Screen TVC where it originated — a new scene added later gets it
-       for free, nothing to remember to wire in. */
-    #global-hud {
-      position: absolute;
-      left: 29px; top: 25px;
-      width: 1862px; height: 1031px;
-      pointer-events: none;
-      z-index: 9999;
-    }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
     #ws-timer {
@@ -1514,10 +1502,28 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      position: relative;
+      z-index: 0;
     }
-    #ws-timer-label img {
+    /* Scoped to the ID, not "#ws-timer-label img" — a generic descendant
+       selector would also clamp #ws-timer-label-bg (also an <img> inside
+       this box) to the OLD 160x47 label size via max-width/max-height:
+       100%, silently overriding any width/height set from the dashboard
+       Edit tab. */
+    #ws-timer-label-img {
       max-width: 100%; max-height: 100%;
       object-fit: contain;
+    }
+    /* Background plaque behind the label graphic — see mplfs.html's
+       #ws-timer-label-bg for why this is a child of the label box rather
+       than a canvas-absolute sibling. */
+    #ws-timer-label-bg {
+      position: absolute;
+      z-index: -1;
+      left: -9.5px; top: -11px;
+      width: 179px; height: 69px;
+      object-fit: cover;
+      pointer-events: none;
     }
     #ws-timer-value {
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
@@ -2268,7 +2274,7 @@
       <div id="ws-casters" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
     </div>
@@ -2679,7 +2685,6 @@
         <div class="pb-name"><span id="pb-r5-name"></span></div>
       </div>
     </div>
-    <img id="global-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
   </div>
 
   <script>

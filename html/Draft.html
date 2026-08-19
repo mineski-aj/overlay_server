@@ -1207,14 +1207,11 @@
         renderBars(scoreEls[1], maxWins, c1Team.score, true);
         renderBars(scoreEls[2], maxWins, c2Team.score, false);
 
-        /* Coach name — camp1 is always the LEFT/blue box (dcoach-home)
-           and camp2 the RIGHT/red box (dcoach-away) regardless of which
-           team (home/away) is currently swapped into that camp, same as
-           the score bars above. BPM slot selection in pollCoachBpm()
-           below follows the same swap so the heart/number match. */
+        /* dcoachSwapped only feeds pollCoachBpm()'s coach_home1/coach_away1
+           pairing now — coach NAME/headset come from the draft API's
+           coach_in instead (see poll() → updateCoachFromDraft), which is
+           already positional (campid 1=left/2=right) and needs no swap. */
         dcoachSwapped = swapped;
-        if (dcoachRefs.home) dcoachFitName(dcoachRefs.home.nameTextEl, c1Team.coach || 'COACH NAME');
-        if (dcoachRefs.away) dcoachFitName(dcoachRefs.away.nameTextEl, c2Team.coach || 'COACH NAME');
 
         /* Map bug — same source as the ingame scoreboard's #sb-map */
         var mapVal     = s.map || 'Broken Walls';
@@ -1324,6 +1321,10 @@
     var headset = document.createElement('div');
     headset.className = 'dcoach-headset dcoach-' + side;
     headset.innerHTML = DCOACH_HEADSET_SVG;
+    /* Hidden until the draft API confirms a real coach_in (see poll() /
+       updateCoachFromDraft) — starting hidden avoids a flash of a headset
+       icon with no coach name next to it before the first poll tick. */
+    headset.style.display = 'none';
     scene.appendChild(headset);
 
     var name = document.createElement('div');
@@ -1333,7 +1334,7 @@
     name.appendChild(nameText);
     scene.appendChild(name);
 
-    dcoachRefs[side] = { heartEl: heart, numEl: num, nameTextEl: nameText, phase: Math.random(), bpm: 0, connected: false };
+    dcoachRefs[side] = { heartEl: heart, numEl: num, nameTextEl: nameText, headsetEl: headset, phase: Math.random(), bpm: 0, connected: false };
   }
 
   /* Coach name fit — maximize a single line to fill the 27px-tall box;
@@ -1400,11 +1401,23 @@
   function buildCoachBpm() {
     buildCoachSide('home');
     buildCoachSide('away');
-    /* No coach-name source yet — placeholder until one exists; swap the
-       literal string for real data the same way pollCoachBpm() below
-       updates the heart/number when a name feed shows up. */
-    dcoachFitName(dcoachRefs.home.nameTextEl, 'COACH NAME');
-    dcoachFitName(dcoachRefs.away.nameTextEl, 'COACH NAME');
+    /* Left blank (and headset hidden, per buildCoachSide) until poll()
+       gets a real coach_in from the draft API — see updateCoachFromDraft. */
+  }
+
+  /* Coach name + headset visibility, driven by the draft API's per-camp
+     coach_in (see poll()). campid is already positional (1=blue/left,
+     2=red/right — same convention as everywhere else in this codebase),
+     so unlike the BPM feed's coach_home1/coach_away1 pairing this needs
+     no swap logic: camp1 always maps to 'home' (left), camp2 to 'away'
+     (right). "Unknown" (the API's not-yet-set sentinel) and any other
+     falsy value are treated the same — blank name, headset hidden. */
+  function updateCoachFromDraft(side, coachIn) {
+    var refs = dcoachRefs[side];
+    if (!refs) return;
+    var known = !!coachIn && coachIn !== 'Unknown';
+    dcoachFitName(refs.nameTextEl, known ? coachIn : '');
+    if (refs.headsetEl) refs.headsetEl.style.display = known ? '' : 'none';
   }
 
   /* Heartbeat scale bump, phase-driven by actual BPM — same easing curve
@@ -2196,7 +2209,8 @@
       var players = camp.player_list || [];
       var out = {
         campid: (players[0] && players[0].campid) || (idx + 1),
-        team_simple_name: camp.team_name_simple || camp.team_name || ''
+        team_simple_name: camp.team_name_simple || camp.team_name || '',
+        coach_in: camp.coach_in || ''
       };
       players.forEach(function (p, seatIdx) {
         /* No explicit seat/position field in this feed — player_list order
@@ -2242,6 +2256,11 @@
 
         if (teamEls[1]) teamEls[1].textContent = (camp1 && camp1.team_simple_name) || '';
         if (teamEls[2]) teamEls[2].textContent = (camp2 && camp2.team_simple_name) || '';
+
+        /* Coach name + headset — live from the draft API now, not the
+           manual /match/state field (see pollMatchState()). */
+        updateCoachFromDraft('home', camp1 && camp1.coach_in);
+        updateCoachFromDraft('away', camp2 && camp2.coach_in);
 
         /* Team logos — only reload when team name changes */
         [1, 2].forEach(function(campid) {
