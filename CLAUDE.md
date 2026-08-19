@@ -166,6 +166,36 @@ know every name up front; there's no generic "any event" API) or it
 will silently never reach any page no matter how many
 `addEventListener('yourNewEvent', ...)` calls exist client-side.
 
+**Whenever you add a name to `KNOWN_EVENTS` (or otherwise change
+`overlay-shared-worker.js`), you MUST also bump
+`OVERLAY_WORKER_VERSION` in `html/js/overlay-sse-shim.js`.**
+`SharedWorker`s are reused by exact script URL — a tab/OBS
+browser-source that's been open since before your change is still
+talking to the OLD worker instance in memory, which never learned
+the new event name, no matter how many times that tab is refreshed
+or how correct routes/overlay.js and the client listener are.
+`OVERLAY_WORKER_VERSION` is a cache-busting query param
+(`?v=N`) on the worker's URL specifically so a plain page reload is
+enough to pick up a fresh worker — skip the bump and the only fix
+left is closing every single tab/browser-source on the whole origin
+at once. This exact bug shipped once (Post 4 Key's Control-tab
+toggle and Edit-tab preview both looked completely broken — right
+server route, right client code, stale worker) and cost a full extra
+round trip to diagnose, so treat it as a required step, not an
+afterthought, when adding a feature to this server.
+
+**Before calling a new feature done, verify the Control-tab
+toggle button AND the SSE round-trip actually work — not just that
+the server route returns 200.** `curl`ing `/overlay/<key>/show` only
+proves the route exists; it says nothing about whether a connected
+mplfs.html tab actually reacts, because that hop goes through the
+SharedWorker described above. Test it properly: load the page fresh
+(a brand-new Playwright/browser context has no stale worker to hide
+behind), click the real Control-tab toggle button, and confirm a
+*separate* tab/page picks up the change — the Post 4 Key bug above
+looked fine under `curl` and only showed up when someone actually
+pressed the button in a real, already-open browser tab.
+
 ## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
 
 `html/ENTVC.html` is a separate, mostly-duplicate copy of `mplfs.html`'s
@@ -574,19 +604,32 @@ fire the request and let the SSE echo-back update the UI.
    string. **The last one is the one that gets forgotten** — everything
    still shows/hides fine without it, only the Control-tab "Showing"
    indicator is silently wrong.
-8. Sanity-check before calling it done: grep every id/class used in the new
+8. New named SSE event → add it to `KNOWN_EVENTS` in
+   `html/js/overlay-shared-worker.js` AND bump `OVERLAY_WORKER_VERSION`
+   in `html/js/overlay-sse-shim.js` in the same change (see "Dashboard
+   architecture" above). Skip the version bump and any tab/OBS
+   browser-source already open keeps talking to the old worker forever,
+   no matter how many times it's refreshed.
+9. Sanity-check before calling it done: grep every id/class used in the new
    `FOO_ELEMENTS`/`FOO_DEFAULTS` against the actual `mplfs.html` markup —
    a mismatch is silent (no error, the Edit row just does nothing). Same
    goes for the feature-key string across all 6 SSE-wiring spots.
-9. Validate JS syntax on both `mplfs.html` and `dashboard.html` (a fresh
-   `<script>` block that fails to parse breaks the whole page):
-   ```
-   node -e "
-   const fs=require('fs');
-   for (const f of ['html/mplfs.html','html/dashboard.html']) {
-     const src = fs.readFileSync(f,'utf8');
-     [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
-       .forEach((m,i) => { try { new Function(m[1]); }
-         catch(e){ console.log(f, i, e.message); } });
-   }"
-   ```
+10. Validate JS syntax on both `mplfs.html` and `dashboard.html` (a fresh
+    `<script>` block that fails to parse breaks the whole page):
+    ```
+    node -e "
+    const fs=require('fs');
+    for (const f of ['html/mplfs.html','html/dashboard.html']) {
+      const src = fs.readFileSync(f,'utf8');
+      [...src.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
+        .forEach((m,i) => { try { new Function(m[1]); }
+          catch(e){ console.log(f, i, e.message); } });
+    }"
+    ```
+11. Verify live, in a fresh browser context, not just via `curl`: click
+    the real Control-tab toggle button and confirm a *separate* tab
+    picks up the change over SSE, and confirm the Edit-tab preview
+    iframe actually shows the scene. `curl`ing the show/hide routes only
+    proves the routes exist — it says nothing about the SharedWorker hop
+    in between (see step 8), which is exactly the hop that silently
+    breaks for anyone testing from an already-open tab.

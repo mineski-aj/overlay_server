@@ -699,8 +699,45 @@
       font-family: 'General Sans', sans-serif;
       color: #0a0a0a;
     }
-    #wl-timer-label { width: 160px; height: 47px; display: flex; align-items: center; justify-content: flex-start; }
-    #wl-timer-label img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    /* position:absolute (not a flex child) so it's independently
+       draggable from #wl-timer in the dashboard Edit tab — left/top are
+       LOCAL offsets against #wl-timer's own box, matching exactly where
+       align-items:center + being the first flex item used to put it
+       (cross-axis center of the 130px-tall row = (130-47)/2 = 41.5px;
+       first item = left:0), so pulling it out of the flex flow doesn't
+       shift anything. #wl-timer-value is unaffected: it's left-anchored
+       and was already the only OTHER item, so it keeps sitting at the
+       row's start regardless of how much intrinsic width the row loses
+       by removing the label from flow. */
+    #wl-timer-label {
+      position: absolute;
+      left: 0px; top: 41.5px;
+      width: 160px; height: 47px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      z-index: 0;
+    }
+    /* Scoped to the ID, not "#wl-timer-label img" — a generic descendant
+       selector here would also clamp #wl-timer-label-bg (also an <img>
+       inside this box) to the OLD 160x47 label size via max-width/
+       max-height:100%, silently overriding any width/height set from the
+       dashboard Edit tab. */
+    #wl-timer-label-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    /* Background plaque behind the label graphic — a child of the label
+       box (not a canvas-absolute sibling) so it rides along with the
+       label without affecting #wl-timer's flex layout of the value next
+       to it. Centered over the 160x47 label box (offsets = half the size
+       difference), z-index:-1 to sit behind the label img — see
+       #ws-timer-label-bg for the Waiting Screen TVC twin. */
+    #wl-timer-label-bg {
+      position: absolute;
+      z-index: -1;
+      left: -9.5px; top: -11px;
+      width: 179px; height: 69px;
+      object-fit: cover;
+      pointer-events: none;
+    }
     #wl-timer-value {
       width: 355px;
       font-weight: 800;
@@ -1832,19 +1869,6 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
-    /* Full-canvas decorative frame (season tickers in the corners) — mostly
-       transparent. Lives as the last child of #canvas (not inside any one
-       scene's -page div) so it sits above EVERY scene, not just Waiting
-       Screen TVC where it originated — a new scene added later gets it
-       for free, nothing to remember to wire in. */
-    #global-hud {
-      position: absolute;
-      left: 29px; top: 25px;
-      width: 1862px; height: 1031px;
-      pointer-events: none;
-      z-index: 9999;
-    }
-
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
     #ws-timer {
       position: absolute;
@@ -1860,10 +1884,25 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      position: relative;
+      z-index: 0;
     }
-    #ws-timer-label img {
+    /* Scoped to the ID, not "#ws-timer-label img" — see #wl-timer-label-img
+       above for why (this box also has the label-bg <img> sibling now). */
+    #ws-timer-label-img {
       max-width: 100%; max-height: 100%;
       object-fit: contain;
+    }
+    /* Background plaque behind the label graphic — see #wl-timer-label-bg
+       (Waiting Lobby twin) for why this is a child of the label box rather
+       than a canvas-absolute sibling. */
+    #ws-timer-label-bg {
+      position: absolute;
+      z-index: -1;
+      left: -9.5px; top: -11px;
+      width: 179px; height: 69px;
+      object-fit: cover;
+      pointer-events: none;
     }
     #ws-timer-value {
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
@@ -2094,6 +2133,94 @@
     }
     .ws-panel-out { animation: ws-panel-out 300ms ease-in both; }
     .ws-panel-in  { animation: ws-panel-in  400ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+    /* ── POST 4 KEY PAGE ──
+       Four independently-positioned player-highlight cards (Rich Guy /
+       The Carry / Sand Bag / The Wingman), each spotlighting the game's
+       leader in one stat (GPM, damage dealt, damage taken, assists).
+       Matchboard shows with this scene like the other Post features;
+       middleboard and playerboard do NOT — same as Consolidated Post,
+       since this scene already shows its own player photos. */
+    #post4key-page {
+      position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+      display: none; overflow: visible;
+      background: transparent;
+      opacity: 0; transition: opacity 400ms ease;
+    }
+    #post4key-page.p4k-on { display: block; }
+    #post4key-page.p4k-visible { opacity: 1; }
+
+    .p4k-card { position: absolute; width: 416px; height: 509px; }
+    #p4k-card-1 { left: 100px;  top: 373px; }
+    #p4k-card-2 { left: 527px;  top: 373px; }
+    #p4k-card-3 { left: 954px;  top: 373px; }
+    #p4k-card-4 { left: 1381px; top: 373px; }
+
+    .p4k-bg {
+      position: absolute; left: 0px; top: 0px; width: 416px; height: 509px;
+      object-fit: cover; z-index: 1;
+    }
+
+    .p4k-title {
+      position: absolute; left: 0px; top: -68px; width: 416px; height: 48px;
+      text-align: center; line-height: 48px; white-space: nowrap;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 40px; color: #000;
+      z-index: 2;
+    }
+
+    .p4k-photo-box {
+      /* No background of its own — transparent so .p4k-bg's marble
+         texture (bigfourred.png/bigfourblue.png) shows through the
+         cutout photo's transparent areas, same as richguy/playerboard's
+         layering (colored art behind, transparent player cutout on top). */
+      position: absolute; left: 0px; top: 0px; width: 416px; height: 416px;
+      overflow: hidden; z-index: 3;
+    }
+    .p4k-photo {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: top center;
+    }
+
+    /* Invisible — this box's only job is to mark where the photo should
+       get clipped (its own top edge is the cutoff line). It draws
+       nothing itself; p4kApplyCrop() reads its position and clip-paths
+       .p4k-photo-box to match, so below the cutoff the card's own
+       .p4k-bg (marble + team-color band) shows through untouched. */
+    .p4k-crop {
+      position: absolute; left: 0px; top: 357px; width: 416px; height: 152px;
+      pointer-events: none;
+    }
+
+    .p4k-name-box {
+      position: absolute; left: 0px; top: 357px; width: 416px; height: 48px;
+      z-index: 5;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p4k-name {
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 36px; color: #fff;
+      line-height: 1; white-space: nowrap; transform-origin: center center;
+    }
+
+    .p4k-stat-box {
+      position: absolute; left: 25px; top: 405px; width: 123px; height: 104px;
+      z-index: 6;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p4k-stat-label {
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 21px; color: #000;
+      text-align: center; line-height: 1.05;
+    }
+
+    /* Stat value — its own box, separate from the label. */
+    .p4k-value-box {
+      position: absolute; left: 165px; top: 404px; width: 251px; height: 105px;
+      z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .p4k-stat-value {
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 60px; color: #000;
+      text-align: center; line-height: 1; text-transform: uppercase;
+    }
 
     /* ── POST RICHGUY PAGE ── */
     #post-richguy-page {
@@ -2598,6 +2725,15 @@
       </div>
     </div>
 
+    <div class="feature-card">
+      <div class="feature-card-label">Post 4 Key</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPost4Key()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePost4Key()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-post4key" onclick="toggleLocalPreview('post4key', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── BROADCAST CANVAS ── -->
@@ -2615,6 +2751,52 @@
     <video id="scene-video-1" loop muted playsinline preload="auto"></video>
     <!-- post_hearts containers injected by JS -->
     <div id="post-richguy-page"></div>
+    <div id="post4key-page">
+      <div id="p4k-card-1" class="p4k-card">
+        <img class="p4k-bg" id="p4k-1-bg" alt="">
+        <div class="p4k-title" id="p4k-1-title">RICH GUY</div>
+        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-1-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-crop"></div>
+        <div class="p4k-name-box"><span class="p4k-name" id="p4k-1-name"></span></div>
+        <div class="p4k-stat-box">
+          <div class="p4k-stat-label">GOLD PER<br>MINUTE</div>
+        </div>
+        <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-1-value"></div></div>
+      </div>
+      <div id="p4k-card-2" class="p4k-card">
+        <img class="p4k-bg" id="p4k-2-bg" alt="">
+        <div class="p4k-title" id="p4k-2-title">THE CARRY</div>
+        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-2-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-crop"></div>
+        <div class="p4k-name-box"><span class="p4k-name" id="p4k-2-name"></span></div>
+        <div class="p4k-stat-box">
+          <div class="p4k-stat-label">DAMAGE<br>DEALT</div>
+        </div>
+        <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-2-value"></div></div>
+      </div>
+      <div id="p4k-card-3" class="p4k-card">
+        <img class="p4k-bg" id="p4k-3-bg" alt="">
+        <div class="p4k-title" id="p4k-3-title">SAND BAG</div>
+        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-3-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-crop"></div>
+        <div class="p4k-name-box"><span class="p4k-name" id="p4k-3-name"></span></div>
+        <div class="p4k-stat-box">
+          <div class="p4k-stat-label">DAMAGE<br>TAKEN</div>
+        </div>
+        <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-3-value"></div></div>
+      </div>
+      <div id="p4k-card-4" class="p4k-card">
+        <img class="p4k-bg" id="p4k-4-bg" alt="">
+        <div class="p4k-title" id="p4k-4-title">THE WINGMAN</div>
+        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-4-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-crop"></div>
+        <div class="p4k-name-box"><span class="p4k-name" id="p4k-4-name"></span></div>
+        <div class="p4k-stat-box">
+          <div class="p4k-stat-label">TOTAL<br>ASSISTS</div>
+        </div>
+        <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-4-value"></div></div>
+      </div>
+    </div>
     <div id="waiting-screen-page">
       <div id="ws-header">
         <img src="/assets/Waiting Screen TVC/S18_Header.png" alt="MPL Philippines — Season 18 Regular Season">
@@ -2625,7 +2807,7 @@
       <div id="ws-casters" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="ws-timer-value">30:30</div>
       </div>
     </div>
@@ -2637,7 +2819,7 @@
       <div id="wl-match"></div>
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
-        <div id="wl-timer-label"><img id="wl-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="wl-timer-label"><img id="wl-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="wl-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
         <div id="wl-timer-value">30:30</div>
       </div>
       <div class="wl-player wl-player-blue">
@@ -3097,7 +3279,6 @@
         <div class="pb-name"><span id="pb-r5-name"></span></div>
       </div>
     </div>
-    <img id="global-hud" src="/assets/Waiting Screen TVC/HUD.png" alt="">
   </div>
 
   <script>
@@ -3475,6 +3656,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showConsolidatedPost, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('post4key', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPost4Key, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -4241,6 +4430,7 @@
       mvp:        '/assets/bgloopwaves.webm',
       credits:    '/assets/bgloopwaves.webm',
       consolidated_post: '/assets/bgloopwaves.webm',
+      post4key:   '/assets/bgloopwaves.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -6754,7 +6944,7 @@
     let cpDuringPostTransition = false;
 
     /* Add new Post scene names here — match board follows automatically */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'post4key']);
 
     /* Central transition: manages match board + middleboard based on Post vs non-Post */
     // Everything that must finish animating OUT before timeline animates IN.
@@ -6787,7 +6977,7 @@
       if (POST_FEATURES.has(newFeature)) {
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
-        else if (newFeature === 'consolidated_post') { /* rows already show photos; skip middle/player board */ }
+        else if (newFeature === 'consolidated_post' || newFeature === 'post4key') { /* own player photos already shown; skip middle/player board */ }
         else { showMiddleBoard(); showPlayerBoard(); }
         if (newFeature !== 'timeline') {
           cpDuringPostTransition = true;
@@ -6824,6 +7014,7 @@
       if (prev === 'items')    return hidePostItems();
       if (prev === 'stats')    return hidePostStats();
       if (prev === 'consolidated_post') return hideConsolidatedPost();
+      if (prev === 'post4key') return hidePost4Key();
       return Promise.resolve();
     }
 
@@ -7777,6 +7968,151 @@
     }
 
     /* ════════════════════════════════════════════════
+       POST 4 KEY — four cards, each spotlighting the game's leader in
+       one stat (GPM / damage dealt / damage taken / assists). Same data
+       source as Consolidated Post/Rich Guy (/api/gamedata-proxy's
+       camp_list seats); judger seats are excluded the same way Rich Guy
+       excludes them. Assist ties are broken by highest GPM per the
+       user's spec — the other three stats aren't expected to tie in
+       practice, so ties there just keep whichever seat sorts first.
+    ════════════════════════════════════════════════ */
+    let p4kVisible = false;
+
+    function p4kFitName(el, maxSize = 36, minSize = 20) {
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.parentElement.clientWidth && size > minSize) {
+        el.style.fontSize = (--size) + 'px';
+      }
+    }
+
+    // Stat values like "28.0k" can be wider than the 123px-wide white
+    // stat box at 60px font — anything spilling past it lands on the
+    // black crop/name-bar background right outside, where black-on-black
+    // text just vanishes. Shrink to fit instead of letting that happen.
+    function p4kFitValue(el, maxSize = 60, minSize = 30) {
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.parentElement.clientWidth && size > minSize) {
+        el.style.fontSize = (--size) + 'px';
+      }
+    }
+
+    // .p4k-crop draws nothing — it's just a positioned/resizable marker
+    // (so it stays independently editable from the dashboard, per the
+    // spec). Its own top edge is the real cutoff line: clip .p4k-photo-box
+    // there so the photo never bleeds into the name/stat area, and
+    // everything below the cutoff is untouched card background instead
+    // of a painted-over rectangle. Must run after the page is actually
+    // laid out (display:block) — see the offsetTop/offsetHeight note in
+    // showPost4Key.
+    function p4kApplyCrop(cardEl) {
+      const photoBox = cardEl.querySelector('.p4k-photo-box');
+      const crop     = cardEl.querySelector('.p4k-crop');
+      if (!photoBox || !crop) return;
+      const cutoff      = crop.offsetTop - photoBox.offsetTop;
+      const hiddenBelow = photoBox.offsetHeight - cutoff;
+      photoBox.style.clipPath = hiddenBelow > 0 ? `inset(0 0 ${hiddenBelow}px 0)` : 'none';
+    }
+
+    function p4kApplyCard(n, s, value) {
+      const bgEl    = document.getElementById(`p4k-${n}-bg`);
+      const nameEl  = document.getElementById(`p4k-${n}-name`);
+      const valueEl = document.getElementById(`p4k-${n}-value`);
+      const photoEl = document.getElementById(`p4k-${n}-photo`);
+
+      if (bgEl) bgEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourblue.png' : '/assets/postgame/bigfourred.png');
+      if (nameEl) { nameEl.textContent = s.name || ''; p4kFitName(nameEl); }
+      if (valueEl) { valueEl.textContent = value; p4kFitValue(valueEl); }
+      if (photoEl) {
+        // Signature portrait, not the VICTORY/DEFEAT full-body pose —
+        // same helper MVP Highlights/MVP Scene use (hlPhotoUrl), same
+        // hide-on-error fallback (no photo beats a broken-image icon,
+        // and the card's own marble/team-color art shows through).
+        photoEl.onerror = () => { photoEl.style.display = 'none'; };
+        photoEl.style.display = '';
+        photoEl.src = buildUrl(hlPhotoUrl(s.name));
+      }
+    }
+
+    async function fetchPost4KeyData() {
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+
+        const seats = [];
+        (gd.camp_list || []).filter(c => c.campid === 1 || c.campid === 2).forEach(camp => {
+          ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].forEach(k => {
+            const p = camp[k];
+            if (p && !p.judger) seats.push({ ...p, campid: camp.campid });
+          });
+        });
+        if (!seats.length) return;
+
+        const highest = (getVal) => seats.reduce((best, s) => (getVal(s) > getVal(best) ? s : best), seats[0]);
+
+        const gpmPlayer   = highest(s => s.extra_param?.gpm || 0);
+        const dealtPlayer = highest(s => s.total_damage || 0);
+        const takenPlayer = highest(s => s.total_hurt || 0);
+
+        const maxAssists  = Math.max(...seats.map(s => s.assist_num || 0));
+        const assistTied  = seats.filter(s => (s.assist_num || 0) === maxAssists);
+        const assistPlayer = assistTied.reduce(
+          (best, s) => ((s.extra_param?.gpm || 0) > (best.extra_param?.gpm || 0) ? s : best),
+          assistTied[0]
+        );
+
+        p4kApplyCard(1, gpmPlayer,   String(gpmPlayer.extra_param?.gpm || 0));
+        p4kApplyCard(2, dealtPlayer, fmtGold(dealtPlayer.total_damage || 0));
+        p4kApplyCard(3, takenPlayer, fmtGold(takenPlayer.total_hurt || 0));
+        p4kApplyCard(4, assistPlayer, String(assistPlayer.assist_num || 0));
+      } catch {}
+    }
+
+    async function showPost4Key() {
+      if (p4kVisible) return;
+      const page = document.getElementById('post4key-page');
+      const dataPromise = fetchPost4KeyData();
+      await transitionTo('post4key');
+      await dataPromise;
+      if (activeFeature !== 'post4key') return; /* superseded while awaiting data */
+      await preloadMedia(page.querySelectorAll('img'), 1500);
+      if (activeFeature !== 'post4key') return; /* superseded while preloading */
+      p4kVisible = true;
+      showSceneVideo('post4key');
+      page.classList.add('p4k-on');
+      void page.offsetWidth;
+      // Re-run the shrink-to-fit passes now that the page is actually
+      // laid out (display:block) — while #post4key-page was still
+      // display:none, every element in it had clientWidth/scrollWidth
+      // stuck at 0, so p4kApplyCard's fit calls were no-ops.
+      for (let i = 1; i <= 4; i++) {
+        const nameEl  = document.getElementById(`p4k-${i}-name`);
+        const valueEl = document.getElementById(`p4k-${i}-value`);
+        const cardEl  = document.getElementById(`p4k-card-${i}`);
+        if (nameEl)  p4kFitName(nameEl);
+        if (valueEl) p4kFitValue(valueEl);
+        if (cardEl)  p4kApplyCrop(cardEl);
+      }
+      page.classList.add('p4k-visible');
+    }
+
+    function hidePost4Key() {
+      if (!p4kVisible) return Promise.resolve();
+      p4kVisible = false;
+      const page = document.getElementById('post4key-page');
+      page.classList.remove('p4k-visible');
+      return new Promise(resolve => setTimeout(() => {
+        page.classList.remove('p4k-on');
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
+    /* ════════════════════════════════════════════════
        POST_STATS
     ════════════════════════════════════════════════ */
 
@@ -8439,6 +8775,7 @@
           else if (scene.activeFeature === 'items')    showPostItems();
           else if (scene.activeFeature === 'stats')    showPostStats();
           else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
+          else if (scene.activeFeature === 'post4key') showPost4Key();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
           else if (scene.activeFeature === 'waiting')  showWaitingScreen();
           else if (scene.activeFeature === 'lobby')    showWaitingLobby();
@@ -8491,6 +8828,7 @@
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
         if (feature === 'consolidated_post') showConsolidatedPost();
+        if (feature === 'post4key') showPost4Key();
       }
     }
 

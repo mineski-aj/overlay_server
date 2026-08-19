@@ -1304,6 +1304,7 @@
     team_lineup_blue: 'lineupblue',
     team_lineup_red:  'lineupred',
     consolidated_post: 'consolidated_post',
+    post4key:       'post4key',
   };
 
   function mplfsFeatureShown(key) {
@@ -1576,6 +1577,7 @@
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
         { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
+        { name: 'Post 4 Key',    show: '/overlay/post4key/show',        hide: '/overlay/post4key/hide'        },
         { name: 'Rich Guy',      show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
@@ -2628,6 +2630,22 @@
     '#wl-match':          { left: 40,   top: 390 },
     '#wl-sponsor':        { left: 40,   top: 705 },
     '#wl-timer':          { left: 40,   top: 862 },
+    /* Pulled out of #wl-timer's flex flow (position:absolute in the CSS
+       now) specifically so it can be dragged/resized independently of
+       #wl-timer — left/top are LOCAL offsets against #wl-timer's own box,
+       not canvas coordinates (40.../41.5... come from the exact cross-
+       axis-centered spot the old flex layout put it at, so this default
+       matches on-air today pixel for pixel). Own group so moving it
+       doesn't also move #wl-timer/#wl-header. */
+    '#wl-timer-label':    { left: 0,    top: 41.5, width: 160, height: 47 },
+    /* Child of #wl-timer-label, not a canvas-absolute sibling — left/top
+       are LOCAL offsets relative to the 160x47 label box (same pattern as
+       WS_TIMER_DEFAULTS' #ws-timer-label-bg twin). Own group, not
+       'Header', so it doesn't move with #wl-header on arrow-key nudges —
+       and not the same group as #wl-timer-label either, since that would
+       double-move this on a group drag (it already rides along for free
+       as a DOM child of #wl-timer-label). */
+    '#wl-timer-label-bg': { left: -9.5, top: -11, width: 179, height: 69 },
     '.wl-player-blue':    { left: 1035, top: 90,  width: 500, height: 800 },
     '.wl-player-red':     { left: 1420, top: 40,  width: 500, height: 800 },
     '.wl-namebox-blue':   { left: 860,  top: 830 },
@@ -2643,6 +2661,8 @@
   var WL_ELEMENTS = [
     { group: 'Header',  id: '#wl-header',       name: 'Header Logo'     },
     { group: 'Header',  id: '#wl-timer',        name: 'Countdown Timer' },
+    { group: 'Timer Label',    id: '#wl-timer-label',    name: 'Timer Label'          },
+    { group: 'Countdown Label', id: '#wl-timer-label-bg', name: 'Container Background' },
     { group: 'Match',   id: '#wl-match',        name: 'Match Card'      },
     { group: 'Match',   id: '#wl-sponsor',      name: 'Sponsor Box'     },
     { group: 'Players', id: '.wl-player-blue',  name: 'Photo (Blue)'    },
@@ -2722,6 +2742,20 @@
     { group: 'Match Row Text', id: '.wsm-band-label, .wsm-band-time, .wsm-band-bo', name: 'Header Text Size' },
     { group: 'Match Row Text', id: '.wsm-tri',                                      name: 'Team Code Size'   },
     { group: 'Match Row Text', id: '.wsm-score-l, .wsm-score-r',                    name: 'Score Size'       },
+  ];
+
+  /* ── Waiting Screen TVC — Countdown Label background (mplfs.html) ──
+     #ws-timer-label-bg is a child of #ws-timer-label (not a canvas-
+     absolute sibling), so its left/top are LOCAL offsets relative to the
+     160x47 label box, not canvas coordinates — same pattern as the
+     Casters/Hosts photo slots above. Left deliberately untouched/
+     non-editable (see mplfs.html): the label's own on-screen position
+     must not move. */
+  var WS_TIMER_DEFAULTS = {
+    '#ws-timer-label-bg': { left: -9.5, top: -11, width: 179, height: 69 },
+  };
+  var WS_TIMER_ELEMENTS = [
+    { group: 'Countdown Label', id: '#ws-timer-label-bg', name: 'Container Background' },
   ];
 
   /* ── Today's / Tomorrow's Schedule — per-match-count layout ───────
@@ -3240,6 +3274,39 @@
   CP_DEFAULTS['#cpg-board'] = { left: 59, top: 745, width: 1800, height: 270 };
   CP_ELEMENTS.push({ group: 'Post Graph', id: '#cpg-board', name: 'Post Graph' });
 
+  /* Post 4 Key — four cards, each spotlighting the game's leader in one
+     stat (GPM / damage dealt / damage taken / assists). Sub-element
+     positions (title, photo, crop, name bar, stat box) are identical
+     across all 4 cards, so they're registered once as class selectors
+     — editing one moves it for every card, same as Consolidated Post's
+     .cp-hero/.cp-name/etc. Each card's own container position is
+     registered separately (like .cp-row-N) so the 4 cards can still be
+     arranged independently. */
+  var P4K_DEFAULTS = {
+    '#p4k-card-1': { left: 100,  top: 373, width: 416, height: 509 },
+    '#p4k-card-2': { left: 527,  top: 373, width: 416, height: 509 },
+    '#p4k-card-3': { left: 954,  top: 373, width: 416, height: 509 },
+    '#p4k-card-4': { left: 1381, top: 373, width: 416, height: 509 },
+    '.p4k-title':     { left: 0,  top: -68, width: 416, height: 48,  fontSize: 40 },
+    '.p4k-photo-box': { left: 0,  top: 0,   width: 416, height: 416 },
+    '.p4k-crop':      { left: 0,  top: 357, width: 416, height: 152 },
+    '.p4k-name-box':  { left: 0,   top: 357, width: 416, height: 48  },
+    '.p4k-stat-box':  { left: 25,  top: 405, width: 123, height: 104 },
+    '.p4k-value-box': { left: 165, top: 404, width: 251, height: 105 },
+  };
+  var P4K_ELEMENTS = [
+    { group: 'Post 4 Key · Card 1', id: '#p4k-card-1', name: 'Card 1 Position' },
+    { group: 'Post 4 Key · Card 2', id: '#p4k-card-2', name: 'Card 2 Position' },
+    { group: 'Post 4 Key · Card 3', id: '#p4k-card-3', name: 'Card 3 Position' },
+    { group: 'Post 4 Key · Card 4', id: '#p4k-card-4', name: 'Card 4 Position' },
+    { group: 'Post 4 Key · Title',      id: '.p4k-title',     name: 'Title Label' },
+    { group: 'Post 4 Key · Photo',      id: '.p4k-photo-box', name: 'Player Photo' },
+    { group: 'Post 4 Key · Photo Crop', id: '.p4k-crop',      name: 'Photo Crop Mask' },
+    { group: 'Post 4 Key · Name Bar',   id: '.p4k-name-box',  name: 'Player Name Bar' },
+    { group: 'Post 4 Key · Stat Label', id: '.p4k-stat-box',  name: 'Stat Label' },
+    { group: 'Post 4 Key · Stat Value', id: '.p4k-value-box', name: 'Stat Value' },
+  ];
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {
@@ -3340,6 +3407,15 @@
       defaults:    CP_DEFAULTS,
       showFn:      'showConsolidatedPost',
     },
+    mplfs_post4key: {
+      label:       'Post 4 Key · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_post4key',
+      elements:    P4K_ELEMENTS,
+      defaults:    P4K_DEFAULTS,
+      showFn:      'showPost4Key',
+    },
     mplfs_credits: {
       label:       'Credit Reel · mplfs',
       file:        'mplfs.html',
@@ -3374,6 +3450,15 @@
       defaultsKey: 'sb_edit_defaults_mplfs_wsmatches',
       elements:    WS_MATCHES_ELEMENTS,
       defaults:    WS_MATCHES_DEFAULTS,
+      showFn:      'showWsMatchesForEdit',
+    },
+    mplfs_wstimer: {
+      label:       'Countdown Label · Waiting TVC',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_wstimer',
+      elements:    WS_TIMER_ELEMENTS,
+      defaults:    WS_TIMER_DEFAULTS,
       showFn:      'showWsMatchesForEdit',
     },
     mplfs_todayschedule_2m: {

@@ -25,6 +25,12 @@
 // has to be kept in sync with whatever routes/overlay.js (and friends)
 // actually broadcast. Extend this list, not each page's own code, when a
 // new named event is introduced anywhere in the system.
+//
+// IMPORTANT: also bump OVERLAY_WORKER_VERSION in overlay-sse-shim.js
+// whenever this list (or any other logic here) changes — a tab that's
+// been open since before the change is still running the OLD worker
+// instance (SharedWorkers persist per exact script URL across reloads)
+// and will silently never learn the new event otherwise.
 const KNOWN_EVENTS = [
   'consolidated_post', 'credits', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
   'draftpredict', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
@@ -32,7 +38,7 @@ const KNOWN_EVENTS = [
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerui',
   'post_emblems', 'post_hearts', 'post_itemline', 'post_itemline_itemin',
-  'post_itemline_itemout', 'post_items', 'post_richguy', 'post_stats', 'reload',
+  'post4key', 'post_itemline_itemout', 'post_items', 'post_richguy', 'post_stats', 'reload',
   'scoreboard', 'sidecheck', 'standings', 'team_hexagon', 'team_lineup_blue',
   'team_lineup_red', 'today_schedule', 'tomorrow_schedule', 'waiting_lobby',
   'waiting_tvc',
