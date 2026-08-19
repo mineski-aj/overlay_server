@@ -213,17 +213,21 @@
       <span class="panel-badge badge-universal">Universal</span>
       <span class="panel-label-sub">Applies to all languages</span>
     </div>
-    <div class="universal-placeholder">Reserved — universal fields will appear here</div>
+    <div class="field">
+      <label class="field-label" for="match-headline">Match Headline</label>
+      <textarea id="match-headline" name="match_headline" rows="2" placeholder="Enter match headline…"></textarea>
+    </div>
   </div>
 </div>
 
 <script>
-  const FIELDS = ['ph_ticker', 'en_ticker', 'ph_headline', 'en_headline'];
+  const FIELDS = ['ph_ticker', 'en_ticker', 'ph_headline', 'en_headline', 'match_headline'];
   const ID_MAP  = {
-    ph_ticker:   'ph-ticker',
-    en_ticker:   'en-ticker',
-    ph_headline: 'ph-headline',
-    en_headline: 'en-headline',
+    ph_ticker:      'ph-ticker',
+    en_ticker:      'en-ticker',
+    ph_headline:    'ph-headline',
+    en_headline:    'en-headline',
+    match_headline: 'match-headline',
   };
   const statusEl = document.getElementById('save-status');
   let saveTimer  = null;

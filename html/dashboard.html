@@ -1612,7 +1612,12 @@
         { name: 'Rich Guy',      show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
-        { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide' },
+        /* realButtons: pressing Show again while this is already live cycles
+           a per-match "highlight" instead of a plain on/off toggle (see
+           routes/overlay.js) — needs its own real Show/Hide buttons so
+           Show stays clickable while live, same reasoning as mpltag's
+           mapSelectTagStatus above. */
+        { name: "Today's Schedule", show: '/overlay/today_schedule/show', hide: '/overlay/today_schedule/hide', realButtons: true },
         { name: "Tomorrow's Schedule", show: '/overlay/tomorrow_schedule/show', hide: '/overlay/tomorrow_schedule/hide' },
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
         { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
@@ -2437,7 +2442,7 @@
         var fr = el('div', 'feature-row');
         fr.appendChild(el('div', 'feature-name', feat.name));
         var fb = el('div', 'feature-btns');
-        if (feat.show && feat.hide) {
+        if (feat.show && feat.hide && !feat.realButtons) {
           var key = feat.show.split('/')[2];
           var tb = el('button', 'btn btn-toggle btn-toggle-off', '○ Hidden');
           tb.addEventListener('click', (function (f, k) { return function () { toggleMplfsFeature(f, k, body); }; })(feat, key));
@@ -2779,6 +2784,40 @@
     { group: 'Match Row Text', id: '.wsm-score-l, .wsm-score-r',                    name: 'Score Size'       },
   ];
 
+  /* ── Waiting Screen TVC — per-match-count layout ──────────────────
+     buildWsMatches (mplfs.html) tags BOTH #ws-matches AND the whole
+     #waiting-screen-page with a runtime 'wsm-count-2'/'wsm-count-3' class
+     reflecting the real row count for that day — same trick as Today's/
+     Tomorrow's Schedule's tsm-count-N (see that section below). The
+     page-level class lets #ws-header/#ws-sponsor be targeted per-count
+     too, not just the match rows. These two configs let the header
+     block, match rows block, and sponsor box be positioned independently
+     per count; Hosts/Casters (.ws-talent-box, .ws-hosts-slot-N,
+     .ws-casters-slot-N) live under completely different selectors and
+     are untouched by any of this. Defaults below equal the current CSS
+     values (mplfs.html #ws-header/#ws-matches/#ws-sponsor) so nothing
+     visibly changes until a value is actually edited and saved. */
+  var WS_COUNT2_DEFAULTS = {
+    '#waiting-screen-page.wsm-count-2 #ws-header':  { left: 40, top: 80,  width: 1028, height: 150 },
+    '#ws-matches.wsm-count-2':                       { left: 40, top: 280, width: 571 },
+    '#waiting-screen-page.wsm-count-2 #ws-sponsor': { left: 40, top: 280, width: 571,  height: 600 },
+  };
+  var WS_COUNT2_ELEMENTS = [
+    { group: 'Header',  id: '#waiting-screen-page.wsm-count-2 #ws-header',  name: 'Header Block'     },
+    { group: 'Matches', id: '#ws-matches.wsm-count-2',                       name: 'Match Rows Block' },
+    { group: 'Sponsor', id: '#waiting-screen-page.wsm-count-2 #ws-sponsor', name: 'Sponsor Box'      },
+  ];
+  var WS_COUNT3_DEFAULTS = {
+    '#waiting-screen-page.wsm-count-3 #ws-header':  { left: 40, top: 80,  width: 1028, height: 150 },
+    '#ws-matches.wsm-count-3':                       { left: 40, top: 280, width: 571 },
+    '#waiting-screen-page.wsm-count-3 #ws-sponsor': { left: 40, top: 280, width: 571,  height: 600 },
+  };
+  var WS_COUNT3_ELEMENTS = [
+    { group: 'Header',  id: '#waiting-screen-page.wsm-count-3 #ws-header',  name: 'Header Block'     },
+    { group: 'Matches', id: '#ws-matches.wsm-count-3',                       name: 'Match Rows Block' },
+    { group: 'Sponsor', id: '#waiting-screen-page.wsm-count-3 #ws-sponsor', name: 'Sponsor Box'      },
+  ];
+
   /* ── Waiting Screen TVC — Countdown Label background (mplfs.html) ──
      #ws-timer-label-bg is a child of #ws-timer-label (not a canvas-
      absolute sibling), so its left/top are LOCAL offsets relative to the
@@ -2905,6 +2944,17 @@
     { group: 'Icon',       id: '#draft-map-logo',      name: 'Map Icon' },
     { group: 'Text',       id: '#draft-map-name',      name: 'Map Name Box' },
     { group: 'Text',       id: '.draft-map-name-text', name: 'Map Name Font Size' },
+  ];
+
+  /* ── Match/Game indicator (Draft.html) — "MATCH 1 - GAME 1" box
+     centered above the draft area, sourced from Match Board. ── */
+  var DRAFT_MATCHGAME_DEFAULTS = {
+    '#draft-match-game':           { left: 837, top: 851, width: 247, height: 58 },
+    '.draft-match-game-text':      { fontSize: 18 },
+  };
+  var DRAFT_MATCHGAME_ELEMENTS = [
+    { group: 'Text', id: '#draft-match-game',      name: 'Match/Game Box' },
+    { group: 'Text', id: '.draft-match-game-text', name: 'Match/Game Font Size' },
   ];
 
   /* ── Team Line-Up (mplfs.html) element defaults ────────────────
@@ -3120,8 +3170,8 @@
     { group: 'Plaque',    id: '#mv-name',         name: 'Player Name' },
     { group: 'KDA Label', id: '#mv-kda-label',    name: 'KDA Label' },
     { group: 'KDA Value', id: '#mv-kda',          name: 'KDA Value' },
-    { group: 'GPM Label', id: '#mv-gpm-label',    name: 'GPM Label' },
-    { group: 'GPM Value', id: '#mv-gpm',          name: 'GPM Value' },
+    { group: 'MVP Stat Label', id: '#mv-gpm-label', name: 'MVP Stat Label (mvp_title)' },
+    { group: 'MVP Stat Value', id: '#mv-gpm',       name: 'MVP Stat Value (mvp_value)' },
     { group: 'KP% Label', id: '#mv-kp-label',     name: 'KP% Label' },
     { group: 'KP% Value', id: '#mv-kp',           name: 'KP% Value' },
   ];
@@ -3608,6 +3658,24 @@
       defaults:    WS_MATCHES_DEFAULTS,
       showFn:      'showWsMatchesForEdit',
     },
+    mplfs_wsmatches_2m: {
+      label:       'Waiting TVC — 2 Matches',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_wsmatches_2m',
+      elements:    WS_COUNT2_ELEMENTS,
+      defaults:    WS_COUNT2_DEFAULTS,
+      showFn:      'showWsMatchesEdit2',
+    },
+    mplfs_wsmatches_3m: {
+      label:       'Waiting TVC — 3 Matches',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_wsmatches_3m',
+      elements:    WS_COUNT3_ELEMENTS,
+      defaults:    WS_COUNT3_DEFAULTS,
+      showFn:      'showWsMatchesEdit3',
+    },
     mplfs_wstimer: {
       label:       'Countdown Label · Waiting TVC',
       file:        'mplfs.html',
@@ -3660,6 +3728,14 @@
       defaultsKey: 'sb_edit_defaults_draft_mapbug',
       elements:    DRAFT_MAP_ELEMENTS,
       defaults:    DRAFT_MAP_DEFAULTS,
+    },
+    draft_matchgame: {
+      label:       'Match/Game Indicator · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_matchgame',
+      elements:    DRAFT_MATCHGAME_ELEMENTS,
+      defaults:    DRAFT_MATCHGAME_DEFAULTS,
     },
     mplfs_standings: {
       label:       'Standings · mplfs',

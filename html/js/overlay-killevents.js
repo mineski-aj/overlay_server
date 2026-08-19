@@ -32,6 +32,48 @@ var KILL_EVENT_SPONSOR_LOGO = {
   'savage.webm':      'assets/ingame/ingamevisawhite.png',
 };
 
+/* ── Timeline pause (all kill events) ──
+   Replaces the earlier slow-motion-middle-third trial: instead of riding
+   playbackRate, the video just pauses outright once it reaches a fixed
+   point in its OWN timeline ("at", in seconds — from the After Effects
+   comp's timecode, every asset here is 60fps so e.g. 1s+15f = 1.25s),
+   holds there for pauseMs, then resumes at normal speed. The player-
+   photo popup's hold time is extended by the same pauseMs so it doesn't
+   retreat while the video is sitting paused. Same at/pauseMs for every
+   video for now (shortest asset — Double/Triple Kill at 2.124s — still
+   leaves 0.874s after resume, so 1.25s is safe across the board); split
+   any one of these out with its own values once someone wants a
+   different feel for it. */
+var KILL_EVENT_PAUSE = {
+  'firstblood.webm':  { at: 1.25, pauseMs: 750 },
+  'doublekill.webm':  { at: 1.25, pauseMs: 750 },
+  'triplekill.webm':  { at: 1.25, pauseMs: 750 },
+  'maniac.webm':      { at: 1.25, pauseMs: 750 },
+  'savage.webm':      { at: 1.25, pauseMs: 750 },
+  'lordslain.webm':   { at: 1.25, pauseMs: 750 },
+  'turtleslain.webm': { at: 1.25, pauseMs: 750 },
+  'wipedout.webm':    { at: 1.25, pauseMs: 750 },
+};
+var killPauseArmed = false; /* true until the current video's pause point has fired once */
+
+function killClearPause() {
+  killPauseArmed = false;
+}
+
+killVideoEl.addEventListener('timeupdate', function() {
+  if (!killPauseArmed) return;
+  var cfg = KILL_EVENT_PAUSE[killEventCurrent];
+  if (!cfg || killVideoEl.currentTime < cfg.at) return;
+  killPauseArmed = false;
+  killVideoEl.pause();
+  var token = killEventToken;
+  setTimeout(function() {
+    /* Guard against a since-superseded video (queue moved on while this
+       was pending) — only resume if it's still the same playback. */
+    if (killEventToken === token) killVideoEl.play().catch(function() {});
+  }, cfg.pauseMs);
+});
+
 /* Pop timing — start delayed 300ms after the trigger, held up for 1.3s,
    then pops back down. KILL_POP_EXIT_MS must track the exit transition
    duration in mploverlay_v7.css so the overlay hide (below) never cuts
@@ -132,7 +174,8 @@ function killSnapHide(clipEl, innerEl) {
   innerEl.style.transition = '';
 }
 
-function showKillEventPlayer(playerName, role, camp, sponsorLogo) {
+function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
+  extraHoldMs = extraHoldMs || 0;
   clearKillTimers();
   /* If a previous popup is still up, snap it away instantly instead of
      letting it slide out — the new photo/name/role only get swapped in
@@ -178,10 +221,10 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo) {
       killNametagClipEl.classList.remove('ke-in');
       killSponsorLabelClipEl.classList.remove('ke-in');
       killSponsorLogoClipEl.classList.remove('ke-in');
-    }, KILL_POP_HOLD_MS);
+    }, KILL_POP_HOLD_MS + extraHoldMs);
   }, KILL_POP_DELAY_MS);
 
-  killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + KILL_POP_EXIT_MS;
+  killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + extraHoldMs + KILL_POP_EXIT_MS;
 }
 
 function hideKillEventPlayer() {
@@ -208,6 +251,7 @@ function scheduleOverlayHide() {
 }
 
 killVideoEl.addEventListener('ended', function() {
+  killClearPause();
   scheduleOverlayHide();
   killEventPlaying = false;
   killEventCurrent = null;
@@ -216,6 +260,7 @@ killVideoEl.addEventListener('ended', function() {
 
 /* safety net: if video stalls or errors, don't get stuck */
 killVideoEl.addEventListener('error', function() {
+  killClearPause();
   scheduleOverlayHide();
   hideKillEventPlayer();
   killEventPlaying = false;
@@ -242,11 +287,17 @@ function playNextKillEvent() {
   killEventToken++;
   var entry = killEventQueue.shift();
   killEventCurrent = entry.video;
+  killClearPause();
   killVideoEl.src = 'assets/motion/' + entry.video;
   killOverlayEl.style.display = 'block';
-  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, KILL_EVENT_SPONSOR_LOGO[entry.video] || null);
+
+  var pauseCfg = KILL_EVENT_PAUSE[entry.video];
+  killPauseArmed = !!pauseCfg;
+  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, KILL_EVENT_SPONSOR_LOGO[entry.video] || null, pauseCfg ? pauseCfg.pauseMs : 0);
   else hideKillEventPlayer();
+
   killVideoEl.play().catch(function() {
+    killClearPause();
     scheduleOverlayHide();
     hideKillEventPlayer();
     killEventPlaying = false;

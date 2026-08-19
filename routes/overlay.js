@@ -4,6 +4,7 @@ const fs      = require('fs');
 const path    = require('path');
 const router  = express.Router();
 const state   = require('../lib/state');
+const matchState = require('../lib/matchState');
 
 // Local state for draftpredict commands
 const _draftpredictCmds = [];
@@ -483,8 +484,24 @@ router.get('/overlay/team_lineup_red/hide', (req, res) => {
 });
 
 // GET /overlay/today_schedule/show
+// Pressing Show again while the scene is ALREADY live doesn't re-trigger
+// the whole scene — it cycles a "currently being talked about" highlight
+// through each match row instead (grows 1.15x), one row per press, then
+// back to nothing. Match count (2 vs 3) follows the same isDay2 rule as
+// mplfs.html's msToMatchRows, so the cycle length matches whatever's
+// actually on screen.
 router.get('/overlay/today_schedule/show', (req, res) => {
+  if (state.mplfsScene.activeFeature === 'schedule') {
+    const ms = matchState.get();
+    const maxMatches = (ms.day || 1) === 2 ? 3 : 2;
+    const cur  = state.mplfsScene.scheduleHighlight || 0;
+    const next = cur >= maxMatches ? 0 : cur + 1;
+    state.mplfsScene.scheduleHighlight = next;
+    state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: ' + JSON.stringify({ action: 'highlight', match: next }) + '\n\n'); } catch {} });
+    return res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "highlight", match: next });
+  }
   state.mplfsScene.activeFeature = 'schedule';
+  state.mplfsScene.scheduleHighlight = 0;
   state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: {"action":"show"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
 });
@@ -492,6 +509,7 @@ router.get('/overlay/today_schedule/show', (req, res) => {
 // GET /overlay/today_schedule/hide
 router.get('/overlay/today_schedule/hide', (req, res) => {
   state.mplfsScene.activeFeature = null;
+  state.mplfsScene.scheduleHighlight = 0;
   state.overlayClients.forEach(c => { try { c.write('event: today_schedule\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
@@ -574,7 +592,7 @@ router.get('/overlay/middleboard/hide', (req, res) => {
 
 // GET /overlay/fs/hide
 router.get('/overlay/fs/hide', (req, res) => {
-  state.mplfsScene = { matchboard: false, middleboard: false, playerboard: false, activeFeature: null };
+  state.mplfsScene = { matchboard: false, middleboard: false, playerboard: false, activeFeature: null, scheduleHighlight: 0 };
   state.overlayClients.forEach(c => {
     try {
       c.write('event: matchboard\ndata: {"action":"hide"}\n\n');

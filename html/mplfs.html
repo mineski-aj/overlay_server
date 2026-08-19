@@ -505,7 +505,7 @@
     .cp2-mirrored .cp2-dmg-bar { background: linear-gradient(to left, #a30000, #ff3b3b); }
     .cp2-dmg-num-dark, .cp2-dmg-num-light {
       position: absolute; inset: 0; display: flex; align-items: center; padding-left: 8px;
-      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 13px; line-height: 1;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1;
       pointer-events: none; white-space: nowrap; overflow: hidden;
     }
     /* Same reason: #111 text on the baked-in black track is invisible —
@@ -1333,7 +1333,7 @@
     .mv-stat-label {
       position: absolute; top: 22px; height: 22px; text-align: center;
       font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 18px;
-      color: #0a0a0a; text-transform: uppercase;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
     }
     #mv-kda-label { left: 843px;  width: 299px; }
     #mv-gpm-label { left: 1312px; width: 134px; }
@@ -1915,7 +1915,21 @@
       gap: 8px;
       font-family: 'General Sans', sans-serif;
     }
-    .tsm-row { position: relative; width: 858px; height: 232px; }
+    .tsm-row {
+      position: relative; width: 858px; height: 232px;
+      transition: transform 300ms ease-in-out;
+    }
+    /* "Currently being talked about" highlight — cycled by pressing Show
+       again on Today's Schedule while it's already live (see
+       applyTsHighlight below / routes/overlay.js). Deliberately overlaps
+       the neighboring rows rather than reflowing the flex column, same as
+       a card lifting to draw attention. */
+    /* !important: wsMatchesSlideIn's entrance animation uses fill-mode
+       "both", which permanently pins each row's transform to the
+       animation's own final keyframe (CSS Animations output outranks
+       plain author rules) — without !important this rule would be
+       silently overridden and never visibly scale anything. */
+    .tsm-row.tsm-highlight { transform: scale(1.15) !important; z-index: 5; }
     .tsm-row > img.tsm-bg { position: absolute; left: 0; top: 0; width: 858px; height: 232px; }
     .tsm-label, .tsm-time, .tsm-bo {
       position: absolute; top: 0; height: 48px;
@@ -3370,6 +3384,8 @@
         <div id="mv-name"></div>
         <div id="mv-kda-label" class="mv-stat-label">KDA</div>
         <div id="mv-kda" class="mv-stat-value">-/-/-</div>
+        <!-- driven by the API's own mvp_title/mvp_value (see mvApply) —
+             not always literally GPM, e.g. can read "DAMAGE DEALT" / "26.88K" -->
         <div id="mv-gpm-label" class="mv-stat-label">GPM</div>
         <div id="mv-gpm" class="mv-stat-value">-</div>
         <div id="mv-kp-label" class="mv-stat-label">KP%</div>
@@ -3813,6 +3829,7 @@
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showTodaySchedule, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
+        else if (msg.action === 'highlight') applyTsHighlight(msg.match);
       });
 
       sseSource.addEventListener('tomorrow_schedule', (e) => {
@@ -4871,6 +4888,17 @@
           `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
       });
       root.innerHTML = html;
+
+      /* Tag both the match-row container and the whole scene page with the
+         real row count — same trick as buildTsMatches/buildTwMatches' own
+         tsm-count-N classes — so the dashboard Edit tab can position the
+         header/match/sponsor boards independently per 2-match/3-match day
+         (see mplfs_wsmatches_2m/3m in dashboard.html). */
+      const countClass = 'wsm-count-' + matches.length;
+      root.classList.remove('wsm-count-2', 'wsm-count-3');
+      root.classList.add(countClass);
+      wsPage.classList.remove('wsm-count-2', 'wsm-count-3');
+      wsPage.classList.add(countClass);
     }
     buildWsMatches('ws-matches', WS_MATCHES);
 
@@ -5127,6 +5155,18 @@
     }
     buildTsMatches();
 
+    /* "Currently being talked about" row highlight — matchIndex is
+       1-based (matches routes/overlay.js's cycle), 0 clears every row.
+       Rows have no stable id of their own (rebuilt fresh by
+       buildTsMatches), so target by DOM order — same order the server's
+       cycle counts against (msToMatchRows' isDay2 rule). */
+    function applyTsHighlight(matchIndex) {
+      const root = document.getElementById('ts-matches');
+      if (!root) return;
+      const rows = root.querySelectorAll('.tsm-row');
+      rows.forEach((row, i) => row.classList.toggle('tsm-highlight', matchIndex > 0 && (i + 1) === matchIndex));
+    }
+
     /* Tomorrow's Schedule — Day 1/2 preview same week's next day; Day 3
        previews next week's Day 1 (no play the following calendar day). */
     function computeTomorrowWeekDay(state) {
@@ -5204,6 +5244,14 @@
         el.style.animation = 'none';
         void el.offsetWidth; /* restart the animation on every show */
         el.style.animation = `wsm-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 140}ms both`;
+        /* fill-mode "both" pins transform via inline style forever once the
+           animation ends — without clearing it, a later class-driven
+           transform change (e.g. .tsm-highlight) has nothing to transition
+           FROM and just jump-cuts instead of easing. */
+        el.addEventListener('animationend', function onSlideInEnd() {
+          el.removeEventListener('animationend', onSlideInEnd);
+          el.style.animation = '';
+        });
       });
     }
 
@@ -5263,6 +5311,31 @@
     async function showWsMatchesForEdit() {
       await showWaitingScreen();
       stopWsPanelCycle();
+    }
+
+    /* Dashboard Edit-panel hooks — force a specific match count so the
+       header/match/sponsor boards can be positioned independently for
+       2-match and 3-match days, regardless of what the live Match Board
+       currently has configured (see mplfs_wsmatches_2m/3m in
+       dashboard.html). Same trick as showTodayScheduleEdit2/3: reuse the
+       real show path, then rebuild just the match rows with synthetic
+       data that deterministically hits msToMatchRows' existing
+       isDay2 ? 3 : 2 branch — hosts/casters/timer are left exactly as the
+       live state already set them. */
+    const WS_EDIT_PREVIEW = {
+      todayMatches: [
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '14:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'FLCN', time: '16:30 GMT +8' },
+        { team1Short: 'ONIC', team2Short: 'ONIC', time: '18:30 GMT +8' },
+      ],
+    };
+    async function showWsMatchesEdit2() {
+      await showWsMatchesForEdit();
+      buildWsMatches('ws-matches', msToMatchRows({ ...WS_EDIT_PREVIEW, day: 1 }));
+    }
+    async function showWsMatchesEdit3() {
+      await showWsMatchesForEdit();
+      buildWsMatches('ws-matches', msToMatchRows({ ...WS_EDIT_PREVIEW, day: 2 }));
     }
 
     function hideWaitingScreen() {
@@ -6136,7 +6209,11 @@
     function mvFitStatValue(el, maxSize, minSize) {
       let size = maxSize;
       el.style.fontSize = size + 'px';
-      while (el.scrollWidth > el.clientWidth && size > minSize) {
+      /* >= (not >): scrollWidth/clientWidth are both rounded to whole
+         pixels, so an exact match can still clip a sub-pixel sliver of
+         the last glyph (seen with "DAMAGE DEALT" in the MVP-stat label,
+         width 134 == 134) — require a strict margin, not just non-overflow. */
+      while (el.scrollWidth >= el.clientWidth && size > minSize) {
         size -= 1;
         el.style.fontSize = size + 'px';
       }
@@ -6236,8 +6313,15 @@
       kdaEl.textContent = (player && player.kda) || '-/-/-';
       mvFitStatValue(kdaEl, 64, 32);
 
+      /* mv-gpm-label/mv-gpm double as a generic "MVP stat" slot — the API
+         itself decides which stat earned MVP (GPM, damage dealt, damage
+         taken, assists, ...) and names it via mvp_title/mvp_value, so we
+         just display whatever it says instead of hardcoding gpm/GPM. */
+      const gpmLabelEl = document.getElementById('mv-gpm-label');
+      gpmLabelEl.textContent = (player && player.mvp_title) || 'GPM';
+
       const gpmEl = document.getElementById('mv-gpm');
-      gpmEl.textContent = (player && player.gpm != null) ? String(player.gpm) : '-';
+      gpmEl.textContent = (player && player.mvp_value != null) ? String(player.mvp_value) : '-';
       mvFitStatValue(gpmEl, 64, 32);
 
       const kpEl = document.getElementById('mv-kp');
@@ -9329,7 +9413,7 @@
           else if (scene.activeFeature === 'finalteam') showFinalTeam();
           else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
           else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
-          else if (scene.activeFeature === 'schedule') showTodaySchedule();
+          else if (scene.activeFeature === 'schedule') showTodaySchedule().then(() => applyTsHighlight(scene.scheduleHighlight || 0));
           else if (scene.activeFeature === 'tomorrow') showTomorrowSchedule();
           else if (scene.activeFeature === 'standings') showStandings();
           else if (!scene.activeFeature)                hideActiveFeature();

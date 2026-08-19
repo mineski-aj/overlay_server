@@ -661,6 +661,28 @@
       white-space: nowrap;
     }
 
+    /* ── Match/Game indicator — from Match Board's match+computed-game
+       state, shown as "MATCH 1 - GAME 1" centered above the draft area. ── */
+    #draft-match-game {
+      position: absolute;
+      left: 837px;
+      top: 851px;
+      width: 247px;
+      height: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .draft-match-game-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 18px; /* 4.4pt @ 300dpi */
+      color: #000000;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+    }
+
     /* ── Coach BPM + headset + name — home=blue/left, away=red/right,
        mirror(x) = 1920 − x − width (same formula as the map bug / pui
        cards elsewhere in this codebase). Heart+beat pattern is the same
@@ -1207,6 +1229,14 @@
         renderBars(scoreEls[1], maxWins, c1Team.score, true);
         renderBars(scoreEls[2], maxWins, c2Team.score, false);
 
+        /* Match number is the manually-set /match/state field; game number
+           is derived the same way Match Board's computeGame() does —
+           total games played so far (both scores) + 1. */
+        var matchNum = s.match || 1;
+        var gameNum  = (home.score || 0) + (away.score || 0) + 1;
+        var mgTxt = document.querySelector('#draft-match-game .draft-match-game-text');
+        if (mgTxt) mgTxt.textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
+
         /* dcoachSwapped only feeds pollCoachBpm()'s coach_home1/coach_away1
            pairing now — coach NAME/headset come from the draft API's
            coach_in instead (see poll() → updateCoachFromDraft), which is
@@ -1282,6 +1312,14 @@
 
     box.appendChild(logo);
     box.appendChild(name);
+    scene.appendChild(box);
+  }
+
+  /* ── Build match/game indicator ──────────────────────────────── */
+  function buildDraftMatchGame() {
+    var box = document.createElement('div');
+    box.id = 'draft-match-game';
+    box.innerHTML = '<span class="draft-match-game-text"></span>';
     scene.appendChild(box);
   }
 
@@ -2370,6 +2408,7 @@
   buildTeamLogos();
   buildStatusArea();
   buildDraftMap();
+  buildDraftMatchGame();
   buildCoachBpm();
   buildTimerBar();
   startSponsorLoop();
