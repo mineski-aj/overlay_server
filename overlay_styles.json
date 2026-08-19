@@ -108,6 +108,20 @@
     ".sidecheck-role-icon": {
       "width": "13px",
       "height": "13px"
+    },
+    "#sb-mi-patch": {
+      "left": "1508px",
+      "top": "107px",
+      "width": "176px",
+      "height": "23px",
+      "fontSize": "13px"
+    },
+    "#sb-mi-casters": {
+      "left": "1665px",
+      "top": "108px",
+      "width": "279px",
+      "height": "19px",
+      "fontSize": "13px"
     }
   },
   "mplfs": {
@@ -990,6 +1004,322 @@
       "top": "-12px",
       "width": "179px",
       "height": "69px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-hero": {
+      "left": "0px",
+      "top": "0px",
+      "width": "69px",
+      "height": "132px"
+    },
+    ".cp2-mirrored .cp2-hero": {
+      "left": "661px",
+      "top": "0px",
+      "width": "69px",
+      "height": "132px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-photo": {
+      "left": "69px",
+      "top": "0px",
+      "width": "138px",
+      "height": "132px"
+    },
+    ".cp2-mirrored .cp2-photo": {
+      "left": "523px",
+      "top": "0px",
+      "width": "138px",
+      "height": "132px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-spell": {
+      "left": "4px",
+      "top": "97px",
+      "width": "30px",
+      "height": "30px"
+    },
+    ".cp2-mirrored .cp2-spell": {
+      "left": "696px",
+      "top": "97px",
+      "width": "30px",
+      "height": "30px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-level": {
+      "left": "0px",
+      "top": "132px",
+      "width": "69px",
+      "height": "22px",
+      "fontSize": "15px"
+    },
+    ".cp2-mirrored .cp2-level": {
+      "left": "661px",
+      "top": "132px",
+      "width": "69px",
+      "height": "22px",
+      "fontSize": "15px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-role": {
+      "left": "71px",
+      "top": "134px",
+      "width": "19px",
+      "height": "19px"
+    },
+    ".cp2-mirrored .cp2-role": {
+      "left": "640px",
+      "top": "134px",
+      "width": "19px",
+      "height": "19px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-name": {
+      "left": "98px",
+      "top": "132px",
+      "width": "99px",
+      "height": "22px",
+      "fontSize": "12.4px"
+    },
+    ".cp2-mirrored .cp2-name": {
+      "left": "533px",
+      "top": "132px",
+      "width": "99px",
+      "height": "22px",
+      "fontSize": "12.4px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-rune-main": {
+      "left": "207px",
+      "top": "11px",
+      "width": "39px",
+      "height": "39px"
+    },
+    ".cp2-mirrored .cp2-rune-main": {
+      "left": "484px",
+      "top": "11px",
+      "width": "39px",
+      "height": "39px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-rune-1": {
+      "left": "252px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-mirrored .cp2-rune-1": {
+      "left": "450px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-rune-2": {
+      "left": "286px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-mirrored .cp2-rune-2": {
+      "left": "416px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-rune-3": {
+      "left": "320px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-mirrored .cp2-rune-3": {
+      "left": "382px",
+      "top": "17px",
+      "width": "28px",
+      "height": "28px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-kda-label": {
+      "left": "207px",
+      "top": "52px",
+      "width": "141px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-mirrored .cp2-kda-label": {
+      "left": "382px",
+      "top": "52px",
+      "width": "141px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-kda-value": {
+      "left": "207px",
+      "top": "68px",
+      "width": "141px",
+      "height": "28px",
+      "fontSize": "24.8px"
+    },
+    ".cp2-mirrored .cp2-kda-value": {
+      "left": "382px",
+      "top": "68px",
+      "width": "141px",
+      "height": "28px",
+      "fontSize": "24.8px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-gold-label": {
+      "left": "207px",
+      "top": "96px",
+      "width": "141px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-mirrored .cp2-gold-label": {
+      "left": "382px",
+      "top": "96px",
+      "width": "141px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-gold-value": {
+      "left": "207px",
+      "top": "112px",
+      "width": "141px",
+      "height": "28px",
+      "fontSize": "24.8px"
+    },
+    ".cp2-mirrored .cp2-gold-value": {
+      "left": "382px",
+      "top": "112px",
+      "width": "141px",
+      "height": "28px",
+      "fontSize": "24.8px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-dmg-taken-label": {
+      "left": "372px",
+      "top": "10px",
+      "width": "170px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-mirrored .cp2-dmg-taken-label": {
+      "left": "188px",
+      "top": "10px",
+      "width": "170px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-dmg-taken": {
+      "left": "372px",
+      "top": "26px",
+      "width": "170px",
+      "height": "34px"
+    },
+    ".cp2-mirrored .cp2-dmg-taken": {
+      "left": "188px",
+      "top": "26px",
+      "width": "170px",
+      "height": "34px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-dmg-dealt-label": {
+      "left": "549px",
+      "top": "10px",
+      "width": "170px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-mirrored .cp2-dmg-dealt-label": {
+      "left": "11px",
+      "top": "10px",
+      "width": "170px",
+      "height": "14px",
+      "fontSize": "12px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-dmg-dealt": {
+      "left": "549px",
+      "top": "26px",
+      "width": "170px",
+      "height": "34px"
+    },
+    ".cp2-mirrored .cp2-dmg-dealt": {
+      "left": "11px",
+      "top": "26px",
+      "width": "170px",
+      "height": "34px"
+    },
+    ".cp2-row:not(.cp2-mirrored) .cp2-items": {
+      "left": "372px",
+      "top": "81px",
+      "width": "348px",
+      "height": "53px"
+    },
+    ".cp2-mirrored .cp2-items": {
+      "left": "10px",
+      "top": "81px",
+      "width": "348px",
+      "height": "53px"
+    },
+    ".cp2-row-1": {
+      "left": "59px",
+      "top": "193px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-2": {
+      "left": "59px",
+      "top": "358px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-3": {
+      "left": "59px",
+      "top": "523px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-4": {
+      "left": "59px",
+      "top": "688px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-5": {
+      "left": "59px",
+      "top": "853px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-6": {
+      "left": "1131px",
+      "top": "193px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-7": {
+      "left": "1131px",
+      "top": "358px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-8": {
+      "left": "1131px",
+      "top": "523px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-9": {
+      "left": "1131px",
+      "top": "688px",
+      "width": "730px",
+      "height": "154px"
+    },
+    ".cp2-row-10": {
+      "left": "1131px",
+      "top": "853px",
+      "width": "730px",
+      "height": "154px"
+    },
+    "#ckm2-board": {
+      "left": "805px",
+      "top": "521px",
+      "width": "311px",
+      "height": "426px"
+    },
+    "#ckm2-bounds": {
+      "left": "-33px",
+      "top": "75px",
+      "width": "380px",
+      "height": "386.1px"
     }
   },
   "Draft": {

@@ -10,7 +10,7 @@
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
 // below for why this exists. Current bump: added 'post4key'.
-const OVERLAY_WORKER_VERSION = 2;
+const OVERLAY_WORKER_VERSION = 3;
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

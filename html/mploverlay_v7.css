@@ -1075,7 +1075,7 @@
     white-space: nowrap;
     overflow: hidden;
   }
-  /* Sits over the dark bar already baked into ingamepng.png at this
+  /* Sits over the dark bar already baked into ingamepng2.png at this
      exact spot (confirmed: art transitions to near-black right at
      x=1642, one pixel past this box's left edge) — white text/icon,
      no CSS background needed. */
@@ -1300,7 +1300,7 @@
     transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease-out;
   }
   /* Little settle bounce once the slide-up lands — same scale-bounce
-     approach as .ic-middle-bounce/.ecc-middle-bounce/.gdc-smart-bounce
+     approach as .ic-label-bounce/.ecc-middle-bounce/.gdc-smart-bounce
      elsewhere. translateY(0) is baked into every step since the slide
      transition above has already finished by the time this plays. */
   @keyframes kill-photo-bounce {
@@ -1433,23 +1433,29 @@
   }
 
   /* ── [FEATURE: item-check] ──────────────────────────────────────
-     Panel is a 1:1 render of assets/ingame/ingameitemback.png
-     (1072×286) — all child coordinates below are measured directly
-     off that asset (see ingameitemguide.png's green/red guide boxes).
-     Row tops: 11, 66, 122, 177, 232 — box size 43-44px.
-     Home portrait x=373, away portrait x=656 (43×44).
-     Home items (index 0→5, closest→furthest from portrait):
-       241, 194, 147, 101, 54, 7 (44×44 each).
-     Away items (index 0→5): 787, 834, 881, 927, 974, 1021.
-     Gold gap: home x=284–373 (89px wide), away x=698–787. */
+     Panel is a 1:1 render of assets/ingame/ingameitemback2.png
+     (887×282) — all child coordinates below are measured relative to
+     that background image's own top-left. There's no separate middle
+     "button" panel anymore — instead a banner
+     (assets/ingame/ingameitemlabel.png, 409×43) rides above the panel
+     sharing the same slide, same fixed-clip / sliding-inner pattern as
+     golddiff-check's .gdc-smart chip (1px overlap with the panel top).
+     Row tops (top:8, pitch 56 = 40px row + 16px gap): 8, 64, 120, 176, 232.
+     Home portrait x=326, away portrait x=521 (40×40).
+     Home items (index 0→5, closest→furthest from portrait, pitch 43 =
+       40px + 3px gap): 223, 180, 137, 94, 51, 8.
+     Away items (index 0→5, mirrored): 624, 667, 710, 753, 796, 839.
+     Gold box (64×31, pitch 57 = 31px + 26px gap down each row, first
+       row top:25): home x=262, away x=561. */
   /* Fixed, never-animated clip window — sits fully inside the 1920×1080
      scene (bottom edge flush with y=1080) and clips at its own bounds, so
      the sliding element inside it never paints outside the scene, no
-     matter what any ancestor's overflow does. */
+     matter what any ancestor's overflow does. Height covers the label
+     banner (43px) + panel (282px) minus their 1px overlap = 324px. */
   #item-check-clip {
     position: absolute;
-    left: 424px; top: 794px; /* horizontally centered; bottom flush with the 1080px-tall scene */
-    width: 1072px; height: 286px;
+    left: 516px; top: 756px; /* horizontally centered; bottom flush with the 1080px-tall scene */
+    width: 887px; height: 324px;
     overflow: hidden;
     display: none;
     pointer-events: none;
@@ -1458,11 +1464,11 @@
   #item-check-overlay {
     position: absolute;
     left: 0; top: 0;
-    width: 1072px; height: 286px;
-    /* Hidden state pushes the panel down by its own full height (286px) —
+    width: 887px; height: 324px;
+    /* Hidden state pushes the panel down by its own full height (324px) —
        clipped away entirely by item-check-clip's overflow:hidden, so it's
        invisible without ever leaving the clip window's (in-scene) bounds. */
-    transform: translateY(286px);
+    transform: translateY(324px);
     /* The transition that applies when TRANSITIONING TO this state (i.e.
        exiting, since removing .ic-in reverts here) — ease-in per request. */
     transition: transform 350ms ease-in;
@@ -1474,48 +1480,66 @@
     transform: translateY(0);
   }
   .ic-bg {
-    position: absolute; left: 0; top: 0;
-    width: 1072px; height: 286px;
+    position: absolute; left: 0; top: 42px;
+    width: 887px; height: 282px;
   }
-  .ic-middle {
+  /* Banner riding above the panel — same slide, same bounce+sheen
+     flourish pattern as golddiff-check's .gdc-smart chip. */
+  .ic-label {
     position: absolute;
-    left: 428px; top: 0;
-    width: 216px; height: 286px;
+    left: 239px; top: 0;
+    width: 409px; height: 43px;
+    overflow: hidden;
   }
-  @keyframes ic-middle-bounce {
+  .ic-label-img {
+    position: absolute; left: 0; top: 0;
+    width: 409px; height: 43px;
+  }
+  .ic-label-sheen {
+    position: absolute;
+    top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  @keyframes ic-label-sheen-sweep {
+    from { left: -60%; }
+    to   { left: 120%; }
+  }
+  .ic-label.ic-sheen-play .ic-label-sheen {
+    animation: ic-label-sheen-sweep 650ms ease-out;
+  }
+  @keyframes ic-label-bounce {
     0%   { transform: scale(1); }
-    40%  { transform: scale(1.06); }
-    70%  { transform: scale(0.98); }
+    35%  { transform: scale(0.90); }
+    65%  { transform: scale(1.08); }
     100% { transform: scale(1); }
   }
-  .ic-middle.ic-bounce { animation: ic-middle-bounce 400ms ease-out; }
+  .ic-label.ic-bounce-play {
+    animation: ic-label-bounce 350ms ease-out;
+  }
 
   .ic-portrait {
     position: absolute;
-    width: 43px; height: 44px;
+    width: 40px; height: 40px;
     object-fit: cover;
   }
   .ic-item-slot {
     position: absolute;
-    width: 44px; height: 44px;
+    width: 40px; height: 40px;
     object-fit: contain;
   }
-  /* No icon element — the background art already has the gold icon baked in
-     per row (home: x 344-359, away: x 712-728, both y = rowTop+14..+30).
-     These boxes cover only the remaining gap space, right up against that
-     icon, text-aligned to sit flush against it. */
   .ic-gold {
     position: absolute;
-    height: 44px;
-    display: flex; align-items: center;
+    width: 64px; height: 31px;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'General Sans', sans-serif;
     font-weight: 700;
-    font-size: 19px;
-    color: #111;
+    font-size: 18px;
+    color: #000;
     white-space: nowrap;
   }
-  .ic-gold.ic-gold-home { left: 284px; width: 57px; justify-content: flex-end; }
-  .ic-gold.ic-gold-away { left: 731px; width: 56px; justify-content: flex-start; }
 
   /* ── [FEATURE: emblem-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check, but the

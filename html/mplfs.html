@@ -400,6 +400,159 @@
     .cp-mirrored .cp-item-1, .cp-mirrored .cp-item-4 { left: 50px; }
     .cp-mirrored .cp-item-2, .cp-mirrored .cp-item-5 { left: 0px; }
 
+    /* ── CONSOLIDATED POST 2 ROW — a resized/repositioned variant of the
+       row above (backup-safe duplicate per the user's request), same
+       10-row/mirroring convention but a taller 730×154 background
+       (consoblue2.png/consored2.png) and no player-photo element — that
+       area is baked into the new background art instead. Mirroring rule
+       is identical: x' = 730 - x - width per child. */
+    .cp2-row {
+      position: absolute;
+      width: 730px; height: 154px;
+      overflow: hidden;
+      opacity: 0;
+      transform: perspective(600px) rotateY(90deg);
+      pointer-events: none;
+    }
+    .cp2-row.ph-visible { opacity: 1; transform: perspective(600px) rotateY(0deg); pointer-events: auto; }
+    .cp2-row.ph-in  { animation: ph-flip-in 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: auto; }
+    .cp2-row.ph-out { animation: ph-flip-out 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    .cp2-row { background-repeat: no-repeat; background-size: 730px 154px; background-position: 0 0; }
+    .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/consoblue2.png'); }
+    .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/consored2.png'); }
+
+    /* blue — left column, 11px gap: pitch = row height (154) + 11 */
+    .cp2-row-1 { left: 59px; top: 193px; z-index: 3; }
+    .cp2-row-2 { left: 59px; top: 358px; z-index: 3; }
+    .cp2-row-3 { left: 59px; top: 523px; z-index: 3; }
+    .cp2-row-4 { left: 59px; top: 688px; z-index: 3; }
+    .cp2-row-5 { left: 59px; top: 853px; z-index: 3; }
+    /* red — right column, mirrored: left = 1920 - 59 - 730 */
+    .cp2-row-6  { left: 1131px; top: 193px; z-index: 4; }
+    .cp2-row-7  { left: 1131px; top: 358px; z-index: 4; }
+    .cp2-row-8  { left: 1131px; top: 523px; z-index: 4; }
+    .cp2-row-9  { left: 1131px; top: 688px; z-index: 4; }
+    .cp2-row-10 { left: 1131px; top: 853px; z-index: 4; }
+
+    .cp2-hero, .cp2-photo, .cp2-spell, .cp2-role,
+    .cp2-rune-main, .cp2-rune-1, .cp2-rune-2, .cp2-rune-3, .cp2-item {
+      position: absolute; display: block;
+    }
+    .cp2-hero  { left: 0px;  top: 0px;   width: 69px; height: 132px; object-fit: cover; z-index: 1; }
+    /* Fills the unused gap between the hero art and the rune column with
+       the same live/random player-photo system Post 1's .cp-photo already
+       uses (pbDebugPhotos/cpSetPhoto/pbPhotoUrl) — no new toggle needed. */
+    .cp2-photo { left: 69px; top: 0px;   width: 138px; height: 132px; object-fit: cover; object-position: top center; z-index: 1; }
+    .cp2-spell { left: 4px;  top: 97px;  width: 30px; height: 30px;  object-fit: contain; z-index: 2; }
+    .cp2-role  { left: 71px; top: 134px; width: 19px; height: 19px;  object-fit: contain; filter: brightness(0); z-index: 2; }
+
+    .cp2-level, .cp2-name {
+      position: absolute;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; color: #fff;
+      line-height: 1; white-space: nowrap; overflow: hidden;
+    }
+    .cp2-level { left: 0px;  top: 132px; width: 69px; height: 22px; font-size: 15px; }
+    .cp2-name  { left: 98px; top: 132px; width: 99px; height: 22px; font-size: 12.4px; transform-origin: center center; }
+
+    .cp2-rune-main { left: 207px; top: 11px; width: 39px; height: 39px; object-fit: contain; }
+    .cp2-rune-1    { left: 252px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
+    .cp2-rune-2    { left: 286px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
+    .cp2-rune-3    { left: 320px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
+
+    .cp2-kda-label, .cp2-gold-label {
+      position: absolute; left: 207px; width: 141px; height: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 12px; color: #111;
+      letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+    }
+    .cp2-kda-label  { top: 52px; }
+    .cp2-gold-label { top: 96px; }
+    .cp2-kda-value, .cp2-gold-value {
+      position: absolute; left: 207px; width: 141px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 24.8px; color: #111;
+      line-height: 1; white-space: nowrap; overflow: hidden;
+    }
+    .cp2-kda-value  { top: 68px; }
+    .cp2-gold-value { top: 112px; }
+
+    /* Damage taken/dealt sit side by side (not stacked) in this layout —
+       same dual dark/light-number bar technique as .cp-dmg-* above, just
+       resized to 170×34 and placed next to each other at the same top. */
+    .cp2-dmg-label {
+      position: absolute; top: 10px; width: 170px; height: 14px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 12px; color: #111;
+      letter-spacing: 0.06em; text-transform: uppercase; line-height: 14px;
+    }
+    .cp2-dmg-taken-label { left: 372px; }
+    .cp2-dmg-dealt-label { left: 549px; }
+
+    .cp2-dmg-taken, .cp2-dmg-dealt {
+      position: absolute; top: 26px; width: 170px; height: 34px;
+      background: rgba(0,0,0,0.15); overflow: hidden;
+    }
+    .cp2-dmg-taken { left: 372px; }
+    .cp2-dmg-dealt { left: 549px; }
+    .cp2-dmg-bar   { position: absolute; top: 0; left: 0; height: 100%; width: 0%; }
+    /* Both bars (Taken and Dealt) match their row's team color — blue on
+       the blue side, red on the red side — rather than differing by stat
+       type. consoblue2/consored2's art bakes the track in as solid black
+       (unlike consoblue/consored, where it's light gray), so these need
+       real contrast against a black backdrop, not the original #111. */
+    .cp2-row:not(.cp2-mirrored) .cp2-dmg-bar { background: linear-gradient(to right, #1540d0, #2d6ef5); }
+    .cp2-mirrored .cp2-dmg-bar { background: linear-gradient(to left, #a30000, #ff3b3b); }
+    .cp2-dmg-num-dark, .cp2-dmg-num-light {
+      position: absolute; inset: 0; display: flex; align-items: center; padding-left: 8px;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 13px; line-height: 1;
+      pointer-events: none; white-space: nowrap; overflow: hidden;
+    }
+    /* Same reason: #111 text on the baked-in black track is invisible —
+       unlike .cp-dmg-num-dark (Post 1), which sits on a light track. */
+    .cp2-dmg-num-dark  { color: #fff; z-index: 1; }
+    .cp2-dmg-num-light { color: #fff; z-index: 2; clip-path: inset(0 100% 0 0); }
+
+    /* .cp2-items wraps all 6 slots (one row, not a 2x3 grid) so the whole
+       group drags as one unit; item positions below are relative to THIS
+       wrapper, not .cp2-row. */
+    .cp2-items { position: absolute; left: 372px; top: 81px; width: 348px; height: 53px; }
+    .cp2-item  { position: absolute; top: 0px; width: 53px; height: 53px; object-fit: cover; background: #1c1c1c; }
+    .cp2-item-0 { left: 0px; }
+    .cp2-item-1 { left: 59px; }
+    .cp2-item-2 { left: 118px; }
+    .cp2-item-3 { left: 177px; }
+    .cp2-item-4 { left: 236px; }
+    .cp2-item-5 { left: 295px; }
+
+    /* mirrored (red side) — x' = 730 - x - width per element */
+    .cp2-mirrored .cp2-hero  { left: 661px; }
+    .cp2-mirrored .cp2-photo { left: 523px; }
+    .cp2-mirrored .cp2-spell { left: 696px; }
+    .cp2-mirrored .cp2-level { left: 661px; }
+    .cp2-mirrored .cp2-role  { left: 640px; }
+    .cp2-mirrored .cp2-name  { left: 533px; }
+    .cp2-mirrored .cp2-rune-main { left: 484px; }
+    .cp2-mirrored .cp2-rune-1    { left: 450px; }
+    .cp2-mirrored .cp2-rune-2    { left: 416px; }
+    .cp2-mirrored .cp2-rune-3    { left: 382px; }
+    .cp2-mirrored .cp2-kda-label,  .cp2-mirrored .cp2-kda-value,
+    .cp2-mirrored .cp2-gold-label, .cp2-mirrored .cp2-gold-value { left: 382px; }
+    .cp2-mirrored .cp2-dmg-taken-label, .cp2-mirrored .cp2-dmg-taken { left: 188px; }
+    .cp2-mirrored .cp2-dmg-dealt-label, .cp2-mirrored .cp2-dmg-dealt { left: 11px; }
+    .cp2-mirrored .cp2-dmg-label { text-align: right; justify-content: flex-end; }
+    .cp2-mirrored .cp2-dmg-bar        { left: auto; right: 0; }
+    .cp2-mirrored .cp2-dmg-num-dark, .cp2-mirrored .cp2-dmg-num-light { padding-left: 0; padding-right: 8px; justify-content: flex-end; }
+    .cp2-mirrored .cp2-dmg-num-light { clip-path: inset(0 0 0 100%); }
+    .cp2-mirrored .cp2-items { left: 10px; }
+    /* item order reverses left-to-right within the wrapper */
+    .cp2-mirrored .cp2-item-0 { left: 295px; }
+    .cp2-mirrored .cp2-item-1 { left: 236px; }
+    .cp2-mirrored .cp2-item-2 { left: 177px; }
+    .cp2-mirrored .cp2-item-3 { left: 118px; }
+    .cp2-mirrored .cp2-item-4 { left: 59px; }
+    .cp2-mirrored .cp2-item-5 { left: 0px; }
+
     /* ── CONSOLIDATED MIDDLE BOARD — Middleboard's objectives relocated
        into Consolidated Post, canvas-absolute (not nested in a row).
        consomiddle.png already bakes in the header bar, row dividers, and
@@ -485,6 +638,53 @@
        Default matches .ckm-graphic/.ckm-kills exactly, so it's a no-op
        until someone drags/resizes it from the dashboard Edit tab. */
     #ckm-bounds { position: absolute; left: 105px; top: 0px; width: 205px; height: 211px; pointer-events: none; }
+
+    /* ── CONSOLIDATED KILL MAP 2 — Post 2's own Kill Map, same system as
+       #ckm-board above (icon+name from /match/state's `map` field, dots
+       plotted via ckmGameToLocal/renderCkmKills/fetchCkmKills — all
+       generalized to take target element ids instead of hardcoded
+       'ckm-*' ones) but a taller 311×426 layout: header row (icon+name)
+       on top, a "KILL MAP" title band, then a near-square 311×316 map
+       area below spanning the full width. consomapback2.png's title
+       band and header are plain light gray/white — the pasted spec's
+       red Rectangle_3 fill was placeholder noise (verified against the
+       actual asset), so this stays dark-on-light like .ckm-label. */
+    #ckm2-board {
+      position: absolute; left: 805px; top: 521px; width: 311px; height: 426px;
+      background-image: url('/assets/consolidated_post/consomapback2.png');
+      background-size: 311px 426px; background-repeat: no-repeat;
+      z-index: 189;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #ckm2-board.ckm2-visible { opacity: 1; }
+    .ckm2-label {
+      position: absolute; left: 0px; top: 67px; width: 311px; height: 43px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px; color: #0a0a0a;
+    }
+    .ckm2-name {
+      position: absolute; left: 87px; top: 0px; width: 224px; height: 58px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: 'Anton', sans-serif; font-size: 27.5px; line-height: 1.05; color: #000;
+    }
+    .ckm2-icon    { position: absolute; left: 10px; top: 6px;   width: 45px;  height: 45px;  object-fit: contain; }
+    .ckm2-graphic { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; object-fit: cover; }
+    .ckm2-kills   { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; overflow: visible; }
+    #ckm2-bounds  { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; pointer-events: none; }
+
+    /* Sponsor loop below the Kill Map — same frame/system as Tomorrow's
+       Schedule's #tw-sponsor (.wl-sponsor-bg/.sponsor-cat-label/
+       .wl-sponsor-loop are shared classes, reused as-is; only this
+       container's own position is new). */
+    #cp2-sponsor {
+      position: absolute;
+      left: 805px; top: 957px;
+      width: 340px; height: 94px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #cp2-sponsor.cp2-sponsor-visible { opacity: 1; }
 
     /* ── CONSOLIDATED POST GRAPH — gold-difference area/line chart (blue
        above zero, red below, color switches exactly at zero-crossings —
@@ -2150,11 +2350,25 @@
     #post4key-page.p4k-on { display: block; }
     #post4key-page.p4k-visible { opacity: 1; }
 
-    .p4k-card { position: absolute; width: 416px; height: 509px; }
-    #p4k-card-1 { left: 100px;  top: 373px; }
-    #p4k-card-2 { left: 527px;  top: 373px; }
-    #p4k-card-3 { left: 954px;  top: 373px; }
-    #p4k-card-4 { left: 1381px; top: 373px; }
+    /* Deal-in: each card starts off-position (as if still in a dealer's
+       hand below-center) and slides/rotates flat into place. --deal-dx/
+       --deal-rot are per-card so the four converge toward one shared
+       point instead of all sliding in on parallel paths — p4kDeal() in
+       JS adds .p4k-dealt one card at a time, in quick succession. */
+    .p4k-card {
+      position: absolute; width: 416px; height: 509px;
+      opacity: 0;
+      transform: translate(var(--deal-dx), 300px) rotate(var(--deal-rot)) scale(0.85);
+    }
+    .p4k-card.p4k-dealt {
+      transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+      transform: translate(0, 0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    #p4k-card-1 { left: 100px;  top: 373px; --deal-dx: 650px;  --deal-rot: -18deg; }
+    #p4k-card-2 { left: 527px;  top: 373px; --deal-dx: 225px;  --deal-rot: -8deg; }
+    #p4k-card-3 { left: 954px;  top: 373px; --deal-dx: -200px; --deal-rot: 8deg; }
+    #p4k-card-4 { left: 1381px; top: 373px; --deal-dx: -630px; --deal-rot: 18deg; }
 
     .p4k-bg {
       position: absolute; left: 0px; top: 0px; width: 416px; height: 509px;
@@ -2179,6 +2393,20 @@
     .p4k-photo {
       position: absolute; left: 0; top: 0; width: 100%; height: 100%;
       object-fit: cover; object-position: top center;
+    }
+    /* Two stacked photo layers, same technique as Waiting Lobby's
+       lu-photo-sig/lu-photo-final (see luPlayAnimation): FRONT pose
+       shows first, then once the card's landed it "buttons" over to
+       the SIGNATURE pose with a quick bounce. */
+    .p4k-photo-front { z-index: 3; opacity: 1; }
+    .p4k-photo-sig   { z-index: 4; opacity: 0; }
+    .p4k-photo-box.p4k-posed .p4k-photo-front { opacity: 0; transition: opacity 220ms ease; }
+    .p4k-photo-box.p4k-posed .p4k-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    @keyframes p4k-pose-bounce {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.06); }
+      70%  { transform: scale(0.97); }
+      100% { transform: scale(1); }
     }
 
     /* Invisible — this box's only job is to mark where the photo should
@@ -2726,6 +2954,15 @@
     </div>
 
     <div class="feature-card">
+      <div class="feature-card-label">Consolidated Post 2</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showConsolidatedPost2()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideConsolidatedPost2()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-consolidated_post_2" onclick="toggleLocalPreview('consolidated_post_2', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <div class="feature-card">
       <div class="feature-card-label">Post 4 Key</div>
       <div class="feature-card-btns">
         <button class="dbg-btn show" onclick="showPost4Key()">▶ SHOW</button>
@@ -2755,7 +2992,10 @@
       <div id="p4k-card-1" class="p4k-card">
         <img class="p4k-bg" id="p4k-1-bg" alt="">
         <div class="p4k-title" id="p4k-1-title">RICH GUY</div>
-        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-1-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-photo-box">
+          <img class="p4k-photo p4k-photo-front" id="p4k-1-photo-front" src="/photos/placeholder.png" alt="">
+          <img class="p4k-photo p4k-photo-sig"   id="p4k-1-photo-sig"   src="/photos/placeholder.png" alt="">
+        </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-1-name"></span></div>
         <div class="p4k-stat-box">
@@ -2766,7 +3006,10 @@
       <div id="p4k-card-2" class="p4k-card">
         <img class="p4k-bg" id="p4k-2-bg" alt="">
         <div class="p4k-title" id="p4k-2-title">THE CARRY</div>
-        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-2-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-photo-box">
+          <img class="p4k-photo p4k-photo-front" id="p4k-2-photo-front" src="/photos/placeholder.png" alt="">
+          <img class="p4k-photo p4k-photo-sig"   id="p4k-2-photo-sig"   src="/photos/placeholder.png" alt="">
+        </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-2-name"></span></div>
         <div class="p4k-stat-box">
@@ -2777,7 +3020,10 @@
       <div id="p4k-card-3" class="p4k-card">
         <img class="p4k-bg" id="p4k-3-bg" alt="">
         <div class="p4k-title" id="p4k-3-title">SAND BAG</div>
-        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-3-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-photo-box">
+          <img class="p4k-photo p4k-photo-front" id="p4k-3-photo-front" src="/photos/placeholder.png" alt="">
+          <img class="p4k-photo p4k-photo-sig"   id="p4k-3-photo-sig"   src="/photos/placeholder.png" alt="">
+        </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-3-name"></span></div>
         <div class="p4k-stat-box">
@@ -2788,7 +3034,10 @@
       <div id="p4k-card-4" class="p4k-card">
         <img class="p4k-bg" id="p4k-4-bg" alt="">
         <div class="p4k-title" id="p4k-4-title">THE WINGMAN</div>
-        <div class="p4k-photo-box"><img class="p4k-photo" id="p4k-4-photo" src="/photos/placeholder.png" alt=""></div>
+        <div class="p4k-photo-box">
+          <img class="p4k-photo p4k-photo-front" id="p4k-4-photo-front" src="/photos/placeholder.png" alt="">
+          <img class="p4k-photo p4k-photo-sig"   id="p4k-4-photo-sig"   src="/photos/placeholder.png" alt="">
+        </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-4-name"></span></div>
         <div class="p4k-stat-box">
@@ -2832,7 +3081,7 @@
       </div>
       <!-- [FEATURE: waiting-lobby-redcorner] full-canvas accent, in front of
            both player photos. Kept frame-synced to the shared scene
-           background video (bgloopsun.webm) — see showWaitingLobby(). -->
+           background video (bgloopsun2.webm) — see showWaitingLobby(). -->
       <video id="wl-redcorner" loop muted playsinline preload="auto"></video>
       <div class="wl-namebox wl-namebox-blue">
         <img class="wl-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
@@ -3190,6 +3439,17 @@
       <svg class="ckm-kills" id="ckm-kills" viewBox="0 0 205 211"></svg>
       <div id="ckm-bounds"></div>
     </div>
+
+    <div id="ckm2-board">
+      <div class="ckm2-label">KILL MAP</div>
+      <img class="ckm2-icon" id="ckm2-icon" src="" alt="">
+      <div class="ckm2-name" id="ckm2-name"></div>
+      <img class="ckm2-graphic" src="/assets/consolidated_post/consomap.png" alt="">
+      <svg class="ckm2-kills" id="ckm2-kills" viewBox="0 0 205 211" preserveAspectRatio="none"></svg>
+      <div id="ckm2-bounds"></div>
+    </div>
+
+    <div id="cp2-sponsor"></div>
 
     <div id="cpg-board">
       <svg id="cpg-chart" viewBox="0 0 1800 270" preserveAspectRatio="none"></svg>
@@ -3656,6 +3916,14 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showConsolidatedPost, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('consolidated_post_2', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showConsolidatedPost2, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -4406,7 +4674,7 @@
        Two stacked <video> layers behind all 5 scenes below instead of one
        per scene:
          - Back-to-back scenes using the SAME file (e.g. Waiting Lobby →
-           Waiting Screen TVC, both bgloopsun.webm) — untouched, just keeps
+           Waiting Screen TVC, both bgloopsun2.webm) — untouched, just keeps
            playing, no reload.
          - Same file after a gap (scene hidden, then a scene using that
            same file shows again later) — the already-loaded layer just
@@ -4417,20 +4685,21 @@
     ════════════════════════════════════════════════ */
     const sceneVideoEls = [document.getElementById('scene-video-0'), document.getElementById('scene-video-1')];
     const SCENE_VIDEO_SRC = {
-      waiting:   '/assets/bgloopsun.webm',
-      lobby:     '/assets/bgloopsun.webm',
+      waiting:   '/assets/bgloopsun2.webm',
+      lobby:     '/assets/bgloopsun2.webm',
       hexagon:   '/assets/bgloop.webm',
-      schedule:  '/assets/bgloopsun.webm',
-      tomorrow:  '/assets/bgloopsun.webm',
-      standings: '/assets/bgloopwaves.webm',
-      finalteam: '/assets/bgloopsun.webm',
-      lineupblue: '/assets/bgloopwaves.webm',
-      lineupred:  '/assets/bgloopwaves.webm',
-      highlights: '/assets/bgloopwaves.webm',
-      mvp:        '/assets/bgloopwaves.webm',
-      credits:    '/assets/bgloopwaves.webm',
-      consolidated_post: '/assets/bgloopwaves.webm',
-      post4key:   '/assets/bgloopwaves.webm',
+      schedule:  '/assets/bgloopsun2.webm',
+      tomorrow:  '/assets/bgloopsun2.webm',
+      standings: '/assets/bgloopwaves2.webm',
+      finalteam: '/assets/bgloopsun2.webm',
+      lineupblue: '/assets/bgloopwaves2.webm',
+      lineupred:  '/assets/bgloopwaves2.webm',
+      highlights: '/assets/bgloopwaves2.webm',
+      mvp:        '/assets/bgloopwaves2.webm',
+      credits:    '/assets/bgloopwaves2.webm',
+      consolidated_post: '/assets/bgloopwaves2.webm',
+      consolidated_post_2: '/assets/bgloopwaves2.webm',
+      post4key:   '/assets/bgloopwaves2.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -4943,7 +5212,7 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
       }
       buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
       populateWsHosts(ms);
@@ -5266,7 +5535,7 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('wl-week-label').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+        document.getElementById('wl-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
       }
       buildWlMatch(ms);
       const labelImg = document.getElementById('wl-timer-label-img');
@@ -5280,9 +5549,9 @@
     const WL_REDCORNER_SRC = WL_ASSET + 'redcorner.webm';
     const wlRedcornerEl = document.getElementById('wl-redcorner');
 
-    /* redcorner.webm and bgloopsun.webm are the same 10s/60fps duration by
+    /* redcorner.webm and bgloopsun2.webm are the same 10s/60fps duration by
        design (specifically so they can stay loop-locked) with synced visual
-       beats, per the user. bgloopsun.webm is the shared scene background
+       beats, per the user. bgloopsun2.webm is the shared scene background
        video (see showSceneVideo above) and may already be mid-loop when
        Waiting Lobby appears — e.g. the previous scene (Waiting Screen TVC,
        Today's/Tomorrow's Schedule, Final Team) reuses the exact same file,
@@ -6739,6 +7008,19 @@
     buildTwSponsor();
     const twSponsorLoop = makeSponsorLoop('tw-sponsor-img', 'tw-sponsor-cat');
 
+    /* Consolidated Post 2's sponsor loop, below the Kill Map — same
+       system/markup as Tomorrow's Schedule's above, just a different
+       container (#cp2-sponsor) and its own show/hide hooks in
+       showConsolidatedPost2/hideConsolidatedPost2. */
+    function buildCp2Sponsor() {
+      document.getElementById('cp2-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="cp2-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="cp2-sponsor-img" src="" alt=""></div>`;
+    }
+    buildCp2Sponsor();
+    const cp2SponsorLoop = makeSponsorLoop('cp2-sponsor-img', 'cp2-sponsor-cat');
+
     async function showTomorrowSchedule() {
       /* Week/Day chip + match rows follow the Match Board state */
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
@@ -6944,7 +7226,7 @@
     let cpDuringPostTransition = false;
 
     /* Add new Post scene names here — match board follows automatically */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'post4key']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key']);
 
     /* Central transition: manages match board + middleboard based on Post vs non-Post */
     // Everything that must finish animating OUT before timeline animates IN.
@@ -6977,7 +7259,8 @@
       if (POST_FEATURES.has(newFeature)) {
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
-        else if (newFeature === 'consolidated_post' || newFeature === 'post4key') { /* own player photos already shown; skip middle/player board */ }
+        else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
+        else if (newFeature === 'post4key') { hideMiddleBoard(); hidePlayerBoard(); /* own player photos already shown — and unlike Consolidated Post, must actively turn these off in case they're still on from a prior Post scene */ }
         else { showMiddleBoard(); showPlayerBoard(); }
         if (newFeature !== 'timeline') {
           cpDuringPostTransition = true;
@@ -7014,6 +7297,7 @@
       if (prev === 'items')    return hidePostItems();
       if (prev === 'stats')    return hidePostStats();
       if (prev === 'consolidated_post') return hideConsolidatedPost();
+      if (prev === 'consolidated_post_2') return hideConsolidatedPost2();
       if (prev === 'post4key') return hidePost4Key();
       return Promise.resolve();
     }
@@ -7410,7 +7694,7 @@
       }
     }
 
-    function cpAnimateDmgBar(id, mirrored, takenVal, takenPct, dealtVal, dealtPct) {
+    function cpAnimateDmgBar(id, mirrored, takenVal, takenPct, dealtVal, dealtPct, isVisible = () => cpVisible) {
       const takenBar   = document.getElementById(`${id}-taken-bar`);
       const takenDark  = document.getElementById(`${id}-taken-numD`);
       const takenLight = document.getElementById(`${id}-taken-numL`);
@@ -7422,7 +7706,7 @@
       const start = performance.now();
       function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
       function tick(now) {
-        if (!cpVisible) return;
+        if (!isVisible()) return;
         const t  = Math.min((now - start) / DURATION, 1);
         const e  = easeOut(t);
         const tp = takenPct * e;
@@ -7496,7 +7780,15 @@
        being a static end-of-match snapshot (no polling). */
     let cmbVisible = false;
 
-    async function fetchCmbData() {
+    function ckmFitName(el, maxSize = 27.5, minSize = 14) {
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
+        el.style.fontSize = (--size) + 'px';
+      }
+    }
+
+    async function fetchCmbData(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false) {
       try {
         const [gameR, msR, piR] = await Promise.allSettled([
           fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -7543,10 +7835,18 @@
           set('cmb-game-label', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
 
           const mapName = ms.map || '';
-          const iconEl  = document.getElementById('ckm-icon');
-          const nameEl  = document.getElementById('ckm-name');
+          const iconEl  = document.getElementById(ckmIconId);
+          const nameEl  = document.getElementById(ckmNameId);
           if (iconEl) iconEl.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
-          if (nameEl)  nameEl.innerHTML = mapName ? mapName.toUpperCase().replace(' ', '<br>') : '';
+          if (nameEl) {
+            nameEl.innerHTML = mapName
+              ? (singleLineName ? mapName.toUpperCase() : mapName.toUpperCase().replace(' ', '<br>'))
+              : '';
+            // Forcing one line (Post 2) risks overflow for longer map names
+            // (e.g. "Dangerous Grass") that used to wrap instead — shrink
+            // to fit rather than let it spill out of the box.
+            if (singleLineName) ckmFitName(nameEl);
+          }
         }
       } catch {}
     }
@@ -7581,9 +7881,9 @@
        it regardless of how big the box was). */
     const CKM_ORIG_W = 205, CKM_ORIG_H = 211;
     const CKM_SCALE = 1.6;
-    function getCkmBounds() {
-      const svgEl    = document.getElementById('ckm-kills');
-      const boundsEl = document.getElementById('ckm-bounds');
+    function getCkmBounds(svgId = 'ckm-kills', boundsId = 'ckm-bounds') {
+      const svgEl    = document.getElementById(svgId);
+      const boundsEl = document.getElementById(boundsId);
       const fallback = { left: 0, top: 0, width: CKM_ORIG_W, height: CKM_ORIG_H };
       if (!svgEl || !boundsEl) return fallback;
       const svgRect    = svgEl.getBoundingClientRect();
@@ -7612,15 +7912,15 @@
       };
     }
 
-    function renderCkmKills(points) {
-      const svg = document.getElementById('ckm-kills');
+    function renderCkmKills(points, svgId = 'ckm-kills') {
+      const svg = document.getElementById(svgId);
       if (!svg) return;
       svg.innerHTML = points.map(p =>
         `<circle class="ckm-kill-dot" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3" fill="${p.camp === 1 ? '#0458ef' : '#f41100'}"></circle>`
       ).join('');
     }
 
-    async function fetchCkmKills() {
+    async function fetchCkmKills(svgId = 'ckm-kills', boundsId = 'ckm-bounds') {
       try {
         const [evR, posR] = await Promise.allSettled([
           fetch(buildUrl('/events'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -7628,7 +7928,7 @@
         ]);
         const kills  = (evR.value?.events || []).filter(e => e.type === 'kill');
         const posLog = posR.value?.positions || [];
-        if (!kills.length) { renderCkmKills([]); return; }
+        if (!kills.length) { renderCkmKills([], svgId); return; }
 
         // Group positions by camp-seat, sorted by time, for nearest-tick lookup.
         const byKey = {};
@@ -7647,7 +7947,7 @@
           return best;
         }
 
-        const bounds = getCkmBounds();
+        const bounds = getCkmBounds(svgId, boundsId);
         const points = [];
         kills.forEach(k => {
           const camp = k.camp === 'camp1' ? 1 : k.camp === 'camp2' ? 2 : null;
@@ -7656,7 +7956,7 @@
           if (!pos || (pos.x === 0 && pos.y === 0)) return; // pre-spawn zero coords
           points.push({ camp, ...ckmGameToLocal(pos.x, pos.y, bounds) });
         });
-        renderCkmKills(points);
+        renderCkmKills(points, svgId);
       } catch {}
     }
 
@@ -7869,20 +8169,47 @@
       document.getElementById('cpg-board').classList.remove('cpg-visible');
     }
 
-    function showCmbBoard() {
+    // ckmIconId/ckmNameId let a caller point the map-icon/name fetched here
+    // at a different Kill Map's elements (e.g. Post 2's ckm2-icon/ckm2-name)
+    // while still writing into the one shared #cmb-board — see showCkmBoard/
+    // showCkm2Board below for the actual Kill Map container show/hide.
+    function showCmbBoard(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false) {
       if (cmbVisible) return;
       cmbVisible = true;
-      fetchCmbData();
-      fetchCkmKills();
+      fetchCmbData(ckmIconId, ckmNameId, singleLineName);
       document.getElementById('cmb-board').classList.add('cmb-visible');
-      document.getElementById('ckm-board').classList.add('ckm-visible');
     }
 
     function hideCmbBoard() {
       if (!cmbVisible) return;
       cmbVisible = false;
       document.getElementById('cmb-board').classList.remove('cmb-visible');
+    }
+
+    let ckmVisible = false;
+    function showCkmBoard() {
+      if (ckmVisible) return;
+      ckmVisible = true;
+      fetchCkmKills();
+      document.getElementById('ckm-board').classList.add('ckm-visible');
+    }
+    function hideCkmBoard() {
+      if (!ckmVisible) return;
+      ckmVisible = false;
       document.getElementById('ckm-board').classList.remove('ckm-visible');
+    }
+
+    let ckm2Visible = false;
+    function showCkm2Board() {
+      if (ckm2Visible) return;
+      ckm2Visible = true;
+      fetchCkmKills('ckm2-kills', 'ckm2-bounds');
+      document.getElementById('ckm2-board').classList.add('ckm2-visible');
+    }
+    function hideCkm2Board() {
+      if (!ckm2Visible) return;
+      ckm2Visible = false;
+      document.getElementById('ckm2-board').classList.remove('ckm2-visible');
     }
 
     async function showConsolidatedPost() {
@@ -7900,6 +8227,7 @@
       cpVisible = true;
       showSceneVideo('consolidated_post');
       showCmbBoard();
+      showCkmBoard();
       showCpgBoard();
       CP_ROW_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`cp-row-el-${i + 1}`);
@@ -7925,6 +8253,7 @@
       if (!cpVisible) return Promise.resolve();
       cpVisible = false;
       hideCmbBoard();
+      hideCkmBoard();
       hideCpgBoard();
       if (cpDuringPostTransition) {
         // Switching straight to another post feature — matchboard stays
@@ -7955,6 +8284,182 @@
               el.style.animationDelay = '';
               el.style.willChange = '';
               const id = `cp-${i + 1}`;
+              const tb = document.getElementById(`${id}-taken-bar`);
+              const db = document.getElementById(`${id}-dealt-bar`);
+              if (tb) tb.style.width = '0%';
+              if (db) db.style.width = '0%';
+            });
+            hideSceneVideo();
+          }
+          resolve();
+        }, 950);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
+       CONSOLIDATED POST 2 — resized/repositioned duplicate of
+       Consolidated Post's player rows (backup-safe variant per the
+       user's request). Reuses cpApplyRow/cpAnimateDmgBar/cpFitLabel
+       as-is (they're already id-parameterized, not cp-row-specific) and
+       shares #cmb-board/#ckm-board with Consolidated Post — only the
+       row markup/CSS and the graph (#cpg-board, intentionally dropped
+       here) differ. No player-photo element — baked into consoblue2/
+       consored2.png instead.
+    ════════════════════════════════════════════════ */
+    const CP2_ROW_CLASSES = [
+      'cp2-row-1','cp2-row-2','cp2-row-3','cp2-row-4','cp2-row-5',
+      'cp2-row-6','cp2-row-7','cp2-row-8','cp2-row-9','cp2-row-10',
+    ];
+
+    function buildCp2RowHTML(id) {
+      const itemSlots = [0,1,2,3,4,5]
+        .map(i => `<img class="cp2-item cp2-item-${i}" id="${id}-item-${i}" src="" alt="">`).join('');
+      return `
+        <img class="cp2-hero" id="${id}-hero" src="" alt="">
+        <img class="cp2-photo" id="${id}-photo" src="" alt="">
+        <img class="cp2-spell" id="${id}-spell" src="" alt="" style="display:none">
+        <div class="cp2-level" id="${id}-level"></div>
+        <img class="cp2-role" id="${id}-role" src="" alt="" style="display:none">
+        <div class="cp2-name" id="${id}-name"></div>
+        <img class="cp2-rune-main" id="${id}-rune-main" src="" alt="" style="display:none">
+        <img class="cp2-rune-1" id="${id}-rune-1" src="" alt="" style="display:none">
+        <img class="cp2-rune-2" id="${id}-rune-2" src="" alt="" style="display:none">
+        <img class="cp2-rune-3" id="${id}-rune-3" src="" alt="" style="display:none">
+        <div class="cp2-kda-label">KDA</div>
+        <div class="cp2-kda-value" id="${id}-kda">-/-/-</div>
+        <div class="cp2-gold-label">GOLD EARNED</div>
+        <div class="cp2-gold-value" id="${id}-gold">-</div>
+        <div class="cp2-dmg-label cp2-dmg-taken-label">DAMAGE TAKEN</div>
+        <div class="cp2-dmg-taken">
+          <div class="cp2-dmg-bar" id="${id}-taken-bar"></div>
+          <div class="cp2-dmg-num-dark"  id="${id}-taken-numD">0</div>
+          <div class="cp2-dmg-num-light" id="${id}-taken-numL">0</div>
+        </div>
+        <div class="cp2-dmg-label cp2-dmg-dealt-label">DAMAGE DEALT</div>
+        <div class="cp2-dmg-dealt">
+          <div class="cp2-dmg-bar" id="${id}-dealt-bar"></div>
+          <div class="cp2-dmg-num-dark"  id="${id}-dealt-numD">0</div>
+          <div class="cp2-dmg-num-light" id="${id}-dealt-numL">0</div>
+        </div>
+        <div class="cp2-items">${itemSlots}</div>
+      `;
+    }
+
+    CP2_ROW_CLASSES.forEach((cls, n) => {
+      const id       = `cp2-${n + 1}`;
+      const mirrored = n >= 5 ? ' cp2-mirrored' : '';
+      const div      = document.createElement('div');
+      div.className  = `cp2-row ${cls}${mirrored}`;
+      div.id         = `cp2-row-el-${n + 1}`;
+      div.innerHTML  = buildCp2RowHTML(id);
+      canvas.appendChild(div);
+    });
+
+    let cp2Visible = false;
+    let cp2Data    = [];
+
+    async function fetchConsolidatedPost2Data() {
+      cp2Data = Array(10).fill(null);
+      try {
+        await pbLoadManifest();
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+        const camps = gd.camp_list || [];
+        const c1 = camps.find(c => c.campid === 1);
+        const c2 = camps.find(c => c.campid === 2);
+        const winCamp = gd.win_camp || 0;
+        const pose1 = winCamp === 0 || winCamp === 1 ? 'VICTORY' : 'DEFEAT';
+        const pose2 = winCamp === 0 || winCamp === 2 ? 'VICTORY' : 'DEFEAT';
+        const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
+          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+        if (c1) extractSeats(c1).forEach((s, i) => { cp2Data[i]     = { s, pose: pose1 }; });
+        if (c2) extractSeats(c2).forEach((s, i) => { cp2Data[5 + i] = { s, pose: pose2 }; });
+
+        const maxTaken = Math.max(...cp2Data.map(d => d ? (d.s.total_hurt || 0) : 0), 1);
+        const maxDealt = Math.max(...cp2Data.map(d => d ? (d.s.total_damage || 0) : 0), 1);
+
+        cp2Data.forEach((d, i) => {
+          const id = `cp2-${i + 1}`;
+          if (!d) return;
+          cpApplyRow(d.s, id);
+          const photoEl = document.getElementById(`${id}-photo`);
+          if (photoEl) cpSetPhoto(photoEl, d.s.name, d.pose);
+          d.takenPct = ((d.s.total_hurt || 0) / maxTaken) * 100;
+          d.dealtPct = ((d.s.total_damage || 0) / maxDealt) * 100;
+        });
+      } catch {}
+    }
+
+    async function showConsolidatedPost2() {
+      if (cp2Visible) return;
+      document.getElementById('match-board').classList.add('cp-compact');
+      await transitionTo('consolidated_post_2');
+      await fetchConsolidatedPost2Data();
+      if (activeFeature !== 'consolidated_post_2') return; /* superseded while awaiting data */
+      await preloadMedia(document.querySelectorAll('[id^="cp2-row-el-"] img'), 900);
+      if (activeFeature !== 'consolidated_post_2') return; /* superseded while preloading */
+      cp2Visible = true;
+      showSceneVideo('consolidated_post_2');
+      showCmbBoard('ckm2-icon', 'ckm2-name', true);
+      showCkm2Board();
+      document.getElementById('cp2-sponsor').classList.add('cp2-sponsor-visible');
+      cp2SponsorLoop.start();
+      CP2_ROW_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`cp2-row-el-${i + 1}`);
+        el.style.willChange = 'transform, opacity';
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out', 'ph-visible');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-in');
+        setTimeout(() => {
+          if (cp2Visible) {
+            el.classList.remove('ph-in');
+            el.classList.add('ph-visible');
+            el.style.animationDelay = '';
+            const d = cp2Data[i];
+            if (d) setTimeout(() => { if (cp2Visible) cpAnimateDmgBar(`cp2-${i + 1}`, i >= 5, d.s.total_hurt || 0, d.takenPct, d.s.total_damage || 0, d.dealtPct, () => cp2Visible); }, 50);
+          }
+        }, 700 + delay);
+      });
+    }
+
+    function hideConsolidatedPost2() {
+      if (!cp2Visible) return Promise.resolve();
+      cp2Visible = false;
+      hideCmbBoard();
+      hideCkm2Board();
+      document.getElementById('cp2-sponsor').classList.remove('cp2-sponsor-visible');
+      cp2SponsorLoop.stop();
+      if (cpDuringPostTransition) {
+        // Switching straight to another post feature — matchboard stays
+        // up, just snap it back out of compact mode (see hideConsolidatedPost).
+        document.getElementById('match-board').classList.remove('cp-compact');
+      } else {
+        hideMatchBoard().then(() => {
+          document.getElementById('match-board').classList.remove('cp-compact');
+        });
+      }
+      CP2_ROW_CLASSES.forEach((cls, i) => {
+        const el    = document.getElementById(`cp2-row-el-${i + 1}`);
+        const delay = (i % 5) * ROW_STAGGER_MS;
+        el.classList.remove('ph-in', 'ph-out');
+        el.style.animationDelay = `${delay}ms`;
+        void el.offsetWidth;
+        el.classList.add('ph-out');
+      });
+      return new Promise(resolve => {
+        setTimeout(() => {
+          if (!cp2Visible) {
+            CP2_ROW_CLASSES.forEach((cls, i) => {
+              const el = document.getElementById(`cp2-row-el-${i + 1}`);
+              el.classList.remove('ph-out', 'ph-visible');
+              el.style.animationDelay = '';
+              el.style.willChange = '';
+              const id = `cp2-${i + 1}`;
               const tb = document.getElementById(`${id}-taken-bar`);
               const db = document.getElementById(`${id}-dealt-bar`);
               if (tb) tb.style.width = '0%';
@@ -8016,22 +8521,32 @@
     }
 
     function p4kApplyCard(n, s, value) {
-      const bgEl    = document.getElementById(`p4k-${n}-bg`);
-      const nameEl  = document.getElementById(`p4k-${n}-name`);
-      const valueEl = document.getElementById(`p4k-${n}-value`);
-      const photoEl = document.getElementById(`p4k-${n}-photo`);
+      const bgEl     = document.getElementById(`p4k-${n}-bg`);
+      const nameEl   = document.getElementById(`p4k-${n}-name`);
+      const valueEl  = document.getElementById(`p4k-${n}-value`);
+      const frontEl  = document.getElementById(`p4k-${n}-photo-front`);
+      const sigEl    = document.getElementById(`p4k-${n}-photo-sig`);
+      const photoBox = document.getElementById(`p4k-card-${n}`)?.querySelector('.p4k-photo-box');
 
       if (bgEl) bgEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourblue.png' : '/assets/postgame/bigfourred.png');
       if (nameEl) { nameEl.textContent = s.name || ''; p4kFitName(nameEl); }
       if (valueEl) { valueEl.textContent = value; p4kFitValue(valueEl); }
-      if (photoEl) {
+      // Reset to the pre-pose state — a re-fetch mid-scene shouldn't
+      // leave an already-posed card stuck showing a stale signature photo.
+      if (photoBox) photoBox.classList.remove('p4k-posed');
+      if (frontEl) {
+        frontEl.onerror = () => { frontEl.style.display = 'none'; };
+        frontEl.style.display = '';
+        frontEl.src = buildUrl(luPoseUrl(s.name, 'FRONT'));
+      }
+      if (sigEl) {
         // Signature portrait, not the VICTORY/DEFEAT full-body pose —
         // same helper MVP Highlights/MVP Scene use (hlPhotoUrl), same
         // hide-on-error fallback (no photo beats a broken-image icon,
         // and the card's own marble/team-color art shows through).
-        photoEl.onerror = () => { photoEl.style.display = 'none'; };
-        photoEl.style.display = '';
-        photoEl.src = buildUrl(hlPhotoUrl(s.name));
+        sigEl.onerror = () => { sigEl.style.display = 'none'; };
+        sigEl.style.display = '';
+        sigEl.src = buildUrl(hlPhotoUrl(s.name));
       }
     }
 
@@ -8072,6 +8587,28 @@
       } catch {}
     }
 
+    // Deal the four cards in one after another (like being dropped from a
+    // hand), then once each card has landed, button its photo over from
+    // FRONT pose to SIGNATURE pose — same crossfade+bounce technique as
+    // Waiting Lobby's luPlayAnimation.
+    const P4K_DEAL_STAGGER_MS  = 130;
+    const P4K_DEAL_DURATION_MS = 480;
+    const P4K_POSE_HOLD_MS     = 220;
+
+    function p4kPlayAnimation() {
+      for (let i = 1; i <= 4; i++) {
+        const dealDelay = (i - 1) * P4K_DEAL_STAGGER_MS;
+        setTimeout(() => {
+          if (!p4kVisible) return;
+          document.getElementById(`p4k-card-${i}`)?.classList.add('p4k-dealt');
+        }, dealDelay);
+        setTimeout(() => {
+          if (!p4kVisible) return;
+          document.getElementById(`p4k-card-${i}`)?.querySelector('.p4k-photo-box')?.classList.add('p4k-posed');
+        }, dealDelay + P4K_DEAL_DURATION_MS + P4K_POSE_HOLD_MS);
+      }
+    }
+
     async function showPost4Key() {
       if (p4kVisible) return;
       const page = document.getElementById('post4key-page');
@@ -8096,8 +8633,13 @@
         if (nameEl)  p4kFitName(nameEl);
         if (valueEl) p4kFitValue(valueEl);
         if (cardEl)  p4kApplyCrop(cardEl);
+        // Reset deal/pose state in case this card was left mid-animation
+        // by a very fast hide+reshow.
+        cardEl?.classList.remove('p4k-dealt');
+        cardEl?.querySelector('.p4k-photo-box')?.classList.remove('p4k-posed');
       }
       page.classList.add('p4k-visible');
+      p4kPlayAnimation();
     }
 
     function hidePost4Key() {
@@ -8775,6 +9317,7 @@
           else if (scene.activeFeature === 'items')    showPostItems();
           else if (scene.activeFeature === 'stats')    showPostStats();
           else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
+          else if (scene.activeFeature === 'consolidated_post_2') showConsolidatedPost2();
           else if (scene.activeFeature === 'post4key') showPost4Key();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
           else if (scene.activeFeature === 'waiting')  showWaitingScreen();
@@ -8828,6 +9371,7 @@
         if (feature === 'timeline') showItemTimeline();
         if (feature === 'emblems')  showPostEmblems();
         if (feature === 'consolidated_post') showConsolidatedPost();
+        if (feature === 'consolidated_post_2') showConsolidatedPost2();
         if (feature === 'post4key') showPost4Key();
       }
     }
