@@ -2503,7 +2503,7 @@
         <div id="tw-title">See You Tomorrow</div>
         <div id="tw-subline">
           <span id="tw-season">Season 18 Regular Season</span>
-          <div id="tw-week">Week 8 Day 1</div>
+          <div id="tw-week">Week 8 - Day 1</div>
         </div>
       </div>
       <div id="tw-matches"></div>
@@ -5803,7 +5803,7 @@
       if (ms) {
         if (ms.week != null && ms.day != null) {
           const wd = computeTomorrowWeekDay(ms);
-          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' DAY ' + wd.day;
+          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
         }
         buildTwMatches(ms);
       }
@@ -5938,7 +5938,7 @@
         applyTwTitle(ms);
         if (ms.week != null && ms.day != null) {
           const wd = computeTomorrowWeekDay(ms);
-          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' DAY ' + wd.day;
+          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
         }
         buildTwMatches(ms);
       }
