@@ -12,8 +12,6 @@ const killNametagClipEl = document.getElementById('kill-event-nametag-clip');
 const killNametagBgEl   = document.getElementById('kill-event-nametag-text');
 const killNameEl        = document.getElementById('kill-event-name');
 const killRoleIconEl    = document.getElementById('kill-event-role-icon');
-const killSponsorLabelClipEl = document.getElementById('kill-event-sponsor-label-clip');
-const killSponsorLabelEl     = document.getElementById('kill-event-sponsor-label');
 const killSponsorLogoClipEl  = document.getElementById('kill-event-sponsor-logo-clip');
 const killSponsorLogoEl      = document.getElementById('kill-event-sponsor-logo');
 
@@ -24,8 +22,8 @@ killPhotoEl.onerror = function() {
   killPhotoEl.style.visibility = 'hidden';
 };
 
-/* Kill events sponsored by a specific brand — the sponsor plate (label +
-   logo) only shows for these videos, popping in alongside the photo. */
+/* Kill events sponsored by a specific brand — the sponsor logo only
+   shows for these videos, popping in alongside the photo. */
 var KILL_EVENT_SPONSOR_LOGO = {
   'doublekill.webm':  'assets/ingame/ingamesmart.png',
   'turtleslain.webm': 'assets/ingame/ingamesmart.png',
@@ -35,36 +33,51 @@ var KILL_EVENT_SPONSOR_LOGO = {
 /* ── Timeline pause (all kill events) ──
    Replaces the earlier slow-motion-middle-third trial: instead of riding
    playbackRate, the video just pauses outright once it reaches a fixed
-   point in its OWN timeline ("at", in seconds — from the After Effects
-   comp's timecode, every asset here is 60fps so e.g. 1s+15f = 1.25s),
-   holds there for pauseMs, then resumes at normal speed. The player-
-   photo popup's hold time is extended by the same pauseMs so it doesn't
-   retreat while the video is sitting paused. Same at/pauseMs for every
-   video for now (shortest asset — Double/Triple Kill at 2.124s — still
-   leaves 0.874s after resume, so 1.25s is safe across the board); split
-   any one of these out with its own values once someone wants a
-   different feel for it. */
+   point in its OWN timeline, holds there for pauseMs, then resumes at
+   normal speed. The player-photo popup's hold time is extended by the
+   same pauseMs so it doesn't retreat while the video is sitting paused.
+
+   Pause points are specified as atFrame — a frame COUNT (every asset
+   here is 60fps, so e.g. 1s+15f = frame 75), not a seconds value. A
+   seconds-based threshold is checked against currentTime on the
+   'timeupdate' event, which only fires on the browser's own coarse
+   schedule — a rendering hiccup elsewhere on the page can delay that
+   check running until well past the intended instant, landing the pause
+   on a visibly later frame than intended. requestVideoFrameCallback
+   (used below when supported — Chrome/Edge; falls back to timeupdate
+   otherwise, e.g. Firefox/Safari) instead fires once per actually
+   decoded/presented video frame with that frame's own exact mediaTime,
+   so the pause always lands on the intended frame regardless of what
+   else is happening on the page. Same atFrame/pauseMs for every video
+   for now (shortest asset — Double/Triple Kill at 2.124s — still leaves
+   ~0.87s after resume, so frame 75 is safe across the board); split any
+   one of these out with its own values once someone wants a different
+   feel for it. */
+var KILL_EVENT_FPS = 60;
 var KILL_EVENT_PAUSE = {
-  'firstblood.webm':  { at: 1.25, pauseMs: 750 },
-  'doublekill.webm':  { at: 1.25, pauseMs: 750 },
-  'triplekill.webm':  { at: 1.25, pauseMs: 750 },
-  'maniac.webm':      { at: 1.25, pauseMs: 750 },
-  'savage.webm':      { at: 1.25, pauseMs: 750 },
-  'lordslain.webm':   { at: 1.25, pauseMs: 750 },
-  'turtleslain.webm': { at: 1.25, pauseMs: 750 },
-  'wipedout.webm':    { at: 1.25, pauseMs: 750 },
+  'firstblood.webm':  { atFrame: 75, pauseMs: 750 }, // 1s + 15f
+  'doublekill.webm':  { atFrame: 75, pauseMs: 750 },
+  'triplekill.webm':  { atFrame: 75, pauseMs: 750 },
+  'maniac.webm':      { atFrame: 75, pauseMs: 750 },
+  'savage.webm':      { atFrame: 75, pauseMs: 750 },
+  'lordslain.webm':   { atFrame: 75, pauseMs: 750 },
+  'turtleslain.webm': { atFrame: 75, pauseMs: 750 },
+  'wipedout.webm':    { atFrame: 75, pauseMs: 750 },
 };
-var killPauseArmed = false; /* true until the current video's pause point has fired once */
+var killPauseArmed  = false; /* true until the current video's pause point has fired once */
+var killPauseRvfcId = null;  /* pending requestVideoFrameCallback handle, if in use */
+var KILL_EVENT_HAS_RVFC = typeof HTMLVideoElement !== 'undefined' &&
+  'requestVideoFrameCallback' in HTMLVideoElement.prototype;
 
 function killClearPause() {
   killPauseArmed = false;
+  if (killPauseRvfcId !== null && killVideoEl.cancelVideoFrameCallback) {
+    killVideoEl.cancelVideoFrameCallback(killPauseRvfcId);
+  }
+  killPauseRvfcId = null;
 }
 
-killVideoEl.addEventListener('timeupdate', function() {
-  if (!killPauseArmed) return;
-  var cfg = KILL_EVENT_PAUSE[killEventCurrent];
-  if (!cfg || killVideoEl.currentTime < cfg.at) return;
-  killPauseArmed = false;
+function killResumeAfterPause(cfg) {
   killVideoEl.pause();
   var token = killEventToken;
   setTimeout(function() {
@@ -72,6 +85,36 @@ killVideoEl.addEventListener('timeupdate', function() {
        was pending) — only resume if it's still the same playback. */
     if (killEventToken === token) killVideoEl.play().catch(function() {});
   }, cfg.pauseMs);
+}
+
+/* Re-arms itself every frame (via the callback's own recursive request)
+   until the target frame is reached, then pauses. */
+function killArmFramePause() {
+  killPauseRvfcId = killVideoEl.requestVideoFrameCallback(function(now, metadata) {
+    killPauseRvfcId = null;
+    if (!killPauseArmed) return;
+    var cfg = KILL_EVENT_PAUSE[killEventCurrent];
+    if (!cfg) return;
+    if (Math.round(metadata.mediaTime * KILL_EVENT_FPS) < cfg.atFrame) {
+      killArmFramePause();
+      return;
+    }
+    killPauseArmed = false;
+    killResumeAfterPause(cfg);
+  });
+}
+
+/* Fallback for browsers without requestVideoFrameCallback — same frame
+   count, converted to seconds against currentTime instead. Less precise
+   under a hiccup (see the comment above), but a graceful degradation
+   rather than a hard requirement. */
+killVideoEl.addEventListener('timeupdate', function() {
+  if (KILL_EVENT_HAS_RVFC) return; /* handled by killArmFramePause instead */
+  if (!killPauseArmed) return;
+  var cfg = KILL_EVENT_PAUSE[killEventCurrent];
+  if (!cfg || killVideoEl.currentTime < cfg.atFrame / KILL_EVENT_FPS) return;
+  killPauseArmed = false;
+  killResumeAfterPause(cfg);
 });
 
 /* Pop timing — start delayed 300ms after the trigger, held up for 1.3s,
@@ -89,10 +132,6 @@ var KILL_POP_ENTER_MS = 480;
 /* Rectangle_3 (name text box) is 151px wide — leave a small margin so
    shrink-to-fit text never touches the plate art's edges. */
 var KILL_NAME_MAX_W = 139;
-
-/* Rectangle_1 (sponsor label) is 131x19 — small margin so shrink-to-fit
-   text never touches its edges. */
-var KILL_SPONSOR_LABEL_MAX_W = 125;
 
 var killShowTimer      = null; /* pending: about to pop in */
 var killBounceTimer    = null; /* pending: about to play the settle bounce */
@@ -132,28 +171,6 @@ function killFitName(el) {
   }
 }
 
-/* Same binary-search shrink-to-fit as killFitNameMeasure, but starting
-   from Rectangle_1's own 19px height (maximize the height) and only
-   shrinking from there if "OFFICIAL SPONSOR" would otherwise overflow
-   its 131px width. */
-function killFitSponsorLabelMeasure(el) {
-  el.style.fontSize = '19px';
-  if (el.scrollWidth <= KILL_SPONSOR_LABEL_MAX_W) return;
-  var lo = 8, hi = 19;
-  while (hi - lo > 0.5) {
-    var mid = (lo + hi) / 2;
-    el.style.fontSize = mid + 'px';
-    if (el.scrollWidth <= KILL_SPONSOR_LABEL_MAX_W) lo = mid; else hi = mid;
-  }
-  el.style.fontSize = lo + 'px';
-}
-function killFitSponsorLabel(el) {
-  killFitSponsorLabelMeasure(el);
-  if (document.fonts && document.fonts.status !== 'loaded') {
-    document.fonts.ready.then(function() { killFitSponsorLabelMeasure(el); });
-  }
-}
-
 function clearKillTimers() {
   if (killShowTimer)   { clearTimeout(killShowTimer);   killShowTimer   = null; }
   if (killBounceTimer) { clearTimeout(killBounceTimer); killBounceTimer = null; }
@@ -183,7 +200,6 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
      (see killSnapHide above for why this must be instant, not animated). */
   killSnapHide(killPhotoClipEl, killPhotoEl);
   killSnapHide(killNametagClipEl, killNametagBgEl);
-  killSnapHide(killSponsorLabelClipEl, killSponsorLabelEl);
   killSnapHide(killSponsorLogoClipEl, killSponsorLogoEl);
 
   killShowTimer = setTimeout(function() {
@@ -203,10 +219,7 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
     killPhotoClipEl.classList.add('ke-in');
     killNametagClipEl.classList.add('ke-in');
     if (sponsorLogo) {
-      killSponsorLabelEl.textContent = 'OFFICIAL SPONSOR';
-      killFitSponsorLabel(killSponsorLabelEl);
       killSponsorLogoEl.src = sponsorLogo;
-      killSponsorLabelClipEl.classList.add('ke-in');
       killSponsorLogoClipEl.classList.add('ke-in');
     }
     killBounceTimer = setTimeout(function() {
@@ -219,7 +232,6 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
       killHoldTimer = null;
       killPhotoClipEl.classList.remove('ke-in');
       killNametagClipEl.classList.remove('ke-in');
-      killSponsorLabelClipEl.classList.remove('ke-in');
       killSponsorLogoClipEl.classList.remove('ke-in');
     }, KILL_POP_HOLD_MS + extraHoldMs);
   }, KILL_POP_DELAY_MS);
@@ -231,7 +243,6 @@ function hideKillEventPlayer() {
   clearKillTimers();
   killPhotoClipEl.classList.remove('ke-in');
   killNametagClipEl.classList.remove('ke-in');
-  killSponsorLabelClipEl.classList.remove('ke-in');
   killSponsorLogoClipEl.classList.remove('ke-in');
   killPopCycleEndsAt = 0;
 }
@@ -293,6 +304,7 @@ function playNextKillEvent() {
 
   var pauseCfg = KILL_EVENT_PAUSE[entry.video];
   killPauseArmed = !!pauseCfg;
+  if (killPauseArmed && KILL_EVENT_HAS_RVFC) killArmFramePause();
   if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, KILL_EVENT_SPONSOR_LOGO[entry.video] || null, pauseCfg ? pauseCfg.pauseMs : 0);
   else hideKillEventPlayer();
 
@@ -319,4 +331,44 @@ function enqueueKillEvent(video, priority, playerIdx, playerName, role, camp) {
   if (killEventQueue.some(function(e) { return e.video === video; })) return;
   killEventQueue.push({ video: video, priority: priority, playerIdx: playerIdx || null, playerName: playerName || null, role: role || null, camp: camp || null });
   playNextKillEvent();
+}
+
+/* Forces a representative sponsored kill event into a frozen, held-open
+   state — used only as the dashboard Edit tab's showFn for positioning
+   the sponsor logo (see mploverlay_v7_killevent in dashboard.html). A
+   real kill event plays through in ~2s and auto-hides after ~1.3s, both
+   of which make it useless to actually see and drag — this bypasses
+   playNextKillEvent()/the queue entirely, plays the video only up to its
+   normal KILL_EVENT_PAUSE freeze point and leaves it paused there
+   instead of resuming, and shows the player popup + sponsor logo with no
+   auto-hide timer. */
+function previewKillEventSponsor() {
+  var video = 'turtleslain.webm';
+  clearKillTimers();
+  killEventToken++;
+  killPauseArmed = false;
+  killEventCurrent = video;
+  killOverlayEl.style.display = 'block';
+  killVideoEl.src = 'assets/motion/' + video;
+
+  var freezeAt = ((KILL_EVENT_PAUSE[video] || {}).atFrame || 75) / KILL_EVENT_FPS;
+  function holdFrame() {
+    if (killVideoEl.currentTime < freezeAt) return;
+    killVideoEl.pause();
+    killVideoEl.removeEventListener('timeupdate', holdFrame);
+  }
+  killVideoEl.addEventListener('timeupdate', holdFrame);
+  killVideoEl.play().catch(function() {});
+
+  killPhotoEl.style.visibility = '';
+  killPhotoEl.src = killEventPhotoSrc('PREVIEW');
+  killNametagBgEl.style.backgroundImage = 'url(' + killNametagBgSrc('blue') + ')';
+  killNameEl.textContent = 'PREVIEW';
+  killFitName(killNameEl);
+  killRoleIconEl.removeAttribute('src');
+  killRoleIconEl.style.display = 'none';
+  killPhotoClipEl.classList.add('ke-in');
+  killNametagClipEl.classList.add('ke-in');
+  killSponsorLogoEl.src = KILL_EVENT_SPONSOR_LOGO[video];
+  killSponsorLogoClipEl.classList.add('ke-in');
 }

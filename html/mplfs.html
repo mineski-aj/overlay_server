@@ -678,9 +678,6 @@
        .wl-sponsor-loop are shared classes, reused as-is; only this
        container's own position is new). */
     #cp2-sponsor {
-      position: absolute;
-      left: 805px; top: 957px;
-      width: 340px; height: 94px;
       opacity: 0; pointer-events: none;
       transition: opacity 300ms ease;
     }
@@ -845,7 +842,13 @@
       left: 40px; top: 705px;
       width: 340px; height: 94px;
     }
-    #wl-sponsor img.wl-sponsor-bg { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    /* 100%/100%, not a fixed pixel size — must track whatever size the
+       dashboard Edit tab sets on the container (#cp2-sponsor etc.), same
+       as .wl-sponsor-loop's relative left/right/top/bottom already do.
+       A fixed 340x94 here meant resizing the box in the Edit tab shrank
+       the logo but left this background at its original size, sticking
+       out past the (now smaller) box. */
+    .wl-sponsor-bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
        slide used, but a single image sliding in from the left (decelerating
        into place) then out to the right (accelerating away), matching
@@ -1222,6 +1225,45 @@
       font-family: 'Anton', sans-serif; font-size: 103px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; text-align: left; white-space: nowrap;
     }
+    /* ── MVP HIGHLIGHTS STATS BACKER — sits directly below .hl-hero.
+       Same KDA/KP%/API-named-stat data as MVP Scene (hlApply reuses the
+       exact same player object hlFetchMvp/hlExtractPlayer already
+       produce for MVP Scene's mvApply). One container, positioned/sized
+       as a whole from the dashboard Edit tab (#hl-stats-backer) — the 6
+       slots inside keep the fixed internal layout below, same pattern as
+       #cmb-board's internal rows, since they're one designed unit rather
+       than independently placed pieces. Default position/size below is a
+       reasonable placeholder directly under .hl-hero's own default box
+       (left:1394,top:950 = hl-plaque's 1393,777 + hero's own 1,55 offset,
+       top edge at hero's bottom 55+118=173) — nudge into place via the
+       Edit tab like everything else here. */
+    #hl-stats-backer {
+      position: absolute; left: 1394px; top: 950px; width: 463px; height: 48px;
+      z-index: 40;
+      background: url('/assets/highlights/mvphlstats.png') no-repeat;
+      background-size: 100% 100%;
+    }
+    .hlst-label {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 12.4px;
+      color: #0a0a0a; text-transform: uppercase; text-align: center;
+    }
+    .hlst-value {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 25.4px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    #hlst-kda-label { left: 2px;   width: 53px;  z-index: 9;  white-space: nowrap; }
+    #hlst-kda-value { left: 55px;  width: 118px; z-index: 10; }
+    #hlst-kp-label  { left: 187px; width: 40px;  z-index: 13; white-space: nowrap; }
+    #hlst-kp-value  { left: 227px; width: 90px;  z-index: 11; }
+    /* Dynamic (mvp_title varies per API response) — wraps to a 2nd line
+       instead of the static labels' nowrap, since it can be one or two
+       words (e.g. "GPM" vs "GOLD LEAD"). */
+    #hlst-mvp-label { left: 331px; width: 52px;  z-index: 14; white-space: normal; line-height: 1.15; }
+    #hlst-mvp-value { left: 383px; width: 78px;  z-index: 12; }
     /* ── MVP SCENE PAGE — full MVP-of-the-game card. Positions follow
        assets/mvp/mvpfsguide.png; the bottom plaque row (team logo/role
        icon/name + KDA/GPM/KP%) is backed by mvpfsblue.png/mvpfsred.png,
@@ -2638,6 +2680,24 @@
     #mdb-game-time-value { position:absolute; left:960px; top:264px; z-index:78; transform:translateX(-50%); font-family:'General Sans',sans-serif; font-size:74px; font-weight:700; color:rgb(0,0,0); white-space:nowrap; }
     #mdb-game-label-bar  { position:absolute; left:960px; top:351px; width:190px; height:31px; z-index:79; transform:translateX(-50%); background:rgb(0,0,0); display:flex; align-items:center; justify-content:center; }
     #mdb-game-label-bar span { font-family:'General Sans',sans-serif; font-size:18px; font-weight:600; color:#fff; text-transform:uppercase; white-space:nowrap; }
+    /* Same box as Consolidated Post 2's #cp2-sponsor — the two share one
+       position rule (registered together under one dashboard Edit-tab
+       selector) so dragging/resizing either one moves both. #mdb-sponsor
+       lives as its own top-level canvas element (not nested in
+       #middleboard, see the HTML comment by its div) with its own
+       opacity toggle, matching #cmb-board/#cp2-sponsor's pattern rather
+       than inheriting #middleboard's display:none/block. */
+    #cp2-sponsor, #mdb-sponsor {
+      position: absolute;
+      left: 805px; top: 957px;
+      width: 340px; height: 94px;
+    }
+    #mdb-sponsor {
+      z-index: 151;
+      opacity: 0; pointer-events: none;
+      transition: opacity 300ms ease;
+    }
+    #mdb-sponsor.mdb-sponsor-visible { opacity: 1; }
 
     /* ── PLAYERBOARD ── */
     #playerboard { position:absolute; top:0; left:0; width:1920px; height:1080px; pointer-events:none; z-index:150; display:none; }
@@ -3349,6 +3409,14 @@
           <div class="hl-hero-name" id="hl-hero-name"></div>
         </div>
       </div>
+      <div id="hl-stats-backer">
+        <div id="hlst-kda-label" class="hlst-label">KDA</div>
+        <div id="hlst-kda-value" class="hlst-value"></div>
+        <div id="hlst-kp-label" class="hlst-label">KP%</div>
+        <div id="hlst-kp-value" class="hlst-value"></div>
+        <div id="hlst-mvp-label" class="hlst-label"></div>
+        <div id="hlst-mvp-value" class="hlst-value"></div>
+      </div>
     </div>
     <div id="mvp-page">
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
@@ -3466,6 +3534,13 @@
     </div>
 
     <div id="cp2-sponsor"></div>
+
+    <!-- Must come after #cp2-sponsor in document order — the dashboard
+         Edit tab looks up this shared selector with querySelector (first
+         DOM match wins), and #cp2-sponsor is the one actually visible
+         while its own Edit panel is open. See the shared CSS rule above
+         Middle Board's block. -->
+    <div id="mdb-sponsor"></div>
 
     <div id="cpg-board">
       <svg id="cpg-chart" viewBox="0 0 1800 270" preserveAspectRatio="none"></svg>
@@ -3636,6 +3711,7 @@
     async function showPostHearts() {
       await transitionTo('hearts');
       phVisible = true;
+      showSceneVideo('hearts');
       CONTAINERS.forEach(({ cls }) => { canvas.querySelector(`.${cls}`).style.willChange = 'transform, opacity'; });
       CONTAINERS.forEach(({ cls }, i) => {
         const el    = canvas.querySelector(`.${cls}`);
@@ -3674,6 +3750,7 @@
             el.style.animationDelay = '';
             el.style.willChange = '';
           });
+          hideSceneVideo();
           resolve();
         }, 950);
       });
@@ -4717,6 +4794,10 @@
       consolidated_post: '/assets/bgloopwaves2.webm',
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
+      hearts:     '/assets/bgloopwaves2.webm',
+      emblems:    '/assets/bgloopwaves2.webm',
+      items:      '/assets/bgloopwaves2.webm',
+      stats:      '/assets/bgloopwaves2.webm',
     };
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
@@ -6120,6 +6201,19 @@
       return null;
     }
 
+    /* The API-named MVP stat (mvp_value — see mvApply/hlApply) can be a
+       small count (assists) or a large one (gold, damage) depending on
+       whatever mvp_title says it is — under 1000 shows as a plain
+       integer, 1000+ shows as "1.4k" (1 decimal) instead of the full
+       number, same convention used elsewhere for large stat totals. */
+    function mvFormatStatValue(v) {
+      if (v == null) return '-';
+      const n = Number(v);
+      if (!isFinite(n)) return String(v);
+      if (Math.abs(n) < 1000) return String(n);
+      return (n / 1000).toFixed(1) + 'k';
+    }
+
     function hlApply(player) {
       const plaque   = document.getElementById('hl-plaque');
       const logoEl   = document.getElementById('hl-team-logo');
@@ -6144,7 +6238,14 @@
       roleEl.src = (player && player.role) ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
 
       nameEl.textContent = (player && player.name) || '';
-      hlFitName(nameEl);
+      /* Not fit here — #highlights-page is still display:none at this
+         point (showHighlights calls hlApply before adding .hl-on), so
+         clientWidth/scrollWidth read 0 and the shrink loops below would
+         either never run (hlFitName's strict >) or run all the way to
+         their floor regardless of actual length (mvFitStatValue's >=,
+         since 0 >= 0 is always true) — same class of bug already fixed
+         for MVP Scene's #mv-name. Fit again once the page is actually
+         laid out instead (see showHighlights). */
 
       heroImg.onerror = () => { heroImg.style.display = 'none'; };
       heroImg.style.display = '';
@@ -6154,6 +6255,17 @@
       photoEl.onerror = () => { photoEl.style.display = 'none'; };
       photoEl.style.display = '';
       photoEl.src = hlPhotoUrl(player && player.name);
+
+      /* Stats backer below the hero image — same fields/API as MVP
+         Scene's own KDA/GPM(or-whatever-mvp_title-says)/KP% (see
+         mvApply): mvp_title/mvp_value let the API name whichever stat
+         actually earned MVP instead of this always being GPM. Values get
+         fit (mvFitStatValue, shared with MVP Scene's own stat boxes) in
+         showHighlights instead of here — see the comment above. */
+      document.getElementById('hlst-kda-value').textContent = (player && player.kda) || '-/-/-';
+      document.getElementById('hlst-kp-value').textContent = (player && player.kp != null) ? player.kp + '%' : '-';
+      document.getElementById('hlst-mvp-label').textContent = (player && player.mvp_title) || 'GPM';
+      document.getElementById('hlst-mvp-value').textContent = mvFormatStatValue(player && player.mvp_value);
     }
 
     async function showHighlights() {
@@ -6168,6 +6280,12 @@
       hlPage.classList.add('hl-on');
       void hlPage.offsetWidth; /* force reflow so the opacity transition runs */
       hlPage.classList.add('hl-visible');
+      /* Now that the page has real layout, fit every shrink-to-fit text
+         piece against actual measurements (see hlApply's comment). */
+      hlFitName(document.getElementById('hl-name'));
+      mvFitStatValue(document.getElementById('hlst-kda-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hlst-kp-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hlst-mvp-value'), 25.4, 14);
     }
 
     function hideHighlights() {
@@ -6209,28 +6327,79 @@
     function mvFitStatValue(el, maxSize, minSize) {
       let size = maxSize;
       el.style.fontSize = size + 'px';
-      /* >= (not >): scrollWidth/clientWidth are both rounded to whole
-         pixels, so an exact match can still clip a sub-pixel sliver of
-         the last glyph (seen with "DAMAGE DEALT" in the MVP-stat label,
-         width 134 == 134) — require a strict margin, not just non-overflow. */
-      while (el.scrollWidth >= el.clientWidth && size > minSize) {
+      /* Strict > (not >=) — same as every other shrink-to-fit helper in
+         this file. scrollWidth is spec'd to never read below clientWidth,
+         so short content that fits comfortably still reports
+         scrollWidth === clientWidth (the normal "fits fine" case, not an
+         edge case) — a >= comparison misreads that as "still overflowing"
+         and shrinks every value straight to minSize regardless of actual
+         length, which is what was happening here. A previous version used
+         >= to catch one specific near-exact-fit case ("DAMAGE DEALT" at
+         width 134 == 134) clipping a sub-pixel glyph sliver, but that
+         traded a correct, universal case for a rare, minor cosmetic one. */
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
         size -= 1;
         el.style.fontSize = size + 'px';
       }
     }
 
+    /* User-editable ceiling for the shrink-to-fit search below (dashboard
+       Edit tab: MVP Scene → Player Name → Font Size). A blanket
+       `!important` CSS override (the normal mechanism every other
+       editable property uses — see the mplfs-overrides IIFE near the
+       bottom of this file) would always beat mvFitNameMeasure's own
+       inline font-size assignment and permanently pin the name at
+       whatever size was last saved — exactly the bug this was: the name
+       overflowed and got cropped because #mv-name had a saved fontSize
+       that silenced the shrink-to-fit entirely, no matter how long the
+       name was. Same fix as .sidecheck-name (SIDECHECK_NAME_FONT_CEILING
+       in overlay-sidecheck-core.js) — this value is a ceiling the fit
+       search starts from and shrinks below as needed, not a fixed size. */
+    let MV_NAME_FONT_CEILING = 52;
+    (function loadMvNameFontSize() {
+      fetch('/api/overlay-styles?file=mplfs')
+        .then(r => r.json())
+        .then(styles => {
+          const v = styles && styles['#mv-name'] && styles['#mv-name'].fontSize;
+          const n = v && parseFloat(v);
+          if (n) MV_NAME_FONT_CEILING = n;
+        })
+        .catch(() => {});
+    })();
+
     /* Left-aligned single line that starts near the box height, then
        shrinks to fit the box width — same approach as hlFitName, just
        left- instead of center-aligned. */
-    function mvFitName(el) {
-      const MAX_SIZE = 52, MIN_SIZE = 18;
-      let size = MAX_SIZE;
+    function mvFitNameMeasure(el) {
+      const MIN_SIZE = 12;
+      let size = MV_NAME_FONT_CEILING;
       el.style.fontSize = size + 'px';
       while (el.scrollWidth > el.clientWidth && size > MIN_SIZE) {
         size -= 1;
         el.style.fontSize = size + 'px';
       }
     }
+    function mvFitName(el) {
+      mvFitNameMeasure(el);
+      /* General Sans loads async (font-display:block) — if this runs
+         before it's ready, the measurement above is against fallback-font
+         glyphs and can under/over-size the text (same issue as
+         killFitName in overlay-killevents.js). Re-measure once the real
+         face is in. */
+      if (document.fonts && document.fonts.status !== 'loaded') {
+        document.fonts.ready.then(() => mvFitNameMeasure(el));
+      }
+    }
+    /* Called from dashboard.html's applyToEditIframe() while dragging the
+       Font Size field for #mv-name — same cross-frame-call pattern as
+       window.sidecheckSetNameFontCeiling. */
+    window.mvSetNameFontCeiling = function(v) {
+      const n = parseFloat(v);
+      if (!n) return;
+      MV_NAME_FONT_CEILING = n;
+      const el = document.getElementById('mv-name');
+      if (el) mvFitNameMeasure(el);
+    };
 
     async function mvFetchMatchState() {
       try {
@@ -6266,7 +6435,11 @@
 
       const nameEl = document.getElementById('mv-name');
       nameEl.textContent = (player && player.name) || '';
-      mvFitName(nameEl);
+      /* Not fit here — #mvp-page is still display:none at this point (see
+         showMvpScene, which calls mvApply before adding .mv-on), so
+         clientWidth/scrollWidth both read 0 and the shrink loop below
+         never actually runs, leaving every name at MAX_SIZE regardless of
+         length. Fit again once the page is actually laid out instead. */
 
       const heroImg = document.getElementById('mv-hero-img');
       heroImg.onerror = () => { heroImg.style.display = 'none'; };
@@ -6321,7 +6494,7 @@
       gpmLabelEl.textContent = (player && player.mvp_title) || 'GPM';
 
       const gpmEl = document.getElementById('mv-gpm');
-      gpmEl.textContent = (player && player.mvp_value != null) ? String(player.mvp_value) : '-';
+      gpmEl.textContent = mvFormatStatValue(player && player.mvp_value);
       mvFitStatValue(gpmEl, 64, 32);
 
       const kpEl = document.getElementById('mv-kp');
@@ -6342,6 +6515,7 @@
       if (activeFeature !== 'mvp') return; /* superseded while preloading */
       showSceneVideo('mvp');
       mvPage.classList.add('mv-on');
+      mvFitName(document.getElementById('mv-name')); /* now has real layout to measure against */
       void mvPage.offsetWidth; /* force reflow so the opacity transition runs */
       mvPage.classList.add('mv-visible');
     }
@@ -6554,10 +6728,10 @@
       return '';
     }
 
-    /* Live hero pick + battle spell come from the in-game feed
-       (/api/gamedata-proxy), keyed by campid — camp1/camp2 are draft-side
-       identities, not home/away, so resolve which is which the same way
-       the Match Board preview does (ms.swapped). */
+    /* Team identity (logo/name, see updateFtTeamIdentity) follows the
+       Match Board's home/away call, keyed by campid — camp1/camp2 are
+       draft-side identities, not home/away, so resolve which is which
+       the same way the Match Board preview does (ms.swapped). */
     function ftResolveCamps(ms, gameData) {
       const camps = (gameData && gameData.camp_list) || [];
       const isSwapped = !!(ms && ms.swapped);
@@ -6566,6 +6740,19 @@
       return {
         homeCamp: camps.find(c => c.campid === homeCampId) || null,
         awayCamp: camps.find(c => c.campid === awayCampId) || null,
+      };
+    }
+
+    /* Card wall side (which camp's players/heroes/spells render blue vs
+       red) is strictly campid 1 = blue (left), campid 2 = red (right) —
+       unlike ftResolveCamps above, this never follows ms.swapped, so the
+       cards always match the live game API's own camp assignment even
+       when the Match Board's home/away call disagrees. */
+    function ftResolveCardCamps(gameData) {
+      const camps = (gameData && gameData.camp_list) || [];
+      return {
+        blueCamp: camps.find(c => c.campid === 1) || null,
+        redCamp:  camps.find(c => c.campid === 2) || null,
       };
     }
     function ftLiveRoleMap(camp) {
@@ -6588,7 +6775,7 @@
     const FT_CARD_W = 183, FT_MARGIN = 45;
 
     /* Everything here — name, hero, spell, role — comes from the live
-       game_api feed (via homeLive/awayLive, see ftLiveRoleMap), not the
+       game_api feed (via blueLive/redLive, see ftLiveRoleMap), not the
        dashboard-managed roster Team Hexagon/Waiting Lobby use. `roleKey`
        is always one of FT_ROLE_ORDER, guaranteed by the fixed column
        layout, so the role icon is never conditionally missing. */
@@ -6623,19 +6810,19 @@
       }
     }
 
-    function buildFtCards(homeCamp, awayCamp) {
+    function buildFtCards(blueCamp, redCamp) {
       const root = document.getElementById('ft-cards');
-      const homeLive = ftLiveRoleMap(homeCamp);
-      const awayLive = ftLiveRoleMap(awayCamp);
+      const blueLive = ftLiveRoleMap(blueCamp);
+      const redLive  = ftLiveRoleMap(redCamp);
 
       let html = '';
       FT_ROLE_ORDER.forEach((key, i) => {
-        html += ftBuildCardHtml('blue', i, key, homeLive[key]);
+        html += ftBuildCardHtml('blue', i, key, blueLive[key]);
       });
-      /* Away side reads 5,4,3,2,1 outward from the middle — reverse the
+      /* Red side reads 5,4,3,2,1 outward from the middle — reverse the
          role order (gold nearest center at column 5, exp farthest at 9). */
       FT_ROLE_ORDER.slice().reverse().forEach((key, i) => {
-        html += ftBuildCardHtml('red', 5 + i, key, awayLive[key]);
+        html += ftBuildCardHtml('red', 5 + i, key, redLive[key]);
       });
       root.innerHTML = html;
       root.querySelectorAll('.ft-card-name').forEach(el => ftFitName(el, 22, 11));
@@ -6718,7 +6905,8 @@
       if (activeFeature !== 'finalteam') return; /* superseded while awaiting the feed */
       const { homeCamp, awayCamp } = ftResolveCamps(ms, gd && gd.data);
       updateFtTeamIdentity(homeCamp, awayCamp);
-      buildFtCards(homeCamp, awayCamp);
+      const { blueCamp, redCamp } = ftResolveCardCamps(gd && gd.data);
+      buildFtCards(blueCamp, redCamp);
       await preloadMedia(ftPage.querySelectorAll('img, video'), 900);
       if (activeFeature !== 'finalteam') return; /* superseded while preloading */
 
@@ -7105,6 +7293,19 @@
     buildCp2Sponsor();
     const cp2SponsorLoop = makeSponsorLoop('cp2-sponsor-img', 'cp2-sponsor-cat');
 
+    /* Middle Board's own sponsor loop — same markup/system as Consolidated
+       Post 2's above, sharing that box's position (#cp2-sponsor,
+       #mdb-sponsor CSS rule) so the two always line up; started/stopped
+       from showMiddleBoard/hideMiddleBoard instead of a Post scene. */
+    function buildMdbSponsor() {
+      document.getElementById('mdb-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="mdb-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="mdb-sponsor-img" src="" alt=""></div>`;
+    }
+    buildMdbSponsor();
+    const mdbSponsorLoop = makeSponsorLoop('mdb-sponsor-img', 'mdb-sponsor-cat');
+
     async function showTomorrowSchedule() {
       /* Week/Day chip + match rows follow the Match Board state */
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
@@ -7489,6 +7690,7 @@
       await preloadMedia(document.querySelectorAll('[id^="emb-card-"] img'), 900);
       if (activeFeature !== 'emblems') return; /* superseded while preloading */
       embVisible = true;
+      showSceneVideo('emblems');
       EMB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`emb-card-${i + 1}`);
         el.style.willChange = 'transform, opacity';
@@ -7527,6 +7729,7 @@
               el.style.animationDelay = '';
               el.style.willChange = '';
             });
+            hideSceneVideo();
           }
           resolve();
         }, 950);
@@ -7621,6 +7824,7 @@
       await preloadMedia(document.querySelectorAll('[id^="pib-card-"] img'), 900);
       if (activeFeature !== 'items') return; /* superseded while preloading */
       pibVisible = true;
+      showSceneVideo('items');
       PIB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`pib-card-${i + 1}`);
         el.style.willChange = 'transform, opacity';
@@ -7659,6 +7863,7 @@
               el.style.animationDelay = '';
               el.style.willChange = '';
             });
+            hideSceneVideo();
           }
           resolve();
         }, 950);
@@ -7874,14 +8079,16 @@
 
     async function fetchCmbData(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false) {
       try {
-        const [gameR, msR, piR] = await Promise.allSettled([
+        const [gameR, msR, piR, mapSelR] = await Promise.allSettled([
           fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/mapselection/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
         const gd = gameR.value?.data ?? null;
         const ms = msR.value ?? null;
         const pi = piR.value?.data ?? null;
+        const mapSel = mapSelR.value ?? null;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
         if (gd) {
           const camps = gd.camp_list || [];
@@ -7918,7 +8125,16 @@
           const matchNum = ms.match || 1;
           set('cmb-game-label', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
 
-          const mapName = ms.map || '';
+          /* ms.map is a single field last-overwritten by whichever game's
+             map was most recently set on the Match Board's Map Selection
+             tab (lib/mapSelectionState.js setMap()) — it can go stale if
+             a different game's map gets edited after this one's. Prefer
+             this specific game's own map straight from the Map Selection
+             tab's per-game list, indexed by the same gameNum the label
+             above already shows; fall back to ms.map only when that
+             game's slot hasn't actually been picked yet (still null). */
+          const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
+          const mapName = (gameEntry && gameEntry.map) || ms.map || '';
           const iconEl  = document.getElementById(ckmIconId);
           const nameEl  = document.getElementById(ckmNameId);
           if (iconEl) iconEl.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
@@ -8304,15 +8520,25 @@
       // at the old position, then visibly snaps to the compact one.
       document.getElementById('match-board').classList.add('cp-compact');
       await transitionTo('consolidated_post');
+      /* Same fix as Consolidated Post 2 (see its comment) — start these
+         boards' own data fetches now, in parallel with the row data
+         below, instead of only after fetchConsolidatedPostData() AND
+         preloadMedia() have both already finished. */
+      fetchCmbData();
+      fetchCkmKills();
+      fetchCpgData();
       await fetchConsolidatedPostData();
       if (activeFeature !== 'consolidated_post') return; /* superseded while awaiting data */
       await preloadMedia(document.querySelectorAll('[id^="cp-row-el-"] img'), 900);
       if (activeFeature !== 'consolidated_post') return; /* superseded while preloading */
       cpVisible = true;
       showSceneVideo('consolidated_post');
-      showCmbBoard();
-      showCkmBoard();
-      showCpgBoard();
+      cmbVisible = true;
+      document.getElementById('cmb-board').classList.add('cmb-visible');
+      ckmVisible = true;
+      document.getElementById('ckm-board').classList.add('ckm-visible');
+      cpgVisible = true;
+      document.getElementById('cpg-board').classList.add('cpg-visible');
       CP_ROW_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`cp-row-el-${i + 1}`);
         el.style.willChange = 'transform, opacity';
@@ -8481,14 +8707,26 @@
       if (cp2Visible) return;
       document.getElementById('match-board').classList.add('cp-compact');
       await transitionTo('consolidated_post_2');
+      /* Kick off the Middle Board / Kill Map's own data fetches now, in
+         parallel with the row data below — they used to only start once
+         fetchConsolidatedPost2Data() AND preloadMedia() had BOTH already
+         finished (via showCmbBoard()/showCkm2Board() at the bottom of this
+         function), which queued a second round of the same slow live-game
+         proxy calls strictly behind the first instead of overlapping them,
+         making the whole scene — the middle board most visibly, since it
+         was last — feel like it took forever to populate. */
+      fetchCmbData('ckm2-icon', 'ckm2-name', true);
+      fetchCkmKills('ckm2-kills', 'ckm2-bounds');
       await fetchConsolidatedPost2Data();
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while awaiting data */
       await preloadMedia(document.querySelectorAll('[id^="cp2-row-el-"] img'), 900);
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while preloading */
       cp2Visible = true;
       showSceneVideo('consolidated_post_2');
-      showCmbBoard('ckm2-icon', 'ckm2-name', true);
-      showCkm2Board();
+      cmbVisible = true;
+      document.getElementById('cmb-board').classList.add('cmb-visible');
+      ckm2Visible = true;
+      document.getElementById('ckm2-board').classList.add('ckm2-visible');
       document.getElementById('cp2-sponsor').classList.add('cp2-sponsor-visible');
       cp2SponsorLoop.start();
       CP2_ROW_CLASSES.forEach((cls, i) => {
@@ -8847,6 +9085,7 @@
       await fetchStatsData();
       if (activeFeature !== 'stats') return; /* superseded while awaiting data */
       psbVisible = true;
+      showSceneVideo('stats');
       PSB_CARD_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`psb-card-${i + 1}`);
         el.style.willChange = 'transform, opacity';
@@ -8892,6 +9131,7 @@
               if (tb) tb.style.width = '0%';
               if (db) db.style.width = '0%';
             });
+            hideSceneVideo();
           }
           resolve();
         }, 950);
@@ -9078,12 +9318,16 @@
       void el.offsetWidth;
       el.classList.add('mdb-in');
       _startUnifiedPoll();
+      document.getElementById('mdb-sponsor').classList.add('mdb-sponsor-visible');
+      mdbSponsorLoop.start();
     }
 
     function hideMiddleBoard() {
       if (!mdbVisible) return Promise.resolve();
       mdbVisible = false;
       _stopUnifiedPoll();
+      document.getElementById('mdb-sponsor').classList.remove('mdb-sponsor-visible');
+      mdbSponsorLoop.stop();
       const el = document.getElementById('middleboard');
       el.classList.remove('mdb-in');
       el.classList.add('mdb-out');
@@ -9514,6 +9758,16 @@
         .then(function(r) { return r.json(); })
         .then(function(styles) {
           if (!styles || !Object.keys(styles).length) return;
+          /* #mv-name's saved fontSize is read directly by mvFitNameMeasure
+             (MV_NAME_FONT_CEILING, see loadMvNameFontSize above) instead of
+             being injected as a blanket override here — a `!important`
+             rule would always win over that function's own inline
+             font-size assignment, permanently defeating its shrink-to-
+             fit-the-box protection for long names (same reasoning as
+             .sidecheck-name/#sb-mi-patch/#sb-mi-casters in
+             overlay-scoreboard.js's loadSbOverrides). Left/top/width/
+             height are NOT excluded — still real CSS box dimensions. */
+          var skipFontSize = function(sel) { return sel === '#mv-name'; };
           var css = Object.keys(styles).map(function(sel) {
             var props = styles[sel];
             var native = TW_MATCHES_SCALE_NATIVE[sel];
@@ -9528,7 +9782,9 @@
               decls.push('transform-origin:left top !important');
               return sel + '{' + decls.join(';') + '}';
             }
-            var decls = Object.keys(props).map(function(prop) {
+            var decls = Object.keys(props).filter(function(prop) {
+              return !(skipFontSize(sel) && prop === 'fontSize');
+            }).map(function(prop) {
               var cssProp = prop === 'fontSize' ? 'font-size' : prop;
               return cssProp + ':' + props[prop] + ' !important';
             }).join(';');

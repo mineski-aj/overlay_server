@@ -2627,6 +2627,23 @@
     { group: 'Caster Box',  id: '#sb-mi-casters',        name: 'Caster Box'       },
   ];
 
+  /* ── Kill Event Sponsor Logo (mploverlay_v7.html) ──────────────────
+     One shared element reused for whichever sponsored kill event is
+     currently playing (Double Kill, Turtle Slain, Savage — see
+     KILL_EVENT_SPONSOR_LOGO in overlay-killevents.js), so editing this
+     one position/size reflects to every sponsored kill event
+     automatically. Its own EDIT_CONFIG (not folded into the main
+     Scoreboard one above) because the kill-event overlay is hidden by
+     default and only pops up for ~1.3s during a real event — showFn
+     freezes a representative event mid-playback so it's actually visible
+     to drag/resize, same pattern as Side Events' secAnimateIn below. */
+  var KILLEVENT_DEFAULTS = {
+    '#kill-event-sponsor-logo-clip': { left: 1055, top: 1005, width: 142, height: 58 },
+  };
+  var KILLEVENT_ELEMENTS = [
+    { group: 'Kill Event', id: '#kill-event-sponsor-logo-clip', name: 'Sponsor Logo' },
+  ];
+
   /* ── Side-check family (mploverlay_v7.html) ───────────────────────
      Exp/Taken/Damage/Gold checks share one factory (createSideCheck in
      overlay-sidecheck-core.js) and one set of .sidecheck-* CSS classes
@@ -3103,6 +3120,13 @@
     '.hl-name':              { left: 157,  top: 5,    width: 298, height: 43   },
     '.hl-hero':              { left: 1,    top: 55,   width: 460, height: 118  },
     '.hl-hero-name':         { left: 10,   top: 83,   fontSize: 22 },
+    /* Stats backer (KDA / KP% / whichever stat mvp_title names) below the
+       hero image — one container, position/size only. The 6 slots inside
+       keep a fixed internal layout (see .hlst-label/.hlst-value in
+       mplfs.html), same pattern as #cmb-board's internal rows, so only
+       the whole assembly moves as one unit instead of each slot being
+       separately draggable. */
+    '#hl-stats-backer':      { left: 1394, top: 950,  width: 463, height: 48 },
   };
 
   var HL_ELEMENTS = [
@@ -3114,6 +3138,7 @@
     { group: 'Plaque',       id: '.hl-name',               name: 'Player Name' },
     { group: 'Plaque',       id: '.hl-hero',               name: 'Hero Image' },
     { group: 'Plaque',       id: '.hl-hero-name',          name: 'Hero Name' },
+    { group: 'Stats Backer', id: '#hl-stats-backer',      name: 'Stats Backer' },
   ];
 
   /* ── MVP Scene (mplfs.html) element defaults ─────────────────────
@@ -3466,9 +3491,12 @@
   CP2_ELEMENTS.push({ group: 'Kill Map Bounds', id: '#ckm2-bounds', name: 'Kill Map Bounds' });
 
   /* Sponsor loop below the Kill Map — same Tomorrow's-Schedule-style
-     frame (bg + category label + sliding logo), whole box only. */
-  CP2_DEFAULTS['#cp2-sponsor'] = { left: 805, top: 957, width: 340, height: 94 };
-  CP2_ELEMENTS.push({ group: 'Sponsor Loop', id: '#cp2-sponsor', name: 'Sponsor Loop' });
+     frame (bg + category label + sliding logo), whole box only. Shares
+     its selector with Middle Board's own copy (#mdb-sponsor) so this one
+     control positions both — see the CSS comment above #mdb-sponsor in
+     mplfs.html. */
+  CP2_DEFAULTS['#cp2-sponsor, #mdb-sponsor'] = { left: 805, top: 957, width: 340, height: 94 };
+  CP2_ELEMENTS.push({ group: 'Sponsor Loop', id: '#cp2-sponsor, #mdb-sponsor', name: 'Sponsor Loop (also Middle Board)' });
 
   /* Post 4 Key — four cards, each spotlighting the game's leader in one
      stat (GPM / damage dealt / damage taken / assists). Sub-element
@@ -3521,6 +3549,15 @@
       elements:    SIDECHECK_ELEMENTS,
       defaults:    SIDECHECK_DEFAULTS,
       showFn:      'secAnimateIn',
+    },
+    mploverlay_v7_killevent: {
+      label:       'Kill Event Sponsor · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_killevent',
+      elements:    KILLEVENT_ELEMENTS,
+      defaults:    KILLEVENT_DEFAULTS,
+      showFn:      'previewKillEventSponsor',
     },
     mploverlay_v7_itemcheck: {
       label:       'Item Check Layout · mploverlay_v7',
@@ -4046,6 +4083,13 @@
     if (editValues['.sidecheck-name'] && editValues['.sidecheck-name'].fontSize !== undefined) {
       try { editIframe.contentWindow.sidecheckSetNameFontCeiling(editValues['.sidecheck-name'].fontSize); } catch (e) {}
     }
+    /* MVP Scene's #mv-name — same reasoning as .sidecheck-name above (see
+       MV_NAME_FONT_CEILING in mplfs.html): a blanket !important font-size
+       would permanently defeat mvFitNameMeasure's own shrink-to-fit,
+       which is exactly what let long names overflow/get cropped before. */
+    if (editValues['#mv-name'] && editValues['#mv-name'].fontSize !== undefined) {
+      try { editIframe.contentWindow.mvSetNameFontCeiling(editValues['#mv-name'].fontSize); } catch (e) {}
+    }
     /* Patch Box/Caster Box fontSize — same reasoning as .sidecheck-name
        above (see SB_MI_FIT_CONFIG in overlay-scoreboard.js): a blanket
        !important font-size on the container never reaches the child text
@@ -4062,7 +4106,7 @@
       var p = editValues[sel];
       var d = [];
       var native = TW_MATCHES_SCALE_NATIVE[sel];
-      var skipFontSize = (sel === '.sidecheck-name' || sel === '#sb-mi-patch' || sel === '#sb-mi-casters');
+      var skipFontSize = (sel === '.sidecheck-name' || sel === '#sb-mi-patch' || sel === '#sb-mi-casters' || sel === '#mv-name');
       if (p.left !== undefined) d.push('left:' + p.left + 'px !important');
       if (p.top  !== undefined) d.push('top:'  + p.top  + 'px !important');
       if (native && (p.width !== undefined || p.height !== undefined)) {

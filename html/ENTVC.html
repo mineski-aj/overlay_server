@@ -3780,6 +3780,20 @@
           `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
       });
       root.innerHTML = html;
+
+      /* Tag both the match-row container and the whole scene page with the
+         real row count — same trick as buildTsMatches/buildTwMatches' own
+         tsm-count-N classes — so the dashboard Edit tab can position the
+         header/match/sponsor boards independently per 2-match/3-match day
+         (see mplfs_wsmatches_2m/3m in dashboard.html). Mirrored from
+         mplfs.html's buildWsMatches — without this, the saved position
+         overrides (scoped to #waiting-screen-page.wsm-count-N ...) never
+         match anything here, since the class was never applied. */
+      const countClass = 'wsm-count-' + matches.length;
+      root.classList.remove('wsm-count-2', 'wsm-count-3');
+      root.classList.add(countClass);
+      wsPage.classList.remove('wsm-count-2', 'wsm-count-3');
+      wsPage.classList.add(countClass);
     }
     buildWsMatches('ws-matches', WS_MATCHES);
 

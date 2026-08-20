@@ -1,76 +1,76 @@
 {
   "home": {
-    "teamId": "10763",
+    "teamId": "10845",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Sanford",
-        "id": "1025593308"
+        "ign": "Nathzz",
+        "id": "2093991492"
       },
       {
         "role": "JUNGLER",
-        "ign": "KarlTzy",
-        "id": "1271650163"
+        "ign": "Koyl",
+        "id": "1478121246"
       },
       {
         "role": "MID LANER",
-        "ign": "Sanji",
-        "id": "1271650190"
+        "ign": "Yue",
+        "id": "1373200860"
       },
       {
         "role": "ROAMER",
-        "ign": "Jaypee",
-        "id": "1582754314"
+        "ign": "Light",
+        "id": "1478121262"
       },
       {
         "role": "GOLD LANER",
-        "ign": "Teddy",
-        "id": "1810330654"
+        "ign": "Domeng",
+        "id": "1373200918"
       }
     ],
-    "name": "Team Liquid PH",
-    "short": "TLPH",
-    "score": 0,
-    "coach": "Aeon"
+    "name": "Aurora Gaming PH",
+    "short": "RORA",
+    "score": 1,
+    "coach": "Master the Basics"
   },
   "away": {
-    "teamId": "10973",
+    "teamId": "10764",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Flap",
-        "id": "1271650054"
+        "ign": "Kirk",
+        "id": "1373201033"
       },
       {
         "role": "JUNGLER",
-        "ign": "Kyle",
-        "id": "1582754321"
+        "ign": "K1NGKONG",
+        "id": "1373201049"
       },
       {
         "role": "MID LANER",
-        "ign": "Hadji",
-        "id": "1271650087"
+        "ign": "SuperFrince",
+        "id": "1271650280"
       },
       {
         "role": "ROAMER",
-        "ign": "Owgwen",
-        "id": "1271650065"
+        "ign": "SUPERYOSHI",
+        "id": "1373808369"
       },
       {
         "role": "GOLD LANER",
-        "ign": "SuperMarco",
-        "id": "1155835108"
+        "ign": "Savero",
+        "id": "1722728882"
       }
     ],
-    "name": "Team Falcons",
-    "short": "FLCN",
+    "name": "ONIC PH",
+    "short": "ONIC",
     "score": 0,
-    "coach": "Ducky"
+    "coach": "PHEWW"
   },
   "series": "BO3",
-  "game": 1,
+  "game": 2,
   "swapped": false,
-  "official": false,
+  "official": true,
   "week": 1,
   "day": 1,
   "patch": "Scarlet Embers 0805",
@@ -80,9 +80,9 @@
     "Thea"
   ],
   "casters": [
+    "Brigida",
     "Uomi",
-    "Burrito",
-    "Wolf"
+    "Renmar"
   ],
   "todayMatches": [
     {
@@ -92,9 +92,9 @@
       "team2Id": "10764",
       "team2Name": "ONIC PH",
       "team2Short": "ONIC",
-      "score1": 2,
-      "score2": 1,
-      "vsDisplay": "2 - 1",
+      "score1": 0,
+      "score2": 0,
+      "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": true,
       "matchType": "international"
@@ -166,19 +166,19 @@
       "matchType": "regular"
     }
   ],
-  "countdownLabel": "SHOW RESUMES IN",
+  "countdownLabel": "SHOW STARTS IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
-  "match": 2,
+  "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 900
+    "running": true,
+    "endAt": 1787036471875,
+    "remaining": 90
   },
-  "map": "Expanding Rivers",
+  "map": "Flying Cloud",
   "enCasters": [
-    "Leo",
-    "Naisou",
-    "Renmar"
+    "Hans",
+    "Renmar",
+    "Leo"
   ]
 }

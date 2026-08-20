@@ -6,7 +6,9 @@
 
    createSideCheck({
      clipId, overlayId,      // ids of the two container divs already in the HTML
-     headerText,             // Anton header title
+     headerText,             // Anton header title — omit to skip the header entirely
+                             // (e.g. when bgSrc's own art already bakes in a title)
+     bgSrc,                  // panel background image — defaults to sidestatback.png
      statField,              // seat property this panel ranks/fills by, e.g. 'exp'
      formatStat(seat),        // returns the display string for the stat text, e.g. 'LVL 15'
    })
@@ -136,14 +138,16 @@ function createSideCheck(opts) {
 
     const bg = document.createElement('img');
     bg.className = 'sidecheck-bg';
-    bg.src = 'assets/ingame/sidestatback.png';
+    bg.src = opts.bgSrc || 'assets/ingame/sidestatback.png';
     bg.alt = '';
     overlay.appendChild(bg);
 
-    const header = document.createElement('div');
-    header.className = 'sidecheck-header';
-    header.textContent = opts.headerText;
-    overlay.appendChild(header);
+    if (opts.headerText) {
+      const header = document.createElement('div');
+      header.className = 'sidecheck-header';
+      header.textContent = opts.headerText;
+      overlay.appendChild(header);
+    }
 
     for (let slotIdx = 1; slotIdx <= 5; slotIdx++) {
       overlay.appendChild(buildRow('home', slotIdx));

@@ -1377,39 +1377,12 @@
     text-transform: uppercase;
   }
 
-  /* Sponsor plate — only shown for the specific kill-event videos that are
+  /* Sponsor logo — only shown for the specific kill-event videos that are
      sponsored (see KILL_EVENT_SPONSOR_LOGO in overlay-killevents.js), pops
      in/out alongside the photo/nametag using the same slide+fade pattern.
-     Rectangle_1 (label): 904,1025 131×19 — coordinates only, per spec.
-     Rectangle_2 (logo):  1055,1005 142×58 — coordinates only, per spec. */
-  #kill-event-sponsor-label-clip {
-    position: absolute;
-    left: 904px; top: 1025px;
-    width: 131px; height: 19px;
-    overflow: hidden;
-    z-index: 53;
-  }
-  #kill-event-sponsor-label {
-    position: absolute;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-    font-family: 'General Sans', sans-serif;
-    font-weight: 700;
-    color: #fff;
-    text-transform: uppercase;
-    transform: translateY(calc(100% + 12px));
-    opacity: 0;
-    transition: transform 300ms cubic-bezier(0.55, 0, 1, 0.45), opacity 220ms ease-in;
-  }
-  #kill-event-sponsor-label-clip.ke-in #kill-event-sponsor-label {
-    transform: translateY(0);
-    opacity: 1;
-    transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1) 70ms, opacity 300ms ease-out 70ms;
-  }
+     Editable from the dashboard Edit tab (#kill-event-sponsor-logo-clip)
+     — one shared element reused for whichever sponsored event is
+     currently playing, so editing it once covers all of them. */
   #kill-event-sponsor-logo-clip {
     position: absolute;
     left: 1055px; top: 1005px;
