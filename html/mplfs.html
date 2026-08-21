@@ -921,32 +921,25 @@
       justify-content: flex-start;
       z-index: 0;
     }
-    /* Scoped to the ID, not "#wl-timer-label img" — a generic descendant
-       selector here would also clamp #wl-timer-label-bg (also an <img>
-       inside this box) to the OLD 160x47 label size via max-width/
-       max-height:100%, silently overriding any width/height set from the
-       dashboard Edit tab. */
-    #wl-timer-label-img { max-width: 100%; max-height: 100%; object-fit: contain; }
-    /* Background plaque behind the label graphic — a child of the label
-       box (not a canvas-absolute sibling) so it rides along with the
-       label without affecting #wl-timer's flex layout of the value next
-       to it. Centered over the 160x47 label box (offsets = half the size
-       difference), z-index:-1 to sit behind the label img — see
-       #ws-timer-label-bg for the Waiting Screen TVC twin. */
-    #wl-timer-label-bg {
-      position: absolute;
-      z-index: -1;
-      left: -9.5px; top: -11px;
-      width: 179px; height: 69px;
-      object-fit: cover;
-      pointer-events: none;
+    /* Plain text label — no background plaque. white-space:nowrap keeps
+       "SHOW STARTS IN"/"SHOW RESUMES IN" on one line regardless of the
+       #wl-timer-label box width (that box is just a drag anchor now, not
+       a clipping frame). */
+    #wl-timer-label-img {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      color: #0a0a0a;
     }
     #wl-timer-value {
       width: 355px;
-      font-weight: 800;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
       font-size: 130px;
       line-height: 1;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;
@@ -2126,9 +2119,17 @@
       white-space: nowrap;
     }
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
+    /* width/height frozen at the box's old flex-computed size (160 label +
+       20 gap + 355 value, tallest child 130px) now that #ws-timer-value is
+       pulled out to position:absolute below — without this, removing the
+       value from the flex flow would shrink-to-fit the container down to
+       just the label's size and shift the whole thing (it's right-anchored)
+       and re-center the label vertically, moving it even though nobody
+       asked to move the label. */
     #ws-timer {
       position: absolute;
       top: 88px; right: 130px;
+      width: 535px; height: 130px;
       display: flex;
       align-items: center;
       gap: 20px;
@@ -2160,12 +2161,21 @@
       object-fit: cover;
       pointer-events: none;
     }
+    /* Pulled out of #ws-timer's flex flow so it can be dragged/resized and
+       font-size-tuned independently from the dashboard Edit tab — left/top
+       are LOCAL offsets against #ws-timer's own box (180 = label's 160px
+       width + 20px gap; 0 = same top as the now-frozen #ws-timer box),
+       matching exactly where the old flex layout put it, so this default
+       doesn't shift anything on first load. */
     #ws-timer-value {
+      position: absolute;
+      left: 180px; top: 0px;
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
-      font-weight: 800;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
       font-size: 130px;
       line-height: 1;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;
@@ -3142,7 +3152,7 @@
       <div id="wl-match"></div>
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
-        <div id="wl-timer-label"><img id="wl-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="wl-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="wl-timer-label"><div id="wl-timer-label-img">SHOW STARTS IN</div></div>
         <div id="wl-timer-value">30:30</div>
       </div>
       <div class="wl-player wl-player-blue">
@@ -5694,8 +5704,7 @@
       buildWlMatch(ms);
       const labelImg = document.getElementById('wl-timer-label-img');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
-      const labelSrc = WL_ASSET + label + '.png';
-      if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
+      if (labelImg.textContent !== label) labelImg.textContent = label;
       wlTimerState = ms.timer || WS_TIMER_DEFAULT;
       startWlPlayerCycle(ms);
     }

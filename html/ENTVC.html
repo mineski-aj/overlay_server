@@ -1488,9 +1488,17 @@
     }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
+    /* width/height frozen at the box's old flex-computed size (160 label +
+       20 gap + 355 value, tallest child 130px) now that #ws-timer-value is
+       pulled out to position:absolute below — without this, removing the
+       value from the flex flow would shrink-to-fit the container down to
+       just the label's size and shift the whole thing (it's right-anchored)
+       and re-center the label vertically, moving it even though nobody
+       asked to move the label. */
     #ws-timer {
       position: absolute;
       top: 88px; right: 130px;
+      width: 535px; height: 130px;
       display: flex;
       align-items: center;
       gap: 20px;
@@ -1525,12 +1533,21 @@
       object-fit: cover;
       pointer-events: none;
     }
+    /* Pulled out of #ws-timer's flex flow so it can be dragged/resized and
+       font-size-tuned independently from the dashboard Edit tab — left/top
+       are LOCAL offsets against #ws-timer's own box (180 = label's 160px
+       width + 20px gap; 0 = same top as the now-frozen #ws-timer box),
+       matching exactly where the old flex layout put it, so this default
+       doesn't shift anything on first load. */
     #ws-timer-value {
+      position: absolute;
+      left: 180px; top: 0px;
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
-      font-weight: 800;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
       font-size: 130px;
       line-height: 1;
-      letter-spacing: -0.02em;
+      letter-spacing: 0.02em;
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;

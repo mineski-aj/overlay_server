@@ -2703,14 +2703,7 @@
        matches on-air today pixel for pixel). Own group so moving it
        doesn't also move #wl-timer/#wl-header. */
     '#wl-timer-label':    { left: 0,    top: 41.5, width: 160, height: 47 },
-    /* Child of #wl-timer-label, not a canvas-absolute sibling — left/top
-       are LOCAL offsets relative to the 160x47 label box (same pattern as
-       WS_TIMER_DEFAULTS' #ws-timer-label-bg twin). Own group, not
-       'Header', so it doesn't move with #wl-header on arrow-key nudges —
-       and not the same group as #wl-timer-label either, since that would
-       double-move this on a group drag (it already rides along for free
-       as a DOM child of #wl-timer-label). */
-    '#wl-timer-label-bg': { left: -9.5, top: -11, width: 179, height: 69 },
+    '#wl-timer-label-img': { fontSize: 18 },
     '.wl-player-blue':    { left: 1035, top: 90,  width: 500, height: 800 },
     '.wl-player-red':     { left: 1420, top: 40,  width: 500, height: 800 },
     '.wl-namebox-blue':   { left: 860,  top: 830 },
@@ -2727,7 +2720,7 @@
     { group: 'Header',  id: '#wl-header',       name: 'Header Logo'     },
     { group: 'Header',  id: '#wl-timer',        name: 'Countdown Timer' },
     { group: 'Timer Label',    id: '#wl-timer-label',    name: 'Timer Label'          },
-    { group: 'Countdown Label', id: '#wl-timer-label-bg', name: 'Container Background' },
+    { group: 'Timer Label Text', id: '#wl-timer-label-img', name: 'Timer Label Font Size' },
     { group: 'Match',   id: '#wl-match',        name: 'Match Card'      },
     { group: 'Match',   id: '#wl-sponsor',      name: 'Sponsor Box'     },
     { group: 'Players', id: '.wl-player-blue',  name: 'Photo (Blue)'    },
@@ -2852,9 +2845,15 @@
      must not move. */
   var WS_TIMER_DEFAULTS = {
     '#ws-timer-label-bg': { left: -9.5, top: -11, width: 179, height: 69 },
+    /* Child of #ws-timer, pulled out of its flex flow (position:absolute
+       in the CSS now) so it can be dragged/resized/font-sized independently
+       — left/top are LOCAL offsets against #ws-timer's own box, not canvas
+       coordinates (matches exactly where the old flex layout put it). */
+    '#ws-timer-value':    { left: 180, top: 0, fontSize: 130 },
   };
   var WS_TIMER_ELEMENTS = [
     { group: 'Countdown Label', id: '#ws-timer-label-bg', name: 'Container Background' },
+    { group: 'Countdown Timer', id: '#ws-timer-value',    name: 'Countdown Timer'       },
   ];
 
   /* ── Today's / Tomorrow's Schedule — per-match-count layout ───────
