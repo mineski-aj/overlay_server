@@ -2512,7 +2512,7 @@
       display: flex; align-items: center; justify-content: center;
     }
     .p4k-stat-value {
-      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 60px; color: #000;
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 60px; color: #000;
       text-align: center; line-height: 1; text-transform: uppercase;
     }
 
@@ -8129,19 +8129,17 @@
           }
           set('cmb-game-time-value', fmtGameTime(gd.game_time));
         }
-        // Buff counts come from the separate Post-Info API — the live
-        // sub-info feed (gamedata-proxy) has no enemy_area_get at all.
-        // enemy_area_get is an array of per-time-window deltas, so sum
-        // across all of them for a running total, not a single lookup.
+        // Buff counts come from the separate Post-Info API's own camp
+        // fields (red_buff_num / blue_buff_num), not the live sub-info
+        // feed (gamedata-proxy has neither field at all).
         if (pi) {
           const piCamps = pi.camp_list || [];
           const pc1 = piCamps.find(c => c.campid === 1);
           const pc2 = piCamps.find(c => c.campid === 2);
-          const sumBuff = (camp, key) => (camp && camp.enemy_area_get || []).reduce((sum, e) => sum + (e[key] || 0), 0);
-          set('cmb-redbuff-l',    sumBuff(pc1, 'orange_buffer_num'));
-          set('cmb-redbuff-r',    sumBuff(pc2, 'orange_buffer_num'));
-          set('cmb-purplebuff-l', sumBuff(pc1, 'purple_buffer_num'));
-          set('cmb-purplebuff-r', sumBuff(pc2, 'purple_buffer_num'));
+          set('cmb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
+          set('cmb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
+          set('cmb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
+          set('cmb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
         }
         if (ms) {
           const gameNum  = ms.game  || 1;
@@ -9319,19 +9317,17 @@
           }
           set('mdb-game-time-value', fmtGameTime(gd.game_time));
         }
-        // Buff counts come from the separate Post-Info API — the live
-        // sub-info feed (gamedata-proxy) has no enemy_area_get at all.
-        // enemy_area_get is an array of per-time-window deltas, so sum
-        // across all of them for a running total, not a single lookup.
+        // Buff counts come from the separate Post-Info API's own camp
+        // fields (red_buff_num / blue_buff_num), not the live sub-info
+        // feed (gamedata-proxy has neither field at all).
         if (pi) {
           const piCamps = pi.camp_list || [];
           const pc1 = piCamps.find(c => c.campid === 1);
           const pc2 = piCamps.find(c => c.campid === 2);
-          const sumBuff = (camp, key) => (camp && camp.enemy_area_get || []).reduce((sum, e) => sum + (e[key] || 0), 0);
-          set('mdb-redbuff-l',    sumBuff(pc1, 'orange_buffer_num'));
-          set('mdb-redbuff-r',    sumBuff(pc2, 'orange_buffer_num'));
-          set('mdb-purplebuff-l', sumBuff(pc1, 'purple_buffer_num'));
-          set('mdb-purplebuff-r', sumBuff(pc2, 'purple_buffer_num'));
+          set('mdb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
+          set('mdb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
+          set('mdb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
+          set('mdb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
         }
         if (ms) {
           const gameNum  = ms.game  || 1;
@@ -9753,7 +9749,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -9774,6 +9770,7 @@
         if (event === 'standings')     showStandings();
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
+        if (event === 'post4key')      showPost4Key();
         if (event === 'matchboard')    showMatchBoard();
         if (event === 'middleboard')   showMiddleBoard();
         if (event === 'playerboard')   showPlayerBoard();

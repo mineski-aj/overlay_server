@@ -4,297 +4,146 @@
   "game_start_time": null,
   "game_end_time": "2026-08-21T07:27:31.554Z",
   "game_duration": "11:15",
-  "camp1_tricode": "RORA",
-  "camp2_tricode": "ONIC",
-  "camp1": {
+  "home": {
     "tricode": "RORA",
+    "camp_code": "10845",
+    "camp_name": "Aurora Gaming PH",
     "players": [
       {
         "player1": {
-          "slot": "slot1",
-          "name": "watch1",
           "player_name": "Nathzz",
           "role": "EXP LANER",
-          "hero_id": 77,
           "avg_bpm": 120,
           "peak_bpm": 153,
           "pct_above_120": "29%",
           "avg_bpm_at_objectives": 114,
           "peak_bpm_at_objectives": 114,
           "avg_clash_bpm": 135,
-          "bpm_on_end": 130,
-          "item_timeline": [
-            {
-              "game_time_s": 669,
-              "game_time_fmt": "11:09",
-              "item_id": 3001,
-              "item_name": "Malefic Roar",
-              "is_tier3": true
-            }
-          ]
+          "bpm_on_end": 130
         }
       },
       {
         "player2": {
-          "slot": "slot2",
-          "name": "watch2",
           "player_name": "Koyl",
           "role": "JUNGLER",
-          "hero_id": 42,
           "avg_bpm": 128,
           "peak_bpm": 154,
           "pct_above_120": "63%",
           "avg_bpm_at_objectives": 137,
           "peak_bpm_at_objectives": 137,
           "avg_clash_bpm": 128,
-          "bpm_on_end": 142,
-          "item_timeline": [
-            {
-              "game_time_s": 613,
-              "game_time_fmt": "10:13",
-              "item_id": 3110,
-              "item_name": "Lightning Truncheon",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 620,
-              "game_time_fmt": "10:20",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 636,
-              "game_time_fmt": "10:36",
-              "item_id": 2104,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 655,
-              "game_time_fmt": "10:55",
-              "item_id": 1101,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 663,
-              "game_time_fmt": "11:03",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "bpm_on_end": 142
         }
       },
       {
         "player3": {
-          "slot": "slot3",
-          "name": "watch3",
           "player_name": "Yue",
           "role": "MID LANER",
-          "hero_id": 15,
           "avg_bpm": 131,
           "peak_bpm": 151,
           "pct_above_120": "94%",
           "avg_bpm_at_objectives": 149,
           "peak_bpm_at_objectives": 149,
           "avg_clash_bpm": 134,
-          "bpm_on_end": 145,
-          "item_timeline": []
+          "bpm_on_end": 145
         }
       },
       {
         "player4": {
-          "slot": "slot4",
-          "name": "watch4",
           "player_name": "Light",
           "role": "ROAMER",
-          "hero_id": 6,
           "avg_bpm": 122,
           "peak_bpm": 158,
           "pct_above_120": "39%",
           "avg_bpm_at_objectives": 130,
           "peak_bpm_at_objectives": 130,
           "avg_clash_bpm": 133,
-          "bpm_on_end": 132,
-          "item_timeline": [
-            {
-              "game_time_s": 615,
-              "game_time_fmt": "10:15",
-              "item_id": 2006,
-              "item_name": "Demon Hunter Sword",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 628,
-              "game_time_fmt": "10:28",
-              "item_id": 2204,
-              "item_name": null,
-              "is_tier3": false
-            },
-            {
-              "game_time_s": 651,
-              "game_time_fmt": "10:51",
-              "item_id": 1202,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "bpm_on_end": 132
         }
       },
       {
         "player5": {
-          "slot": "slot5",
-          "name": "watch5",
           "player_name": "Domeng",
           "role": "GOLD LANER",
-          "hero_id": 114,
           "avg_bpm": 136,
           "peak_bpm": 154,
           "pct_above_120": "100%",
           "avg_bpm_at_objectives": 148,
           "peak_bpm_at_objectives": 148,
           "avg_clash_bpm": 135,
-          "bpm_on_end": 118,
-          "item_timeline": []
+          "bpm_on_end": 118
         }
       }
     ]
   },
-  "camp2": {
+  "away": {
     "tricode": "ONIC",
+    "camp_code": "10764",
+    "camp_name": "ONIC PH",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
           "player_name": "Kirk",
           "role": "EXP LANER",
-          "hero_id": 26,
           "avg_bpm": 81,
           "peak_bpm": 96,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": 76,
           "peak_bpm_at_objectives": 76,
           "avg_clash_bpm": 79,
-          "bpm_on_end": 69,
-          "item_timeline": [
-            {
-              "game_time_s": 627,
-              "game_time_fmt": "10:27",
-              "item_id": 3008,
-              "item_name": "Blade of Despair",
-              "is_tier3": true
-            },
-            {
-              "game_time_s": 668,
-              "game_time_fmt": "11:08",
-              "item_id": 2103,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "bpm_on_end": 69
         }
       },
       {
         "player2": {
-          "slot": "slot9",
-          "name": "watch9",
           "player_name": "K1NGKONG",
           "role": "JUNGLER",
-          "hero_id": 21,
           "avg_bpm": 90,
           "peak_bpm": 98,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": 95,
           "peak_bpm_at_objectives": 95,
           "avg_clash_bpm": 85,
-          "bpm_on_end": 66,
-          "item_timeline": [
-            {
-              "game_time_s": 648,
-              "game_time_fmt": "10:48",
-              "item_id": 3009,
-              "item_name": "Hunter Strike",
-              "is_tier3": true
-            }
-          ]
+          "bpm_on_end": 66
         }
       },
       {
         "player3": {
-          "slot": "slot8",
-          "name": "watch8",
           "player_name": "SuperFrince",
           "role": "MID LANER",
-          "hero_id": 63,
           "avg_bpm": 85,
           "peak_bpm": 99,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": 96,
           "peak_bpm_at_objectives": 96,
           "avg_clash_bpm": 81,
-          "bpm_on_end": 79,
-          "item_timeline": [
-            {
-              "game_time_s": 618,
-              "game_time_fmt": "10:18",
-              "item_id": 1201,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "bpm_on_end": 79
         }
       },
       {
         "player4": {
-          "slot": "slot7",
-          "name": "watch7",
           "player_name": "SUPERYOSHI",
           "role": "ROAMER",
-          "hero_id": 103,
           "avg_bpm": 78,
           "peak_bpm": 99,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": 63,
           "peak_bpm_at_objectives": 63,
           "avg_clash_bpm": 82,
-          "bpm_on_end": 82,
-          "item_timeline": [
-            {
-              "game_time_s": 648,
-              "game_time_fmt": "10:48",
-              "item_id": 1205,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "bpm_on_end": 82
         }
       },
       {
         "player5": {
-          "slot": "slot6",
-          "name": "watch6",
           "player_name": "Savero",
           "role": "GOLD LANER",
-          "hero_id": 71,
           "avg_bpm": 84,
           "peak_bpm": 96,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": 87,
           "peak_bpm_at_objectives": 87,
           "avg_clash_bpm": 80,
-          "bpm_on_end": 88,
-          "item_timeline": [
-            {
-              "game_time_s": 669,
-              "game_time_fmt": "11:09",
-              "item_id": 3103,
-              "item_name": "Concentrated Energy",
-              "is_tier3": true
-            }
-          ]
+          "bpm_on_end": 88
         }
       }
     ]
