@@ -3497,6 +3497,14 @@
   CP2_DEFAULTS['#cp2-sponsor, #mdb-sponsor'] = { left: 805, top: 957, width: 340, height: 94 };
   CP2_ELEMENTS.push({ group: 'Sponsor Loop', id: '#cp2-sponsor, #mdb-sponsor', name: 'Sponsor Loop (also Middle Board)' });
 
+  /* Middle Board's own Map Selection box — background art + logo + map
+     name, same markup/source as mploverlay_v7's #sb-map (see mplfs.html's
+     #middleboard block and fetchMiddleBoardData). */
+  var MDB_DEFAULTS = {};
+  var MDB_ELEMENTS = [];
+  MDB_DEFAULTS['#mdb-map'] = { left: 1638, top: 141, width: 294, height: 69 };
+  MDB_ELEMENTS.push({ group: 'Map Selection', id: '#mdb-map', name: 'Map Box' });
+
   /* Post 4 Key — four cards, each spotlighting the game's leader in one
      stat (GPM / damage dealt / damage taken / assists). Sub-element
      positions (title, photo, crop, name bar, stat box) are identical
@@ -3647,6 +3655,15 @@
       elements:    CP_ELEMENTS,
       defaults:    CP_DEFAULTS,
       showFn:      'showConsolidatedPost',
+    },
+    mplfs_middleboard: {
+      label:       'Middle Board · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_middleboard',
+      elements:    MDB_ELEMENTS,
+      defaults:    MDB_DEFAULTS,
+      showFn:      'showMiddleBoard',
     },
     mplfs_consolidated_post_2: {
       label:       'Consolidated Post 2 · mplfs',
