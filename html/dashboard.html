@@ -411,6 +411,7 @@
       border-radius: 10px;
       overflow: hidden;
       margin-bottom: 16px;
+      flex-shrink: 0;
     }
     .settings-section-hdr {
       padding: 12px 16px;
@@ -438,7 +439,7 @@
       white-space: nowrap;
       min-width: 80px;
     }
-    #game-api-input {
+    .settings-input {
       flex: 1;
       max-width: 380px;
       height: 30px;
@@ -451,22 +452,20 @@
       font-size: 12px;
       outline: none;
     }
-    #game-api-input:focus { border-color: #556; }
-    #game-api-apply {
+    .settings-input:focus { border-color: #556; }
+    .settings-btn {
       height: 30px; padding: 0 16px;
       background: #1e2a4a; border: 1px solid #2a3a6a;
       border-radius: 5px; color: #7aabff;
       cursor: pointer; font-size: 12px;
+      white-space: nowrap;
     }
-    #game-api-apply:hover { filter: brightness(1.2); }
-    #game-api-status { font-size: 11px; color: #555; }
-    #btn-debugoff {
-      height: 30px; padding: 0 16px;
+    .settings-btn:hover { filter: brightness(1.2); }
+    .settings-status { font-size: 11px; color: #555; }
+    .settings-btn-danger {
       background: #2a1a1a; border: 1px solid #5a2a2a;
-      border-radius: 5px; color: #ff6677;
-      cursor: pointer; font-size: 12px;
+      color: #ff6677;
     }
-    #btn-debugoff:hover { filter: brightness(1.2); }
 
     /* ── Edit page ───────────────────────────────────────────── */
     #edit-layout {
@@ -860,9 +859,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="game-api-input">Base URL</label>
-        <input type="text" id="game-api-input" placeholder="http://192.168.1.100:5001" spellcheck="false" autocomplete="off" />
-        <button id="game-api-apply">Apply</button>
-        <span id="game-api-status"></span>
+        <input type="text" id="game-api-input" class="settings-input" placeholder="http://192.168.1.100:5001" spellcheck="false" autocomplete="off" />
+        <button id="game-api-apply" class="settings-btn">Apply</button>
+        <span id="game-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -872,9 +871,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="hexagon-api-input">Base URL</label>
-        <input type="text" id="hexagon-api-input" placeholder="https://theapi.dpdns.org/api/teamh2h/" spellcheck="false" autocomplete="off" />
-        <button id="hexagon-api-apply">Apply</button>
-        <span id="hexagon-api-status"></span>
+        <input type="text" id="hexagon-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/teamh2h/" spellcheck="false" autocomplete="off" />
+        <button id="hexagon-api-apply" class="settings-btn">Apply</button>
+        <span id="hexagon-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -884,9 +883,21 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="highlights-api-input">Base URL</label>
-        <input type="text" id="highlights-api-input" placeholder="https://theapi.dpdns.org/api/game-mvp/view/" spellcheck="false" autocomplete="off" />
-        <button id="highlights-api-apply">Apply</button>
-        <span id="highlights-api-status"></span>
+        <input type="text" id="highlights-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/game-mvp/view/" spellcheck="false" autocomplete="off" />
+        <button id="highlights-api-apply" class="settings-btn">Apply</button>
+        <span id="highlights-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Standings API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="standings-api-input">Base URL</label>
+        <input type="text" id="standings-api-input" class="settings-input" placeholder="http://10.88.120.60:5001/api/standing/" spellcheck="false" autocomplete="off" />
+        <button id="standings-api-apply" class="settings-btn">Apply</button>
+        <span id="standings-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -896,9 +907,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="hrm-api-input">Base URL</label>
-        <input type="text" id="hrm-api-input" placeholder="http://192.168.1.100:5055" spellcheck="false" autocomplete="off" />
-        <button id="hrm-api-apply">Apply</button>
-        <span id="hrm-api-status"></span>
+        <input type="text" id="hrm-api-input" class="settings-input" placeholder="http://192.168.1.100:5055" spellcheck="false" autocomplete="off" />
+        <button id="hrm-api-apply" class="settings-btn">Apply</button>
+        <span id="hrm-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -908,9 +919,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="draft-api-input">Base URL</label>
-        <input type="text" id="draft-api-input" placeholder="https://theapi.dpdns.org/sql/draft-info-only/" spellcheck="false" autocomplete="off" />
-        <button id="draft-api-apply">Apply</button>
-        <span id="draft-api-status"></span>
+        <input type="text" id="draft-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/sql/draft-info-only/" spellcheck="false" autocomplete="off" />
+        <button id="draft-api-apply" class="settings-btn">Apply</button>
+        <span id="draft-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -920,9 +931,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="lineuprate-api-input">Base URL</label>
-        <input type="text" id="lineuprate-api-input" placeholder="https://theapi.dpdns.org/api/line-up-rate/" spellcheck="false" autocomplete="off" />
-        <button id="lineuprate-api-apply">Apply</button>
-        <span id="lineuprate-api-status"></span>
+        <input type="text" id="lineuprate-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/line-up-rate/" spellcheck="false" autocomplete="off" />
+        <button id="lineuprate-api-apply" class="settings-btn">Apply</button>
+        <span id="lineuprate-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -932,9 +943,9 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="postinfo-api-input">Base URL</label>
-        <input type="text" id="postinfo-api-input" placeholder="http://10.88.120.60:5001/api/post-info/" spellcheck="false" autocomplete="off" />
-        <button id="postinfo-api-apply">Apply</button>
-        <span id="postinfo-api-status"></span>
+        <input type="text" id="postinfo-api-input" class="settings-input" placeholder="http://10.88.120.60:5001/api/post-info/" spellcheck="false" autocomplete="off" />
+        <button id="postinfo-api-apply" class="settings-btn">Apply</button>
+        <span id="postinfo-api-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -944,7 +955,7 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label>Overlays</label>
-        <button id="btn-debugoff">Hide Debug Bars</button>
+        <button id="btn-debugoff" class="settings-btn settings-btn-danger">Hide Debug Bars</button>
       </div>
     </div>
   </div>
@@ -954,8 +965,8 @@
     <div class="settings-section-body">
       <div class="settings-row">
         <label>All Pages</label>
-        <button id="btn-force-reload-overlays">Force-Refresh All Overlays</button>
-        <span id="force-reload-status"></span>
+        <button id="btn-force-reload-overlays" class="settings-btn">Force-Refresh All Overlays</button>
+        <span id="force-reload-status" class="settings-status"></span>
       </div>
     </div>
   </div>
@@ -982,6 +993,12 @@
       document.getElementById('page-' + btn.dataset.page).classList.add('active');
       if (btn.dataset.page === 'control' && document.getElementById('layout').classList.contains('split')) {
         requestAnimationFrame(scalePreview);
+      }
+      // Returning to Control after the preview iframe was released below —
+      // re-select the last-picked overlay so the iframe reloads instead of
+      // staying blank/black.
+      if (btn.dataset.page === 'control' && lastOverlay && !activeItem) {
+        selectOverlay(lastOverlay, lastItem);
       }
       // Returning to the Edit tab after it was released below — the
       // dropdown still shows the last-picked config, so reload that same
@@ -1099,6 +1116,34 @@
 
   hlApiApply.addEventListener('click', saveHighlightsApiUrl);
   hlApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHighlightsApiUrl(); });
+
+  /* ── Standings API URL ───────────────────────────────────── */
+  var standingsApiInput  = document.getElementById('standings-api-input');
+  var standingsApiApply  = document.getElementById('standings-api-apply');
+  var standingsApiStatus = document.getElementById('standings-api-status');
+
+  fetch('/api/standings-url').then(function(r){ return r.json(); }).then(function(d){
+    standingsApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveStandingsApiUrl() {
+    var url = standingsApiInput.value.trim();
+    fetch('/api/standings-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      standingsApiStatus.textContent = 'Saved ✓';
+      standingsApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ standingsApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      standingsApiStatus.textContent = 'Error';
+      standingsApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  standingsApiApply.addEventListener('click', saveStandingsApiUrl);
+  standingsApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveStandingsApiUrl(); });
 
   /* ── Draft (Pick/Ban) API URL ────────────────────────────── */
   var draftApiInput  = document.getElementById('draft-api-input');
@@ -1826,6 +1871,8 @@
   var controlPanelBody  = document.getElementById('control-panel-body');
   var sidebar           = document.getElementById('sidebar');
   var activeItem        = null;
+  var lastOverlay       = null;
+  var lastItem          = null;
   var dots              = {};
 
   function scalePreview() {
@@ -1844,6 +1891,8 @@
     if (activeItem === item) return;
     if (activeItem) activeItem.classList.remove('active');
     activeItem = item;
+    lastOverlay = ov;
+    lastItem = item;
     item.classList.add('active');
     controlPanelTitle.textContent = ov.name;
     var srcUrl = ov.url || (ov.file ? '/html/' + ov.file : null);
@@ -1864,6 +1913,8 @@
   function deselectOverlay() {
     if (activeItem) activeItem.classList.remove('active');
     activeItem = null;
+    lastOverlay = null;
+    lastItem = null;
     layout.classList.remove('split');
     previewIframe.src = '';
     controlPanelBody.innerHTML = '';

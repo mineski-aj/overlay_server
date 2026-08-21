@@ -6433,8 +6433,14 @@
     }
 
     function mvApplyMatchLabel(ms) {
+      /* Match number is the manually-set /match/state field; game number
+         must track the actual series score, not the separate (and easily
+         stale) ms.game counter — the current total score IS the current
+         game number (1-1 → Game 2), no +1. */
       const matchNum = (ms && ms.match) || 1;
-      const gameNum  = (ms && ms.game)  || 1;
+      const homeScore = (ms && ms.home && ms.home.score) || 0;
+      const awayScore = (ms && ms.away && ms.away.score) || 0;
+      const gameNum   = homeScore + awayScore;
       document.getElementById('mv-matchbox-game').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
     }
 
@@ -6751,26 +6757,13 @@
       return '';
     }
 
-    /* Team identity (logo/name, see updateFtTeamIdentity) follows the
-       Match Board's home/away call, keyed by campid — camp1/camp2 are
-       draft-side identities, not home/away, so resolve which is which
-       the same way the Match Board preview does (ms.swapped). */
-    function ftResolveCamps(ms, gameData) {
-      const camps = (gameData && gameData.camp_list) || [];
-      const isSwapped = !!(ms && ms.swapped);
-      const homeCampId = isSwapped ? 2 : 1;
-      const awayCampId = isSwapped ? 1 : 2;
-      return {
-        homeCamp: camps.find(c => c.campid === homeCampId) || null,
-        awayCamp: camps.find(c => c.campid === awayCampId) || null,
-      };
-    }
-
-    /* Card wall side (which camp's players/heroes/spells render blue vs
-       red) is strictly campid 1 = blue (left), campid 2 = red (right) —
-       unlike ftResolveCamps above, this never follows ms.swapped, so the
-       cards always match the live game API's own camp assignment even
-       when the Match Board's home/away call disagrees. */
+    /* Team identity (logo/name, see updateFtTeamIdentity) AND card wall
+       side both use the same strict campid mapping — campid 1 = blue
+       (left), campid 2 = red (right) — regardless of the Match Board's
+       own home/away/ms.swapped call, so the blue/red boxes always match
+       the live game API's own camp assignment (e.g. if the game API has
+       TLPH on campid 1, TLPH renders on the blue side here even if the
+       Match Board thinks TLPH is "away"). */
     function ftResolveCardCamps(gameData) {
       const camps = (gameData && gameData.camp_list) || [];
       return {
@@ -6869,31 +6862,39 @@
     /* Series score bars — the series-wins tally lives on the dashboard
        Match Board (home.score/away.score), not the live feed (whose own
        "score" field is this game's kill count, a different number), so
-       this part still reads from /match/state. */
+       this part still reads from /match/state. Unlike team identity (now
+       strictly campid-based, see updateFtTeamIdentity), the score bars
+       follow ms.swapped directly — home/away swap sides together with
+       whatever the Match Board says, independent of which team the game
+       API put on which campid. */
     function updateFtScoreBars(ms) {
       const home = (ms && ms.home) || {};
       const away = (ms && ms.away) || {};
+      const isSwapped = !!(ms && ms.swapped);
+      const blueScore = isSwapped ? (away.score || 0) : (home.score || 0);
+      const redScore  = isSwapped ? (home.score || 0) : (away.score || 0);
       const maxWins = Math.ceil(parseInt(((ms && ms.series) || 'BO3').replace('BO', ''), 10) / 2);
-      ftRenderScoreBar(document.getElementById('ft-scorebar-blue'), maxWins, home.score || 0, true);
-      ftRenderScoreBar(document.getElementById('ft-scorebar-red'),  maxWins, away.score || 0, false);
+      ftRenderScoreBar(document.getElementById('ft-scorebar-blue'), maxWins, blueScore, true);
+      ftRenderScoreBar(document.getElementById('ft-scorebar-red'),  maxWins, redScore, false);
     }
 
     /* Team logo + name come from the live game_api feed's own camp
-       identity (team_simple_name), not the dashboard roster — same
-       tricode the Match Board preview uses for its logo lookup. */
-    function updateFtTeamIdentity(homeCamp, awayCamp) {
-      const homeTri = (homeCamp && homeCamp.team_simple_name) || '';
-      const awayTri = (awayCamp && awayCamp.team_simple_name) || '';
+       identity (team_simple_name), strictly by campid (1=blue, 2=red) —
+       matches the card wall, not the dashboard Match Board's home/away
+       call. */
+    function updateFtTeamIdentity(blueCamp, redCamp) {
+      const blueTri = (blueCamp && blueCamp.team_simple_name) || '';
+      const redTri  = (redCamp && redCamp.team_simple_name) || '';
       const blueLogo = document.getElementById('ft-blue-logo');
       const redLogo  = document.getElementById('ft-red-logo');
       blueLogo.onerror = () => { blueLogo.style.display = 'none'; };
       blueLogo.style.display = '';
-      blueLogo.src = homeTri ? '/logos/' + encodeURIComponent(homeTri) + '.png' : '';
+      blueLogo.src = blueTri ? '/logos/' + encodeURIComponent(blueTri) + '.png' : '';
       redLogo.onerror = () => { redLogo.style.display = 'none'; };
       redLogo.style.display = '';
-      redLogo.src = awayTri ? '/logos/' + encodeURIComponent(awayTri) + '.png' : '';
-      document.getElementById('ft-blue-name').textContent = homeTri;
-      document.getElementById('ft-red-name').textContent  = awayTri;
+      redLogo.src = redTri ? '/logos/' + encodeURIComponent(redTri) + '.png' : '';
+      document.getElementById('ft-blue-name').textContent = blueTri;
+      document.getElementById('ft-red-name').textContent  = redTri;
     }
 
     function updateFtMatchBar(ms) {
@@ -6916,7 +6917,6 @@
       await transitionTo('finalteam');
       const ms = await msPromise;
       if (activeFeature !== 'finalteam') return; /* superseded while awaiting match state */
-      updateFtScoreBars(ms);
       updateFtMatchBar(ms);
 
       /* Team logo/name, player names, hero picks, and battle spells all
@@ -6926,9 +6926,9 @@
          at a time as each asset finishes loading. */
       const gd = await Promise.race([gdPromise, new Promise(r => setTimeout(r, FT_FEED_TIMEOUT_MS))]);
       if (activeFeature !== 'finalteam') return; /* superseded while awaiting the feed */
-      const { homeCamp, awayCamp } = ftResolveCamps(ms, gd && gd.data);
-      updateFtTeamIdentity(homeCamp, awayCamp);
       const { blueCamp, redCamp } = ftResolveCardCamps(gd && gd.data);
+      updateFtTeamIdentity(blueCamp, redCamp);
+      updateFtScoreBars(ms);
       buildFtCards(blueCamp, redCamp);
       await preloadMedia(ftPage.querySelectorAll('img, video'), 900);
       if (activeFeature !== 'finalteam') return; /* superseded while preloading */
@@ -7503,8 +7503,14 @@
       }
       /* Standings week/day chip */
       if (activeFeature === 'standings') stApplyWeekDay(ms);
-      /* MVP Scene match/game plate */
-      if (activeFeature === 'mvp') mvApplyMatchLabel(ms);
+      /* MVP Scene match/game plate is intentionally NOT kept live here —
+         MVP is a post-game segment for the game that just ended, and the
+         Match Board's game/match counter is often bumped to the next game
+         before MVP is shown/while it's still on screen. Reacting to that
+         live would make MVP show the upcoming game instead of the one it's
+         actually about. mvApplyMatchLabel only runs once, in showMvpScene,
+         so it stays locked to whatever Match Board said at that moment —
+         same number Middle Board was showing during that game. */
     }
 
     /* ════════════════════════════════════════════════

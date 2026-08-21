@@ -929,11 +929,33 @@ function bpmAnimate(ts) {
 }
 requestAnimationFrame(bpmAnimate);
 
+/* ── BPM → color (memoized — same bpm always gives same color)
+   ≤60  : #0a9200 (green)
+   60–120: lerp green→orange→red
+   ≥120  : #d2001e (red) ── */
+const bpmColorCache = {};
+function bpmColor(bpm) {
+  const key = bpm | 0;
+  if (bpmColorCache[key]) return bpmColorCache[key];
+  const green  = { r:10,  g:146, b:0  };
+  const orange = { r:230, g:100, b:0  };
+  const red    = { r:210, g:0,   b:30 };
+  const t = Math.max(0, Math.min(1, (bpm - 60) / 60));
+  const a = t < 0.5 ? green  : orange;
+  const b = t < 0.5 ? orange : red;
+  const u = t < 0.5 ? t * 2  : (t - 0.5) * 2;
+  const result = `rgb(${Math.round(a.r+(b.r-a.r)*u)},${Math.round(a.g+(b.g-a.g)*u)},${Math.round(a.b+(b.b-a.b)*u)})`;
+  bpmColorCache[key] = result;
+  return result;
+}
+
 function setBpmDisplay(key, bpm, active) {
   const h = bpmPlayers[key];
   if (!h.numEl) return;
-  h.numEl.textContent   = (active && bpm > 0) ? bpm : '--';
-  h.heartEl.style.color = (active && bpm > 0) ? '#e8121f' : '#999';
+  h.numEl.textContent = (active && bpm > 0) ? bpm : '--';
+  const col = (active && bpm > 0) ? bpmColor(bpm) : '#999';
+  h.heartEl.style.color = col;
+  h.numEl.style.color   = col;
 }
 
 /* isOff toggles the whole meter off and swaps in the KDA + Gold block */

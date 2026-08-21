@@ -84,7 +84,7 @@
     /* ── Standings table ── */
     .st-grid {
       display: grid;
-      grid-template-columns: 36px 52px 40px 92px 118px 150px 84px 92px 92px 84px;
+      grid-template-columns: 36px 52px 40px 92px 150px 84px 92px 92px 84px;
       gap: 8px;
       align-items: center;
     }
@@ -180,15 +180,13 @@
   <!-- Regular Season Standings -->
   <div id="tab-regular" class="subpage active">
     <div class="panel">
-      <div class="panel-title">Regular Season Standings — drives the MPL Full Screen Standings overlay</div>
+      <div class="panel-title">Regular Season Standings — drives the MPL Full Screen Standings overlay. Rank, trend, and match/game stats are pulled live from the Standings API (see Settings); only Playoffs status is set here.</div>
       <div class="st-grid st-hdr">
-        <div>#</div><div>Move</div><div></div><div>Tricode</div><div>Trend</div><div>Status</div>
+        <div>#</div><div>Trend</div><div></div><div>Tricode</div><div>Status</div>
         <div>Match Pt</div><div>Match W/L</div><div>Game W/L</div><div>Net Game</div>
       </div>
       <div id="st-rows"></div>
       <div id="st-actions">
-        <button class="btn btn-save" id="save-btn">Save Changes</button>
-        <button class="btn btn-sort" id="sort-btn">⇅ Sort by Match Point</button>
         <span id="dirty-hint"></span>
       </div>
     </div>
@@ -255,28 +253,24 @@
     document.getElementById('sync-label').textContent = ok ? 'Synced' : 'Disconnected';
   }
 
-  function isEditing() {
-    var a = document.activeElement;
-    return a && a.closest && a.closest('#st-rows') && (a.tagName === 'INPUT' || a.tagName === 'SELECT');
-  }
-
-  /* Local edits stay local until Save Changes is pressed; while there are
-     unsaved edits, incoming SSE state must not clobber the operator's work. */
-  var dirty = false;
-  function setDirty(v) {
-    dirty = v;
-    document.getElementById('save-btn').classList.toggle('attn', v);
-    document.getElementById('save-btn').textContent = v ? 'Save Changes •' : 'Save Changes';
-    document.getElementById('dirty-hint').textContent = v ? 'Unsaved changes' : '';
-  }
-
+  /* Rank/trend/stats are now driven entirely by the Standings API poll (see
+     lib/pollers.js's pollStandings()) — only the Status (secured/eliminated)
+     select below is still operator-editable, and it saves itself on change
+     instead of needing a Save button, so there's no "unsaved edits" state
+     that could clobber an incoming SSE update mid-edit like the old
+     full-table editor had to guard against. */
   function applyState(s) {
-    if (dirty || isEditing()) return;
+    if (isEditing()) return;
     if (s && Array.isArray(s.teams) && s.teams.length) teams = s.teams;
     renderTable();
   }
 
-  /* ── PUSH ── */
+  function isEditing() {
+    var a = document.activeElement;
+    return a && a.closest && a.closest('#st-rows') && a.tagName === 'SELECT';
+  }
+
+  /* ── PUSH (status-only) ── */
   var _toastTimer = null;
   function showSavedToast() {
     var t = document.getElementById('saved-toast');
@@ -292,30 +286,14 @@
       body: JSON.stringify({ token: token, teams: teams }),
     }).then(function (r) {
       setSyncStatus(r.ok);
-      if (r.ok) { showSavedToast(); setDirty(false); }
+      if (r.ok) showSavedToast();
       if (r.status === 401) { token = ''; sessionStorage.removeItem('match_token'); showLogin(); }
     }).catch(function () { setSyncStatus(false); });
   }
 
-  document.getElementById('save-btn').addEventListener('click', push);
-  document.getElementById('sort-btn').addEventListener('click', function () {
-    teams.sort(function (a, b) {
-      return (b.mp || 0) - (a.mp || 0) || (b.ngw || 0) - (a.ngw || 0);
-    });
-    renderTable();
-    setDirty(true);
-  });
-
   /* ── TABLE ── */
   function logoUrl(tri) { return '/logos/' + encodeURIComponent((tri || '').toUpperCase()) + '.png'; }
-
-  function moveRow(i, dir) {
-    var j = i + dir;
-    if (j < 0 || j >= teams.length) return;
-    var tmp = teams[i]; teams[i] = teams[j]; teams[j] = tmp;
-    renderTable();
-    setDirty(true);
-  }
+  var TREND_LABEL = { up: '▲', down: '▼', neutral: '—' };
 
   function renderTable() {
     var root = document.getElementById('st-rows');
@@ -329,18 +307,12 @@
       rank.textContent = i + 1;
       row.appendChild(rank);
 
-      var re = document.createElement('div');
-      re.className = 'st-reorder';
-      var up = document.createElement('button');
-      up.textContent = '▲'; up.title = 'Move up';
-      up.disabled = i === 0;
-      up.addEventListener('click', function () { moveRow(i, -1); });
-      var dn = document.createElement('button');
-      dn.textContent = '▼'; dn.title = 'Move down';
-      dn.disabled = i === teams.length - 1;
-      dn.addEventListener('click', function () { moveRow(i, 1); });
-      re.appendChild(up); re.appendChild(dn);
-      row.appendChild(re);
+      var trend = document.createElement('div');
+      trend.style.textAlign = 'center';
+      trend.style.fontSize = '15px';
+      trend.style.color = t.move === 'up' ? '#44cc88' : (t.move === 'down' ? '#ff6677' : '#555');
+      trend.textContent = TREND_LABEL[t.move] || TREND_LABEL.neutral;
+      row.appendChild(trend);
 
       var lc = document.createElement('div');
       lc.className = 'st-logo-cell';
@@ -350,25 +322,11 @@
       lc.appendChild(img);
       row.appendChild(lc);
 
-      var tri = document.createElement('input');
-      tri.type = 'text'; tri.className = 'st-tri-input'; tri.maxLength = 5;
-      tri.value = t.tri || '';
-      tri.addEventListener('input', function () {
-        img.style.display = '';
-        img.src = logoUrl(tri.value.trim());
-      });
-      tri.addEventListener('change', function () { t.tri = tri.value.trim().toUpperCase(); tri.value = t.tri; setDirty(true); });
+      var tri = document.createElement('div');
+      tri.style.textAlign = 'center';
+      tri.style.fontWeight = '700';
+      tri.textContent = t.tri || '';
       row.appendChild(tri);
-
-      var mv = document.createElement('select');
-      [['neutral', '— Neutral'], ['up', '▲ Up'], ['down', '▼ Down']].forEach(function (o) {
-        var opt = document.createElement('option');
-        opt.value = o[0]; opt.textContent = o[1];
-        mv.appendChild(opt);
-      });
-      mv.value = t.move || 'neutral';
-      mv.addEventListener('change', function () { t.move = mv.value; setDirty(true); });
-      row.appendChild(mv);
 
       var st = document.createElement('select');
       [['', 'None'], ['secured', 'Playoffs Bound'], ['eliminated', 'Eliminated']].forEach(function (o) {
@@ -377,28 +335,19 @@
         st.appendChild(opt);
       });
       st.value = t.status || '';
-      st.addEventListener('change', function () { t.status = st.value || null; setDirty(true); });
+      st.addEventListener('change', function () { t.status = st.value || null; push(); });
       row.appendChild(st);
 
-      function numInput(key) {
-        var inp = document.createElement('input');
-        inp.type = 'number';
-        inp.value = (t[key] != null) ? t[key] : 0;
-        inp.addEventListener('change', function () { t[key] = parseInt(inp.value, 10) || 0; inp.value = t[key]; setDirty(true); });
-        return inp;
+      function stat(key, fallback) {
+        var div = document.createElement('div');
+        div.style.textAlign = 'center';
+        div.textContent = (t[key] != null) ? t[key] : fallback;
+        return div;
       }
-      function txtInput(key) {
-        var inp = document.createElement('input');
-        inp.type = 'text';
-        inp.style.textAlign = 'center';
-        inp.value = t[key] || '0-0';
-        inp.addEventListener('change', function () { t[key] = inp.value.trim() || '0-0'; inp.value = t[key]; setDirty(true); });
-        return inp;
-      }
-      row.appendChild(numInput('mp'));
-      row.appendChild(txtInput('mwl'));
-      row.appendChild(txtInput('gwl'));
-      row.appendChild(numInput('ngw'));
+      row.appendChild(stat('mp', 0));
+      row.appendChild(stat('mwl', '0-0'));
+      row.appendChild(stat('gwl', '0-0'));
+      row.appendChild(stat('ngw', 0));
 
       root.appendChild(row);
     });

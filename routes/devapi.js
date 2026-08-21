@@ -214,6 +214,25 @@ router.post('/api/game-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Standings API base URL — GET to read, POST { url } to update. Read fresh
+// on every tick by lib/pollers.js's pollStandings(), same as GAME_URL_FILE.
+const STANDINGS_URL_FILE    = path.join(__dirname, '..', 'standings_api_url.json');
+const STANDINGS_API_DEFAULT = 'http://10.88.120.60:5001/api/standing/';
+
+router.get('/api/standings-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(STANDINGS_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: STANDINGS_API_DEFAULT });
+  }
+});
+
+router.post('/api/standings-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(STANDINGS_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
 // Player photo manifest — returns available filenames per pose for client-side lookup
 const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
 
