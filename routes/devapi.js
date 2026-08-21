@@ -291,8 +291,16 @@ router.get('/api/dynamic-content/vmix', (req, res) => {
 // an in-memory cache instead of each one triggering its own live round-trip
 // to the upstream game API. Falls back to a direct fetch only if the poller
 // hasn't landed a payload yet (e.g. right at server startup).
+//
+// ?fresh=1 skips state.lastGameData and always does a live fetch to the
+// upstream game API right then — for boards that need the API's current
+// value at the exact moment they read it (Player Board, Post Emblems, Post
+// Items, Post Stats) rather than whatever the once-a-second poll last
+// caught. Still goes through this server, not the browser, so it works the
+// same everywhere the cached path already works (no new CORS/reachability
+// requirements on whatever machine renders mplfs.html).
 router.get('/api/gamedata-proxy', async (req, res) => {
-  if (state.lastGameData) {
+  if (state.lastGameData && req.query.fresh !== '1') {
     return res.set('Cache-Control', 'no-store').json(state.lastGameData);
   }
   try {

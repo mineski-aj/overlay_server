@@ -7683,7 +7683,8 @@
 
     async function fetchEmblemData() {
       try {
-        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
         if (!r.ok) { embResetSeats(); return; }
         const json = await r.json();
         const gd = json.data;
@@ -7692,14 +7693,16 @@
         const camps = gd.camp_list || [];
         const c1 = camps.find(c => c.campid === 1);
         const c2 = camps.find(c => c.campid === 2);
+        /* No sort by s.pos — seat_1..seat_5 order from the API is already
+           the intended top-to-bottom card order (see pbApplySeats above). */
         if (c1) {
           const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
-            .map(k => c1[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+            .map(k => c1[k]).filter(Boolean);
           embFillSeats(seats, 1);
         }
         if (c2) {
           const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
-            .map(k => c2[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+            .map(k => c2[k]).filter(Boolean);
           embFillSeats(seats, 6);
         }
       } catch { embResetSeats(); }
@@ -7818,7 +7821,8 @@
 
     async function fetchItemsData() {
       try {
-        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
         if (!r.ok) return;
         const json = await r.json();
         const gd = json.data;
@@ -7826,14 +7830,16 @@
         const camps = gd.camp_list || [];
         const c1 = camps.find(c => c.campid === 1);
         const c2 = camps.find(c => c.campid === 2);
+        /* No sort by s.pos — seat_1..seat_5 order from the API is already
+           the intended top-to-bottom card order (see pbApplySeats above). */
         if (c1) {
           const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
-            .map(k => c1[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+            .map(k => c1[k]).filter(Boolean);
           pibFillSeats(seats, 1);
         }
         if (c2) {
           const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
-            .map(k => c2[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+            .map(k => c2[k]).filter(Boolean);
           pibFillSeats(seats, 6);
         }
       } catch {}
@@ -8142,7 +8148,11 @@
           set('cmb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
         }
         if (ms) {
-          const gameNum  = ms.game  || 1;
+          /* Consolidated Post's compact recap of Middle Board's objectives
+             — same "just-finished game" data, so same fix as
+             fetchMiddleBoardData above: ms.game is the live/current game
+             number, already advanced by the time this recap is shown. */
+          const gameNum  = Math.max(1, (ms.game || 1) - 1);
           const matchNum = ms.match || 1;
           set('cmb-game-label', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
 
@@ -9074,7 +9084,8 @@
     async function fetchStatsData() {
       psbData = Array(10).fill(null).map(() => ({ taken: 0, dealt: 0, takenPct: 0, dealtPct: 0 }));
       try {
-        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
         if (!r.ok) return;
         const json = await r.json();
         const gd = json.data;
@@ -9082,8 +9093,10 @@
         const camps = gd.camp_list || [];
         const c1 = camps.find(c => c.campid === 1);
         const c2 = camps.find(c => c.campid === 2);
+        /* No sort by s.pos — seat_1..seat_5 order from the API is already
+           the intended top-to-bottom card order (see pbApplySeats above). */
         const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
-          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          .map(k => camp[k]).filter(Boolean);
         if (c1) extractSeats(c1).forEach((s, i) => {
           psbData[i] = { taken: s.total_hurt || 0, dealt: s.total_damage || 0 };
         });
@@ -9330,7 +9343,11 @@
           set('mdb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
         }
         if (ms) {
-          const gameNum  = ms.game  || 1;
+          /* Middle Board shows the just-finished game's recap stats, but
+             ms.game is the live/current game number — already advanced by
+             the time this is shown. Subtract 1 (floored at 1) so the label
+             names the game these numbers actually came from. */
+          const gameNum  = Math.max(1, (ms.game || 1) - 1);
           const matchNum = ms.match || 1;
           set('mdb-game-label-text', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
 
@@ -9441,9 +9458,12 @@
     const PB_ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER'];
 
     function pbApplySeats(camp, prefix, pose, updatePhotos) {
+      /* No re-sort by s.pos here — seat_1..seat_5 order from the API IS the
+         top-to-bottom card order (pb-b1/pb-r1 is topmost, see .pb-b1..pb-b5
+         top: 249/404/559/714/869 above), and PB_ROLES below is indexed to
+         that same seat order. Sorting by pos scrambled this. */
       const seats = ['seat_1','seat_2','seat_3','seat_4','seat_5']
-        .map(k => camp[k]).filter(Boolean)
-        .sort((a, b) => a.pos - b.pos);
+        .map(k => camp[k]).filter(Boolean);
       seats.forEach((s, i) => {
         const n = i + 1;
         const heroEl   = document.getElementById(prefix + n + '-hero');
@@ -9465,7 +9485,8 @@
 
     async function fetchPlayerBoardData() {
       try {
-        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
+        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
         if (!r.ok) return;
         const json = await r.json();
         const gd = json.data;
