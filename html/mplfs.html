@@ -2441,11 +2441,61 @@
       object-fit: cover; z-index: 1;
     }
 
+    /* THE CARRY's card only — a second backer layer stacked on top of
+       the plain .p4k-bg (same z-index, later in the DOM so it paints
+       above it once visible), holding the Visa-branded art. Stays
+       transparent through phases 1-2 so card 2 reads exactly like the
+       other three during the deal, then quick-fades in once the Visa
+       tag lands/sheens (phase 3) — see p4kPlayAnimation. */
+    .p4k-bg-visa {
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .p4k-bg-visa.p4k-bg-visa-in { opacity: 1; }
+
     .p4k-title {
       position: absolute; left: 0px; top: -68px; width: 416px; height: 48px;
       text-align: center; line-height: 48px; white-space: nowrap;
-      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 40px; color: #000;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 39.8px; color: #000;
       z-index: 2;
+    }
+
+    /* THE CARRY's Visa tag — a separately-positioned container sitting
+       directly above card 2, sharing the same asset dimensions as
+       visatag.png. Kept fully transparent through phase 1 (card deal-in)
+       — while the card is still tumbling into place it hasn't landed on
+       top of the tag's "hidden" offset yet, so opacity is what actually
+       keeps it invisible, not the translateY offset alone. It only
+       fades/slides in once p4k-visatag-in is added for phase 2. */
+    .p4k-visatag {
+      position: absolute; left: 527px; top: 251px; width: 416px; height: 122px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(122px);
+    }
+    .p4k-visatag.p4k-visatag-in {
+      transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 120ms ease;
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .p4k-visatag-bg {
+      position: absolute; left: 0; top: 0; width: 416px; height: 122px;
+    }
+    /* Sheen sweep once the tag has landed — same technique as mploverlay
+       v7's gold-diff-check smart-chip sheen (.gdc-smart-sheen /
+       gdc-sheen-sweep in mploverlay_v7.css), just renamed for this card. */
+    .p4k-visatag-sheen {
+      position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      pointer-events: none;
+    }
+    @keyframes p4k-visatag-sheen-sweep {
+      from { left: -60%; }
+      to   { left: 120%; }
+    }
+    .p4k-visatag.p4k-visatag-sheen-play .p4k-visatag-sheen {
+      animation: p4k-visatag-sheen-sweep 650ms ease-out;
     }
 
     .p4k-photo-box {
@@ -2773,7 +2823,7 @@
     #match-board.mb-on { display:block; }
     #mb-camp1 { position:absolute; left:57px;   top:106px; width:713px; height:86px; overflow:visible; }
     #mb-camp2 { position:absolute; left:1150px; top:106px; width:713px; height:86px; overflow:visible; }
-    #mb-tournament { position:absolute; left:851px; top:41px; width:218px; height:218px; background:url('/assets/postgame/mpl_logo.png') center/contain no-repeat; z-index:262; }
+    #mb-tournament { position:absolute; left:851px; top:41px; width:218px; height:218px; background:url('/assets/mpl2026logo.png') center/contain no-repeat; z-index:262; }
     .mb-score-bar { width:14px; height:50px; background:#1a1a1a; flex-shrink:0; }
     #mb-camp1 .mb-score-bar.scored { background:#1E64FF; }
     #mb-camp2 .mb-score-bar.scored { background:#FF3232; }
@@ -3097,9 +3147,13 @@
         </div>
         <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-1-value"></div></div>
       </div>
+      <div id="p4k-2-visatag" class="p4k-visatag">
+        <img class="p4k-visatag-bg" src="/assets/postgame/visatag.png" alt="">
+        <div class="p4k-visatag-sheen"></div>
+      </div>
       <div id="p4k-card-2" class="p4k-card">
         <img class="p4k-bg" id="p4k-2-bg" alt="">
-        <div class="p4k-title" id="p4k-2-title">THE CARRY</div>
+        <img class="p4k-bg p4k-bg-visa" id="p4k-2-bg-visa" alt="">
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-2-photo-front" src="/photos/placeholder.png" alt="">
           <img class="p4k-photo p4k-photo-sig"   id="p4k-2-photo-sig"   src="/photos/placeholder.png" alt="">
@@ -3855,6 +3909,31 @@
     /* ── SSE — overlay trigger ── */
     let sseSource = null;
 
+    // Live position patches from the dashboard Control tab's quick nudge
+    // buttons (routes/overlayStyles.js's POST /api/overlay-nudge) — unlike
+    // 'reload', this applies instantly via CSS injection with no page
+    // reload/flash, since the primary feedback loop for nudging is the
+    // dashboard's own live preview iframe (which is just another connected
+    // client of this same event). Patches accumulate per-selector across
+    // the page's lifetime so nudging multiple elements in one session
+    // doesn't clobber each other's overrides.
+    const liveStylePatches = {}; // selector -> { left: '123px', ... }
+    function applyLiveStylePatch(selector, props) {
+      liveStylePatches[selector] = Object.assign({}, liveStylePatches[selector], props);
+      let tag = document.getElementById('live-style-patch');
+      if (!tag) {
+        tag = document.createElement('style');
+        tag.id = 'live-style-patch';
+        document.head.appendChild(tag);
+      }
+      tag.textContent = Object.keys(liveStylePatches).map((sel) => {
+        const decls = Object.entries(liveStylePatches[sel])
+          .map(([prop, val]) => (prop === 'fontSize' ? 'font-size' : prop) + ':' + val + ' !important')
+          .join(';');
+        return sel + '{' + decls + '}';
+      }).join('\n');
+    }
+
     function connectSSE() {
       if (sseSource) sseSource.close();
       // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js)
@@ -3883,6 +3962,12 @@
          waiting for someone to manually refresh. Safe to do unattended
          since edits are never made while a scene is live. */
       sseSource.addEventListener('reload', () => { window.location.reload(); });
+
+      sseSource.addEventListener('stylepatch', (e) => {
+        let msg = null;
+        try { msg = JSON.parse(e.data); } catch { return; }
+        if (msg && msg.file === 'mplfs' && msg.selector && msg.props) applyLiveStylePatch(msg.selector, msg.props);
+      });
 
       sseSource.addEventListener('post_hearts', (e) => {
         const msg = JSON.parse(e.data);
@@ -8881,6 +8966,7 @@
 
     function p4kApplyCard(n, s, value) {
       const bgEl     = document.getElementById(`p4k-${n}-bg`);
+      const bgVisaEl = document.getElementById(`p4k-${n}-bg-visa`); // only exists for card 2
       const nameEl   = document.getElementById(`p4k-${n}-name`);
       const valueEl  = document.getElementById(`p4k-${n}-value`);
       const frontEl  = document.getElementById(`p4k-${n}-photo-front`);
@@ -8888,6 +8974,15 @@
       const photoBox = document.getElementById(`p4k-card-${n}`)?.querySelector('.p4k-photo-box');
 
       if (bgEl) bgEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourblue.png' : '/assets/postgame/bigfourred.png');
+      // Card 2 (THE CARRY) only — the Visa-branded backer sits on a
+      // second layer on top of the plain one above, kept transparent
+      // until phase 3 quick-fades it in (see p4kPlayAnimation). Reset
+      // the fade state here too, in case a re-fetch mid-scene lands on
+      // an already-faded-in card.
+      if (bgVisaEl) {
+        bgVisaEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourbluevisa.png' : '/assets/postgame/bigfourredvisa.png');
+        bgVisaEl.classList.remove('p4k-bg-visa-in');
+      }
       if (nameEl) { nameEl.textContent = s.name || ''; p4kFitName(nameEl); }
       if (valueEl) { valueEl.textContent = value; p4kFitValue(valueEl); }
       // Reset to the pre-pose state — a re-fetch mid-scene shouldn't
@@ -8950,13 +9045,22 @@
     // hand), then once each card has landed, button its photo over from
     // FRONT pose to SIGNATURE pose — same crossfade+bounce technique as
     // Waiting Lobby's luPlayAnimation.
-    const P4K_DEAL_STAGGER_MS  = 130;
-    const P4K_DEAL_DURATION_MS = 480;
-    const P4K_POSE_HOLD_MS     = 220;
+    const P4K_DEAL_STAGGER_MS   = 130;
+    const P4K_DEAL_DURATION_MS  = 480;
+    const P4K_POSE_HOLD_MS      = 220;
+    // THE CARRY (card 2) holds its signature-pose transition back an
+    // extra half second past the other three cards' normal timing.
+    const P4K_CARRY_POSE_EXTRA_DELAY_MS = 500;
+    // Visa tag's own slide-up matches its CSS transition duration
+    // (.p4k-visatag-in), so the sheen can be timed to start right as
+    // the slide finishes landing.
+    const P4K_VISATAG_SLIDE_MS  = 480;
 
     function p4kPlayAnimation() {
       for (let i = 1; i <= 4; i++) {
         const dealDelay = (i - 1) * P4K_DEAL_STAGGER_MS;
+        const poseDelay = dealDelay + P4K_DEAL_DURATION_MS + P4K_POSE_HOLD_MS
+          + (i === 2 ? P4K_CARRY_POSE_EXTRA_DELAY_MS : 0);
         setTimeout(() => {
           if (!p4kVisible) return;
           document.getElementById(`p4k-card-${i}`)?.classList.add('p4k-dealt');
@@ -8964,7 +9068,24 @@
         setTimeout(() => {
           if (!p4kVisible) return;
           document.getElementById(`p4k-card-${i}`)?.querySelector('.p4k-photo-box')?.classList.add('p4k-posed');
-        }, dealDelay + P4K_DEAL_DURATION_MS + P4K_POSE_HOLD_MS);
+        }, poseDelay);
+        if (i === 2) {
+          // Phase 2: Visa tag slides up from behind the card at the same
+          // moment THE CARRY's photo buttons over to its signature pose,
+          // and the card's own backer quick-fades over to the Visa-
+          // branded variant right alongside that slide — up to now it's
+          // read exactly like the other three cards' plain marble
+          // backer. Phase 3 (below) just sheens the landed tag.
+          setTimeout(() => {
+            if (!p4kVisible) return;
+            document.getElementById('p4k-2-visatag')?.classList.add('p4k-visatag-in');
+            document.getElementById('p4k-2-bg-visa')?.classList.add('p4k-bg-visa-in');
+          }, poseDelay);
+          setTimeout(() => {
+            if (!p4kVisible) return;
+            document.getElementById('p4k-2-visatag')?.classList.add('p4k-visatag-sheen-play');
+          }, poseDelay + P4K_VISATAG_SLIDE_MS);
+        }
       }
     }
 
@@ -8997,6 +9118,9 @@
         cardEl?.classList.remove('p4k-dealt');
         cardEl?.querySelector('.p4k-photo-box')?.classList.remove('p4k-posed');
       }
+      // Reset the visa tag too, in case this card was left mid-animation
+      // by a very fast hide+reshow.
+      document.getElementById('p4k-2-visatag')?.classList.remove('p4k-visatag-in', 'p4k-visatag-sheen-play');
       page.classList.add('p4k-visible');
       p4kPlayAnimation();
     }
@@ -9307,70 +9431,93 @@
       }
     }
 
-    async function fetchMiddleBoardData() {
-      try {
-        const [gameR, msR, piR, mapSelR] = await Promise.allSettled([
-          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-          fetch(buildUrl('/mapselection/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
-        ]);
-        const gd = gameR.value?.data ?? null;
-        const ms = msR.value ?? null;
-        const pi = piR.value?.data ?? null;
-        const mapSel = mapSelR.value ?? null;
-        const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        if (gd) {
-          const camps = gd.camp_list || [];
-          const c1 = camps.find(c => c.campid === 1);
-          const c2 = camps.find(c => c.campid === 2);
-          if (c1 && c2) {
-            set('mdb-gold-l',       fmtGold(c1.total_money));
-            set('mdb-gold-r',       fmtGold(c2.total_money));
-            set('mdb-tower-l',      c1.kill_tower || 0);
-            set('mdb-tower-r',      c2.kill_tower || 0);
-            set('mdb-lord-l',       c1.kill_lord || 0);
-            set('mdb-lord-r',       c2.kill_lord || 0);
-            set('mdb-turtle-l',     c1.kill_tortoise || 0);
-            set('mdb-turtle-r',     c2.kill_tortoise || 0);
-          }
-          set('mdb-game-time-value', fmtGameTime(gd.game_time));
-        }
-        // Buff counts come from the separate Post-Info API's own camp
-        // fields (red_buff_num / blue_buff_num), not the live sub-info
-        // feed (gamedata-proxy has neither field at all).
-        if (pi) {
-          const piCamps = pi.camp_list || [];
-          const pc1 = piCamps.find(c => c.campid === 1);
-          const pc2 = piCamps.find(c => c.campid === 2);
-          set('mdb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
-          set('mdb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
-          set('mdb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
-          set('mdb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
-        }
-        if (ms) {
-          /* Middle Board shows the just-finished game's recap stats, but
-             ms.game is the live/current game number — already advanced by
-             the time this is shown. Subtract 1 (floored at 1) so the label
-             names the game these numbers actually came from. */
-          const gameNum  = Math.max(1, (ms.game || 1) - 1);
-          const matchNum = ms.match || 1;
-          set('mdb-game-label-text', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
+    const mdbSet = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-          // Same per-game map lookup as Consolidated Middle Board's
-          // fetchCmbData above — prefer this game's own Map Selection
-          // slot, fall back to ms.map only if that slot isn't picked yet.
-          const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
-          const mapName = (gameEntry && gameEntry.map) || ms.map || '';
-          const mapLogoImg = document.getElementById('mdb-map-logo-img');
-          const mapNameTxt = document.querySelector('#mdb-map-name .mdb-map-name-text');
-          if (mapLogoImg) mapLogoImg.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
-          if (mapNameTxt) {
-            mapNameTxt.textContent = mapName.toUpperCase();
-            mdbFitMapName(mapNameTxt);
-          }
-        }
-      } catch {}
+    // gd/pi/ms/mapSel each apply their own slice of the board the instant
+    // THEIR OWN fetch settles — not gated behind whichever of the 4 is
+    // slowest. gamedata-proxy and postinfo-proxy in particular proxy an
+    // external LAN API that can be unreachable; previously all 4 sources
+    // were awaited together (Promise.allSettled), so a single hung/slow
+    // source stalled every field, even ones whose own fetch had already
+    // resolved. gd/pi null (fetch failed, or its own camp missing) now
+    // explicitly zeroes that source's fields instead of leaving stale
+    // numbers from a previous successful fetch.
+    function mdbApplyGameData(gd) {
+      const camps = (gd && gd.camp_list) || [];
+      const c1 = camps.find(c => c.campid === 1);
+      const c2 = camps.find(c => c.campid === 2);
+      mdbSet('mdb-gold-l',   fmtGold(c1 && c1.total_money));
+      mdbSet('mdb-gold-r',   fmtGold(c2 && c2.total_money));
+      mdbSet('mdb-tower-l',  (c1 && c1.kill_tower)    || 0);
+      mdbSet('mdb-tower-r',  (c2 && c2.kill_tower)    || 0);
+      mdbSet('mdb-lord-l',   (c1 && c1.kill_lord)     || 0);
+      mdbSet('mdb-lord-r',   (c2 && c2.kill_lord)     || 0);
+      mdbSet('mdb-turtle-l', (c1 && c1.kill_tortoise) || 0);
+      mdbSet('mdb-turtle-r', (c2 && c2.kill_tortoise) || 0);
+      mdbSet('mdb-game-time-value', fmtGameTime(gd && gd.game_time));
+    }
+
+    // Buff counts come from the separate Post-Info API's own camp fields
+    // (red_buff_num / blue_buff_num), not the live sub-info feed
+    // (gamedata-proxy has neither field at all).
+    function mdbApplyPostInfoData(pi) {
+      const piCamps = (pi && pi.camp_list) || [];
+      const pc1 = piCamps.find(c => c.campid === 1);
+      const pc2 = piCamps.find(c => c.campid === 2);
+      mdbSet('mdb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
+      mdbSet('mdb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
+      mdbSet('mdb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
+      mdbSet('mdb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
+    }
+
+    // Map name needs BOTH match/state (ms) and mapselection/state
+    // (mapSel) — cache whichever landed most recently and recompute
+    // whenever either one resolves, so neither blocks on the other.
+    let mdbLastMs = null, mdbLastMapSel = null;
+    function mdbApplyMapAndLabel() {
+      const ms = mdbLastMs, mapSel = mdbLastMapSel;
+      /* Middle Board shows the just-finished game's recap stats, but
+         ms.game is the live/current game number — already advanced by
+         the time this is shown. Subtract 1 (floored at 1) so the label
+         names the game these numbers actually came from. */
+      const gameNum  = Math.max(1, ((ms && ms.game) || 1) - 1);
+      const matchNum = (ms && ms.match) || 1;
+      mdbSet('mdb-game-label-text', ms ? ('GAME ' + gameNum + ' - MATCH ' + matchNum) : 'GAME 0 - MATCH 0');
+
+      // Same per-game map lookup as Consolidated Middle Board's
+      // fetchCmbData above — prefer this game's own Map Selection slot,
+      // fall back to ms.map only if that slot isn't picked yet.
+      const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
+      const mapName = (gameEntry && gameEntry.map) || (ms && ms.map) || '';
+      const mapLogoImg = document.getElementById('mdb-map-logo-img');
+      const mapNameTxt = document.querySelector('#mdb-map-name .mdb-map-name-text');
+      if (mapLogoImg) mapLogoImg.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
+      if (mapNameTxt) {
+        mapNameTxt.textContent = mapName.toUpperCase();
+        mdbFitMapName(mapNameTxt);
+      }
+    }
+
+    function fetchMiddleBoardData() {
+      fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => mdbApplyGameData(json && json.data))
+        .catch(() => mdbApplyGameData(null));
+
+      fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(json => mdbApplyPostInfoData(json && json.data))
+        .catch(() => mdbApplyPostInfoData(null));
+
+      fetch(buildUrl('/match/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(ms => { mdbLastMs = ms; mdbApplyMapAndLabel(); })
+        .catch(() => { mdbLastMs = null; mdbApplyMapAndLabel(); });
+
+      fetch(buildUrl('/mapselection/state'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(mapSel => { mdbLastMapSel = mapSel; mdbApplyMapAndLabel(); })
+        .catch(() => { mdbLastMapSel = null; mdbApplyMapAndLabel(); });
     }
 
     function showMiddleBoard() {

@@ -34,17 +34,35 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
-  #save-status {
-    font-size: 11px;
+  /* ── Per-panel save controls ── */
+  .panel-save-status {
+    font-size: 10px;
     font-weight: 600;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
     color: #333;
     transition: color 0.3s;
   }
-  #save-status.saving { color: #5577cc; }
-  #save-status.saved  { color: #00cc88; }
-  #save-status.error  { color: #ff4455; }
+  .panel-save-status.saving { color: #5577cc; }
+  .panel-save-status.saved  { color: #00cc88; }
+  .panel-save-status.error  { color: #ff4455; }
+  .panel-save-status.dirty  { color: #ddaa33; }
+
+  .panel-save-btn {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #ddd;
+    background: #2a2a3e;
+    border: 1px solid #3a3a52;
+    border-radius: 5px;
+    padding: 4px 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .panel-save-btn:hover { background: #34344a; }
+  .panel-save-btn:disabled { opacity: 0.4; cursor: default; }
 
   /* ── Two-column split ── */
   .split-row {
@@ -163,7 +181,6 @@
 
 <div class="page-header">
   <span class="page-title">Dynamic Content</span>
-  <span id="save-status">—</span>
 </div>
 
 <!-- Top: PH | EN -->
@@ -173,6 +190,8 @@
   <div class="panel">
     <div class="panel-header">
       <span class="panel-badge badge-ph">PH</span>
+      <button id="ph-save-btn" class="panel-save-btn" onclick="savePanel('ph')">Save</button>
+      <span id="ph-status" class="panel-save-status">—</span>
       <span class="panel-label-sub">Filipino Content</span>
     </div>
     <div class="field">
@@ -189,6 +208,8 @@
   <div class="panel">
     <div class="panel-header">
       <span class="panel-badge badge-en">EN</span>
+      <button id="en-save-btn" class="panel-save-btn" onclick="savePanel('en')">Save</button>
+      <span id="en-status" class="panel-save-status">—</span>
       <span class="panel-label-sub">English Content</span>
     </div>
     <div class="field">
@@ -211,6 +232,8 @@
   <div class="panel">
     <div class="panel-header">
       <span class="panel-badge badge-universal">Universal</span>
+      <button id="uni-save-btn" class="panel-save-btn" onclick="savePanel('uni')">Save</button>
+      <span id="uni-status" class="panel-save-status">—</span>
       <span class="panel-label-sub">Applies to all languages</span>
     </div>
     <div class="field">
@@ -229,12 +252,21 @@
     en_headline:    'en-headline',
     match_headline: 'match-headline',
   };
-  const statusEl = document.getElementById('save-status');
-  let saveTimer  = null;
+  const PANELS = {
+    ph:  { fields: ['ph_ticker', 'ph_headline'], statusId: 'ph-status',  btnId: 'ph-save-btn' },
+    en:  { fields: ['en_ticker', 'en_headline'], statusId: 'en-status',  btnId: 'en-save-btn' },
+    uni: { fields: ['match_headline'],           statusId: 'uni-status', btnId: 'uni-save-btn' },
+  };
 
-  function setStatus(s) {
-    statusEl.className = s;
-    statusEl.textContent = s === 'saving' ? 'Saving…' : s === 'saved' ? 'Saved' : s === 'error' ? 'Error' : '—';
+  // Last-known-saved value per field. A panel's own save only ever overwrites
+  // ITS fields with live DOM values — every other field is re-sent from this
+  // snapshot, so saving PH never flushes EN's still-unsaved edits to disk.
+  const committed = {};
+
+  function setStatus(panelKey, s) {
+    const el = document.getElementById(PANELS[panelKey].statusId);
+    el.className = 'panel-save-status ' + s;
+    el.textContent = s === 'saving' ? 'Saving…' : s === 'saved' ? 'Saved' : s === 'error' ? 'Error' : s === 'dirty' ? 'Unsaved changes' : '—';
   }
 
   async function load() {
@@ -242,16 +274,20 @@
       const r = await fetch('/api/dynamic-content', { cache: 'no-store' });
       const d = await r.json();
       FIELDS.forEach(k => {
+        committed[k] = d[k] || '';
         const el = document.getElementById(ID_MAP[k]);
-        if (el) el.value = d[k] || '';
+        if (el) el.value = committed[k];
       });
     } catch {}
   }
 
-  async function save() {
-    setStatus('saving');
-    const body = {};
-    FIELDS.forEach(k => {
+  async function savePanel(panelKey) {
+    const panel = PANELS[panelKey];
+    const btnEl = document.getElementById(panel.btnId);
+    setStatus(panelKey, 'saving');
+    btnEl.disabled = true;
+    const body = { ...committed };
+    panel.fields.forEach(k => {
       const el = document.getElementById(ID_MAP[k]);
       body[k] = el ? el.value : '';
     });
@@ -262,25 +298,24 @@
         body: JSON.stringify(body),
       });
       if (r.ok) {
-        setStatus('saved');
-        setTimeout(() => setStatus(''), 2000);
+        panel.fields.forEach(k => { committed[k] = body[k]; });
+        setStatus(panelKey, 'saved');
+        setTimeout(() => setStatus(panelKey, ''), 2000);
       } else {
-        setStatus('error');
+        setStatus(panelKey, 'error');
       }
     } catch {
-      setStatus('error');
+      setStatus(panelKey, 'error');
+    } finally {
+      btnEl.disabled = false;
     }
   }
 
-  function scheduleSave() {
-    clearTimeout(saveTimer);
-    setStatus('saving');
-    saveTimer = setTimeout(save, 600);
-  }
-
-  FIELDS.forEach(k => {
-    const el = document.getElementById(ID_MAP[k]);
-    if (el) el.addEventListener('input', scheduleSave);
+  Object.entries(PANELS).forEach(([panelKey, panel]) => {
+    panel.fields.forEach(k => {
+      const el = document.getElementById(ID_MAP[k]);
+      if (el) el.addEventListener('input', () => setStatus(panelKey, 'dirty'));
+    });
   });
 
   load();

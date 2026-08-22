@@ -368,7 +368,13 @@ router.get('/api/postinfo-proxy', async (req, res) => {
     try { stored = JSON.parse(fs.readFileSync(POST_INFO_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || POST_INFO_URL_DEFAULT).trim();
     if (!url) return res.status(404).json({ error: 'no post-info URL configured' });
-    const r = await fetch(url);
+    // Same reasoning as /api/lineuprate-data below — an unreachable upstream
+    // (e.g. the game-client PC off the network) would otherwise hang this
+    // request indefinitely. mplfs.html's middleboard polls this every 3s
+    // whenever visible, uncached, with no dedup across tabs, so a hung
+    // upstream here piles up hung connections fast once a few overlay tabs
+    // are open — fail fast instead.
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);
@@ -419,7 +425,9 @@ router.get('/api/hexagon-data', async (req, res) => {
     let stored;
     try { stored = JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || HEXAGON_URL_DEFAULT).trim();
-    const r = await fetch(url);
+    // Same reasoning as /api/lineuprate-data below — fail fast instead of
+    // hanging indefinitely on an unreachable upstream.
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);
@@ -452,7 +460,9 @@ router.get('/api/highlights-data', async (req, res) => {
     let stored;
     try { stored = JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
     const url = (stored.url || HIGHLIGHTS_URL_DEFAULT).trim();
-    const r = await fetch(url);
+    // Same reasoning as /api/lineuprate-data below — fail fast instead of
+    // hanging indefinitely on an unreachable upstream.
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);

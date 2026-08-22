@@ -311,6 +311,12 @@
     }
     #copy-tooltip.visible { opacity: 1; }
     .feature-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    /* Quick left/right nudge — MVP Scene/Highlights photo+hero, see
+       feat.nudges / buildNudgeControl */
+    .nudge-group { display: inline-flex; align-items: center; gap: 3px; background: #14141e; border: 1px solid #2a2a3a; border-radius: 4px; padding: 2px 4px; }
+    .nudge-label { font-size: 10px; color: #666; padding: 0 2px; }
+    .btn-nudge { background: #1e1e1e; border-color: #333; color: #aaa; padding: 2px 8px; font-size: 11px; line-height: 16px; }
+    .btn-nudge:hover { border-color: #888; color: #fff; }
 
     /* ── Divider ─────────────────────────────────────────────── */
     .divider { height: 1px; background: #1e1e2c; margin: 10px 0; }
@@ -1674,8 +1680,13 @@
         { name: "Tomorrow's Schedule", show: '/overlay/tomorrow_schedule/show', hide: '/overlay/tomorrow_schedule/hide' },
         { name: 'Standings', show: '/overlay/standings/show', hide: '/overlay/standings/hide' },
         { name: 'Team Hexagon', show: '/overlay/team_hexagon/show', hide: '/overlay/team_hexagon/hide' },
-        { name: 'MVP Highlights', show: '/overlay/highlights/show', hide: '/overlay/highlights/hide' },
-        { name: 'MVP Scene', show: '/overlay/mvp/show', hide: '/overlay/mvp/hide' },
+        { name: 'MVP Highlights', show: '/overlay/highlights/show', hide: '/overlay/highlights/hide',
+          nudges: [ { label: 'Photo', selector: '.hl-player-photo-wrap', fallback: 1360 } ] },
+        { name: 'MVP Scene', show: '/overlay/mvp/show', hide: '/overlay/mvp/hide',
+          nudges: [
+            { label: 'Hero',  selector: '#mv-hero-img', fallback: 953 },
+            { label: 'Photo', selector: '#mv-photo',    fallback: 953 },
+          ] },
         { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
@@ -1847,6 +1858,48 @@
     var b = el('button', 'btn ' + cls, label);
     b.addEventListener('click', onClick);
     return b;
+  }
+
+  /* Quick left/right nudge buttons — Control-tab QoL for MVP Scene/
+     Highlights' photo+hero positioning (see feat.nudges on the mplfs
+     OVERLAYS entry). Mirrors the Edit tab's arrow-key nudge (same
+     saved-or-default merge as sbEditArrow's `vals.left !== undefined ?
+     vals.left : defs.left`), but persists via POST /api/overlay-nudge
+     instead of the Edit tab's Save button — that route broadcasts a
+     live 'stylepatch' SSE event (not 'reload'), so every connected
+     mplfs.html tab, including the Control tab's own preview iframe,
+     applies the new position instantly with no page reload/flash. Each
+     nudge's `fallback` mirrors MV_DEFAULTS/HL_DEFAULTS' left value for
+     the same selector — keep them in sync if those defaults ever
+     change. */
+  var NUDGE_STEP = 10;
+  var nudgeLeftCache = {}; // selector -> current left (px, number)
+  function nudgeGetCurrentLeft(selector, fallback) {
+    if (nudgeLeftCache[selector] !== undefined) return Promise.resolve(nudgeLeftCache[selector]);
+    return fetch('/api/overlay-styles?file=mplfs').then(function (r) { return r.json(); }).then(function (saved) {
+      var v = saved && saved[selector] && saved[selector].left;
+      var left = v !== undefined ? parseFloat(v) : fallback;
+      nudgeLeftCache[selector] = left;
+      return left;
+    }).catch(function () { return fallback; });
+  }
+  function buildNudgeControl(n) {
+    var wrap = el('span', 'nudge-group');
+    wrap.appendChild(el('span', 'nudge-label', n.label));
+    function doNudge(delta) {
+      nudgeGetCurrentLeft(n.selector, n.fallback).then(function (cur) {
+        var next = cur + delta;
+        nudgeLeftCache[n.selector] = next;
+        fetch('/api/overlay-nudge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: 'mplfs', selector: n.selector, props: { left: next + 'px' } }),
+        }).catch(function () {});
+      });
+    }
+    wrap.appendChild(btn('◀', 'btn-nudge', function () { doNudge(-NUDGE_STEP); }));
+    wrap.appendChild(btn('▶', 'btn-nudge', function () { doNudge(NUDGE_STEP); }));
+    return wrap;
   }
 
   /* ── Hit a control endpoint ───────────────────────────────── */
@@ -2548,6 +2601,9 @@
             });
           })(feat);
           fb.appendChild(pvb);
+        }
+        if (feat.nudges) {
+          feat.nudges.forEach(function (n) { fb.appendChild(buildNudgeControl(n)); });
         }
         fr.appendChild(fb);
         body.appendChild(fr);
@@ -3558,18 +3614,24 @@
 
   /* Post 4 Key — four cards, each spotlighting the game's leader in one
      stat (GPM / damage dealt / damage taken / assists). Sub-element
-     positions (title, photo, crop, name bar, stat box) are identical
-     across all 4 cards, so they're registered once as class selectors
-     — editing one moves it for every card, same as Consolidated Post's
+     positions (photo, crop, name bar, stat box) are identical across
+     all 4 cards, so they're registered once as class selectors —
+     editing one moves it for every card, same as Consolidated Post's
      .cp-hero/.cp-name/etc. Each card's own container position is
      registered separately (like .cp-row-N) so the 4 cards can still be
-     arranged independently. */
+     arranged independently. Titles are the one exception — each is its
+     own id selector (card 2's was removed entirely, replaced by the
+     Visa tag) so every remaining header can be repositioned on its own
+     instead of moving as one shared group. */
   var P4K_DEFAULTS = {
     '#p4k-card-1': { left: 100,  top: 373, width: 416, height: 509 },
     '#p4k-card-2': { left: 527,  top: 373, width: 416, height: 509 },
     '#p4k-card-3': { left: 954,  top: 373, width: 416, height: 509 },
     '#p4k-card-4': { left: 1381, top: 373, width: 416, height: 509 },
-    '.p4k-title':     { left: 0,  top: -68, width: 416, height: 48,  fontSize: 40 },
+    '#p4k-1-title':   { left: 0,  top: -68, width: 416, height: 48,  fontSize: 39.8 },
+    '#p4k-3-title':   { left: 0,  top: -68, width: 416, height: 48,  fontSize: 39.8 },
+    '#p4k-4-title':   { left: 0,  top: -68, width: 416, height: 48,  fontSize: 39.8 },
+    '#p4k-2-visatag': { left: 527, top: 251, width: 416, height: 122 },
     '.p4k-photo-box': { left: 0,  top: 0,   width: 416, height: 416 },
     '.p4k-crop':      { left: 0,  top: 357, width: 416, height: 152 },
     '.p4k-name-box':  { left: 0,   top: 357, width: 416, height: 48  },
@@ -3581,7 +3643,10 @@
     { group: 'Post 4 Key · Card 2', id: '#p4k-card-2', name: 'Card 2 Position' },
     { group: 'Post 4 Key · Card 3', id: '#p4k-card-3', name: 'Card 3 Position' },
     { group: 'Post 4 Key · Card 4', id: '#p4k-card-4', name: 'Card 4 Position' },
-    { group: 'Post 4 Key · Title',      id: '.p4k-title',     name: 'Title Label' },
+    { group: 'Post 4 Key · Card 1 Title', id: '#p4k-1-title', name: 'Title Label (Rich Guy)' },
+    { group: 'Post 4 Key · Card 3 Title', id: '#p4k-3-title', name: 'Title Label (Sand Bag)' },
+    { group: 'Post 4 Key · Card 4 Title', id: '#p4k-4-title', name: 'Title Label (Wingman)' },
+    { group: 'Post 4 Key · Card 2 Visa Tag', id: '#p4k-2-visatag', name: 'Visa Tag' },
     { group: 'Post 4 Key · Photo',      id: '.p4k-photo-box', name: 'Player Photo' },
     { group: 'Post 4 Key · Photo Crop', id: '.p4k-crop',      name: 'Photo Crop Mask' },
     { group: 'Post 4 Key · Name Bar',   id: '.p4k-name-box',  name: 'Player Name Bar' },
