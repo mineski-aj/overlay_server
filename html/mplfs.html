@@ -3556,7 +3556,7 @@
       <div class="mdb-box"><span class="mdb-num mdb-num-l" id="mdb-purplebuff-l">0</span><img src="/assets/postgame/purplebuff.png" alt="purplebuff"><span class="mdb-num mdb-num-r" id="mdb-purplebuff-r">0</span></div>
       <div id="mdb-game-time-label">GAME TIME</div>
       <div id="mdb-game-time-value">00:00</div>
-      <div id="mdb-game-label-bar"><span id="mdb-game-label-text">GAME 1 - MATCH 1</span></div>
+      <div id="mdb-game-label-bar"><span id="mdb-game-label-text">MATCH 1 - GAME 1</span></div>
       <div id="mdb-map">
         <div id="mdb-map-logo"><img id="mdb-map-logo-img" alt=""></div>
         <div id="mdb-map-name"><span class="mdb-map-name-text"></span></div>
@@ -9482,7 +9482,7 @@
          names the game these numbers actually came from. */
       const gameNum  = Math.max(1, ((ms && ms.game) || 1) - 1);
       const matchNum = (ms && ms.match) || 1;
-      mdbSet('mdb-game-label-text', ms ? ('GAME ' + gameNum + ' - MATCH ' + matchNum) : 'GAME 0 - MATCH 0');
+      mdbSet('mdb-game-label-text', ms ? ('MATCH ' + matchNum + ' - GAME ' + gameNum) : 'MATCH 0 - GAME 0');
 
       // Same per-game map lookup as Consolidated Middle Board's
       // fetchCmbData above — prefer this game's own Map Selection slot,
