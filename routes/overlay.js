@@ -228,6 +228,20 @@ router.get('/overlay/playerui/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/draftrecap/show
+router.get('/overlay/draftrecap/show', (req, res) => {
+  state.checkOverlays.draftrecap = true;
+  state.overlayClients.forEach(c => { try { c.write('event: draftrecap\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/draftrecap/hide
+router.get('/overlay/draftrecap/hide', (req, res) => {
+  state.checkOverlays.draftrecap = false;
+  state.overlayClients.forEach(c => { try { c.write('event: draftrecap\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/hrm-state — current per-player heart-rate meter on/off
 // state (ingame_red.html / ingame_blue.html), so any page (dashboard,
 // ingame overlays on a different browser/machine, vMix) can poll the

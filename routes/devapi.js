@@ -528,4 +528,24 @@ router.post('/api/draft-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Draft Recap API base URL — GET to read, POST { url } to update. Draft.html's
+// Draft Recap panel (previous-draft format) polls this dedicated endpoint,
+// separate from the live draft-info-only feed above.
+const DRAFT_RECAP_URL_FILE    = path.join(__dirname, '..', 'draft_recap_api_url.json');
+const DRAFT_RECAP_URL_DEFAULT = 'https://theapi.dpdns.org/api/previous-draft/';
+
+router.get('/api/draft-recap-url', (req, res) => {
+  try {
+    res.json(JSON.parse(fs.readFileSync(DRAFT_RECAP_URL_FILE, 'utf8')));
+  } catch (e) {
+    res.json({ url: DRAFT_RECAP_URL_DEFAULT });
+  }
+});
+
+router.post('/api/draft-recap-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  fs.writeFileSync(DRAFT_RECAP_URL_FILE, JSON.stringify({ url }));
+  res.json({ ok: true, url });
+});
+
 module.exports = router;

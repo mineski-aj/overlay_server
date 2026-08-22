@@ -933,6 +933,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Draft Recap API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="draftrecap-api-input">Base URL</label>
+        <input type="text" id="draftrecap-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/previous-draft/" spellcheck="false" autocomplete="off" />
+        <button id="draftrecap-api-apply" class="settings-btn">Apply</button>
+        <span id="draftrecap-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Draft Index (Line-Up Rate) API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1178,6 +1190,34 @@
 
   draftApiApply.addEventListener('click', saveDraftApiUrl);
   draftApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveDraftApiUrl(); });
+
+  /* ── Draft Recap API URL ─────────────────────────────────── */
+  var draftRecapApiInput  = document.getElementById('draftrecap-api-input');
+  var draftRecapApiApply  = document.getElementById('draftrecap-api-apply');
+  var draftRecapApiStatus = document.getElementById('draftrecap-api-status');
+
+  fetch('/api/draft-recap-url').then(function(r){ return r.json(); }).then(function(d){
+    draftRecapApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveDraftRecapApiUrl() {
+    var url = draftRecapApiInput.value.trim();
+    fetch('/api/draft-recap-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      draftRecapApiStatus.textContent = 'Saved ✓';
+      draftRecapApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ draftRecapApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      draftRecapApiStatus.textContent = 'Error';
+      draftRecapApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  draftRecapApiApply.addEventListener('click', saveDraftRecapApiUrl);
+  draftRecapApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveDraftRecapApiUrl(); });
 
   /* ── HRM Server URL ───────────────────────────────────────── */
   var hrmApiInput  = document.getElementById('hrm-api-input');
@@ -1475,7 +1515,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui', 'draftrecap'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -1627,6 +1667,9 @@
       show: '/overlay/draft/show',
       hide: '/overlay/draft/hide',
       photoModeToggle: true,
+      checkToggles: [
+        { name: 'Draft Recap', key: 'draftrecap' },
+      ],
     },
     {
       id: 'draftindex',
@@ -3088,6 +3131,71 @@
     { group: 'Text', id: '.draft-match-game-text', name: 'Match/Game Font Size' },
   ];
 
+  /* ── Draft Recap (Draft.html) — previous-game pick/ban recap, blue
+     card at screen-left, red card at screen-right. Every hero/ban slot
+     within each card is positioned relative to that card's own
+     background box (#dr-blue-bg / #dr-red-bg), so moving the whole card
+     also carries its 5 picks + 5 bans + title with it; each slot is
+     still independently draggable/resizable on top of that. */
+  var DRAFT_RECAP_DEFAULTS = {
+    '#dr-blue-bg':      { left: 0,    top: 562, width: 398, height: 218 },
+    '#dr-blue-title':   { left: 7,    top: 0,   width: 384, height: 44  },
+    '.dr-blue-title-text': { fontSize: 19 },
+    '#dr-blue-pick-1':  { left: 7,    top: 50,  width: 74,  height: 117 },
+    '#dr-blue-pick-2':  { left: 84.5, top: 50,  width: 74,  height: 117 },
+    '#dr-blue-pick-3':  { left: 162,  top: 50,  width: 74,  height: 117 },
+    '#dr-blue-pick-4':  { left: 239.5,top: 50,  width: 74,  height: 117 },
+    '#dr-blue-pick-5':  { left: 317,  top: 50,  width: 74,  height: 117 },
+    '#dr-blue-ban-1':   { left: 8,    top: 172, width: 73,  height: 39  },
+    '#dr-blue-ban-2':   { left: 85.5, top: 172, width: 73,  height: 39  },
+    '#dr-blue-ban-3':   { left: 163,  top: 172, width: 73,  height: 39  },
+    '#dr-blue-ban-4':   { left: 240.5,top: 172, width: 73,  height: 39  },
+    '#dr-blue-ban-5':   { left: 318,  top: 172, width: 73,  height: 39  },
+
+    '#dr-red-bg':       { left: 1522, top: 562, width: 398, height: 218 },
+    '#dr-red-title':    { left: 7,    top: 0,   width: 384, height: 44  },
+    '.dr-red-title-text': { fontSize: 19 },
+    '#dr-red-pick-1':   { left: 7,    top: 50,  width: 74,  height: 117 },
+    '#dr-red-pick-2':   { left: 84.5, top: 50,  width: 74,  height: 117 },
+    '#dr-red-pick-3':   { left: 162,  top: 50,  width: 74,  height: 117 },
+    '#dr-red-pick-4':   { left: 239.5,top: 50,  width: 74,  height: 117 },
+    '#dr-red-pick-5':   { left: 317,  top: 50,  width: 74,  height: 117 },
+    '#dr-red-ban-1':    { left: 8,    top: 172, width: 73,  height: 39  },
+    '#dr-red-ban-2':    { left: 85.5, top: 172, width: 73,  height: 39  },
+    '#dr-red-ban-3':    { left: 163,  top: 172, width: 73,  height: 39  },
+    '#dr-red-ban-4':    { left: 240.5,top: 172, width: 73,  height: 39  },
+    '#dr-red-ban-5':    { left: 318,  top: 172, width: 73,  height: 39  },
+  };
+  var DRAFT_RECAP_ELEMENTS = [
+    { group: 'Blue Card',       id: '#dr-blue-bg',        name: 'Blue Background' },
+    { group: 'Blue Card',       id: '#dr-blue-title',     name: 'Blue Title Box' },
+    { group: 'Blue Card',       id: '.dr-blue-title-text', name: 'Blue Title Font Size' },
+    { group: 'Blue Hero Picks', id: '#dr-blue-pick-1',    name: 'Blue Pick 1' },
+    { group: 'Blue Hero Picks', id: '#dr-blue-pick-2',    name: 'Blue Pick 2' },
+    { group: 'Blue Hero Picks', id: '#dr-blue-pick-3',    name: 'Blue Pick 3' },
+    { group: 'Blue Hero Picks', id: '#dr-blue-pick-4',    name: 'Blue Pick 4' },
+    { group: 'Blue Hero Picks', id: '#dr-blue-pick-5',    name: 'Blue Pick 5' },
+    { group: 'Blue Bans',       id: '#dr-blue-ban-1',     name: 'Blue Ban 1' },
+    { group: 'Blue Bans',       id: '#dr-blue-ban-2',     name: 'Blue Ban 2' },
+    { group: 'Blue Bans',       id: '#dr-blue-ban-3',     name: 'Blue Ban 3' },
+    { group: 'Blue Bans',       id: '#dr-blue-ban-4',     name: 'Blue Ban 4' },
+    { group: 'Blue Bans',       id: '#dr-blue-ban-5',     name: 'Blue Ban 5' },
+
+    { group: 'Red Card',        id: '#dr-red-bg',         name: 'Red Background' },
+    { group: 'Red Card',        id: '#dr-red-title',      name: 'Red Title Box' },
+    { group: 'Red Card',        id: '.dr-red-title-text', name: 'Red Title Font Size' },
+    { group: 'Red Hero Picks',  id: '#dr-red-pick-1',     name: 'Red Pick 1' },
+    { group: 'Red Hero Picks',  id: '#dr-red-pick-2',     name: 'Red Pick 2' },
+    { group: 'Red Hero Picks',  id: '#dr-red-pick-3',     name: 'Red Pick 3' },
+    { group: 'Red Hero Picks',  id: '#dr-red-pick-4',     name: 'Red Pick 4' },
+    { group: 'Red Hero Picks',  id: '#dr-red-pick-5',     name: 'Red Pick 5' },
+    { group: 'Red Bans',        id: '#dr-red-ban-1',      name: 'Red Ban 1' },
+    { group: 'Red Bans',        id: '#dr-red-ban-2',      name: 'Red Ban 2' },
+    { group: 'Red Bans',        id: '#dr-red-ban-3',      name: 'Red Ban 3' },
+    { group: 'Red Bans',        id: '#dr-red-ban-4',      name: 'Red Ban 4' },
+    { group: 'Red Bans',        id: '#dr-red-ban-5',      name: 'Red Ban 5' },
+  ];
+
   /* ── Team Line-Up (mplfs.html) element defaults ────────────────
      Blue and Red are two separate page divs (lub- / lur- prefixed ids) but they
      share every positioning CLASS (.lu-player-N, .lu-nametag-N, .lu-title,
@@ -3913,6 +4021,15 @@
       defaultsKey: 'sb_edit_defaults_draft_matchgame',
       elements:    DRAFT_MATCHGAME_ELEMENTS,
       defaults:    DRAFT_MATCHGAME_DEFAULTS,
+    },
+    draft_recap: {
+      label:       'Draft Recap · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_recap',
+      elements:    DRAFT_RECAP_ELEMENTS,
+      defaults:    DRAFT_RECAP_DEFAULTS,
+      showFn:      'showDraftRecapForEdit',
     },
     mplfs_standings: {
       label:       'Standings · mplfs',

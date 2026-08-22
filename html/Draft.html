@@ -762,6 +762,175 @@
     }
     .dcoach-name.dcoach-home .dcoach-name-text { text-align: left; }
     .dcoach-name.dcoach-away .dcoach-name-text { text-align: right; }
+
+    /* ── Draft Recap — previous game's pick/ban recap. Independent of
+       #scene (shown/hidden via its own toggle, not tied to the main
+       draft scene's slide state). Blue card mirrors the red card;
+       every hero/ban slot inside a card is positioned relative to that
+       card's own background box, so moving the card carries its 5
+       picks + 5 bans + title along, while each slot stays individually
+       draggable/resizable on top of that (see CLAUDE.md's "every
+       element is independently editable" rule). ── */
+    #draftrecap-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      pointer-events: none;
+      display: none;
+    }
+
+    /* Slide in/out — blue enters from off-screen left, red from
+       off-screen right, both sliding back out the same way they came
+       in. Two-rule direction split (base = "out" easing, .draftrecap-
+       visible = "in" easing) is the same technique #scene/#scene.draft-
+       hidden use above, just on transform instead of opacity. */
+    .dr-bg {
+      position: absolute;
+      width: 398px; height: 218px;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      transition: transform 0.45s cubic-bezier(0.4, 0, 1, 1);
+    }
+    #dr-blue-bg {
+      left: 0px; top: 562px;
+      background-image: url('assets/draft/recapblue.png');
+      transform: translateX(-450px);
+    }
+    #dr-red-bg {
+      left: 1522px; top: 562px;
+      background-image: url('assets/draft/recapred.png');
+      transform: translateX(450px);
+    }
+    #draftrecap-page.draftrecap-visible #dr-blue-bg,
+    #draftrecap-page.draftrecap-visible #dr-red-bg {
+      transform: translateX(0);
+      transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .dr-title {
+      position: absolute;
+      left: 7px; top: 0px;
+      width: 384px; height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      overflow: hidden;
+    }
+    #dr-red-title { justify-content: flex-end; }
+    .dr-title-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 19px; /* 4.5pt @ 300dpi */
+      color: #ffffff;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .dr-red-title-text { text-align: right; }
+
+    /* Hero pick slot — video fills/crops the box (portrait, matches the
+       pick-reveal video's own aspect ratio) instead of the object-fit:cover
+       stretching that would distort the ban-hero KOTAK still below. */
+    .dr-pick {
+      position: absolute;
+      top: 50px;
+      width: 74px; height: 117px;
+      overflow: hidden;
+      background: #000;
+    }
+    .dr-pick video {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    #dr-blue-pick-1, #dr-red-pick-1 { left: 7px; }
+    #dr-blue-pick-2, #dr-red-pick-2 { left: 84.5px; }
+    #dr-blue-pick-3, #dr-red-pick-3 { left: 162px; }
+    #dr-blue-pick-4, #dr-red-pick-4 { left: 239.5px; }
+    #dr-blue-pick-5, #dr-red-pick-5 { left: 317px; }
+
+    /* Ban slot — square KOTAK portrait cropped top/bottom by object-fit:
+       cover into this short, wide box (same crop technique as the live
+       ban plate's .ban-hero, just a different box ratio). */
+    .dr-ban {
+      position: absolute;
+      top: 172px;
+      width: 73px; height: 39px;
+      overflow: hidden;
+      background: #000;
+    }
+    .dr-ban img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(1) brightness(0.5);
+    }
+    #dr-blue-ban-1, #dr-red-ban-1 { left: 8px; }
+    #dr-blue-ban-2, #dr-red-ban-2 { left: 85.5px; }
+    #dr-blue-ban-3, #dr-red-ban-3 { left: 163px; }
+    #dr-blue-ban-4, #dr-red-ban-4 { left: 240.5px; }
+    #dr-blue-ban-5, #dr-red-ban-5 { left: 318px; }
+
+    /* ── Pick/ban status badges (banned/stolen/ban_again/ban_to_pick) —
+       drawn on a full-cover overlay div rather than on .dr-pick/.dr-ban
+       directly so the border+glow live at the slot's own bounds
+       (box-sizing:border-box keeps them from ever getting clipped by
+       the slot's overflow:hidden). Entrance animation replays by
+       adding .dr-status-in then removing it on a timer (see
+       drSetStatus() in the script below) rather than relying on
+       animationend, matching this file's usual reveal convention. ── */
+    .dr-status {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      border: 0 solid transparent;
+      z-index: 4;
+    }
+    .dr-status-label {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      height: 16px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 9px;
+      letter-spacing: 0.4px;
+      color: #ffffff;
+      text-transform: uppercase;
+    }
+
+    /* pick_status: "banned" */
+    .dr-status-banned {
+      border: 3px solid #e8121f;
+      box-shadow: inset 0 0 12px rgba(232, 18, 31, 0.85);
+    }
+    .dr-status-banned .dr-status-label { display: flex; background: #e8121f; }
+
+    /* pick_status: "stolen" */
+    .dr-status-stolen {
+      border: 3px solid #3a3a3a;
+      box-shadow: inset 0 0 12px rgba(58, 58, 58, 0.85);
+    }
+    .dr-status-stolen .dr-status-label { display: flex; background: #3a3a3a; }
+
+    /* ban_status: "ban_again" (ban slots only — no label) */
+    .dr-status-ban-again {
+      border: 2px solid #e8121f;
+      box-shadow: inset 0 0 10px rgba(232, 18, 31, 0.85);
+    }
+
+    /* ban_status: "ban_to_pick" (ban slots only — no label) */
+    .dr-status-ban-to-pick {
+      border: 2px solid #ffcc00;
+      box-shadow: inset 0 0 10px rgba(255, 204, 0, 0.85);
+    }
+
+    @keyframes dr-status-in {
+      0%   { opacity: 0; transform: scale(1.3); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .dr-status.dr-status-in { animation: dr-status-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
   </style>
 </head>
 <body>
@@ -809,6 +978,13 @@
     .then(function(r){ return r.json(); })
     .then(function(d){ if (d.mode) draftPhotoMode = d.mode; })
     .catch(function(){});
+
+  /* Draft Recap API URL (Settings → Draft Recap API) — previous-draft
+     format, separate feed from the live draft-info-only apiUrl above. */
+  var draftRecapApiUrl = 'https://theapi.dpdns.org/api/previous-draft/';
+  fetch('/api/draft-recap-url').then(function(r){ return r.json(); }).then(function(d){
+    if (d.url) draftRecapApiUrl = d.url;
+  }).catch(function(){});
 
   /* Player photo layout — matches .player-photo / .photo-canvas CSS width */
   var PHOTO_W = 333;
@@ -1322,6 +1498,244 @@
     box.innerHTML = '<span class="draft-match-game-text"></span>';
     scene.appendChild(box);
   }
+
+  /* ── Draft Recap — previous game's pick/ban recap. Lives outside
+     #scene (own top-level layer, own show/hide) so it isn't affected by
+     the main draft scene's slide transform and can show independently
+     of whether the pick/ban UI itself is showing. campid convention:
+     camp_list[0] = camp1 = blue/left, camp_list[1] = camp2 = red/right
+     (same as every other MLBB feed this overlay consumes). ── */
+  var draftRecapPage = null;
+  var drBlue = null, drRed = null;
+  var drShouldShow = false;
+  var drOutTimer = null;
+  var drPollTimer = null;
+
+  /* pick_status → border/glow class + label text. Only "banned" and
+     "stolen" get special treatment — "repick"/"none"/anything else
+     renders as a plain slot (see drSetStatus). */
+  var DR_PICK_STATUS_CLASS = { banned: 'dr-status-banned', stolen: 'dr-status-stolen' };
+  var DR_PICK_STATUS_LABEL = { banned: 'BANNED', stolen: 'STOLEN' };
+  /* ban_status → border/glow class. No label on ban slots. */
+  var DR_BAN_STATUS_CLASS  = { ban_again: 'dr-status-ban-again', ban_to_pick: 'dr-status-ban-to-pick' };
+
+  function drBuildCard(side) {
+    var bg = document.createElement('div');
+    bg.className = 'dr-bg';
+    bg.id = 'dr-' + side + '-bg';
+
+    var title = document.createElement('div');
+    title.className = 'dr-title';
+    title.id = 'dr-' + side + '-title';
+    var titleText = document.createElement('span');
+    titleText.className = 'dr-title-text dr-' + side + '-title-text';
+    title.appendChild(titleText);
+    bg.appendChild(title);
+
+    var picks = [], bans = [];
+    for (var i = 1; i <= 5; i++) {
+      var pick = document.createElement('div');
+      pick.className = 'dr-pick';
+      pick.id = 'dr-' + side + '-pick-' + i;
+      var vid = document.createElement('video');
+      vid.muted = true;
+      vid.loop = true;
+      vid.playsInline = true;
+      vid.preload = 'none';
+      pick.appendChild(vid);
+
+      var pickStatus = document.createElement('div');
+      pickStatus.className = 'dr-status';
+      var pickLabel = document.createElement('span');
+      pickLabel.className = 'dr-status-label';
+      pickStatus.appendChild(pickLabel);
+      pick.appendChild(pickStatus);
+
+      bg.appendChild(pick);
+      picks.push({ vid: vid, statusEl: pickStatus, labelEl: pickLabel, prevStatus: '', prevHeroid: undefined });
+
+      var ban = document.createElement('div');
+      ban.className = 'dr-ban';
+      ban.id = 'dr-' + side + '-ban-' + i;
+      var img = document.createElement('img');
+      img.alt = '';
+      img.onerror = function () { this.style.visibility = 'hidden'; };
+      ban.appendChild(img);
+
+      var banStatus = document.createElement('div');
+      banStatus.className = 'dr-status';
+      ban.appendChild(banStatus);
+
+      bg.appendChild(ban);
+      bans.push({ img: img, statusEl: banStatus, labelEl: null, prevStatus: '', prevBanId: undefined });
+    }
+
+    return { bg: bg, titleText: titleText, picks: picks, bans: bans };
+  }
+
+  function buildDraftRecap() {
+    draftRecapPage = document.createElement('div');
+    draftRecapPage.id = 'draftrecap-page';
+    drBlue = drBuildCard('blue');
+    drRed  = drBuildCard('red');
+    draftRecapPage.appendChild(drBlue.bg);
+    draftRecapPage.appendChild(drRed.bg);
+    document.body.appendChild(draftRecapPage);
+  }
+
+  /* Applies (or clears) a status border/glow/label on one slot, and
+     plays a one-shot "in" flourish exactly when the status actually
+     changes — draft recap data can be re-fetched while the panel is
+     already showing (see drPollTimer below), so a status can appear or
+     change live, not just on first reveal. Never relies on
+     animationend (memory: feedback_overlay_animations.md) — the
+     .dr-status-in class is added, then removed on a plain timer. */
+  function drSetStatus(slot, statusKey, classMap, labelMap) {
+    var cls = classMap[statusKey] || '';
+    if (slot.prevStatus === cls) return;
+
+    for (var k in classMap) { slot.statusEl.classList.remove(classMap[k]); }
+    slot.statusEl.classList.remove('dr-status-in');
+
+    if (cls) {
+      slot.statusEl.classList.add(cls);
+      if (slot.labelEl) slot.labelEl.textContent = (labelMap && labelMap[statusKey]) || '';
+      void slot.statusEl.offsetWidth; /* force reflow so the animation replays every time */
+      slot.statusEl.classList.add('dr-status-in');
+      setTimeout(function () { slot.statusEl.classList.remove('dr-status-in'); }, 400);
+    } else if (slot.labelEl) {
+      slot.labelEl.textContent = '';
+    }
+    slot.prevStatus = cls;
+  }
+
+  function drApplySide(card, camp, gameNum) {
+    var teamAbbr = (camp && camp.team_name_simple) || '';
+    card.titleText.textContent = teamAbbr + ' DRAFT RECAP - GAME ' + gameNum;
+    var players = (camp && camp.player_list) || [];
+    for (var i = 0; i < 5; i++) {
+      var p        = players[i] || {};
+      var heroid   = p.hero_recap     || 0;
+      var banId    = p.ban_hero_recap || 0;
+      var pickSlot = card.picks[i];
+      var banSlot  = card.bans[i];
+
+      /* Only touch the video element when the hero actually changes —
+         drFetchAndApply() re-runs every 3s via drPollTimer, and
+         re-assigning .src + currentTime=0 + play() on every tick
+         (even to the SAME hero) restarted the clip from frame 0 each
+         time, which is what was reading as flickering/restarting. */
+      if (heroid !== pickSlot.prevHeroid) {
+        pickSlot.prevHeroid = heroid;
+        if (heroid > 0) {
+          pickSlot.vid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+          pickSlot.vid.currentTime = 0;
+          pickSlot.vid.play().catch(function () {});
+        } else {
+          pickSlot.vid.removeAttribute('src');
+          pickSlot.vid.load();
+        }
+      }
+      drSetStatus(pickSlot, p.pick_status, DR_PICK_STATUS_CLASS, DR_PICK_STATUS_LABEL);
+
+      if (banId !== banSlot.prevBanId) {
+        banSlot.prevBanId = banId;
+        if (banId > 0) {
+          banSlot.img.style.visibility = '';
+          banSlot.img.src = 'hero/HERO_' + banId + '_KOTAK.png';
+        } else {
+          banSlot.img.removeAttribute('src');
+          banSlot.img.style.visibility = 'hidden';
+        }
+      }
+      drSetStatus(banSlot, p.ban_status, DR_BAN_STATUS_CLASS, null);
+    }
+  }
+
+  /* Recap's game number is "current game minus 1" (the game that JUST
+     finished) — same computation Match Board / pollMatchState() use for
+     the current game number (both scores + 1), just without the +1. */
+  function drFetchGameNum() {
+    return fetch('/match/state', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        var home = s.home || s.teamA || {};
+        var away = s.away || s.teamB || {};
+        return Math.max(1, (home.score || 0) + (away.score || 0));
+      })
+      .catch(function () { return 1; });
+  }
+
+  function drFetchAndApply() {
+    return Promise.all([
+      fetch(draftRecapApiUrl, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+      drFetchGameNum(),
+    ]).then(function (results) {
+      var data    = results[0];
+      var gameNum = results[1];
+      var camps   = (data && data.camp_list) || [];
+      drApplySide(drBlue, camps[0], gameNum);
+      drApplySide(drRed,  camps[1], gameNum);
+    });
+  }
+
+  function drAnimateIn() {
+    drShouldShow = true;
+    clearTimeout(drOutTimer);
+    draftRecapPage.style.display = 'block';
+    drFetchAndApply().catch(function () {}).then(function () {
+      if (!drShouldShow) return; /* hidden again while we were fetching */
+      /* Double rAF so the browser commits display:block at the
+         off-screen transform before adding the "visible" class (which
+         switches to the slide-in transition) — see icAnimateIn() for
+         why the extra frame matters. */
+      requestAnimationFrame(function () {
+        requestAnimationFrame(function () {
+          if (drShouldShow) draftRecapPage.classList.add('draftrecap-visible');
+        });
+      });
+    });
+
+    /* Keep polling while shown — pick_status/ban_status can still
+       change live even though the game itself is over (corrections
+       from the scorekeeping tool), and drSetStatus() only replays the
+       "in" flourish when a status actually changes, so this doesn't
+       re-animate anything that's already settled. */
+    clearInterval(drPollTimer);
+    drPollTimer = setInterval(function () {
+      if (drShouldShow) drFetchAndApply().catch(function () {});
+    }, 3000);
+  }
+
+  function drAnimateOut() {
+    drShouldShow = false;
+    clearInterval(drPollTimer);
+    draftRecapPage.classList.remove('draftrecap-visible');
+    clearTimeout(drOutTimer);
+    drOutTimer = setTimeout(function () {
+      draftRecapPage.style.display = 'none';
+    }, 460); /* matches .dr-bg's 0.45s "out" transition above */
+  }
+
+  /* Dashboard Edit-tab force-show (see EDIT_CONFIGS' draft_recap in
+     dashboard.html) — fetches live data once so the hero/ban slots and
+     title text sit at realistic sizes while dragging. */
+  window.showDraftRecapForEdit = function () {
+    drShouldShow = true;
+    clearTimeout(drOutTimer);
+    draftRecapPage.style.display = 'block';
+    draftRecapPage.classList.add('draftrecap-visible');
+    drFetchAndApply().catch(function () {});
+  };
+
+  /* Restore real server-side shown/hidden state on load (checkOverlays.
+     draftrecap), so a (re)loaded page picks up an already-shown recap
+     instead of guessing — default is hidden (CSS default), matching the
+     server default of false, so there's no flash either way. */
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.draftrecap) drAnimateIn(); })
+    .catch(function () {});
 
   /* ── Build coach BPM + headset + name (home + away) ──────────── */
   var DCOACH_HEART_SVG =
@@ -2399,6 +2813,31 @@
         else if (d.action === 'hide') hideDraftScene();
       } catch (e) {}
     });
+    sse.addEventListener('draftrecap', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        if (d.action === 'show') drAnimateIn();
+        else if (d.action === 'hide') drAnimateOut();
+      } catch (e) {}
+    });
+    /* Catch-up re-sync — this SSE listener only exists as of NOW (the
+       2s startup delay above), but a Show/Hide click could have fired
+       and broadcast anytime before this point (e.g. a Control-tab
+       preview iframe reloads Draft.html fresh every time its sidebar
+       row is selected, and a click on "Draft Recap Show" right after
+       selecting it easily lands inside that 2s blind window — the
+       server state DID flip and broadcast, this page just wasn't
+       listening yet to catch it). Re-fetch the real state now and
+       reconcile instead of trusting the earlier restore-fetch, which
+       ran before any of this could have happened. */
+    fetch('/overlay/check-overlays', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        var shouldShow = !!(d && d.draftrecap);
+        if (shouldShow && !drShouldShow) drAnimateIn();
+        else if (!shouldShow && drShouldShow) drAnimateOut();
+      })
+      .catch(function () {});
   }, 2000);
 
   buildPickPlates();
@@ -2409,6 +2848,7 @@
   buildStatusArea();
   buildDraftMap();
   buildDraftMatchGame();
+  buildDraftRecap();
   buildCoachBpm();
   buildTimerBar();
   startSponsorLoop();
