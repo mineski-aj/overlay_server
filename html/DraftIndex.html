@@ -435,19 +435,45 @@
     }
   }
 
-  function diApplyTeamBox(prefix, teamObj) {
+  function diApplyTeamBox(prefix, teamObj, logoTricode) {
     var nameBox  = document.getElementById('di-' + prefix + '-name');
     var nameText = nameBox.querySelector('span');
     var logoEl   = document.getElementById('di-' + prefix + '-logo');
     var short    = (teamObj && teamObj.short) || '';
-    nameText.textContent = short;
+    /* Name text and logo both follow the live game feed's own campid (see
+       diApplyPhase2Data/diResolveCamps), not the Match Board's home/away —
+       keeps the tricode label and the logo always matching. Falls back to
+       the Match Board short code only if the live feed has no tricode for
+       that camp yet. */
+    var logoTri = logoTricode || short;
+    nameText.textContent = logoTri;
     diFitTeamName(nameBox, nameText, 34, 18);
     logoEl.onerror = function () { logoEl.style.display = 'none'; };
     logoEl.style.display = '';
-    logoEl.src = short ? '/logos/' + encodeURIComponent(short) + '.png' : '';
+    logoEl.src = logoTri ? '/logos/' + encodeURIComponent(logoTri) + '.png' : '';
   }
 
   /* ── Data fetch ──────────────────────────────────────────────── */
+  /* Team logos: campid 1 = blue, campid 2 = red — same strict, live-feed-
+     based convention as mplfs.html's Final Team scene (updateFtTeamIdentity/
+     ftResolveCardCamps), independent of the Match Board's home/away call. */
+  function diFetchGameData() {
+    return fetch('/api/gamedata-proxy', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+  function diResolveCamps(gd) {
+    var camps = (gd && gd.data && gd.data.camp_list) || [];
+    var blueCamp = null, redCamp = null;
+    for (var i = 0; i < camps.length; i++) {
+      if (camps[i].campid === 1) blueCamp = camps[i];
+      if (camps[i].campid === 2) redCamp = camps[i];
+    }
+    return {
+      blue: (blueCamp && blueCamp.team_simple_name) || '',
+      red:  (redCamp  && redCamp.team_simple_name)  || ''
+    };
+  }
   function diFetchMatchState() {
     return fetch('/match/state', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
@@ -467,7 +493,7 @@
      blank/stale values, it waits for the actual fetch and reveals the
      instant it resolves. */
   function diFetchPhase2Data() {
-    return Promise.all([diFetchMatchState(), diFetchLineupRate()]);
+    return Promise.all([diFetchMatchState(), diFetchLineupRate(), diFetchGameData()]);
   }
 
   /* t1/t2 → blue/red: this codebase's universal convention is camp1 =
@@ -484,11 +510,12 @@
     return { blue: t1, red: t2 };
   }
 
-  function diApplyPhase2Data(ms, lu, animate) {
+  function diApplyPhase2Data(ms, lu, animate, gd) {
     var home = (ms && ms.home) || {};
     var away = (ms && ms.away) || {};
-    diApplyTeamBox('blue', home);
-    diApplyTeamBox('red', away);
+    var liveTri = diResolveCamps(gd);
+    diApplyTeamBox('blue', home, liveTri.blue);
+    diApplyTeamBox('red', away, liveTri.red);
 
     var sides = diNormalizeSides(lu);
     var blue = sides.blue, red = sides.red;
@@ -604,7 +631,7 @@
       diBarsContainer.style.opacity = '1';
       diFetchPhase2Data().then(function (r) {
         if (token !== sceneToken) return;
-        diApplyPhase2Data(r[0], r[1], false);
+        diApplyPhase2Data(r[0], r[1], false, r[2]);
       });
       return;
     }
@@ -652,7 +679,7 @@
          already be in the DOM instead of the real match's logos. */
       dataPromise.then(function (r) {
         if (token !== sceneToken) return;
-        diApplyPhase2Data(r[0], r[1], true);
+        diApplyPhase2Data(r[0], r[1], true, r[2]);
         return diPreload(diPhase2.querySelectorAll('img'), 900);
       }).then(function () {
         if (token !== sceneToken) return;
@@ -710,7 +737,7 @@
     diBarsContainer.style.opacity = '1';
     diFetchPhase2Data().then(function (r) {
       if (token !== sceneToken) return;
-      diApplyPhase2Data(r[0], r[1], false);
+      diApplyPhase2Data(r[0], r[1], false, r[2]);
     });
   };
 
