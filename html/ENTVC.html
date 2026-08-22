@@ -814,6 +814,23 @@
       });
     }
 
+    /* Match times come from the Match Board as free text (e.g. "5:00 PM"),
+       not a fixed format — normalize to 24-hour "HH:MM GMT+8" for display
+       here regardless of how it was typed. Falls back to the raw string
+       unchanged if it doesn't look like a time at all, rather than hiding
+       a value the caster/producer typed. */
+    function wsFormatTimeGmt8(raw) {
+      const s = String(raw || '').trim();
+      const m = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+      if (!m) return s;
+      let h = parseInt(m[1], 10);
+      const min = m[2];
+      const ap = m[3] ? m[3].toUpperCase() : null;
+      if (ap === 'PM' && h < 12) h += 12;
+      if (ap === 'AM' && h === 12) h = 0;
+      return String(h).padStart(2, '0') + ':' + min + ' GMT+8';
+    }
+
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
@@ -831,9 +848,9 @@
         html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
-            ? `<span class="wsm-band-time star">${m.time}</span>` +
+            ? `<span class="wsm-band-time star">${wsFormatTimeGmt8(m.time)}</span>` +
               `<div class="wsm-band-cot"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
-            : `<span class="wsm-band-time">${m.time}</span>`) +
+            : `<span class="wsm-band-time">${wsFormatTimeGmt8(m.time)}</span>`) +
           `<span class="wsm-band-bo">${m.bo}</span>` +
           `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
           logo(m, 'l') +
