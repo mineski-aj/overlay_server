@@ -387,7 +387,7 @@
       row.appendChild(line);
       diBarsContainer.appendChild(row);
 
-      return { numBlue: numBlue, numRed: numRed, segBlue: segBlue, segRed: segRed };
+      return { numBlue: numBlue, numRed: numRed, segBlue: segBlue, segRed: segRed, line: line };
     });
   }
   buildBarsRows();
@@ -541,6 +541,35 @@
     });
   }
 
+  /* ── Data-content opacity (logos/names/stat numbers/bar values) ──
+     Separate from diRevealPhase2()'s shell animation (box slide-in, mini
+     logo pop, bars container fade) on purpose — this scene is sponsored
+     and must always reveal on schedule, never delayed waiting on the
+     Line-Up Rate fetch (2-2.6s worst case). Content starts transparent
+     the moment phase 2 is entered and fades in separately the instant
+     real data actually lands, whenever that is relative to the shell
+     reveal — see diTransitionToPhase2(). Bar LABELS aren't included
+     here since they're static (from DI_BARS), not fetched. */
+  var DI_DATA_SELECTORS = [
+    '#di-blue-logo', '#di-red-logo',
+    '#di-blue-name', '#di-red-name',
+    '#di-blue-counter .di-stat-value', '#di-red-counter .di-stat-value',
+    '#di-blue-lineup .di-stat-value',  '#di-red-lineup .di-stat-value',
+  ];
+  function diSetDataOpacity(value, animate) {
+    DI_DATA_SELECTORS.forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el) return;
+      el.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+      el.style.opacity = String(value);
+    });
+    diBarEls.forEach(function (els) {
+      if (!els.line) return;
+      els.line.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+      els.line.style.opacity = String(value);
+    });
+  }
+
   /* ── Phase 1 — mask reveal from the center seam, then ease out ── */
   function diResetPhase1() {
     diLogoP1.style.clipPath = 'inset(0 0 0 100%)';
@@ -658,14 +687,29 @@
     diPreload([diLogoP1], 500).then(function () {
       if (token !== sceneToken) return;
       diRevealPhase1();
-      setTimeout(function () {
+
+      /* Hold phase 1 (the branded title card) until EITHER the normal
+         pacing time has elapsed OR the data fetch actually settles —
+         whichever is longer — instead of cutting to phase 2 on a fixed
+         timer and hoping the data is ready. The fetch started above (in
+         parallel with the whole title card) already gives it a head
+         start, so on the common/fast path this behaves exactly like the
+         old fixed timer. On a slow Line-Up Rate response, phase 1 (which
+         is itself sponsored, always-safe content) just stays up a bit
+         longer instead of cutting to an empty/incomplete phase 2 — this
+         is bounded by /api/lineuprate-data's own ~5s server-side
+         timeout (see diFetchLineupRate above), never indefinite. */
+      var minHold = new Promise(function (resolve) {
+        setTimeout(resolve, REVEAL_MS + PHASE1_HOLD_MS);
+      });
+      Promise.all([dataPromise, minHold]).then(function (results) {
         if (token !== sceneToken) return;
-        diTransitionToPhase2(token, dataPromise);
-      }, REVEAL_MS + PHASE1_HOLD_MS);
+        diTransitionToPhase2(token, results[0]);
+      });
     });
   }
 
-  function diTransitionToPhase2(token, dataPromise) {
+  function diTransitionToPhase2(token, data) {
     diHidePhase1(380);
 
     setTimeout(function () {
@@ -673,18 +717,24 @@
       diPhase1.style.display = 'none';
       diPhase2.style.display = 'block';
 
-      /* Apply data BEFORE preloading/revealing — preloading first races
-         the slow Line-Up Rate fetch (2-2.6s) against a 900ms cap, so the
-         reveal was firing on whatever (stale/blank) images happened to
-         already be in the DOM instead of the real match's logos. */
-      dataPromise.then(function (r) {
-        if (token !== sceneToken) return;
-        diApplyPhase2Data(r[0], r[1], true, r[2]);
-        return diPreload(diPhase2.querySelectorAll('img'), 900);
-      }).then(function () {
-        if (token !== sceneToken) return;
+      /* Data already finished loading during phase 1's hold above, so
+         apply it and decide up front whether there's anything to show —
+         no more waiting once we get here. If every source failed, leave
+         the data content transparent so the shell (mini logo pop, box
+         slide-in, bars fade) still plays on schedule without showing
+         broken/zeroed placeholders. */
+      var gotData = !!(data[0] || data[1] || data[2]);
+      diApplyPhase2Data(data[0], data[1], true, data[2]);
+      diSetDataOpacity(gotData ? 1 : 0, false);
+
+      if (gotData) {
+        diPreload(diPhase2.querySelectorAll('img'), 900).then(function () {
+          if (token !== sceneToken) return;
+          diRevealPhase2();
+        });
+      } else {
         diRevealPhase2();
-      });
+      }
     }, 380);
   }
 

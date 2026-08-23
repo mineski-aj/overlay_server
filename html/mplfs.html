@@ -4205,8 +4205,9 @@
         onMatchEvent(ms);
       });
       sseSource.addEventListener('standings', (e) => {
-        try { stApplyTeams(JSON.parse(e.data)); } catch { return; }
-        if (activeFeature === 'standings') buildStandings();
+        let changed = false;
+        try { changed = stApplyTeams(JSON.parse(e.data)); } catch { return; }
+        if (changed && activeFeature === 'standings') buildStandings();
       });
     }
 
@@ -6311,14 +6312,14 @@
 
     /* The API-named MVP stat (mvp_value — see mvApply/hlApply) can be a
        small count (assists) or a large one (gold, damage) depending on
-       whatever mvp_title says it is — under 1000 shows as a plain
-       integer, 1000+ shows as "1.4k" (1 decimal) instead of the full
-       number, same convention used elsewhere for large stat totals. */
+       whatever mvp_title says it is — up to 4 digits (under 10000)
+       shows as a plain integer, 5+ digits shows as "45.3k" (1 decimal)
+       instead of the full number. */
     function mvFormatStatValue(v) {
       if (v == null) return '-';
       const n = Number(v);
       if (!isFinite(n)) return String(v);
-      if (Math.abs(n) < 1000) return String(n);
+      if (Math.abs(n) < 10000) return String(n);
       return (n / 1000).toFixed(1) + 'k';
     }
 
@@ -7495,6 +7496,7 @@
     ];
     const ST_ROW_TOP = 354, ST_ROW_PITCH = 77;
     let stTeams = ST_TEAMS;
+    let stTeamsKey = null; /* last-applied team data, so an unchanged re-broadcast (or the show/hide toggle, which shares this same "standings" SSE event name) doesn't force a full row/logo rebuild */
 
     function buildStandings() {
       const root = document.getElementById('st-rows');
@@ -7518,8 +7520,18 @@
     }
     buildStandings();
 
+    /* Returns true only when the team data actually changed, so callers
+       can skip a redundant buildStandings() rebuild — this event also
+       carries the plain show/hide toggle payload ({action:"show"/"hide"},
+       no .teams), which now cleanly no-ops here instead of still forcing
+       a rebuild downstream. */
     function stApplyTeams(s) {
-      if (s && Array.isArray(s.teams) && s.teams.length) stTeams = s.teams;
+      if (!s || !Array.isArray(s.teams) || !s.teams.length) return false;
+      const key = JSON.stringify(s.teams);
+      if (key === stTeamsKey) return false;
+      stTeamsKey = key;
+      stTeams = s.teams;
+      return true;
     }
 
     function stApplyWeekDay(ms) {
