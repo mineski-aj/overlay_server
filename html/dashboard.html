@@ -2858,6 +2858,12 @@
     '.wl-player-red':     { left: 1420, top: 40,  width: 500, height: 800 },
     '.wl-namebox-blue':   { left: 860,  top: 830 },
     '.wl-namebox-red':    { left: 1580, top: 715 },
+    /* Local offsets against .wlm-box (the #wl-match child that actually
+       positions them) — same local-offset convention as #wl-timer-label
+       above, since buildWlMatch() rebuilds #wl-match's innerHTML on every
+       match-state update and these logos live inside that rebuilt tree. */
+    '.wlm-logo-l':        { left: 146,  top: 55 },
+    '.wlm-logo-r':        { left: 478,  top: 55 },
     /* Match Card text — grouped by shared class, so one fontSize edit
        resizes every instance of that text family at once (label/time/BO
        share one class already, same for the L/R team code and score). */
@@ -2877,6 +2883,8 @@
     { group: 'Players', id: '.wl-player-red',   name: 'Photo (Red)'     },
     { group: 'Players', id: '.wl-namebox-blue', name: 'Name Box (Blue)' },
     { group: 'Players', id: '.wl-namebox-red',  name: 'Name Box (Red)'  },
+    { group: 'Match Logo (Blue)', id: '.wlm-logo-l', name: 'Team Logo (Blue)' },
+    { group: 'Match Logo (Red)',  id: '.wlm-logo-r', name: 'Team Logo (Red)'  },
     { group: 'Match Card Text', id: '.wlm-label, .wlm-time, .wlm-bo', name: 'Header Text Size' },
     { group: 'Match Card Text', id: '.wlm-tri',                       name: 'Team Code Size'   },
     { group: 'Match Card Text', id: '.wlm-score-l, .wlm-score-r',     name: 'Score Size'       },
@@ -3245,12 +3253,28 @@
     '.ws-casters-slot-left':   { left: 0,   top: 14, width: 354, height: 464 },
     '.ws-casters-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
     '.ws-casters-slot-right':  { left: 217, top: 14, width: 354, height: 464 },
+    /* Descendant selector scoped to #ws-casters — .ws-talent-namebar is a
+       shared class with #ws-hosts (same markup built by
+       populateWsTalentBox()), so a bare class selector here would drag
+       Hosts' name box too. Scoping to #ws-casters keeps this Casters-
+       only, same trick used for EN Casters' independent copy.
+       The 3 name-text rows below use their own "<box>-slot-<pos>-name"
+       classes instead, which are already unique per box/position (no
+       scoping needed) — same convention as the photo slot classes. */
+    '#ws-casters .ws-talent-namebar': { left: 0, top: 539, width: 571, height: 61 },
+    '.ws-casters-slot-left-name':   { left: 0,   top: 0, width: 190, height: 61 },
+    '.ws-casters-slot-middle-name': { left: 190, top: 0, width: 191, height: 61 },
+    '.ws-casters-slot-right-name':  { left: 381, top: 0, width: 190, height: 61 },
   };
 
   var CASTER_ELEMENTS = [
     { group: 'Casters', id: '.ws-casters-slot-left',   name: 'Photo (Left)'   },
     { group: 'Casters', id: '.ws-casters-slot-middle', name: 'Photo (Middle)' },
     { group: 'Casters', id: '.ws-casters-slot-right',  name: 'Photo (Right)'  },
+    { group: 'Casters Name', id: '#ws-casters .ws-talent-namebar', name: 'Name Box' },
+    { group: 'Caster Name (Left)',   id: '.ws-casters-slot-left-name',   name: 'Caster 1 Name' },
+    { group: 'Caster Name (Middle)', id: '.ws-casters-slot-middle-name', name: 'Caster 2 Name' },
+    { group: 'Caster Name (Right)',  id: '.ws-casters-slot-right-name',  name: 'Caster 3 Name' },
   ];
 
   /* ── Hosts (mplfs.html Waiting Screen TVC) element defaults ─────

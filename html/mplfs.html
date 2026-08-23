@@ -2387,6 +2387,24 @@
       font-weight: 800; font-size: 27px; color: #0a0a0a;
       text-transform: uppercase; white-space: nowrap; overflow: hidden;
     }
+    /* Each name gets its own "<box>-slot-<pos>-name" class (e.g.
+       ws-casters-slot-left-name) so the dashboard Edit panel can drag
+       each caster/host's name independently — same stable-class trick
+       as the photo slots above. Switches the name row from flex (evenly
+       split thirds/halves) to absolute so left/top/width become real,
+       overridable box dimensions instead of flex-computed ones. */
+    .ws-talent-names.ws-talent-namecount-2 .ws-talent-name,
+    .ws-talent-names.ws-talent-namecount-3 .ws-talent-name {
+      position: absolute; top: 0; height: 61px; flex: none;
+    }
+    .ws-talent-names.ws-talent-namecount-2 .ws-hosts-slot-left-name   { left: 0px;     width: 285.5px; }
+    .ws-talent-names.ws-talent-namecount-2 .ws-hosts-slot-right-name  { left: 285.5px; width: 285.5px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-casters-slot-left-name   { left: 0px;   width: 190px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-casters-slot-middle-name { left: 190px; width: 191px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-casters-slot-right-name  { left: 381px; width: 190px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-left-name   { left: 0px;   width: 190px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-middle-name { left: 190px; width: 191px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-right-name  { left: 381px; width: 190px; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -5192,12 +5210,12 @@
       const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
       const slotClass = i => `${rootId}-slot-${posOrder[i].toLowerCase()}`;
       const photosHtml = names.map((n, i) => talentPhotoTag(n, posOrder[i], slotClass(i))).join('');
-      const namesHtml = names.map(n => `<div class="ws-talent-name">${n.toUpperCase()}</div>`).join('');
+      const namesHtml = names.map((n, i) => `<div class="ws-talent-name ${slotClass(i)}-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
         `<img class="ws-talent-bg" src="${WS_TVC_ASSET}${bgAsset}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
         `<div class="ws-talent-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
-        `<div class="ws-talent-names">${namesHtml}</div></div>`;
+        `<div class="ws-talent-names ws-talent-namecount-${names.length}">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
     }

@@ -254,37 +254,37 @@
       "top": "715px"
     },
     ".ws-casters-slot-left": {
-      "left": "-127px",
+      "left": "-174px",
       "top": "37px",
       "width": "354px",
       "height": "464px"
     },
     ".ws-casters-slot-middle": {
-      "left": "141px",
-      "top": "30px",
+      "left": "135px",
+      "top": "27px",
       "width": "320px",
       "height": "478px"
     },
     ".ws-casters-slot-right": {
-      "left": "367px",
+      "left": "334px",
       "top": "35px",
       "width": "354px",
       "height": "464px"
     },
     ".ws-hosts-slot-left": {
-      "left": "-7px",
+      "left": "-11px",
       "top": "17px",
       "width": "300px",
       "height": "464px"
     },
     ".ws-hosts-slot-right": {
-      "left": "262px",
+      "left": "264px",
       "top": "14px",
       "width": "300px",
       "height": "464px"
     },
     ".hl-player-photo-wrap": {
-      "left": "1022px",
+      "left": "1002px",
       "top": "56px",
       "width": "1150px",
       "height": "1150px"
@@ -338,13 +338,13 @@
       "height": "470px"
     },
     "#mv-hero-img": {
-      "left": "-390px",
+      "left": "-320px",
       "top": "-47px",
       "width": "889px",
       "height": "889px"
     },
     "#mv-photo": {
-      "left": "-99px",
+      "left": "-119px",
       "top": "0px",
       "width": "1424px",
       "height": "1424px"
@@ -1444,6 +1444,38 @@
       "top": "404px",
       "width": "251px",
       "height": "105px"
+    },
+    ".wlm-logo-l": {
+      "left": "137px",
+      "top": "55px"
+    },
+    ".wlm-logo-r": {
+      "left": "470px",
+      "top": "55px"
+    },
+    "#ws-casters .ws-talent-namebar": {
+      "left": "0px",
+      "top": "539px",
+      "width": "571px",
+      "height": "61px"
+    },
+    ".ws-casters-slot-left-name": {
+      "left": "0px",
+      "top": "0px",
+      "width": "190px",
+      "height": "61px"
+    },
+    ".ws-casters-slot-middle-name": {
+      "left": "172px",
+      "top": "0px",
+      "width": "191px",
+      "height": "61px"
+    },
+    ".ws-casters-slot-right-name": {
+      "left": "360px",
+      "top": "0px",
+      "width": "190px",
+      "height": "61px"
     }
   },
   "Draft": {
@@ -1467,6 +1499,156 @@
     },
     ".draft-map-name-text": {
       "fontSize": "32px"
+    },
+    "#dr-blue-bg": {
+      "left": "0px",
+      "top": "562px",
+      "width": "398px",
+      "height": "218px"
+    },
+    "#dr-blue-title": {
+      "left": "7px",
+      "top": "0px",
+      "width": "384px",
+      "height": "44px"
+    },
+    ".dr-blue-title-text": {
+      "fontSize": "19px"
+    },
+    "#dr-blue-pick-1": {
+      "left": "7px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-blue-pick-2": {
+      "left": "84.5px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-blue-pick-3": {
+      "left": "162px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-blue-pick-4": {
+      "left": "239.5px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-blue-pick-5": {
+      "left": "317px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-blue-ban-1": {
+      "left": "8px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-blue-ban-2": {
+      "left": "85.5px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-blue-ban-3": {
+      "left": "163px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-blue-ban-4": {
+      "left": "240.5px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-blue-ban-5": {
+      "left": "318px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-red-bg": {
+      "left": "1522px",
+      "top": "562px",
+      "width": "398px",
+      "height": "218px"
+    },
+    "#dr-red-title": {
+      "left": "7px",
+      "top": "0px",
+      "width": "384px",
+      "height": "44px"
+    },
+    ".dr-red-title-text": {
+      "fontSize": "19px"
+    },
+    "#dr-red-pick-1": {
+      "left": "7px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-red-pick-2": {
+      "left": "84.5px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-red-pick-3": {
+      "left": "162px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-red-pick-4": {
+      "left": "239.5px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-red-pick-5": {
+      "left": "317px",
+      "top": "50px",
+      "width": "74px",
+      "height": "117px"
+    },
+    "#dr-red-ban-1": {
+      "left": "8px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-red-ban-2": {
+      "left": "85.5px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-red-ban-3": {
+      "left": "163px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-red-ban-4": {
+      "left": "240.5px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
+    },
+    "#dr-red-ban-5": {
+      "left": "318px",
+      "top": "172px",
+      "width": "73px",
+      "height": "39px"
     }
   },
   "sponsortv": {

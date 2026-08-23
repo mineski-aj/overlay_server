@@ -1609,12 +1609,15 @@
     slot.prevStatus = cls;
   }
 
-  function drApplySide(card, camp, gameNum) {
+  function drApplySide(card, camp, gameNum, reversePickOrder) {
     var teamAbbr = (camp && camp.team_name_simple) || '';
     card.titleText.textContent = teamAbbr + ' DRAFT RECAP - GAME ' + gameNum;
     var players = (camp && camp.player_list) || [];
+    /* Blue's player_list is already left-to-right in display order
+       (6,7,8,9,10). Red's is reversed to display right-to-left
+       (10,9,8,7,6) — see drFetchAndApply's reversePickOrder arg. */
     for (var i = 0; i < 5; i++) {
-      var p        = players[i] || {};
+      var p        = players[reversePickOrder ? (4 - i) : i] || {};
       var heroid   = p.hero_recap     || 0;
       var banId    = p.ban_hero_recap || 0;
       var pickSlot = card.picks[i];
@@ -1674,8 +1677,8 @@
       var data    = results[0];
       var gameNum = results[1];
       var camps   = (data && data.camp_list) || [];
-      drApplySide(drBlue, camps[0], gameNum);
-      drApplySide(drRed,  camps[1], gameNum);
+      drApplySide(drBlue, camps[0], gameNum, false);
+      drApplySide(drRed,  camps[1], gameNum, true);
     });
   }
 
