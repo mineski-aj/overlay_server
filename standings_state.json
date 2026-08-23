@@ -1,6 +1,15 @@
 {
   "teams": [
     {
+      "tri": "ONIC",
+      "move": "neutral",
+      "status": null,
+      "mp": 2,
+      "mwl": "2-0",
+      "gwl": "4-0",
+      "ngw": 4
+    },
+    {
       "tri": "FLCN",
       "move": "neutral",
       "status": null,
@@ -10,24 +19,6 @@
       "ngw": 3
     },
     {
-      "tri": "ONIC",
-      "move": "neutral",
-      "status": null,
-      "mp": 1,
-      "mwl": "1-0",
-      "gwl": "2-0",
-      "ngw": 2
-    },
-    {
-      "tri": "APBR",
-      "move": "neutral",
-      "status": null,
-      "mp": 1,
-      "mwl": "1-0",
-      "gwl": "2-1",
-      "ngw": 1
-    },
-    {
       "tri": "TLPH",
       "move": "neutral",
       "status": null,
@@ -35,6 +26,24 @@
       "mwl": "1-1",
       "gwl": "3-2",
       "ngw": 1
+    },
+    {
+      "tri": "APBR",
+      "move": "neutral",
+      "status": null,
+      "mp": 1,
+      "mwl": "1-1",
+      "gwl": "2-3",
+      "ngw": -1
+    },
+    {
+      "tri": "TNC",
+      "move": "neutral",
+      "status": null,
+      "mp": 1,
+      "mwl": "1-1",
+      "gwl": "2-3",
+      "ngw": -1
     },
     {
       "tri": "TWIS",
@@ -59,18 +68,9 @@
       "move": "neutral",
       "status": null,
       "mp": 0,
-      "mwl": "0-1",
-      "gwl": "0-2",
-      "ngw": -2
-    },
-    {
-      "tri": "TNC",
-      "move": "neutral",
-      "status": null,
-      "mp": 0,
-      "mwl": "0-1",
-      "gwl": "0-2",
-      "ngw": -2
+      "mwl": "0-2",
+      "gwl": "1-4",
+      "ngw": -3
     }
   ]
 }
