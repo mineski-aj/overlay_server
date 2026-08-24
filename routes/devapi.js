@@ -4,6 +4,20 @@ const router  = express.Router();
 const fs      = require('fs');
 const path    = require('path');
 const state   = require('../lib/state');
+const { getApiMode, setApiMode, readUrlForMode, writeUrlForMode } = require('../lib/apiMode');
+
+// LIVE/DEBUG API mode — Settings page's "dangerous debug button". Every
+// per-API URL setting below stores BOTH a live and a debug value; this
+// flips which one every reader (these routes, lib/pollers.js, lib/hrmPoller.js)
+// resolves to. See lib/apiMode.js.
+router.get('/api/api-mode', (req, res) => {
+  res.json({ mode: getApiMode() });
+});
+
+router.post('/api/api-mode', (req, res) => {
+  const mode = setApiMode((req.body || {}).mode);
+  res.json({ ok: true, mode });
+});
 
 router.get('/api/sub-info', (req, res) => {
   const samplePath = path.join(__dirname, '..', 'sub-info_sample.json');
@@ -201,16 +215,12 @@ router.post('/api/itemcheck-layout', (req, res) => {
 const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
 
 router.get('/api/game-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(GAME_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: '' });
-  }
+  res.json({ url: readUrlForMode(GAME_URL_FILE, '') });
 });
 
 router.post('/api/game-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim().replace(/\/$/, '');
-  fs.writeFileSync(GAME_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(GAME_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
@@ -220,16 +230,12 @@ const STANDINGS_URL_FILE    = path.join(__dirname, '..', 'standings_api_url.json
 const STANDINGS_API_DEFAULT = 'http://10.88.120.60:5001/api/standing/';
 
 router.get('/api/standings-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(STANDINGS_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: STANDINGS_API_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(STANDINGS_URL_FILE, STANDINGS_API_DEFAULT) });
 });
 
 router.post('/api/standings-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(STANDINGS_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(STANDINGS_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
@@ -323,8 +329,7 @@ router.get('/api/gamedata-proxy', async (req, res) => {
     return res.set('Cache-Control', 'no-store').json(state.lastGameData);
   }
   try {
-    const stored = JSON.parse(fs.readFileSync(GAME_URL_FILE, 'utf8'));
-    const gameUrl = (stored.url || '').trim();
+    const gameUrl = readUrlForMode(GAME_URL_FILE, '').trim();
     if (!gameUrl) return res.status(404).json({ error: 'no game URL configured' });
     const r = await fetch(gameUrl);
     if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
@@ -344,16 +349,12 @@ const POST_INFO_URL_FILE    = path.join(__dirname, '..', 'post_info_api_url.json
 const POST_INFO_URL_DEFAULT = 'http://10.88.120.60:5001/api/post-info/';
 
 router.get('/api/post-info-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(POST_INFO_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: POST_INFO_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(POST_INFO_URL_FILE, POST_INFO_URL_DEFAULT) });
 });
 
 router.post('/api/post-info-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(POST_INFO_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(POST_INFO_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
@@ -364,9 +365,7 @@ router.get('/api/postinfo-proxy', async (req, res) => {
     return res.set('Cache-Control', 'no-store').json(state.lastPostInfoData);
   }
   try {
-    let stored;
-    try { stored = JSON.parse(fs.readFileSync(POST_INFO_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
-    const url = (stored.url || POST_INFO_URL_DEFAULT).trim();
+    const url = readUrlForMode(POST_INFO_URL_FILE, POST_INFO_URL_DEFAULT).trim();
     if (!url) return res.status(404).json({ error: 'no post-info URL configured' });
     // Same reasoning as /api/lineuprate-data below — an unreachable upstream
     // (e.g. the game-client PC off the network) would otherwise hang this
@@ -388,16 +387,12 @@ const HRM_URL_FILE    = path.join(__dirname, '..', 'hrm_api_url.json');
 const HRM_URL_DEFAULT = 'http://<HRM-SERVER-IP>:5055';
 
 router.get('/api/hrm-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(HRM_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: HRM_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(HRM_URL_FILE, HRM_URL_DEFAULT) });
 });
 
 router.post('/api/hrm-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim().replace(/\/$/, '');
-  fs.writeFileSync(HRM_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(HRM_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
@@ -406,25 +401,19 @@ const HEXAGON_URL_FILE    = path.join(__dirname, '..', 'hexagon_api_url.json');
 const HEXAGON_URL_DEFAULT = 'https://theapi.dpdns.org/api/teamh2h/';
 
 router.get('/api/hexagon-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: HEXAGON_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(HEXAGON_URL_FILE, HEXAGON_URL_DEFAULT) });
 });
 
 router.post('/api/hexagon-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(HEXAGON_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(HEXAGON_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
 // Server-side proxy — fetches the Team Head to Head API and returns JSON, avoids browser CORS issues
 router.get('/api/hexagon-data', async (req, res) => {
   try {
-    let stored;
-    try { stored = JSON.parse(fs.readFileSync(HEXAGON_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
-    const url = (stored.url || HEXAGON_URL_DEFAULT).trim();
+    const url = readUrlForMode(HEXAGON_URL_FILE, HEXAGON_URL_DEFAULT).trim();
     // Same reasoning as /api/lineuprate-data below — fail fast instead of
     // hanging indefinitely on an unreachable upstream.
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -441,25 +430,19 @@ const HIGHLIGHTS_URL_FILE    = path.join(__dirname, '..', 'highlights_api_url.js
 const HIGHLIGHTS_URL_DEFAULT = 'https://theapi.dpdns.org/api/game-mvp/view/';
 
 router.get('/api/highlights-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: HIGHLIGHTS_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(HIGHLIGHTS_URL_FILE, HIGHLIGHTS_URL_DEFAULT) });
 });
 
 router.post('/api/highlights-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(HIGHLIGHTS_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(HIGHLIGHTS_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
 // Server-side proxy — fetches the MVP Highlights API and returns JSON, avoids browser CORS issues
 router.get('/api/highlights-data', async (req, res) => {
   try {
-    let stored;
-    try { stored = JSON.parse(fs.readFileSync(HIGHLIGHTS_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
-    const url = (stored.url || HIGHLIGHTS_URL_DEFAULT).trim();
+    const url = readUrlForMode(HIGHLIGHTS_URL_FILE, HIGHLIGHTS_URL_DEFAULT).trim();
     // Same reasoning as /api/lineuprate-data below — fail fast instead of
     // hanging indefinitely on an unreachable upstream.
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -476,25 +459,19 @@ const LINEUPRATE_URL_FILE    = path.join(__dirname, '..', 'lineuprate_api_url.js
 const LINEUPRATE_URL_DEFAULT = 'https://theapi.dpdns.org/api/line-up-rate/';
 
 router.get('/api/lineuprate-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(LINEUPRATE_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: LINEUPRATE_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(LINEUPRATE_URL_FILE, LINEUPRATE_URL_DEFAULT) });
 });
 
 router.post('/api/lineuprate-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(LINEUPRATE_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(LINEUPRATE_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
 // Server-side proxy — fetches the Draft Index (Line-Up Rate) API and returns JSON, avoids browser CORS issues
 router.get('/api/lineuprate-data', async (req, res) => {
   try {
-    let stored;
-    try { stored = JSON.parse(fs.readFileSync(LINEUPRATE_URL_FILE, 'utf8')); } catch (e) { stored = {}; }
-    const url = (stored.url || LINEUPRATE_URL_DEFAULT).trim();
+    const url = readUrlForMode(LINEUPRATE_URL_FILE, LINEUPRATE_URL_DEFAULT).trim();
     // Upstream has hung/errored for extended periods before (Cloudflare 530s
     // seen against theapi.dpdns.org) — a plain fetch() with no timeout would
     // leave this request (and every client awaiting it, e.g. DraftIndex.html's
@@ -515,16 +492,12 @@ const DRAFT_URL_FILE    = path.join(__dirname, '..', 'draft_api_url.json');
 const DRAFT_URL_DEFAULT = 'https://theapi.dpdns.org/sql/draft-info-only/';
 
 router.get('/api/draft-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(DRAFT_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: DRAFT_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(DRAFT_URL_FILE, DRAFT_URL_DEFAULT) });
 });
 
 router.post('/api/draft-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(DRAFT_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(DRAFT_URL_FILE, url);
   res.json({ ok: true, url });
 });
 
@@ -535,16 +508,12 @@ const DRAFT_RECAP_URL_FILE    = path.join(__dirname, '..', 'draft_recap_api_url.
 const DRAFT_RECAP_URL_DEFAULT = 'https://theapi.dpdns.org/api/previous-draft/';
 
 router.get('/api/draft-recap-url', (req, res) => {
-  try {
-    res.json(JSON.parse(fs.readFileSync(DRAFT_RECAP_URL_FILE, 'utf8')));
-  } catch (e) {
-    res.json({ url: DRAFT_RECAP_URL_DEFAULT });
-  }
+  res.json({ url: readUrlForMode(DRAFT_RECAP_URL_FILE, DRAFT_RECAP_URL_DEFAULT) });
 });
 
 router.post('/api/draft-recap-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
-  fs.writeFileSync(DRAFT_RECAP_URL_FILE, JSON.stringify({ url }));
+  writeUrlForMode(DRAFT_RECAP_URL_FILE, url);
   res.json({ ok: true, url });
 });
 

@@ -242,6 +242,29 @@ router.get('/overlay/draftrecap/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/draftstats/test — Control-tab manual test trigger for the
+// Draft Stats pick reveal (Draft.html). Fixed placeholder values, Player 1
+// of BOTH sides at once (campid 1 and 2, seat_1) — fires two separate
+// events so each side's card animates independently but simultaneously.
+router.get('/overlay/draftstats/test', (req, res) => {
+  [1, 2].forEach((campid) => {
+    const payload = JSON.stringify({ campid, seatIdx: 0, pick: 27, contention: 64, winrate: 58 });
+    state.overlayClients.forEach(c => { try { c.write(`event: draftstats\ndata: ${payload}\n\n`); } catch {} });
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true });
+});
+
+// GET /overlay/draftstats/test-debut — same as above, but a pick count of 0
+// so Draft.html plays the "DEBUT PICK!" reveal instead of the normal
+// PICK/CONTENTION RATE/WIN RATE one (see startDraftStats()'s isDebut check).
+router.get('/overlay/draftstats/test-debut', (req, res) => {
+  [1, 2].forEach((campid) => {
+    const payload = JSON.stringify({ campid, seatIdx: 0, pick: 0, contention: 0, winrate: 0 });
+    state.overlayClients.forEach(c => { try { c.write(`event: draftstats\ndata: ${payload}\n\n`); } catch {} });
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true });
+});
+
 // GET /overlay/hrm-state — current per-player heart-rate meter on/off
 // state (ingame_red.html / ingame_blue.html), so any page (dashboard,
 // ingame overlays on a different browser/machine, vMix) can poll the
@@ -827,7 +850,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','debugphotos'];
+const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','debugphotos','draftstats'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

@@ -13,6 +13,19 @@ node server.js        # or: npm start
 Default port 3000 (autoPort in `.claude/launch.json`). Dashboard is at
 `/html/dashboard.html`; individual overlay pages are served under `/html/`.
 
+**`routes/*.js` and `lib/*.js` are NOT hot-reloaded — a server restart is
+required before those changes take effect.** `html/*.html` changes take
+effect on the next page load with no restart needed, which is easy to
+conflate since most day-to-day work is HTML/CSS/JS-in-`<script>` edits to
+the overlay pages themselves. If you edit a route or a `lib/` file, say so
+explicitly and confirm before restarting — this is usually a server the
+user started from their own terminal (not one this session spawned), so
+don't kill/relaunch it silently. Concretely bit us: editing a shared
+`*_api_url.json` file's on-disk *shape* (see "API Mode" below) while the
+old route code was still loaded meant the GET endpoints briefly served the
+raw new shape (`{live,web,debug}`) instead of the `{url}` contract every
+caller expected, until the restart actually happened.
+
 ## Map
 
 - `server.js` — Express app entrypoint, mounts everything in `routes/`.
@@ -79,6 +92,15 @@ for the entire life of the dashboard tab:
   (the `tabBtns` click handler). Returning to Edit reloads the
   last-picked config automatically; returning to Control needs a fresh
   sidebar click.
+
+**To actually unload an iframe (stop it running, not just hide it),
+set `src = 'about:blank'`, never `src = ''`.** An empty string is not
+"no document" — the browser resolves it relative to the current page
+and the iframe silently loads the *parent page itself*, recursively.
+This is a real, easy-to-miss bug: it renders identically (invisible,
+since it's normally overlaid or covered anyway) but the parent page's
+entire JS keeps running nested inside the iframe, doing whatever that
+page does when loaded standalone. Always `about:blank`.
 
 **Why this matters — the browser's per-host connection cap.** Plain
 HTTP/1.1 (this server, no HTTP/2) caps a browser at ~6 concurrent
@@ -541,6 +563,349 @@ button. The click handlers (`toggleFeature`, `toggleCheckOverlay`,
 `toggleMplfsFeature`) no longer flip local state at all — they only
 fire the request and let the SSE echo-back update the UI.
 
+## `mploverlay_v7.html` — modular per-feature files, two very different feature shapes
+
+Unlike `mplfs.html` (one giant file/script), `mploverlay_v7.html` is a
+thin HTML shell that loads one `<script>` per feature —
+`overlay-lvl15.js`, `overlay-items.js`, `overlay-trinity.js`,
+`overlay-swap.js`, `overlay-conceal.js`, `overlay-killevents.js`,
+`overlay-objectivespawn.js`, `overlay-fights.js`, `overlay-itemcheck.js`,
+`overlay-emblemcheck.js`, `overlay-golddiffcheck.js`,
+`overlay-sidecheck-core.js` + 4 `overlay-side*check.js` variants,
+`overlay-playerui.js` — plus two shared files every feature depends on:
+`overlay-core.js` (state, the polling engine, item/role data tables) and
+`overlay-debug.js` (the on-page debug bar, the one real SSE connection,
+and — today — most features' actual auto-trigger *detection* logic, even
+though each feature has its own file for everything else). New features
+get their own new `.js` file, included as one more `<script>` tag in
+`mploverlay_v7.html`.
+
+There are **two unrelated feature shapes** here — figure out which one a
+new feature is before wiring anything, since they don't share a
+checklist:
+
+**Shape 1 — a persistent on/off panel** (Item Check, Emblem Check,
+Gold Diff Check, the four side-\*-checks, Scoreboard, Player UI). This is
+just the **checkOverlays pattern** documented above, nothing new: a
+`state.checkOverlays[key]` boolean, `/overlay/<key>/show|hide` routes, an
+SSE listener in `overlay-debug.js`'s IIFE at the bottom, a `checkToggles`
+entry in `dashboard.html`. The only `mploverlay_v7.html`-specific
+convention is naming: each panel's build/animate functions share a
+short prefix matching its abbreviation (`icBuildPanel`/`icAnimateIn`/
+`icAnimateOut` for **i**tem**c**heck, `eccBuildPanel`/`eccAnimateIn`/
+`eccAnimateOut` for **e**mblem-**c**heck-**c**heck, `gdcAnimateIn` for
+**g**old**d**iff**c**heck, etc.) — follow it so a new panel's functions
+are predictable from its abbreviation. The four side-checks additionally
+share ONE SSE event (`sidecheck`, with a `check` field) via
+`SIDE_CHECK_HANDLERS` in `overlay-debug.js` instead of one event each —
+add your panel there, don't invent a new event.
+
+**Shape 2 — an automatic per-player reactive effect** (Level 15, Item
+Pickup, Trinity, Quick Swap, Conceal, Kill Events, Objective Spawn).
+These aren't manually shown/hidden — they **fire on their own** when
+`masterPoll()` (runs every 1s, `overlay-core.js`) notices something in
+the live game-data poll, are individually **armable/disarmable** from
+the dashboard (so a caster can turn off "Item Pickup" without turning
+off the whole overlay), and are **queued** rather than dropped if
+another effect is already animating for that same player. This is the
+part of the file that's easy to half-wire, since it has more moving
+parts than a simple show/hide toggle:
+
+1. **Arm/disarm toggle** — add your feature's key to `VALID_FEATURES` in
+   `routes/overlay.js` (`GET /overlay/feature/:feature/:action`, a single
+   generic route shared by every feature — you do NOT add a new route),
+   add its default to `featureEnabled` in `overlay-core.js`, and add
+   `{ name, feature }` to `dashboard.html`'s `featureToggles` array (a
+   flat "● Enabled"/toggle list, separate from `checkToggles`). **The SSE
+   side is already generic and needs no new listener** —
+   `overlay-debug.js`'s existing `sse.addEventListener('featuretoggle', ...)`
+   updates `featureEnabled[d.feature]` for ANY key already present in that
+   object, so skipping this step entirely (forgetting to add the
+   `featureEnabled` default) is what actually breaks — the toggle button
+   will exist and looks like it works, but the object it's writing into
+   was never listening for that key.
+2. **Detection logic** — a block inside `registerPollHandler(function(data)
+   {...})` in `overlay-debug.js` (today, all features' detection lives in
+   this one shared handler, not split per-file) that compares this poll's
+   data against the previous poll's (`prevLevel`, `prevEquipState`,
+   `prevTotalDamage`, `prevBlessingGold` — add your own `prevXxx` object
+   for whatever you're diffing) and decides whether to fire, gated behind
+   `featureEnabled.yourFeature`.
+3. **The per-player trigger function itself** — follow
+   `triggerLvl15(i, ...)` in `overlay-lvl15.js` as the reference shape
+   exactly, it's the smallest complete example:
+   - Guard re-entrancy: `if (isPlayingYourFeature[i]) return;` then set it
+     `true`.
+   - A `cleanup()` closure (guarded by a local `cleanedUp` flag so it only
+     ever runs once) that resets the visual state, sets
+     `isPlayingYourFeature[i] = false`, and **calls `playNextQueued(i)`**
+     — skip this call and anything queued behind your effect for that
+     player never fires, silently, forever.
+   - A safety-net `setTimeout(cleanup, <a bit longer than the animation>)`
+     alongside the normal animation-driven path to `cleanup()` — belt and
+     suspenders in case the normal path never fires for some reason.
+4. **Wire it into the shared mutual-exclusion system** — add
+   `isPlayingYourFeature = {}` and `yourFeatureQueue = {}` (both
+   per-player objects, alongside the existing `isPlayingTrinity`/
+   `trinityQueue` etc. in `overlay-core.js`), add your feature to the
+   OR-chain in `isAnyPlaying(i)`, and add an `else if` branch to
+   `playNextQueued(i)` checking `yourFeatureQueue[i] && !isPlayingYourFeature[i]`.
+   Miss this and your effect can visually stack on top of another one
+   still playing for the same player instead of queueing politely behind
+   it.
+5. **Debug bar** — a `▶ Pn` button per player in `overlay-debug.js`'s
+   loop (same shape as the existing Level 15/Item/Trinity/Swap loops),
+   plus a `<div id="tab-yourfeature">`/`<button data-tab="yourfeature">`
+   pair in `mploverlay_v7.html`'s debug area markup.
+6. **Preview Tester** (`previewDebugTester: true` on the dashboard's
+   `mploverlay7` entry) — the "Player / Feature / ▶ Test" widget calls
+   `window.iframeTest(playerIdx, feature)`, which is its own manually
+   maintained `if (feature === '...')` dispatch chain in
+   `overlay-debug.js` — same silent-no-op risk as `previewTrigger`
+   elsewhere in this codebase if you forget to add your feature's branch
+   here too.
+7. Sanity-check + syntax-validate + live-verify as usual (see the Master
+   checklist below) — additionally confirm from a real poll tick (not
+   just the debug button) that your feature actually fires, since the
+   debug button bypasses `masterPoll()`'s detection logic entirely and
+   proves nothing about step 2.
+
+`killEventTrigger: true` (kill events' own dashboard video-picker +
+manual trigger UI) and the "Kill Event Player Photo" Live/Random toggle
+next to it are bespoke, one-off dashboard blocks built specifically for
+kill events' fixed enumerable video list — not a reusable pattern to
+copy for a different feature.
+
+## Control-tab Preview — keep it fully isolated from real broadcast state
+
+The Control tab's `#preview-iframe` lets you see a scene without
+triggering it for real (OBS/vMix). Two different patterns exist,
+depending on whether the overlay page is cheap enough to always keep
+loaded:
+
+- **`previewButton: true`** (per-feature, e.g. `mplfs.html`'s scenes, or
+  overlay-level like `mpltag`) — the page is *already* sitting loaded in
+  the iframe (selecting its sidebar row loads it, same as any other
+  overlay). The "◈ Preview" button just calls
+  `iw.contentWindow.previewTrigger(eventName, 'show'|'hide')` directly —
+  no network round trip, no real SSE broadcast, purely local to that one
+  loaded instance.
+- **`deferredPreview: true`** (currently only `Draft Overlay`/
+  `Draft.html`) — for a page heavy enough (lots of concurrent video
+  decode/canvas work) that keeping it loaded in the iframe at all times
+  would double GPU load whenever it's *also* genuinely live in vMix.
+  `selectOverlay()` does **not** auto-load it — the iframe stays at
+  `about:blank` (see above) with a "Preview disabled" placeholder until
+  you press "◈ Preview", which loads the page fresh with `?preview=1`,
+  waits for `onload`, then calls `previewTrigger(...)`; toggling off
+  unloads it back to `about:blank` — GPU cost is zero unless you're
+  actively looking at it. Its own real Show/Hide toggle (state-based,
+  `● Showing`/`○ Hidden`) is completely decoupled from this — the iframe
+  is never tied to the real broadcast state at all.
+
+**Any overlay page loaded with `?preview=1` must actively decouple
+itself from the real broadcast — reacting to real SSE the same way a
+live instance would defeats the entire point.** Two failure modes we
+hit, both worth checking for in any new preview-capable page:
+
+1. **The preview instance auto-showing/hiding based on real state.**
+   `Draft.html` checks `PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search)`
+   and, when true, skips the real SSE listeners' show/hide calls AND the
+   restore-on-load fetch entirely — visibility is driven *exclusively* by
+   `window.previewTrigger(event, action)`, which every preview-capable
+   page must expose (same contract mplfs.html already used: dispatch on
+   `event`/`action` to the same internal show/hide functions the real SSE
+   listener calls). `mplfs.html` has an equivalent existing flag,
+   `isPreviewFrame` (`new URLSearchParams(location.search).get('preview') === '1'`,
+   originally added for its SSE-leader-election exemption) — reuse it,
+   don't add a second differently-named flag for the same check.
+2. **A side effect inside the preview instance reaching the real
+   server.** Any code that does more than a purely-local visual change —
+   e.g. `mplfs.html`'s `syncBoard()`, which reports Matchboard/
+   Middleboard/Playerboard visibility to the server so the dashboard
+   stays accurate — must check `isPreviewFrame`/`PREVIEW_ONLY` and skip
+   the real `fetch()` when true, or clicking Preview silently flips real
+   broadcast state. This exact bug shipped: previewing any Post scene
+   (Hearts/Emblem/Items/Stats/Timeline/4 Key) was firing the real
+   `/overlay/matchboard/show` etc. routes, so a preview click changed
+   what was actually live in vMix. If the preview still needs the
+   dashboard to *see* the resulting state (e.g. to light up a related
+   toggle), use `window.parent.postMessage({...}, window.location.origin)`
+   instead of hitting the network — see `previewToggleRegistry` below for
+   the receiving side.
+
+**`previewTrigger`'s dispatch table must be kept in sync by hand — it's
+just a chain of `if (event === '...')` calls, nothing enforces
+completeness.** When adding a new feature that should be previewable,
+add its branch here too, or Preview silently does nothing for it (no
+error). This has shipped incomplete twice: Credit Reel, Post Stats,
+Consolidated Post, and Consolidated Post 2 were all missing from
+`mplfs.html`'s `previewTrigger` despite being fully wired for real
+Show/Hide. **The external event name (derived from the route,
+`feat.show.split('/')[2]`) often does NOT match the page's own internal
+`activeFeature`/`transitionTo()` name** — e.g. the route is
+`post_stats` but the internal name is `stats`; `final_team` vs
+`finalteam`; `team_lineup_blue` vs `lineupblue`. Guessing gets this
+wrong silently. The authoritative mapping is the page's own real SSE
+listener (`sseSource.addEventListener('post_stats', ...)`) — always
+check what event name and internal function *that* uses before adding a
+`previewTrigger` branch, don't infer it from the dashboard route or the
+internal name alone.
+
+**Only one "◈ Preview" can be meaningfully active at a time — they all
+drive the same iframe.** `dashboard.html`'s `buildPreviewToggleBtn(eventName)`
+is the shared factory every trigger-only preview button goes through
+(don't hand-roll another copy); `activePreviewOff` holds whichever
+button's own "turn myself off" closure is currently active, and
+activating a new one calls the previous one's `turnOff()` first — both
+its button state and a real `previewTrigger(..., 'hide')` into the
+iframe. Before this existed, each button tracked its own on/off state
+independently, so previewing scene B while scene A's preview was still
+"on" left A's button stuck active forever even though the iframe had
+already moved on.
+
+Separately, **`previewToggleRegistry`** exists for *passive* reflection —
+a board getting shown as a side effect of another feature's own preview
+(e.g. Post Hearts implicitly showing Matchboard/Middleboard/Playerboard,
+reported to the dashboard via the `postMessage` in point 2 above) should
+light up that board's own Preview button too, but must NOT go through
+`activePreviewOff`'s exclusivity logic — an implied activation isn't a
+"preview just this instead" request, and shouldn't turn off the scene
+that's actually driving it. `buildPreviewToggleBtn` registers a passive
+setter per `eventName`; the dashboard's `message` listener looks it up
+and calls it directly.
+
+Both `activePreviewOff` and `previewToggleRegistry` (and
+`draftPreviewActive`, `mplfsLiveBadge`, `mapSelectTagBadge` — anything
+holding a reference into the just-replaced `#control-panel-body`) get
+reset to `null`/`{}` at the top of `buildControlBody()`, since
+`body.innerHTML = ''` just destroyed whatever DOM they pointed at.
+Forgetting this reset for a *new* piece of cross-render state is a silent
+bug: the stale closure still runs, harmlessly touching a detached
+element, but can also misfire a real network call using outdated context.
+
+## API Mode — LIVE / WEB / DEBUG url sets (`lib/apiMode.js`)
+
+The Settings page's 9 per-API URL fields (Game, Standings, Draft, Draft
+Recap, HRM, Team Hexagon, MVP Highlights, Draft Index, Post-Info) each
+store **three** independent values — `live`, `web`, `debug` — instead of
+one flat URL, switched by a single global mode flag
+(`api_mode.json`, `lib/apiMode.js`'s `getApiMode()`/`setApiMode()`).
+Editing a field's Apply button always writes to whichever mode is
+*currently active*; flipping modes (Settings page's 3-way segmented
+control) is treated as dangerous on purpose — it changes every one of
+those 9 endpoints server-wide, not just for the current dashboard tab —
+and requires an explicit confirm dialog before it takes effect.
+
+**Every one of the 9 backing JSON files (`game_api_url.json`,
+`draft_api_url.json`, etc.) is read directly by MORE than just
+`routes/devapi.js`.** `lib/pollers.js` (game/standings/post-info
+pollers) and `lib/hrmPoller.js` (HRM poller) read these same files on
+their own, independent of the GET routes. All reads/writes MUST go
+through `lib/apiMode.js`'s `readUrlForMode(file, default)` /
+`writeUrlForMode(file, url)` — never `fs.readFileSync` the raw file
+directly and reach into `.url`, since the file's shape is
+`{ live, web, debug }`, not a flat `{ url }`. If you add a NEW poller or
+route that reads one of these files, use these helpers or it'll read the
+wrong mode (or nothing) the moment someone flips the switch.
+
+If you add a 4th mode (or rename one), update the `API_MODES` array in
+`lib/apiMode.js` **and** the hardcoded `API_MODES` array + the 3
+`.api-mode-seg-btn[data-mode="..."]` buttons in `dashboard.html` — these
+are two independent, unenforced copies of the same list, matching the
+existing `MPLFS_ACTIVE_FEATURE_MAP` precedent of "this codebase manually
+mirrors small config tables between server and client rather than
+sharing them."
+
+## Video-heavy overlays — permanently-decoding media is a real, sustained cost
+
+Full-resolution (1920×1080) 60fps VP9 loops that `autoplay`+`loop` and
+are never explicitly paused are a genuine, sustained GPU/CPU cost for
+as long as the page is open — not a one-time thing. This bit
+`mplfs.html` twice:
+
+1. **`#bg-video`** (`bgloop.webm`, the idle-state fallback background)
+   had `autoplay` in its HTML tag and was never referenced again anywhere
+   in the file — it played, full resolution, 100% of the broadcast's
+   runtime, including whenever the overlay was doing nothing at all.
+   Fixed by removing `autoplay` entirely; it now sits paused on its
+   first decoded frame forever (a `<video>` without `autoplay` still
+   renders its first frame once loaded, so this isn't a blank
+   rectangle) — a deliberate call that idle doesn't need motion.
+2. **`#scene-video-0`/`#scene-video-1`** (the two crossfading
+   per-scene backgrounds — `bgloopsun2.webm`, `bgloopwaves2.webm`, etc.,
+   picked per feature via `SCENE_VIDEO_SRC`) were only ever *faded to
+   opacity 0* on hide (`hideSceneVideo()`), never `.pause()`d — so once
+   any scene had been shown once during a broadcast, that layer kept
+   decoding invisibly for the rest of the show. Fixed: `.pause()`
+   ~400ms after removing the `sv-visible` class (matching its own CSS
+   fade-out duration, same setTimeout-after-transition idiom as
+   `hideDraftScene()` elsewhere), and `.play()` again whenever
+   re-shown. The 400ms defer specifically avoids freezing the fade
+   mid-transition; it's guarded against a fast re-show by checking the
+   captured element's own class, not the shared `sceneVideoVisible` flag
+   (which can belong to a different layer by the time the timeout fires).
+
+**When centralizing "start this shared resource" logic across many
+call sites, ordering relative to the OLD resource's own teardown
+matters more than it looks.** `showSceneVideo(feature)` was moved into
+`transitionToImpl()` so a scene's background starts the instant the
+transition is requested, not after that scene's own data-fetch +
+`preloadMedia()` (which can take 1.5s+). Putting the call at the *top*
+of `transitionToImpl` looked right but broke every scene switch: the
+outgoing scene's own hide function calls `hideSceneVideo()` on its own
+deferred `setTimeout` (matching ITS fade-out), which reads the shared
+`sceneVideoLayer`/`currentSceneVideoSrc` pointers — if the NEW scene's
+`showSceneVideo()` already ran and swung those pointers to the new
+layer, the outgoing scene's *delayed* hide ends up hiding the layer
+that was just started. Fix: call the centralized `showSceneVideo()`
+**after** `hideActiveFeature()` has been fully awaited, not before —
+this still starts well before any data-fetch (the actual point), it
+just correctly sequences after the previous scene's own teardown.
+
+**A missing map entry is a silent no-op, not an error — audit by map
+membership, not by guessing which features are exceptions.**
+`SCENE_VIDEO_SRC` (the feature→background-file map) was missing
+`timeline` (Post Timeline) — a genuine bug, since every other Post
+sibling (`hearts`/`emblems`/`items`/`stats`) has an entry. It went
+unnoticed for a long time because `#bg-video` used to still be visibly
+looping underneath (see point 1) — freezing that exposed the gap.
+`richguy` is legitimately absent (its own full-bleed art, deliberately
+leaves whatever background was already playing untouched) — so the
+correct guard in `transitionToImpl` is
+`if (SCENE_VIDEO_SRC[newFeature]) showSceneVideo(newFeature);` (checks
+actual map membership), **not** a hardcoded `if (newFeature !== 'timeline')`-
+style exception list — hardcoding the one exception you happen to know
+about is exactly what caused `timeline` to be missing in the first
+place, and would just as easily miss the next one.
+
+**Baking a mask into a real alpha channel offline beats computing it in
+JS every frame, if the runtime environment actually decodes it.**
+`Draft.html`'s hero-pick reveal used to do a manual per-pixel
+`getImageData`/JS-loop/`putImageData` every video frame to combine a
+luma-based matte mask with the hero video (no real alpha channel on
+either source) — ~0.43ms/frame, non-trivial over a ~1s reveal × up to
+10 picks. Replaced with: pre-bake the identical math into a real WebM
+alpha channel once, offline —
+```
+ffmpeg -i in.webm -vf "format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='255-((77*r(X,Y)+150*g(X,Y)+29*b(X,Y))/256)'" \
+  -c:v libvpx-vp9 -pix_fmt yuva420p -lossless 1 out.webm
+```
+— then at runtime, pure GPU compositing: `drawImage(hero)` →
+`globalCompositeOperation = 'destination-in'` → `drawImage(alphaMatte)`
+→ reset. Measured ~86x cheaper (0.43ms → 0.005ms), verified pixel-exact
+against the original JS formula. **Gotcha when verifying such an
+asset:** `ffmpeg`'s *default* VP9 decoder silently ignores WebM's alpha
+side-channel and reports a constant fully-opaque value — you must pass
+`-c:v libvpx-vp9` explicitly on the decode/verification side (not just
+the encode side) to actually read the baked alpha back out; otherwise a
+correctly-encoded file looks broken. This technique doesn't generalize
+to *every* masking case — a mask that needs to combine with the
+target's own pre-existing alpha via something other than a straight
+multiply (e.g. Draft.html's player-photo erase, which takes
+`Math.min(ownAlpha, matteAlpha)`) doesn't map onto Porter-Duff
+compositing operators and was deliberately left on the JS path.
+
 ## Data & assets
 
 - Player/match data: `hlFetchMvp()` / `hlExtractPlayer()` hit the
@@ -581,21 +946,53 @@ fire the request and let the SSE echo-back update the UI.
   (e.g. a 67px-tall box → ~64px Anton), and give it a sane `minSize` floor
   (~half of max) so worst-case long values don't disappear.
 
-## Checklist: building a brand-new scene from scratch
+## Master checklist — adding any new feature (this is a moving target — use this every time, don't rely on memory)
+
+This project is under continuous, incremental development across
+`mplfs.html`, `mpltag.html` ("MPL L3"), and `Draft.html`. Every miss
+below has actually shipped at least once and cost a real round trip to
+diagnose, because each one is **silent** — no error, no crash, just a
+button/preview/copy-icon that quietly does nothing or a "Showing"
+indicator that's permanently wrong. Work through the checklist for
+whichever file you're extending; don't skip steps because "it's a small
+feature" — the small features are exactly the ones where a skipped step
+goes unnoticed longest.
+
+### A. New `mplfs.html` scene (full-screen, shares the `activeFeature` slot)
 
 1. Copy the structure of an existing scene closest to what you need (MVP
    Scene is the most fully-featured reference) rather than starting blank.
 2. CSS: `#foo-page` container + one absolutely-positioned rule per element,
-   each with its own id/class — no shared wrapper unless intentional.
+   each with its own id/class — no shared wrapper unless intentional (see
+   "The #1 rule" above).
 3. HTML: the container div and its children, wired to the CSS above.
 4. JS: fetch function → apply function (sets every element's
    src/textContent, calls fit-to-box helpers) → `showFooScene`/
-   `hideFooScene` following the two-class transition pattern.
-5. Dashboard Edit tab: add `FOO_DEFAULTS`, `FOO_ELEMENTS`, register in
+   `hideFooScene` following the two-class transition pattern (see "Scene
+   architecture" above).
+5. **Background loop** — decide if this scene needs the shared crossfading
+   ambient background (`showSceneVideo`/`SCENE_VIDEO_SRC`, see
+   "Video-heavy overlays" above). If yes, add `foo: '/assets/bgloopXXX.webm'`
+   to `SCENE_VIDEO_SRC` — check what a sibling scene of the same "family"
+   uses (e.g. every Post scene currently uses `bgloopwaves2.webm`) rather
+   than guessing. If no (the scene has its own full-bleed art, like
+   `richguy`), do nothing — `transitionToImpl`'s
+   `if (SCENE_VIDEO_SRC[newFeature])` guard already skips it correctly,
+   just don't force an entry in "to be safe."
+6. **Post-family boards** — if this is a Post-style scene meant to sit
+   alongside Matchboard/Middleboard/Playerboard, add its key to
+   `POST_FEATURES` in `transitionToImpl` and decide what it does to
+   middle/player board (most Post scenes show both — the `else` branch;
+   a few like `post4key`/`consolidated_post` special-case this — check
+   whether yours needs a special case too, don't assume the default fits).
+   If it's a normal full-screen scene (not Post-family), skip this — it
+   goes through the `else` branch that hides all three boards, which is
+   correct for a scene that covers the whole frame.
+7. Dashboard Edit tab: add `FOO_DEFAULTS`, `FOO_ELEMENTS`, register in
    `EDIT_CONFIGS`.
-6. Local debug card in `mplfs.html` (optional, for testing while you
+8. Local debug card in `mplfs.html` (optional, for testing while you
    build — see "Adding a local debug SHOW/HIDE/PREVIEW card" above).
-7. Live control wiring (needed for the real dashboard to trigger it
+9. Live control wiring (needed for the real dashboard to trigger it
    remotely — see "Live control (SSE)" above): server show/hide routes in
    `routes/overlay.js` → SSE listener in `connectSSE()` → line in
    `hideActiveFeature()` → line in `restoreScene()` → button entry in
@@ -604,18 +1001,33 @@ fire the request and let the SSE echo-back update the UI.
    string. **The last one is the one that gets forgotten** — everything
    still shows/hides fine without it, only the Control-tab "Showing"
    indicator is silently wrong.
-8. New named SSE event → add it to `KNOWN_EVENTS` in
-   `html/js/overlay-shared-worker.js` AND bump `OVERLAY_WORKER_VERSION`
-   in `html/js/overlay-sse-shim.js` in the same change (see "Dashboard
-   architecture" above). Skip the version bump and any tab/OBS
-   browser-source already open keeps talking to the old worker forever,
-   no matter how many times it's refreshed.
-9. Sanity-check before calling it done: grep every id/class used in the new
-   `FOO_ELEMENTS`/`FOO_DEFAULTS` against the actual `mplfs.html` markup —
-   a mismatch is silent (no error, the Edit row just does nothing). Same
-   goes for the feature-key string across all 6 SSE-wiring spots.
-10. Validate JS syntax on both `mplfs.html` and `dashboard.html` (a fresh
-    `<script>` block that fails to parse breaks the whole page):
+10. **Preview** — add a branch to `mplfs.html`'s `window.previewTrigger`
+    for the SAME event name used in step 9's `connectSSE()` listener
+    (verify it's the same string — see "Control-tab Preview" above for
+    why the external route name and the internal `activeFeature` name
+    often differ, e.g. `post_stats` vs `stats`). This is the single most
+    commonly forgotten step of this whole checklist — Credit Reel, Post
+    Stats, Consolidated Post, and Consolidated Post 2 all shipped with
+    working real Show/Hide but a completely silent Preview button.
+    **Everything else Preview-related is automatic** once step 9's
+    `dashboard.html` feature entry exists with `show`/`hide` — the
+    "◈ Preview" button, the show/hide copy-route buttons, and the
+    Showing/Hidden toggle all come from the SAME `ov.features`/`feat`
+    entry via `dashboard.html`'s generic renderer. Do not hand-write any
+    of those; if one is missing, the feature entry is malformed, not
+    missing a manual step.
+11. New named SSE event → add it to `KNOWN_EVENTS` in
+    `html/js/overlay-shared-worker.js` AND bump `OVERLAY_WORKER_VERSION`
+    in `html/js/overlay-sse-shim.js` in the same change (see "Dashboard
+    architecture" above). Skip the version bump and any tab/OBS
+    browser-source already open keeps talking to the old worker forever,
+    no matter how many times it's refreshed.
+12. Sanity-check before calling it done: grep every id/class used in the new
+    `FOO_ELEMENTS`/`FOO_DEFAULTS` against the actual `mplfs.html` markup —
+    a mismatch is silent (no error, the Edit row just does nothing). Same
+    goes for the feature-key string across all wiring spots in steps 9–10.
+13. Validate JS syntax on every file you touched (a fresh `<script>` block
+    that fails to parse breaks the whole page):
     ```
     node -e "
     const fs=require('fs');
@@ -626,10 +1038,147 @@ fire the request and let the SSE echo-back update the UI.
           catch(e){ console.log(f, i, e.message); } });
     }"
     ```
-11. Verify live, in a fresh browser context, not just via `curl`: click
-    the real Control-tab toggle button and confirm a *separate* tab
-    picks up the change over SSE, and confirm the Edit-tab preview
-    iframe actually shows the scene. `curl`ing the show/hide routes only
-    proves the routes exist — it says nothing about the SharedWorker hop
-    in between (see step 8), which is exactly the hop that silently
-    breaks for anyone testing from an already-open tab.
+14. Verify live (see "Verifying changes with a real browser" above) —
+    not just via `curl`, which only proves a route exists:
+    - Click the real Control-tab toggle/Show button and confirm a
+      *separate* tab/instance picks up the change over SSE.
+    - Click "◈ Preview" and confirm the SAME scene shows **only** in the
+      preview iframe, and confirm the real broadcast state (`curl
+      /overlay/mplfs-scene`) did NOT change as a result.
+    - If the scene touches boards (step 6), confirm the board copy of
+      "shown" actually reflects reality afterward
+      (`curl /overlay/mplfs-scene`) even after switching to a *different*
+      scene — this is exactly the class of bug `syncBoard()` exists to
+      prevent, and a new special-cased board branch is a new place it
+      can be missed.
+    - Click each copy-route button and confirm the copied text is the
+      URL you expect.
+
+### B. New `mpltag.html` tag ("MPL L3" — independent, no `activeFeature` slot)
+
+Tags don't share `mplfs.html`'s mutual exclusion, so most use the
+simpler **checkOverlays pattern** (see that section above) rather than
+the 6-layer SSE wiring:
+
+1. HTML/CSS for the tag, same "every element independently editable" rule.
+2. Server: one boolean in `state.checkOverlays`, `GET /overlay/<key>/show`
+   and `/hide` routes broadcasting a named SSE event.
+3. Client listener in `mpltag.html` toggling a CSS class/animation.
+4. Dashboard: add `{ name, key }` to the overlay's `checkToggles` array —
+   this alone generates the toggle button and both copy-route buttons.
+5. **If the tag needs its own real Show/Hide buttons instead of a single
+   toggle** (because, like `mapselecttag`, repeated "Show" clicks do
+   something other than a plain on/off — e.g. reveal one more item each
+   time), use the plain `show`/`hide` fields on the `OVERLAYS` entry
+   instead of `checkToggles`, plus a `mapSelectTagStatus`-style read-only
+   pill if you need to show *what* state it's in beyond shown/hidden.
+6. **Preview** — `mpltag.html` has its own separate `window.previewTrigger`
+   (only handles `mapselecttag` today). Add a branch for your new tag's
+   event name, and set `previewButton: true` on its `OVERLAYS` entry if
+   you want a "◈ Preview" button at all (optional for tags — many don't
+   need cross-tab preview since they're small and quick to check live).
+   **`mpltag.html` has no preview-mode isolation flag at all** (unlike
+   `mplfs.html`'s `isPreviewFrame` / `Draft.html`'s `PREVIEW_ONLY`) — if
+   your new tag's show/hide logic does anything beyond local DOM/CSS
+   changes (a `fetch()`, writing shared state, anything like
+   `syncBoard()`), it WILL leak into real broadcast state when previewed
+   unless you add that same guard yourself. Purely-local tags don't need
+   it.
+7. Syntax-check + live-verify exactly as in section A, steps 13–14.
+
+### C. New `Draft.html`-style single whole-scene toggle
+
+For a standalone on/off panel that isn't part of a "family" (like
+`draft`, `draftindex`, or Draft.html's own `draftrecap` panel):
+
+1. Server: a bespoke boolean (`state.draftActive`-style) or a
+   `state.checkOverlays` entry — either works, see "Simpler show/hide"
+   above for when to use which.
+2. `GET /overlay/<key>/show` / `/hide` routes + a `GET /overlay/<key>-state`
+   restore-on-load route if using the bespoke-boolean style.
+3. Dashboard: plain `show`/`hide` fields on the `OVERLAYS` entry
+   (`toggleShowHide: true` if you want the single SHOWING/HIDDEN pill
+   instead of two separate buttons — see Draft Overlay's entry for the
+   pattern, including its own `draftShowState`/`applyDraftShowBtn` cache
+   and dedicated `dashboardSSE` listener, since a bespoke boolean isn't
+   part of the flat `checkOverlays` map the generic `toggleCheckOverlay`
+   loop already handles).
+4. **If the page is heavy enough that having it live in vMix AND loaded
+   in the Control-tab preview iframe simultaneously would double GPU
+   load** (lots of concurrent video/canvas work — this was Draft.html's
+   whole reason for existing as a special case), use
+   `deferredPreview: true` instead of the normal always-loaded preview
+   iframe (see "Control-tab Preview" above) — the iframe stays at
+   `about:blank` until "◈ Preview" is explicitly pressed. Add
+   `window.previewTrigger` AND the `PREVIEW_ONLY` guard (skip reacting to
+   real SSE, skip the restore-on-load fetch) to the page itself — without
+   both, a `deferredPreview` iframe will either do nothing when
+   previewed, or silently mirror real broadcast state the moment it
+   loads.
+5. Syntax-check + live-verify exactly as in section A, steps 13–14,
+   including confirming the iframe genuinely goes back to `about:blank`
+   (not just visually hidden) when Preview is toggled off, if you used
+   `deferredPreview`.
+
+### D. New `mploverlay_v7.html` feature
+
+First decide which of the two shapes it is (see the
+"`mploverlay_v7.html`" section above — a persistent on/off panel vs. an
+automatic per-player reactive effect; they use completely different
+checklists, and guessing wrong wastes the whole implementation):
+
+- **Persistent panel** → it's the checkOverlays pattern, same as section
+  A/B above, plus this file's `icBuildPanel`/`icAnimateIn`-style naming
+  convention and (if it's a side-\*-check) the shared `sidecheck` event.
+- **Automatic reactive effect** → the 7-step checklist in the
+  "`mploverlay_v7.html`" section above (arm/disarm toggle → detection
+  logic in `overlay-debug.js`'s poll handler → the `triggerYourFeature`
+  build/cleanup/safety-timeout shape → wiring into `isAnyPlaying`/
+  `playNextQueued` → debug bar → `iframeTest` dispatch branch → verify
+  from a real poll tick, not just the debug button).
+
+In both cases: syntax-check + live-verify as in section A, steps 13–14.
+
+## Verifying changes with a real browser, without a Playwright/puppeteer dependency
+
+Headless Microsoft Edge (Chromium-based, already installed on this
+Mac) driven over raw Chrome DevTools Protocol works well for this and
+needs no new dependency — modern Node has native `fetch`/`WebSocket`:
+```
+"/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge" \
+  --headless=new --remote-debugging-port=9222 \
+  --user-data-dir=/path/to/scratch/profile --autoplay-policy=no-user-gesture-required about:blank &
+```
+Then from Node: `fetch('http://localhost:9222/json')` to get the page
+target's `webSocketDebuggerUrl`, open a `WebSocket` to it, and send
+`Page.navigate`/`Runtime.evaluate` commands. This was used repeatedly
+this session to drive real interactions (click a real button, wait,
+read DOM/JS state back) against the actual running dev server —
+far more reliable than reasoning about timing from reading code alone,
+and it's what caught the `showSceneVideo` ordering bug and the iframe
+`about:blank` vs `''` bug, neither of which was obvious from the code.
+`--headless=new` plus `--virtual-time-budget=N` (with `--dump-dom`) works
+for short synchronous checks; for anything involving real video
+playback or `setTimeout`-paced async work, use a real long-lived
+process (`run_in_background`) and real `sleep`s instead — virtual time
+does not advance video decode/playback consistently, which produces
+confusing false negatives that look like a real bug.
+
+**Never let a test touch real state that a live show depends on
+without restoring it.** `state.mplfsScene`/`state.checkOverlays`/
+`state.draftActive`/`api_mode.json`/the 9 `*_api_url.json` files are all
+real, shared, persistent server state — hitting their real routes from
+a test is fine (often necessary — see the Preview section's `syncBoard`
+example, which could only be caught this way), but capture the
+pre-test value first and restore it after (`curl .../fs/hide` to fully
+reset `mplfs.html`'s scene state is the fastest full reset). Prefer an
+isolated harness when the code under test doesn't strictly need the
+real server: extract the actual `<script>` content from the real file
+(`fs.readFileSync` + regex, not hand-retyped) into a scratch HTML page,
+append one line exposing whatever internal functions/state the test
+needs (`window.__test = {...}`), and drive it directly — this exercises
+the literal shipped code with zero risk to shared state. `node --check
+file.js` (parse-only, no execution) is safer than `node -e
+"require(...)"` for a quick syntax check of a `lib/`/`routes/` file
+that starts intervals/pollers at require-time (e.g. `lib/pollers.js`) —
+`require`-ing it for real hangs the process on those timers.

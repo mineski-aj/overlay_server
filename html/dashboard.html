@@ -244,6 +244,21 @@
       border: none;
       transform-origin: top left;
     }
+    #preview-disabled-msg {
+      display: none;
+      position: absolute;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 6px;
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      padding: 20px;
+    }
+    #preview-disabled-msg strong { color: #aabbff; }
+    #preview-disabled-msg span { font-size: 11px; color: #444; }
 
     /* ── Button row ─────────────────────────────────────────── */
     .btn-row {
@@ -471,6 +486,59 @@
     .settings-btn-danger {
       background: #2a1a1a; border: 1px solid #5a2a2a;
       color: #ff6677;
+    }
+    #settings-columns {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    #settings-col-left {
+      width: 320px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #settings-col-right {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    #api-mode-section {
+      border-color: #3a2a2a;
+    }
+    /* Segmented 3-way switch — LIVE / WEB / DEBUG. One pill-shaped group,
+       active segment gets its own color; inactive segments are neutral so
+       the ACTIVE one is always the only thing drawing the eye. */
+    .api-mode-segmented {
+      display: inline-flex;
+      border-radius: 7px;
+      overflow: hidden;
+      border: 1px solid #333344;
+    }
+    .api-mode-seg-btn {
+      padding: 7px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      background: rgba(255,255,255,0.03);
+      color: #666;
+      border: none;
+      border-right: 1px solid #333344;
+      cursor: pointer;
+    }
+    .api-mode-seg-btn:last-child { border-right: none; }
+    .api-mode-seg-btn:hover { background: rgba(255,255,255,0.09); color: #999; }
+    .api-mode-seg-btn.active { cursor: default; }
+    .api-mode-seg-btn.active:hover { color: inherit; }
+    .api-mode-seg-btn.active[data-mode="live"] {
+      background: rgba(68,204,136,0.18); color: #44cc88;
+    }
+    .api-mode-seg-btn.active[data-mode="web"] {
+      background: rgba(90,160,255,0.18); color: #6aa6ff;
+    }
+    .api-mode-seg-btn.active[data-mode="debug"] {
+      background: rgba(255,170,51,0.18); color: #ffaa33;
     }
 
     /* ── Edit page ───────────────────────────────────────────── */
@@ -771,6 +839,10 @@
       </div>
       <div id="preview-frame-wrap">
         <iframe id="preview-iframe" src="" allow="autoplay"></iframe>
+        <div id="preview-disabled-msg">
+          Preview disabled — click <strong>◈ Preview</strong> to load<br>
+          <span>(this overlay is heavy and may be live — loading it here too would double the GPU load)</span>
+        </div>
       </div>
     </div>
   </div>
@@ -859,6 +931,46 @@
 
 <!-- Page 3: Settings -->
 <div id="page-settings" class="page">
+<div id="settings-columns">
+<div id="settings-col-left">
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Debug</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>Overlays</label>
+        <button id="btn-debugoff" class="settings-btn settings-btn-danger">Hide Debug Bars</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Overlay Pages</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>All Pages</label>
+        <button id="btn-force-reload-overlays" class="settings-btn">Force-Refresh All Overlays</button>
+        <span id="force-reload-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+</div>
+<div id="settings-col-right">
+
+  <div class="settings-section" id="api-mode-section">
+    <div class="settings-section-hdr">API Mode</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>Active Set</label>
+        <div class="api-mode-segmented" id="api-mode-segmented">
+          <button class="api-mode-seg-btn" data-mode="live">LIVE</button>
+          <button class="api-mode-seg-btn" data-mode="web">WEB</button>
+          <button class="api-mode-seg-btn" data-mode="debug">DEBUG</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="settings-section">
     <div class="settings-section-hdr">Game API</div>
@@ -968,27 +1080,8 @@
     </div>
   </div>
 
-  <div class="settings-section">
-    <div class="settings-section-hdr">Debug</div>
-    <div class="settings-section-body">
-      <div class="settings-row">
-        <label>Overlays</label>
-        <button id="btn-debugoff" class="settings-btn settings-btn-danger">Hide Debug Bars</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="settings-section">
-    <div class="settings-section-hdr">Overlay Pages</div>
-    <div class="settings-section-body">
-      <div class="settings-row">
-        <label>All Pages</label>
-        <button id="btn-force-reload-overlays" class="settings-btn">Force-Refresh All Overlays</button>
-        <span id="force-reload-status" class="settings-status"></span>
-      </div>
-    </div>
-  </div>
-
+</div>
+</div>
 </div>
 
 <script>
@@ -1041,13 +1134,63 @@
          the same sidebar item / config on return reloads it fresh,
          exactly like selecting it for the first time would. */
       if (leavingControl) {
+        previewIframe.onload = null;
         previewIframe.src = 'about:blank';
+        draftPreviewActive = false;
+        if (previewDisabledMsg) previewDisabledMsg.style.display = 'none';
         if (activeItem) { activeItem.classList.remove('active'); activeItem = null; }
       }
       if (leavingEdit) {
         editIframe.src = 'about:blank';
         editIfLoaded = false;
       }
+    });
+  });
+
+  /* ── API Mode (LIVE / WEB / DEBUG) ─────────────────────────────
+     Every URL field below reads/writes whichever mode is currently
+     active (server-side, see lib/apiMode.js) — flipping this switches
+     ALL of them at once, which is exactly why it needs its own
+     confirmation instead of behaving like a normal Apply button. */
+  var API_MODES = ['live', 'web', 'debug'];
+  var apiModeSegBtns = {};
+  API_MODES.forEach(function (m) {
+    apiModeSegBtns[m] = document.querySelector('.api-mode-seg-btn[data-mode="' + m + '"]');
+  });
+  var currentApiMode = 'live';
+
+  function applyApiModeSeg(mode) {
+    currentApiMode = mode;
+    API_MODES.forEach(function (m) {
+      apiModeSegBtns[m].classList.toggle('active', m === mode);
+    });
+  }
+
+  fetch('/api/api-mode').then(function(r){ return r.json(); }).then(function(d){
+    applyApiModeSeg(API_MODES.indexOf(d.mode) !== -1 ? d.mode : 'live');
+  }).catch(function(){});
+
+  API_MODES.forEach(function (m) {
+    apiModeSegBtns[m].addEventListener('click', function () {
+      if (m === currentApiMode) return;
+      var ok = window.confirm(
+        'Are you sure you want to switch to ' + m.toUpperCase() + ' mode?\n\n' +
+        'This changes which URL every API setting below resolves to — Game, ' +
+        'Standings, Draft, Draft Recap, HRM, and the rest — for the whole server, ' +
+        'not just this dashboard tab.\n\n' +
+        'Overlay pages that are already open won\'t pick this up until they reload ' +
+        '(e.g. via "Force-Refresh All Overlays" in Overlay Pages below).'
+      );
+      if (!ok) return;
+      fetch('/api/api-mode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: m })
+      }).then(function(r){ return r.json(); }).then(function(){
+        // Simplest correct way to resync every URL field below to the new
+        // mode's values, rather than hand-wiring a refetch for all nine.
+        location.reload();
+      }).catch(function(){});
     });
   });
 
@@ -1427,6 +1570,39 @@
     consolidated_post_2: 'consolidated_post_2',
     post4key:       'post4key',
   };
+  /* Display names for the "is anything live" indicator below — same
+     activeFeature values as MPLFS_ACTIVE_FEATURE_MAP, keyed the other
+     way round, mirroring the mplfs OVERLAYS entry's feature names. */
+  var MPLFS_ACTIVE_FEATURE_NAMES = {
+    hearts: 'Post Hearts', itemline: 'Post Timeline', emblems: 'Post Emblem',
+    items: 'Post Items', stats: 'Post Stats', richguy: 'Rich Guy',
+    waiting: 'Waiting Screen TVC', lobby: 'Waiting Lobby',
+    schedule: "Today's Schedule", tomorrow: "Tomorrow's Schedule",
+    standings: 'Standings', hexagon: 'Team Hexagon', highlights: 'MVP Highlights',
+    mvp: 'MVP Scene', credits: 'Credit Reel', finalteam: 'Final Team',
+    lineupblue: 'Team Line-Up — Blue', lineupred: 'Team Line-Up — Red',
+    consolidated_post: 'Consolidated Post', consolidated_post_2: 'Consolidated Post 2',
+    post4key: 'Post 4 Key',
+  };
+
+  var mplfsLiveBadge = null;
+  function applyMplfsLiveBadge() {
+    if (!mplfsLiveBadge) return;
+    var parts = [];
+    if (mplfsSceneState.activeFeature) {
+      parts.push(MPLFS_ACTIVE_FEATURE_NAMES[mplfsSceneState.activeFeature] || mplfsSceneState.activeFeature);
+    }
+    if (mplfsSceneState.matchboard)  parts.push('Matchboard');
+    if (mplfsSceneState.middleboard) parts.push('Middleboard');
+    if (mplfsSceneState.playerboard) parts.push('Playerboard');
+    if (parts.length) {
+      mplfsLiveBadge.textContent = '● Live: ' + parts.join(', ');
+      mplfsLiveBadge.className   = 'btn btn-toggle btn-toggle-on';
+    } else {
+      mplfsLiveBadge.textContent = '○ Nothing Live';
+      mplfsLiveBadge.className   = 'btn btn-toggle btn-toggle-off';
+    }
+  }
 
   function mplfsFeatureShown(key) {
     if (MPLFS_BOOL_KEYS.indexOf(key) !== -1) return !!mplfsSceneState[key];
@@ -1444,6 +1620,7 @@
 
   function refreshMplfsFeatureButtons() {
     Object.keys(mplfsFeatureBtns).forEach(applyMplfsFeatureBtn);
+    applyMplfsLiveBadge();
   }
 
   function loadMplfsScene() {
@@ -1478,6 +1655,73 @@
      "● Showing (N)" / "○ Hidden" status pill next to those buttons. */
   var mapSelectTagState = { revealedGames: 0 };
   var mapSelectTagBadge = null;
+
+  /* ── Shared "◈ Preview" toggle coordination ──────────────────
+     Every trigger-only preview button (per mplfs feature, plus overlay-
+     level ones like mpltag's) drives the SAME previewIframe — only one
+     of them can be meaningfully "active" at a time. Without this, preview-
+     ing feature B while feature A's preview was still on left A's button
+     stuck showing active even though the iframe had already moved on to
+     B (each button used to track its own on/off state with zero
+     awareness of any other button). activePreviewOff holds whichever
+     button's own "turn myself off" function is currently active, so
+     activating a new one can turn the old one off first — both its
+     button's visual state AND a real previewTrigger(..., 'hide') into the
+     iframe, not just a cosmetic reset. */
+  var activePreviewOff = null;
+  /* eventName -> passive setter for that button's visual state, used ONLY
+     by the postMessage listener below (a board getting shown/hidden as a
+     SIDE EFFECT of another feature's own preview, e.g. Post Hearts
+     implicitly showing Matchboard/Middleboard/Playerboard) — deliberately
+     bypasses the click handler's activePreviewOff exclusivity below, since
+     an implied activation isn't a "preview just this instead" request and
+     shouldn't turn off whatever scene is actually driving it. */
+  var previewToggleRegistry = {};
+
+  function buildPreviewToggleBtn(eventName) {
+    var pvb = document.createElement('button');
+    pvb.className = 'btn btn-preview-live';
+    pvb.textContent = '◈ Preview';
+    var active = false;
+
+    function trigger(action) {
+      var iw = previewIframe && previewIframe.contentWindow;
+      if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, action);
+    }
+    function turnOff() {
+      active = false;
+      pvb.classList.remove('active');
+      trigger('hide');
+      if (activePreviewOff === turnOff) activePreviewOff = null;
+    }
+
+    pvb.addEventListener('click', function () {
+      if (active) { turnOff(); return; }
+      if (activePreviewOff) activePreviewOff();
+      active = true;
+      pvb.classList.add('active');
+      activePreviewOff = turnOff;
+      trigger('show');
+    });
+
+    previewToggleRegistry[eventName] = function (shown) {
+      active = shown;
+      pvb.classList.toggle('active', shown);
+    };
+
+    return pvb;
+  }
+
+  /* Receives the preview-iframe's board-visibility reports (see
+     mplfs.html's syncBoard) and reflects them onto that board's OWN
+     Preview button — purely passive, never touches activePreviewOff. */
+  window.addEventListener('message', function (e) {
+    if (e.origin !== window.location.origin) return;
+    var d = e.data;
+    if (d && d.type === 'preview-board' && previewToggleRegistry[d.key]) {
+      previewToggleRegistry[d.key](!!d.shown);
+    }
+  });
 
   function applyMapSelectTagBadge() {
     if (!mapSelectTagBadge) return;
@@ -1524,6 +1768,30 @@
         applyCheckToggleBtn(key, shown);
       } catch (err) {}
     });
+  });
+
+  /* Draft Overlay's whole-scene show/hide — a bespoke boolean
+     (state.draftActive, routes/overlay.js) rather than part of the flat
+     checkOverlays map above, so it needs its own small cache + listener
+     instead of joining the forEach loop. Powers the SHOWING/HIDDEN toggle
+     built in buildControlBody(). */
+  var draftShowState = false;
+  var draftShowBtn   = null;
+  function applyDraftShowBtn() {
+    if (!draftShowBtn) return;
+    draftShowBtn.textContent = draftShowState ? '● Showing' : '○ Hidden';
+    draftShowBtn.className   = 'btn btn-toggle ' + (draftShowState ? 'btn-toggle-on' : 'btn-toggle-off');
+  }
+  fetch('/overlay/draft-state').then(function (r) { return r.json(); }).then(function (d) {
+    draftShowState = !!(d && d.active);
+    applyDraftShowBtn();
+  }).catch(function () {});
+  dashboardSSE.addEventListener('draft', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      draftShowState = d.action === 'show';
+      applyDraftShowBtn();
+    } catch (err) {}
   });
 
   dashboardSSE.addEventListener('sidecheck', function (e) {
@@ -1666,9 +1934,18 @@
       file: 'Draft.html',
       show: '/overlay/draft/show',
       hide: '/overlay/draft/hide',
+      toggleShowHide: true,
+      deferredPreview: true,
       photoModeToggle: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap' },
+      ],
+      featureToggles: [
+        { name: 'Draft Stats', feature: 'draftstats' },
+      ],
+      extraActions: [
+        { label: 'Test Draft Stats (P1, both sides)', action: '/overlay/draftstats/test' },
+        { label: 'Test Debut Pick (P1, both sides)', action: '/overlay/draftstats/test-debut' },
       ],
     },
     {
@@ -1699,12 +1976,17 @@
       name: 'MPL Full Screen',
       file: 'mplfs.html',
       globalHide: '/overlay/fs/hide',
+      mplfsLiveIndicator: true,
       features: [
         { name: 'Matchboard',    show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
         { name: 'Middleboard',   show: '/overlay/middleboard/show',   hide: '/overlay/middleboard/hide'   },
         { name: 'Playerboard',   show: '/overlay/playerboard/show',   hide: '/overlay/playerboard/hide'   },
         { name: 'Post Hearts',   show: '/overlay/post_hearts/show',   hide: '/overlay/post_hearts/hide'   },
-        { name: 'Post Timeline', show: '/overlay/post_itemline/show', hide: '/overlay/post_itemline/hide' },
+        { name: 'Post Timeline', show: '/overlay/post_itemline/show', hide: '/overlay/post_itemline/hide',
+          extraButtons: [
+            { label: 'Item In',  action: '/overlay/post_itemline/itemin'  },
+            { label: 'Item Out', action: '/overlay/post_itemline/itemout' },
+          ] },
         { name: 'Post Emblem',   show: '/overlay/post_emblems/show',  hide: '/overlay/post_emblems/hide'  },
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
@@ -1734,11 +2016,6 @@
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
         { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
-      ],
-      extraActions: [
-        { label: 'Item In',   action: '/overlay/post_itemline/itemin'  },
-        { label: 'Item Out',  action: '/overlay/post_itemline/itemout' },
-        { label: 'Debug Off', action: '/overlay/fs/debugoff'           },
       ],
       debugPhotosToggle: true,
     },
@@ -1961,6 +2238,12 @@
   var previewIframe     = document.getElementById('preview-iframe');
   var previewTitle      = document.getElementById('preview-title');
   var previewLabel      = document.getElementById('preview-label');
+  var previewDisabledMsg = document.getElementById('preview-disabled-msg');
+  /* Set only for overlays flagged `deferredPreview` (currently just Draft
+     Overlay) — whether THIS overlay's own Preview toggle currently has the
+     iframe loaded. Reset whenever selectOverlay/deselectOverlay runs so
+     switching away always leaves it off for next time. */
+  var draftPreviewActive = false;
   var controlPanel      = document.getElementById('control-panel');
   var controlPanelTitle = document.getElementById('control-panel-title');
   var controlPanelOpen  = document.getElementById('control-panel-open');
@@ -2001,7 +2284,21 @@
     buildControlBody(ov);
     previewTitle.textContent = ov.name;
     previewLabel.textContent = ov.url || ov.file || '';
-    if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : ('?t=' + Date.now() + '&preview=1'));
+    draftPreviewActive = false;
+    if (ov.deferredPreview) {
+      /* GPU-saving: don't auto-load this overlay into the iframe just
+         because it's selected — it stays unloaded until its own Preview
+         button is pressed, and unloads again the moment that's toggled
+         off or you navigate away. See CLAUDE.md-adjacent notes on
+         Draft.html's video/canvas load for why this one overlay needs
+         this instead of the normal always-loaded preview iframe. */
+      previewIframe.onload = null;
+      previewIframe.src = 'about:blank';
+      previewDisabledMsg.style.display = 'flex';
+    } else {
+      previewDisabledMsg.style.display = 'none';
+      if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : ('?t=' + Date.now() + '&preview=1'));
+    }
     layout.classList.add('split');
     requestAnimationFrame(scalePreview);
   }
@@ -2011,8 +2308,11 @@
     activeItem = null;
     lastOverlay = null;
     lastItem = null;
+    draftPreviewActive = false;
     layout.classList.remove('split');
-    previewIframe.src = '';
+    previewIframe.onload = null;
+    previewIframe.src = 'about:blank';
+    previewDisabledMsg.style.display = 'none';
     controlPanelBody.innerHTML = '';
   }
 
@@ -2344,6 +2644,9 @@
     var body = controlPanelBody;
     body.innerHTML = '';
     mapSelectTagBadge = null; // body.innerHTML just wiped any previous badge element
+    mplfsLiveBadge = null;
+    activePreviewOff = null; // body.innerHTML just wiped whichever preview button held this
+    previewToggleRegistry = {};
 
     if (ov.ingameControls)    { buildIngameControls(body);    return; }
     if (ov.ingameHrmControls) { buildIngameHrmControls(body, ov.ingameHrmControls); return; }
@@ -2365,8 +2668,20 @@
     /* Show / Hide row */
     if (ov.show || ov.hide || ov.globalHide) {
       var row = el('div', 'btn-row');
-      if (ov.show)       row.appendChild(btn('Show',     'btn-show', function () { hit(ov.show, body); }));
-      if (ov.hide)       row.appendChild(btn('Hide',     'btn-hide', function () { hit(ov.hide, body); }));
+      if (ov.toggleShowHide && ov.show && ov.hide) {
+        /* Single SHOWING/HIDDEN toggle instead of separate Show/Hide
+           buttons — same visual language as the checkToggles buttons
+           below, driven by draftShowState/applyDraftShowBtn above. */
+        draftShowBtn = el('button', 'btn btn-toggle btn-toggle-off', '○ Hidden');
+        draftShowBtn.addEventListener('click', function () {
+          hit(draftShowState ? ov.hide : ov.show, body);
+        });
+        applyDraftShowBtn();
+        row.appendChild(draftShowBtn);
+      } else {
+        if (ov.show) row.appendChild(btn('Show', 'btn-show', function () { hit(ov.show, body); }));
+        if (ov.hide) row.appendChild(btn('Hide', 'btn-hide', function () { hit(ov.hide, body); }));
+      }
       if (ov.show) {
         var scb = document.createElement('button');
         scb.className = 'btn btn-copy';
@@ -2399,24 +2714,50 @@
         })(ov.globalHide, ghCb);
         row.appendChild(ghCb);
       }
+      if (ov.mplfsLiveIndicator) {
+        mplfsLiveBadge = el('button', 'btn btn-toggle btn-toggle-off', '○ Nothing Live');
+        mplfsLiveBadge.disabled = true;
+        applyMplfsLiveBadge();
+        row.appendChild(mplfsLiveBadge);
+      }
       if (ov.previewButton && (ov.show || ov.hide)) {
-        var tlpvb = document.createElement('button');
-        tlpvb.className = 'btn btn-preview-live';
-        tlpvb.textContent = '◈ Preview';
+        var route0 = ov.show || ov.hide;
+        var parts0 = route0.split('/');
+        row.appendChild(buildPreviewToggleBtn(parts0[parts0.length - 2]));
+      }
+      if (ov.deferredPreview && (ov.show || ov.hide)) {
+        /* Unlike ov.previewButton above, this overlay's iframe is NOT
+           already loaded (see selectOverlay's deferredPreview branch) —
+           this button loads it fresh, waits for it, then triggers show;
+           turning it off unloads the iframe outright instead of just
+           hiding within it, so the page (and its video decode/canvas
+           compositing) actually stops running instead of sitting idle. */
+        var dpvb = document.createElement('button');
+        dpvb.className = 'btn btn-preview-live';
+        dpvb.textContent = '◈ Preview';
         (function (o) {
-          var previewActive = false;
-          tlpvb.addEventListener('click', function () {
-            previewActive = !previewActive;
-            tlpvb.classList.toggle('active', previewActive);
-            var iw = previewIframe && previewIframe.contentWindow;
-            if (!iw || typeof iw.previewTrigger !== 'function') return;
-            var route = o.show || o.hide;
-            var parts = route.split('/');
-            var eventName = parts[parts.length - 2];
-            iw.previewTrigger(eventName, previewActive ? 'show' : 'hide');
+          var route = o.show || o.hide;
+          var parts = route.split('/');
+          var eventName = parts[parts.length - 2];
+          dpvb.addEventListener('click', function () {
+            draftPreviewActive = !draftPreviewActive;
+            dpvb.classList.toggle('active', draftPreviewActive);
+            if (draftPreviewActive) {
+              previewDisabledMsg.style.display = 'none';
+              previewIframe.onload = function () {
+                previewIframe.onload = null;
+                var iw = previewIframe.contentWindow;
+                if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
+              };
+              previewIframe.src = '/html/' + o.file + '?t=' + Date.now() + '&preview=1';
+            } else {
+              previewIframe.onload = null;
+              previewIframe.src = 'about:blank';
+              previewDisabledMsg.style.display = 'flex';
+            }
           });
         })(ov);
-        row.appendChild(tlpvb);
+        row.appendChild(dpvb);
       }
       body.appendChild(row);
     }
@@ -2627,26 +2968,24 @@
           fb.appendChild(chb);
         }
         if (feat.show || feat.hide) {
-          var pvb = document.createElement('button');
-          pvb.className = 'btn btn-preview-live';
-          pvb.textContent = '◈ Preview';
-          (function (f) {
-            var previewActive = false;
-            pvb.addEventListener('click', function () {
-              previewActive = !previewActive;
-              pvb.classList.toggle('active', previewActive);
-              var iw = previewIframe && previewIframe.contentWindow;
-              if (!iw || typeof iw.previewTrigger !== 'function') return;
-              var route = f.show || f.hide;
-              var parts = route.split('/');
-              var eventName = parts[parts.length - 2];
-              iw.previewTrigger(eventName, previewActive ? 'show' : 'hide');
-            });
-          })(feat);
-          fb.appendChild(pvb);
+          var featRoute = feat.show || feat.hide;
+          var featParts = featRoute.split('/');
+          fb.appendChild(buildPreviewToggleBtn(featParts[featParts.length - 2]));
         }
         if (feat.nudges) {
           feat.nudges.forEach(function (n) { fb.appendChild(buildNudgeControl(n)); });
+        }
+        if (feat.extraButtons) {
+          feat.extraButtons.forEach(function (a) {
+            fb.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
+            var acb = document.createElement('button');
+            acb.className = 'btn btn-copy';
+            acb.innerHTML = '<span class="copy-icon">⧉</span>';
+            (function (path, label, b) {
+              b.addEventListener('click', function () { copyRoute(path, label + ' route', b); });
+            })(a.action, a.label, acb);
+            fb.appendChild(acb);
+          });
         }
         fr.appendChild(fb);
         body.appendChild(fr);

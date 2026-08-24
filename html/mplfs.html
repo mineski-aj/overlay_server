@@ -3137,7 +3137,11 @@
 
   <!-- ── BROADCAST CANVAS ── -->
   <div id="canvas">
-    <video id="bg-video" src="/assets/bgloop.webm" autoplay loop muted playsinline></video>
+    <!-- Never played (see GPU-saving notes near showSceneVideo below) — this
+         is the idle-state fallback background, and idle doesn't need motion.
+         preload="auto" (default browser behavior without one) still renders
+         its first frame as a static backdrop instead of a blank rectangle. -->
+    <video id="bg-video" src="/assets/bgloop.webm" loop muted playsinline></video>
     <!-- Shared background for the 5 video-backed scenes below (Waiting
          Screen TVC, Waiting Lobby, Team Hexagon, Today's Schedule,
          Standings) — two stacked layers (crossfade pattern, same idea as
@@ -4923,6 +4927,7 @@
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
       hearts:     '/assets/bgloopwaves2.webm',
+      timeline:   '/assets/bgloopwaves2.webm',
       emblems:    '/assets/bgloopwaves2.webm',
       items:      '/assets/bgloopwaves2.webm',
       stats:      '/assets/bgloopwaves2.webm',
@@ -4935,9 +4940,13 @@
       const src = SCENE_VIDEO_SRC[feature];
 
       if (src === currentSceneVideoSrc) {
-        if (!sceneVideoVisible) sceneVideoEls[sceneVideoLayer].classList.add('sv-visible'); // same file after a gap — just reveal it again
+        if (!sceneVideoVisible) {
+          const el = sceneVideoEls[sceneVideoLayer];
+          el.classList.add('sv-visible'); // same file after a gap — just reveal it again
+          el.play().catch(() => {});      // ...and resume decoding (hideSceneVideo paused it)
+        }
         sceneVideoVisible = true;
-        return; // back-to-back with the same file — leave it exactly as it is
+        return;
       }
 
       const nextLayer = 1 - sceneVideoLayer;
@@ -4948,6 +4957,12 @@
       nextEl.play().catch(() => {});
       nextEl.classList.add('sv-visible');   // crossfade new layer in...
       curEl.classList.remove('sv-visible'); // ...old layer out, at the same time
+      curEl.pause(); /* GPU-saving: stop decoding the layer that's fading out —
+        immediate rather than deferred past its 400ms opacity transition, since
+        it's an ambient full-screen background losing opacity anyway (freezing
+        its last frame for that final fraction of a second reads as
+        imperceptible), and an immediate pause avoids the layer being reused by
+        another quick scene switch before a deferred pause would have fired. */
 
       sceneVideoLayer = nextLayer;
       currentSceneVideoSrc = src;
@@ -4955,8 +4970,21 @@
     }
 
     function hideSceneVideo() {
-      sceneVideoEls[sceneVideoLayer].classList.remove('sv-visible');
+      const el = sceneVideoEls[sceneVideoLayer];
+      el.classList.remove('sv-visible');
       sceneVideoVisible = false;
+      /* Deferred so the 400ms opacity fade-out plays fully animated instead
+         of freezing on its last frame the instant hide is called (same
+         setTimeout-after-transition idiom used elsewhere in this codebase,
+         e.g. Draft.html's hideDraftScene). Guarded on the captured element's
+         OWN class, not the shared sceneVideoVisible flag — a fast re-show of
+         the SAME file re-adds 'sv-visible' to this exact element (see
+         showSceneVideo's same-src branch) before this fires, so skip pausing
+         a video that's actively being shown again. */
+      setTimeout(() => {
+        if (el.classList.contains('sv-visible')) return;
+        el.pause();
+      }, 400);
     }
 
     /* ════════════════════════════════════════════════
@@ -7657,10 +7685,44 @@
     /* Add new Post scene names here — match board follows automatically */
     const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key']);
 
+    /* Keeps server-side state.mplfsScene.<key> (and thus the dashboard's
+       Control-tab board toggles/live indicator) in sync with board
+       visibility decided HERE, internally, as a side effect of switching
+       scenes — not just when the dashboard's own toggle button is
+       clicked. Without this, showMatchBoard()/hideMiddleBoard()/etc.
+       below only ever changed the LOCAL animation state; the server (and
+       every other client asking it, like the dashboard) kept believing
+       whatever the last explicit toggle said, drifting stale the moment
+       a scene switch silently hid/showed a board on its own. Fire-and-
+       forget: the local show/hide*Board() call already handles the
+       actual visible change instantly, this just reports the truth. */
+    function syncBoard(key, shown) {
+      /* Never touch real server state from inside the dashboard's own
+         Control-tab preview iframe (isPreviewFrame, set further down from
+         ?preview=1) — previewing a Post scene there was firing this same
+         fetch as a genuine live show/hide event, so matchboard/middle/
+         playerboard flipped for real in vMix just from clicking Preview.
+         The LOCAL show/hideXBoard() calls elsewhere in transitionToImpl
+         still run normally either way, so the preview iframe itself still
+         visually shows the boards — this only stops it from broadcasting
+         that as real. Instead, tell the dashboard directly via postMessage
+         so it can light up that board's OWN Preview button — otherwise
+         previewing e.g. Post Hearts gave zero visual feedback in the
+         dashboard that Matchboard/Middleboard/Playerboard got triggered
+         along with it. */
+      if (isPreviewFrame) {
+        try { window.parent.postMessage({ type: 'preview-board', key: key, shown: shown }, window.location.origin); } catch (e) {}
+        return;
+      }
+      fetch(buildUrl('/overlay/' + key + '/' + (shown ? 'show' : 'hide'))).catch(() => {});
+    }
+
     /* Central transition: manages match board + middleboard based on Post vs non-Post */
     // Everything that must finish animating OUT before timeline animates IN.
     // Add future boards/elements here.
     function hideBeforeTimeline() {
+      syncBoard('middleboard', false);
+      syncBoard('playerboard', false);
       return Promise.all([
         hideMiddleBoard(),
         hidePlayerBoard(),
@@ -7686,19 +7748,49 @@
 
     async function transitionToImpl(newFeature) {
       if (POST_FEATURES.has(newFeature)) {
+        syncBoard('matchboard', true);
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
         else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
-        else if (newFeature === 'post4key') { hideMiddleBoard(); hidePlayerBoard(); /* own player photos already shown — and unlike Consolidated Post, must actively turn these off in case they're still on from a prior Post scene */ }
-        else { showMiddleBoard(); showPlayerBoard(); }
+        else if (newFeature === 'post4key') {
+          syncBoard('middleboard', false);
+          syncBoard('playerboard', false);
+          hideMiddleBoard(); hidePlayerBoard(); /* own player photos already shown — and unlike Consolidated Post, must actively turn these off in case they're still on from a prior Post scene */
+        }
+        else {
+          syncBoard('middleboard', true);
+          syncBoard('playerboard', true);
+          showMiddleBoard(); showPlayerBoard();
+        }
         if (newFeature !== 'timeline') {
           cpDuringPostTransition = true;
           try { await hideActiveFeature(); } finally { cpDuringPostTransition = false; }
         }
       } else {
         cpDuringPostTransition = false;
+        syncBoard('matchboard', false);
+        syncBoard('middleboard', false);
+        syncBoard('playerboard', false);
         await Promise.all([hideMatchBoard(), hideMiddleBoard(), hidePlayerBoard(), hideActiveFeature()]);
       }
+      /* Start the background loop here — right after the OUTGOING scene has
+         fully finished hiding (hideActiveFeature above), not after the
+         INCOMING scene's own data-fetch/preloadMedia (which can take
+         ~1.5s+). Must come after hideActiveFeature, not before: the
+         outgoing scene's own hide function calls hideSceneVideo() on its
+         own delay (matching its fade-out), reading the shared
+         sceneVideoLayer/currentSceneVideoSrc pointers — calling
+         showSceneVideo() first would have already swung those to the NEW
+         layer, so the outgoing scene's deferred hide would then hide the
+         layer that was just started instead of the one it meant to.
+         Only for features actually in SCENE_VIDEO_SRC — a couple of scenes
+         (e.g. richguy) have their own full-bleed art and deliberately leave
+         whatever background was already playing untouched; calling this
+         for them would set the video src to undefined instead. Every
+         scene's own showSceneVideo(...) call further down the line still
+         fires too, but by then it's a same-src no-op for anything already
+         started here (see showSceneVideo's early-return branch). */
+      if (SCENE_VIDEO_SRC[newFeature]) showSceneVideo(newFeature);
       activeFeature = newFeature;
     }
 
@@ -8725,6 +8817,7 @@
       } else {
         // Genuine standalone hide — animate matchboard out with it, then
         // drop compact mode once it's actually invisible (no visual snap).
+        syncBoard('matchboard', false);
         hideMatchBoard().then(() => {
           document.getElementById('match-board').classList.remove('cp-compact');
         });
@@ -8913,6 +9006,7 @@
         // up, just snap it back out of compact mode (see hideConsolidatedPost).
         document.getElementById('match-board').classList.remove('cp-compact');
       } else {
+        syncBoard('matchboard', false);
         hideMatchBoard().then(() => {
           document.getElementById('match-board').classList.remove('cp-compact');
         });
@@ -9975,6 +10069,10 @@
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
         if (event === 'post4key')      showPost4Key();
+        if (event === 'post_stats')    showPostStats();
+        if (event === 'credits')       showCreditsScene();
+        if (event === 'consolidated_post')   showConsolidatedPost();
+        if (event === 'consolidated_post_2') showConsolidatedPost2();
         if (event === 'matchboard')    showMatchBoard();
         if (event === 'middleboard')   showMiddleBoard();
         if (event === 'playerboard')   showPlayerBoard();

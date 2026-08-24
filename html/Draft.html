@@ -311,6 +311,164 @@
       z-index: 1;
     }
 
+    /* ── Draft Stats (toggleable) — PICK / CONTENTION RATE / WIN RATE
+       reveal, played once per live hero pick, both sides (blue rect for
+       camp1, red for camp2 — see .dstats-rect-camp1/2 below).
+       Sits inside plate-content so it tracks the seat's own width; fills
+       the whole card like every other reveal layer here.
+
+       .dstats-rect and .dstats-text are SEPARATE siblings (not one nested
+       inside the other) even though they slide together — this matters:
+       mix-blend-mode only blends an element with whatever is already
+       painted behind it within the nearest ancestor that itself forms a
+       stacking context (transform/opacity/filter/etc. all do this). If
+       .dstats-rect were nested inside a wrapper that had its own
+       `transform` (needed for the slide), that wrapper would isolate the
+       rect's blend to just its own empty background instead of reaching
+       through to heroVid — which is exactly the "multiply isn't doing
+       anything" bug this shipped with once. Putting the transform on
+       .dstats-rect itself (a leaf, no transformed ancestor above it
+       besides plate-content, which has none) keeps it blending correctly
+       against heroVid; .dstats-text carries the identical slide via the
+       shared .dstats-slide rules so the two visually move as one unit. */
+    .dstats-slide {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      transform: translateX(-100%);
+    }
+    /* Camp2 (red side) starts off-screen to the RIGHT instead of the left
+       — mirror of camp1. Both .dstatsRect and .dstatsText carry a shared
+       dstats-campN class specifically so this selector's specificity
+       (exactly 2 classes: .dstats-slide + .dstats-campN) matches BOTH
+       elements identically — using each element's OWN differently-named
+       class here (.dstats-rect-campN vs .dstats-text) instead shipped a
+       real bug: .dstats-text.dstats-campN.dstats-slide is a 3-class
+       selector, which unconditionally beat the 2-class .dstats-slide.dstats-in
+       below regardless of source order, so the text layer stayed stuck
+       off-screen forever while the rect (correctly a 2-class tie, resolved
+       by ordering this block first) slid in fine — Draft Stats visually
+       looked like "just an empty rectangle slides in" for the whole red
+       side. This rule MUST stay before .dstats-slide.dstats-in: both are
+       genuine 2-class ties on a (camp2, mid-transition-in) element, and
+       .dstats-in needs to win that tie so "in" resolves to translateX(0)
+       for both camps. The .dstats-out override further below is a 3-class
+       selector on purpose (dstats-campN + dstats-slide + dstats-out) so it
+       always wins on real specificity — no ordering constraint needed
+       there, but it's written with .dstats-campN too for consistency. */
+    .dstats-slide.dstats-camp2 {
+      transform: translateX(100%);
+    }
+    .dstats-slide.dstats-in {
+      transform: translateX(0);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .dstats-slide.dstats-out {
+      transform: translateX(-100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 1, 1);
+    }
+    .dstats-slide.dstats-camp2.dstats-out {
+      transform: translateX(100%);
+    }
+    .dstats-rect {
+      z-index: 2;
+      mix-blend-mode: multiply;
+    }
+    .dstats-rect-camp1 { background: #0055ff; }
+    .dstats-rect-camp2 { background: #cd0000; }
+    .dstats-text {
+      z-index: 3;
+    }
+
+    /* Rows sit inset from one edge to clear the vertical hero-name
+       backer (27px wide, .hero-banner) — camp1's sits at the card's left
+       edge so rows shift right to clear it; camp2's sits at the right
+       edge (mirrored, for whenever this gets wired up on that side too)
+       so rows shift left instead. left/right both set with no explicit
+       width lets the box narrow itself automatically. */
+    .dstats-text.dstats-camp1 .dstats-row,
+    .dstats-text.dstats-camp1 .dstats-debut-row { left: 27px; right: 0; }
+    .dstats-text.dstats-camp2 .dstats-row,
+    .dstats-text.dstats-camp2 .dstats-debut-row { left: 0; right: 27px; }
+
+    /* Three stacked rows, each independently faded/slid — see
+       startDraftStats() below for the exact timeline. Every row shares
+       the same untriggered "start" transform (the CONTENTION RATE row's
+       own resting spot — where PICK first pops in during phase 2), so
+       PICK/WIN RATE visually reveal themselves moving away from the spot
+       CONTENTION RATE already occupies when phase 3 fires. */
+    .dstats-row {
+      position: absolute;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.2s ease-out, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .dstats-row-pick       { top: 10px;  transform: translateY(54px);  }
+    .dstats-row-contention { top: 54px;  transform: translateY(0);     }
+    .dstats-row-winrate    { top: 112px; transform: translateY(-58px); }
+    .dstats-row.dstats-pop    { opacity: 1; }
+    .dstats-row.dstats-settle { transform: translateY(0); }
+
+    /* PICK pops in oversized (phase 2) then shrinks back to normal size
+       as it shifts up into its final row (phase 3) — same translateY+scale
+       transform, so both read as one continuous motion. Only the pick row
+       gets this; contention/win rate just fade+slide, no scale. */
+    .dstats-row-pick.dstats-pop    { transform: translateY(54px) scale(2.6); }
+    .dstats-row-pick.dstats-settle { transform: translateY(0) scale(1); }
+
+    .dstats-label {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: 0.06em;
+      color: #fff;
+      text-transform: uppercase;
+      line-height: 1.15;
+    }
+    .dstats-value {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 26px;
+      color: #fff;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    /* Debut Pick — replaces the whole PICK/CONTENTION RATE/WIN RATE
+       reveal when the hero's pick count is 0 (never picked before, so
+       there's no stat worth showing yet). Still rides on the same phase 1
+       rect slide-in; "DEBUT" pops in first, "PICK!" pops in right after,
+       each with its own bouncy "button" pop — no phase 3 (nothing to
+       settle into), straight to the hold once both are in. */
+    .dstats-debut-row {
+      position: absolute;
+      text-align: center;
+      opacity: 0;
+      transform: scale(0.5);
+      transition: opacity 0.25s ease-out, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dstats-debut-row.dstats-pop { opacity: 1; transform: scale(1); }
+    .dstats-row-debut-label { top: 50px; }
+    .dstats-row-debut-value { top: 78px; }
+    .dstats-debut-label {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      letter-spacing: 0.08em;
+      color: #fff;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .dstats-debut-value {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 48px;
+      color: #fff;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
     /* ── Post-pick glow overlay (div above canvas, z-index 3) ──── */
     .plate-glow {
       position: absolute;
@@ -941,6 +1099,17 @@
 (function () {
   'use strict';
 
+  /* Dashboard Control-tab preview iframe loads this page with ?preview=1
+     (same convention as the Edit tab and mplfs.html-style previewButton
+     entries). When set, this instance is fully decoupled from the REAL
+     broadcast show/hide state — it never auto-shows/hides itself based on
+     what's actually live, only in response to window.previewTrigger(...)
+     calls the dashboard makes directly. Without this, a preview iframe
+     would react to the same live SSE events as the real vMix instance,
+     doubling video-decode/canvas-compositing load exactly when this scene
+     is heaviest (see CLAUDE.md-adjacent perf notes on this page). */
+  var PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(window.location.search);
+
   var DEFAULT_URL = window.location.protocol + '//' + window.location.hostname + ':5001/api/gamedata';
   var STORAGE_KEY = 'draft_overlay_api_url';
   var POLL_MS     = 1000;
@@ -977,6 +1146,15 @@
   fetch('/overlay/draft-photo-mode', { cache: 'no-store' })
     .then(function(r){ return r.json(); })
     .then(function(d){ if (d.mode) draftPhotoMode = d.mode; })
+    .catch(function(){});
+
+  /* Draft Stats arm/disarm state — see startDraftStats() below.
+     draftStatsEnabled itself is declared down there (defaults true);
+     this just confirms it against the server on load, same pattern as
+     draftPhotoMode above. */
+  fetch('/overlay/features', { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d && d.draftstats !== undefined) draftStatsEnabled = d.draftstats; })
     .catch(function(){});
 
   /* Draft Recap API URL (Settings → Draft Recap API) — previous-draft
@@ -1225,12 +1403,15 @@
         heroVid.preload     = 'none';
         plateContent.appendChild(heroVid);
 
-        /* Canvas for matte composite — on top of heroVid during reveal */
+        /* Canvas for matte composite — on top of heroVid during reveal.
+           GPU-composited only (drawImage + destination-in, see
+           startMatteReveal) — no willReadFrequently hint since this
+           canvas is never read back with getImageData. */
         var cvs = document.createElement('canvas');
         cvs.className = 'plate-canvas';
         cvs.width = 168; cvs.height = 168;
         plateContent.appendChild(cvs);
-        var ctx2d = cvs.getContext('2d', { willReadFrequently: true });
+        var ctx2d = cvs.getContext('2d');
 
         /* Player photo (FRONT → VICTORY) + its erase canvas */
         var photoImg = document.createElement('img');
@@ -1250,15 +1431,26 @@
         photoMatteCanv.width = PHOTO_W; photoMatteCanv.height = PHOTO_W;
         var photoMatteCtx = photoMatteCanv.getContext('2d', { willReadFrequently: true });
 
-        var matteCanv = document.createElement('canvas');
-        matteCanv.width = 168; matteCanv.height = 168;
-        var matteCtx = matteCanv.getContext('2d', { willReadFrequently: true });
-
+        /* Matte video (luma-based wipe mask) — feeds updatePhotoErase()'s
+           JS pixel math unchanged (photo erase combines this mask with
+           the photo's OWN alpha via Math.min, which doesn't map onto a
+           single GPU compositing op, so it keeps the getImageData path). */
         var matteVid = document.createElement('video');
         matteVid.src = 'assets/draft/motion/s17_matte2.webm';
         matteVid.muted = true; matteVid.playsInline = true;
         matteVid.preload = 'none'; matteVid.style.display = 'none';
         plateContent.appendChild(matteVid);
+
+        /* Same wipe, pre-baked as a REAL alpha channel (offline, via
+           ffmpeg — alpha = 255 - lumaOfOriginal, identical formula to
+           matteAlphaAt() below, verified pixel-exact against it) so the
+           hero reveal can composite on the GPU via destination-in
+           instead of getImageData/putImageData every frame. */
+        var heroMatteVid = document.createElement('video');
+        heroMatteVid.src = 'assets/draft/motion/s17_matte2_alpha.webm';
+        heroMatteVid.muted = true; heroMatteVid.playsInline = true;
+        heroMatteVid.preload = 'none'; heroMatteVid.style.display = 'none';
+        plateContent.appendChild(heroMatteVid);
 
         var glowDiv = document.createElement('div');
         glowDiv.className = 'plate-glow';
@@ -1303,6 +1495,50 @@
         triBottom.style.animationDelay = triDelay;
         plateContent.appendChild(triBottom);
 
+        /* Draft Stats reveal (toggleable) — see startDraftStats() below.
+           Built identically for both camps; the rect's color (blue/red)
+           is the only camp-specific visual, via dstats-rect-campN.
+           .dstatsRect and .dstatsText are separate siblings (both direct
+           children of plateContent, NOT one nested in the other) so the
+           rect's multiply blend isn't isolated by a transformed ancestor
+           — see the CSS comment above .dstats-slide for why that matters. */
+        var dstatsRect = document.createElement('div');
+        dstatsRect.className = 'dstats-slide dstats-camp' + campid + ' dstats-rect dstats-rect-camp' + campid;
+        plateContent.appendChild(dstatsRect);
+
+        var dstatsText = document.createElement('div');
+        dstatsText.className = 'dstats-slide dstats-text dstats-camp' + campid;
+
+        var dstatsPickRow = document.createElement('div');
+        dstatsPickRow.className = 'dstats-row dstats-row-pick';
+        dstatsPickRow.innerHTML = '<div class="dstats-label">Pick</div><div class="dstats-value dstats-pick-value">0</div>';
+        dstatsText.appendChild(dstatsPickRow);
+
+        var dstatsContentionRow = document.createElement('div');
+        dstatsContentionRow.className = 'dstats-row dstats-row-contention';
+        dstatsContentionRow.innerHTML = '<div class="dstats-label">Contention<br>Rate</div><div class="dstats-value dstats-contention-value">0%</div>';
+        dstatsText.appendChild(dstatsContentionRow);
+
+        var dstatsWinrateRow = document.createElement('div');
+        dstatsWinrateRow.className = 'dstats-row dstats-row-winrate';
+        dstatsWinrateRow.innerHTML = '<div class="dstats-label">Win Rate</div><div class="dstats-value dstats-winrate-value">0%</div>';
+        dstatsText.appendChild(dstatsWinrateRow);
+
+        /* Debut Pick — shown instead of the rows above when pick count is
+           0 (see startDraftStats() below). Two separate elements so each
+           can pop in on its own stagger. */
+        var dstatsDebutLabel = document.createElement('div');
+        dstatsDebutLabel.className = 'dstats-debut-row dstats-row-debut-label dstats-debut-label';
+        dstatsDebutLabel.textContent = 'Debut';
+        dstatsText.appendChild(dstatsDebutLabel);
+
+        var dstatsDebutValue = document.createElement('div');
+        dstatsDebutValue.className = 'dstats-debut-row dstats-row-debut-value dstats-debut-value';
+        dstatsDebutValue.textContent = 'Pick!';
+        dstatsText.appendChild(dstatsDebutValue);
+
+        plateContent.appendChild(dstatsText);
+
         plate.appendChild(plateContent);
 
         /* Player name sits below, centred in the seat-unit */
@@ -1319,12 +1555,18 @@
           seatUnit: seatUnit, plate: plate, pickVid: vid, pickAnim: pickAnim,
           heroVid: heroVid, pickGrad: pickGrad,
           canvasEl: cvs, ctx2d: ctx2d,
-          matteCtx: matteCtx, matteVid: matteVid,
+          matteVid: matteVid, heroMatteVid: heroMatteVid,
           glowDiv: glowDiv, banner: banner, bannerName: bannerName,
           roleImg: roleImg, nameEl: nameEl,
           triTop: triTop, triBottom: triBottom,
           photoImg: photoImg, photoCanvas: photoCanvas, photoCtx: photoCtx,
-          photoMatteCtx: photoMatteCtx, photoOrigAlpha: null, photoH: null
+          photoMatteCtx: photoMatteCtx, photoOrigAlpha: null, photoH: null,
+          dstatsRect: dstatsRect, dstatsText: dstatsText, dstatsPickRow: dstatsPickRow,
+          dstatsContentionRow: dstatsContentionRow, dstatsWinrateRow: dstatsWinrateRow,
+          dstatsPickValue: dstatsPickRow.querySelector('.dstats-pick-value'),
+          dstatsContentionValue: dstatsContentionRow.querySelector('.dstats-contention-value'),
+          dstatsWinrateValue: dstatsWinrateRow.querySelector('.dstats-winrate-value'),
+          dstatsDebutLabel: dstatsDebutLabel, dstatsDebutValue: dstatsDebutValue
         };
         prevPick[key] = {
           heroid: undefined, picking: false, banning: false,
@@ -1332,7 +1574,7 @@
           roleid: undefined, assignedRole: undefined,
           photoName: undefined, photoPhase: 'none', photoErasing: false,
           photoTimer0: null, photoTimer1: null, photoTimer2: null,
-          pickAnimTimer: null
+          pickAnimTimer: null, dstatsTimers: null
         };
       }
     }
@@ -1686,16 +1928,24 @@
     drShouldShow = true;
     clearTimeout(drOutTimer);
     draftRecapPage.style.display = 'block';
-    drFetchAndApply().catch(function () {}).then(function () {
-      if (!drShouldShow) return; /* hidden again while we were fetching */
-      /* Double rAF so the browser commits display:block at the
-         off-screen transform before adding the "visible" class (which
-         switches to the slide-in transition) — see icAnimateIn() for
-         why the extra frame matters. */
+
+    /* Fire-and-forget — data populates whenever this resolves. The
+       reveal below does NOT wait on it: draftRecapApiUrl is a
+       third-party scorekeeping feed with no timeout on this fetch, so
+       gating visibility behind it meant one slow/unreachable API call
+       could leave the panel silently stuck off-screen (display:block
+       but never getting draftrecap-visible) with no retry — hide
+       always "worked" since it has no fetch dependency, which is what
+       made this look like show/hide were asymmetrically broken. */
+    drFetchAndApply().catch(function () {});
+
+    /* Double rAF so the browser commits display:block at the
+       off-screen transform before adding the "visible" class (which
+       switches to the slide-in transition) — see icAnimateIn() for
+       why the extra frame matters. */
+    requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          if (drShouldShow) draftRecapPage.classList.add('draftrecap-visible');
-        });
+        if (drShouldShow) draftRecapPage.classList.add('draftrecap-visible');
       });
     });
 
@@ -2194,13 +2444,141 @@
       : 255 - ((m[i] * 77 + m[i + 1] * 150 + m[i + 2] * 29) >> 8);
   }
 
+  /* ── Draft Stats reveal ────────────────────────────────────────
+     Toggleable (Control tab → Draft Overlay → Feature Toggles →
+     "Draft Stats"); fires once per live hero pick, both sides. Real
+     numbers come straight from the draft API's pickCnt/contentionRate/
+     winRate fields (see normalizeDraftPayload() and updatePickSeat()) —
+     a pick count of 0 (hero never picked before) is a special case,
+     see startDraftStats()'s isDebut branch below. */
+  var draftStatsEnabled = true; /* confirmed by /overlay/features fetch + 'featuretoggle' SSE below */
+
+  /* Normal reveal — phase 1 (slide, 300ms) → phase 2 starts right after
+     (PICK pops in oversized and holds, ~750ms — 500ms longer than a plain
+     pop so the bigger count actually gets seen) → phase 3 starts shortly
+     after that (PICK shrinks back to normal size while settling into its
+     final row, ~450ms) — then a 1.8s hold, then a 400ms slide back out. */
+  var DSTATS_PHASE1_MS = 300;  // rect slide-in duration
+  var DSTATS_PHASE2_MS = 750;  // delay from phase 1 end to phase 3 start (oversized PICK hold)
+  var DSTATS_PHASE3_MS = 450;  // reserved for the settle transition before the hold begins
+  var DSTATS_HOLD_MS   = 1800;
+  var DSTATS_OUT_MS    = 400;
+
+  /* Debut reveal — same phase 1 slide, then "DEBUT" pops in, "PICK!" pops
+     in shortly after (each its own bouncy pop, no phase 3 — nothing to
+     settle into), then the same hold/out. */
+  var DSTATS_DEBUT_GAP_MS = 220; // delay between DEBUT popping and PICK! popping
+  var DSTATS_DEBUT_POP_MS = 400; // reserved for PICK!'s own pop transition before the hold begins
+
+  /* .dstatsRect and .dstatsText are separate siblings (see the CSS
+     comment above .dstats-slide for why) but always slide together —
+     this pair of helpers is the only place that needs to know that. */
+  function dstatsSlideIn(e) {
+    e.dstatsRect.classList.remove('dstats-out');
+    e.dstatsText.classList.remove('dstats-out');
+    e.dstatsRect.classList.add('dstats-in');
+    e.dstatsText.classList.add('dstats-in');
+  }
+  function dstatsSlideOut(e) {
+    e.dstatsRect.classList.remove('dstats-in');
+    e.dstatsText.classList.remove('dstats-in');
+    e.dstatsRect.classList.add('dstats-out');
+    e.dstatsText.classList.add('dstats-out');
+  }
+  function dstatsSlideReset(e) {
+    e.dstatsRect.classList.remove('dstats-in', 'dstats-out');
+    e.dstatsText.classList.remove('dstats-in', 'dstats-out');
+  }
+
+  function dstatsClearContent(e) {
+    e.dstatsPickRow.classList.remove('dstats-pop', 'dstats-settle');
+    e.dstatsContentionRow.classList.remove('dstats-pop', 'dstats-settle');
+    e.dstatsWinrateRow.classList.remove('dstats-pop', 'dstats-settle');
+    e.dstatsDebutLabel.classList.remove('dstats-pop');
+    e.dstatsDebutValue.classList.remove('dstats-pop');
+  }
+
+  function startDraftStats(e, p, stats) {
+    var isDebut = Number(stats.pick) === 0;
+    if (p.dstatsTimers) { p.dstatsTimers.forEach(clearTimeout); }
+    p.dstatsTimers = [];
+
+    /* Reset to the untriggered state before replaying, in case a
+       previous run is still mid-flight (e.g. rapid test-button clicks). */
+    dstatsSlideReset(e);
+    dstatsClearContent(e);
+    void e.dstatsRect.offsetWidth;
+
+    /* Phase 1 — blue rectangle (+ text layer riding along with it) slides
+       in from the left. Shared by both the normal and debut reveals. */
+    dstatsSlideIn(e);
+
+    var introEndMs; // when the intro content finishes animating, before the hold begins
+
+    if (isDebut) {
+      /* "DEBUT" pops in, then "PICK!" pops in right after — no stats to
+         show for a hero that's never been picked, so skip straight from
+         phase 1 to this instead of the usual PICK/CONTENTION/WIN RATE flow. */
+      p.dstatsTimers.push(setTimeout(function () {
+        e.dstatsDebutLabel.classList.add('dstats-pop');
+      }, DSTATS_PHASE1_MS));
+
+      p.dstatsTimers.push(setTimeout(function () {
+        e.dstatsDebutValue.classList.add('dstats-pop');
+      }, DSTATS_PHASE1_MS + DSTATS_DEBUT_GAP_MS));
+
+      introEndMs = DSTATS_PHASE1_MS + DSTATS_DEBUT_GAP_MS + DSTATS_DEBUT_POP_MS;
+    } else {
+      e.dstatsPickValue.textContent = stats.pick;
+      e.dstatsContentionValue.textContent = stats.contention;
+      e.dstatsWinrateValue.textContent = stats.winrate;
+
+      /* Phase 2 — PICK + its count pop in at the card's vertical centre. */
+      p.dstatsTimers.push(setTimeout(function () {
+        e.dstatsPickRow.classList.add('dstats-pop');
+      }, DSTATS_PHASE1_MS));
+
+      /* Phase 3 — PICK settles upward; CONTENTION RATE/WIN RATE fade in
+         from that same centre point and settle down into their own rows. */
+      p.dstatsTimers.push(setTimeout(function () {
+        e.dstatsPickRow.classList.add('dstats-settle');
+        e.dstatsContentionRow.classList.add('dstats-pop', 'dstats-settle');
+        e.dstatsWinrateRow.classList.add('dstats-pop', 'dstats-settle');
+      }, DSTATS_PHASE1_MS + DSTATS_PHASE2_MS));
+
+      introEndMs = DSTATS_PHASE1_MS + DSTATS_PHASE2_MS + DSTATS_PHASE3_MS;
+    }
+
+    /* Hold, then slide the whole assembly back out the way it came in. */
+    p.dstatsTimers.push(setTimeout(function () {
+      dstatsSlideOut(e);
+    }, introEndMs + DSTATS_HOLD_MS));
+
+    /* Fully offscreen — clear row state so the next pick starts clean. */
+    p.dstatsTimers.push(setTimeout(function () {
+      dstatsSlideReset(e);
+      dstatsClearContent(e);
+      p.dstatsTimers = null;
+    }, introEndMs + DSTATS_HOLD_MS + DSTATS_OUT_MS));
+  }
+
+  /* Cancels any in-flight reveal and snaps the layer back to fully
+     hidden — used when a seat's pick is cleared out from under it
+     (draft swap, auto-pick edge case) so a stale animation can't get
+     stuck mid-flight on the next occupant's card. */
+  function resetDraftStats(e, p) {
+    if (p.dstatsTimers) { p.dstatsTimers.forEach(clearTimeout); p.dstatsTimers = null; }
+    dstatsSlideReset(e);
+    dstatsClearContent(e);
+  }
+
   function startMatteReveal(e, campid, p) {
-    var cvs      = e.canvasEl;
-    var ctx      = e.ctx2d;
-    var mCtx     = e.matteCtx;
-    var matteVid = e.matteVid;
-    var heroVid  = e.heroVid;
-    var rafId    = null;
+    var cvs          = e.canvasEl;
+    var ctx          = e.ctx2d;
+    var matteVid     = e.matteVid;
+    var heroMatteVid = e.heroMatteVid;
+    var heroVid      = e.heroVid;
+    var rafId        = null;
 
     function fireGlow() {
       var gd = e.glowDiv;
@@ -2221,6 +2599,22 @@
           if (ev.propertyName !== 'width') return;
           e.seatUnit.removeEventListener('transitionend', onCollapse);
           e.banner.classList.add('slide-in');
+          /* Draft Stats — starts once the name tag has actually finished
+             sliding in (its own transform transition), not the instant
+             the class is added. p.pickCnt/contentionRate/winRate were
+             stashed from the live seat data in updatePickSeat() below. */
+          if (draftStatsEnabled) {
+            function onBannerIn(bev) {
+              if (bev.propertyName !== 'transform') return;
+              e.banner.removeEventListener('transitionend', onBannerIn);
+              startDraftStats(e, p, {
+                pick: String(p.pickCnt),
+                contention: Math.round(p.contentionRate) + '%',
+                winrate: Math.round(p.winRate) + '%'
+              });
+            }
+            e.banner.addEventListener('transitionend', onBannerIn);
+          }
         }
         e.seatUnit.addEventListener('transitionend', onCollapse);
       }, 900);
@@ -2231,6 +2625,7 @@
       prevPick[e.key].matteActive = false;
       cvs.style.opacity = '0';
       cvs.classList.remove('brightening');
+      heroMatteVid.pause();
       /* Stop pick video now that reveal is complete */
       e.pickVid.style.display = 'none';
       e.pickVid.pause();
@@ -2241,18 +2636,16 @@
       fireGlow();
     }
 
+    /* GPU-only composite: heroMatteVid's alpha channel IS the mask
+       (pre-baked offline to the exact matteAlphaAt() value below), so
+       destination-in multiplies heroVid's opaque pixels by it directly —
+       no getImageData/putImageData round trip. clearRect isn't needed
+       first since the hero draw is a full opaque overwrite either way. */
     function compositeFrame(H) {
-      ctx.clearRect(0, 0, 168, H);
       ctx.drawImage(heroVid, 0, 0, 168, H);
-      var hd = ctx.getImageData(0, 0, 168, H);
-      mCtx.clearRect(0, 0, 168, H);
-      mCtx.drawImage(matteVid, 0, 0, 168, H);
-      var md = mCtx.getImageData(0, 0, 168, H);
-      var h = hd.data, m = md.data;
-      for (var i = 0; i < h.length; i += 4) {
-        h[i + 3] = matteAlphaAt(m, i);
-      }
-      ctx.putImageData(hd, 0, 0);
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.drawImage(heroMatteVid, 0, 0, 168, H);
+      ctx.globalCompositeOperation = 'source-over';
       if (p.photoErasing) updatePhotoErase(e, matteVid);
     }
 
@@ -2268,11 +2661,16 @@
       var natH = heroVid.videoHeight || 300;
       var H    = Math.round(natH * 168 / natW);
       cvs.width = 168; cvs.height = H; cvs.style.height = H + 'px';
-      e.matteCtx.canvas.width = 168; e.matteCtx.canvas.height = H;
 
       cvs.style.opacity = '1';
       matteVid.currentTime = 0;
       matteVid.addEventListener('ended', done, { once: true });
+
+      /* Same timeline as matteVid, started together — matteVid stays the
+         timing driver (ended/requestVideoFrameCallback below); this one
+         only ever gets drawn from, never inspected for state. */
+      heroMatteVid.currentTime = 0;
+      heroMatteVid.play().catch(function () {});
 
       preparePhotoErase(e, p);
 
@@ -2365,7 +2763,14 @@
         e.heroVid.currentTime = 0;
 
         if (p.heroid !== undefined) {
-          /* Live pick: matte reveal drives play() and display */
+          /* Live pick: matte reveal drives play() and display. Stash this
+             pick's draft-stats fields now (straight from the API, see
+             normalizeDraftPayload()) so startMatteReveal()'s fireGlow()
+             has real numbers by the time it triggers startDraftStats(),
+             several steps and a couple of transitionend hops later. */
+          p.pickCnt        = seat.pickCnt || 0;
+          p.contentionRate = seat.contentionRate || 0;
+          p.winRate        = seat.winRate || 0;
           e.heroVid.style.display = 'none'; /* hidden until canvas reveals it */
           p.matteActive = true;
           startMatteReveal(e, campid, p);
@@ -2399,6 +2804,7 @@
         updateCampPickerClass(campid);
         e.roleImg.style.display = '';
         resetPlayerPhoto(e, p);
+        resetDraftStats(e, p);
       }
       p.heroid = heroid;
     }
@@ -2680,7 +3086,16 @@
           ban_heroid: p.ban_heroid || 0,
           banning: !!p.banning,
           picking: !!p.picking,
-          role: p.role || ''
+          role: p.role || '',
+          /* Draft Stats (see startDraftStats()) — pickCnt is this hero's
+             pick count for the current patch (0 = never picked, triggers
+             the Debut Pick reveal instead). contentionRate/winRate are
+             assumed already percentage-scale (e.g. 45.5 meaning 45.5%),
+             matching this feed's sibling pickRate/banRate fields — revisit
+             this assumption once real non-zero values are seen live. */
+          pickCnt: p.pickCnt || 0,
+          contentionRate: p.contentionRate || 0,
+          winRate: p.winRate || 0
         };
       });
       return out;
@@ -2785,11 +3200,18 @@
   /* Restore-on-load — runs immediately (not gated behind the 2s SSE
      delay below) since the default (no class) is visible; only need to
      act if the server says it was explicitly hidden, so a reload never
-     shows a spurious blank frame while this resolves. */
-  fetch('/overlay/draft-state', { cache: 'no-store' })
-    .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.active === false) hideDraftScene(true); })
-    .catch(function () {});
+     shows a spurious blank frame while this resolves.
+     PREVIEW_ONLY skips this entirely — a preview instance starts hidden
+     regardless of real state and only reveals itself via
+     window.previewTrigger, never by guessing what's actually live. */
+  if (PREVIEW_ONLY) {
+    hideDraftScene(true);
+  } else {
+    fetch('/overlay/draft-state', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.active === false) hideDraftScene(true); })
+      .catch(function () {});
+  }
 
   /* SSE — listen for global debug hide.
      Opened after a short delay so Chrome's tab throbber settles on load. */
@@ -2810,6 +3232,7 @@
       } catch (e) {}
     });
     sse.addEventListener('draft', function(ev) {
+      if (PREVIEW_ONLY) return; /* decoupled from real state — see PREVIEW_ONLY above */
       try {
         var d = JSON.parse(ev.data);
         if (d.action === 'show') showDraftScene();
@@ -2817,10 +3240,37 @@
       } catch (e) {}
     });
     sse.addEventListener('draftrecap', function(ev) {
+      if (PREVIEW_ONLY) return;
       try {
         var d = JSON.parse(ev.data);
         if (d.action === 'show') drAnimateIn();
         else if (d.action === 'hide') drAnimateOut();
+      } catch (e) {}
+    });
+    /* Draft Stats — arm/disarm toggle (Control tab → Draft Overlay →
+       Feature Toggles). Runs even in a preview instance — this only
+       gates a local visual reveal, no real broadcast state gets written. */
+    sse.addEventListener('featuretoggle', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        if (d.feature === 'draftstats') draftStatsEnabled = !!d.enabled;
+      } catch (e) {}
+    });
+    /* Draft Stats — Control tab test trigger (fixed placeholder values,
+       Player 1 only). Fires regardless of draftStatsEnabled, same as any
+       other manual test action in this codebase — an explicit test click
+       shouldn't be silently swallowed by an armed/disarmed toggle. */
+    sse.addEventListener('draftstats', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        var key = d.campid + '_' + d.seatIdx;
+        var e2  = pickEls[key];
+        var p2  = prevPick[key];
+        if (e2 && p2) {
+          startDraftStats(e2, p2, {
+            pick: String(d.pick), contention: d.contention + '%', winrate: d.winrate + '%'
+          });
+        }
       } catch (e) {}
     });
     /* Catch-up re-sync — this SSE listener only exists as of NOW (the
@@ -2833,15 +3283,32 @@
        listening yet to catch it). Re-fetch the real state now and
        reconcile instead of trusting the earlier restore-fetch, which
        ran before any of this could have happened. */
-    fetch('/overlay/check-overlays', { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        var shouldShow = !!(d && d.draftrecap);
-        if (shouldShow && !drShouldShow) drAnimateIn();
-        else if (!shouldShow && drShouldShow) drAnimateOut();
-      })
-      .catch(function () {});
+    if (!PREVIEW_ONLY) {
+      fetch('/overlay/check-overlays', { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var shouldShow = !!(d && d.draftrecap);
+          if (shouldShow && !drShouldShow) drAnimateIn();
+          else if (!shouldShow && drShouldShow) drAnimateOut();
+        })
+        .catch(function () {});
+    }
   }, 2000);
+
+  /* ── Local-only preview trigger — called directly by the dashboard's
+     Control-tab Preview button via this iframe's contentWindow, bypassing
+     the network/SSE entirely (same contract as mplfs.html's
+     window.previewTrigger). This is the ONLY thing that shows/hides this
+     page when PREVIEW_ONLY is set. ── */
+  window.previewTrigger = function (event, action) {
+    if (event === 'draft') {
+      if (action === 'show') showDraftScene();
+      else hideDraftScene();
+    } else if (event === 'draftrecap') {
+      if (action === 'show') drAnimateIn();
+      else drAnimateOut();
+    }
+  };
 
   buildPickPlates();
   buildBanPlates();
