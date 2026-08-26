@@ -51,6 +51,7 @@ var prevKillTortoiseTotal = null;
 var turtleDisabledForMatch = false;
 var pendingLordGameTime   = null; /* scheduled game_time for the first (transform) Lord spawn */
 var firstLordHandled      = false; /* once true, resume trusting lord_left_time's own countdown */
+var objSpawnHasPolled     = false; /* true after the first poll this page load has ever seen */
 
 function objSpawnPlayNext() {
   if (objSpawnPlaying || objSpawnQueue.length === 0) return;
@@ -88,13 +89,28 @@ function objSpawnUpdate(data) {
   var gameTime = data.game_time;
   if (typeof gameTime !== 'number') return;
 
+  /* Refresh guard — if this page load's very first poll already reads a
+     game_time past the turtle→Lord transform point, that transform
+     happened before we ever started watching; schedule nothing for it
+     (see Rule 2 below) and go straight to trusting lord_left_time's own
+     countdown for the NEXT respawn, same as after a real transform. This
+     was firing lordspawn.webm immediately on refresh for any ongoing
+     game already past ~8:00, since gameTime >= pendingLordGameTime
+     (just-scheduled 8:05 target) was already true on that very first
+     poll — the fix is only ever scheduling that target when the crossing
+     was actually OBSERVED between two polls, not just read once cold. */
+  var isFirstPoll = !objSpawnHasPolled;
+  objSpawnHasPolled = true;
+
   if (!turtleDisabledForMatch) {
     if (gameTime >= TURTLE_TRANSFORM_GAME_TIME) {
       turtleDisabledForMatch = true;
-      /* Rule 2 — survived untouched to 8:00: fixed 8:05 target, not
-         gameTime+5, so a late-detected crossing (poll skipped a beat)
-         doesn't push the transform later than it actually happened. */
-      if (!firstLordHandled && pendingLordGameTime == null) {
+      if (isFirstPoll) {
+        firstLordHandled = true;
+      } else if (!firstLordHandled && pendingLordGameTime == null) {
+        /* Rule 2 — survived untouched to 8:00: fixed 8:05 target, not
+           gameTime+5, so a late-detected crossing (poll skipped a beat)
+           doesn't push the transform later than it actually happened. */
         pendingLordGameTime = LORD_NATURAL_TRANSFORM_TARGET;
       }
     } else {

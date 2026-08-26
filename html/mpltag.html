@@ -192,6 +192,160 @@
       white-space: nowrap; line-height: 1;
     }
 
+    /* ── Player H2H (Gold) tag ──
+       Coordinates are relative to Layer_1 (.ph2h-back, the 1319x247
+       playerh2hback.png panel) exactly as pasted from the design tool,
+       nested exactly as described (photo inside back, plate inside
+       photo, role/name inside plate, hero + title directly inside
+       back). The outer #ph2h-clip/#ph2h-overlay pair is NOT part of the
+       design spec — it's our own slide-in/out mechanism (same
+       fixed-clip + sliding-inner technique as golddiff-check in
+       mploverlay_v7.css) sized 56px taller than .ph2h-back itself so the
+       home/away photos (which start at top:-56 relative to .ph2h-back,
+       deliberately overflowing the panel's own top edge per the user's
+       "don't crop the top" instruction) and the title banner (top:-31)
+       stay fully inside the clip while off-screen, instead of getting
+       cut off before they even have a chance to slide into view. */
+    #ph2h-clip {
+      position: absolute; left: 301px; top: 777px; width: 1319px; height: 303px;
+      overflow: hidden; display: none; pointer-events: none; z-index: 5;
+    }
+    #ph2h-overlay {
+      position: absolute; left: 0; top: 0; width: 1319px; height: 303px;
+      transform: translateY(303px);
+      transition: transform 350ms ease-in;
+    }
+    #ph2h-overlay.ph2h-in {
+      transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(0);
+    }
+    .ph2h-back {
+      position: absolute; left: 0; top: 56px; width: 1319px; height: 247px;
+      background-image: url('/assets/L3h2h/playerh2hback.png');
+      background-size: 100% 100%; background-repeat: no-repeat;
+    }
+    /* Stacking (front to back): nameplate > photo > hero. */
+    .ph2h-photo {
+      position: absolute; width: 303px; height: 303px;
+      object-fit: cover; object-position: top center; /* crop the bottom if needed, never the top */
+      z-index: 2;
+    }
+    .ph2h-photo.ph2h-home { left: 81px;  top: -56px; }
+    .ph2h-photo.ph2h-away { left: 935px; top: -56px; } /* mirrored: 1319 - 81 - 303 */
+
+    /* Positioned relative to .ph2h-back (the main container), NOT the
+       photo — Group_1's own left/top (0/192) are given "in relation to
+       the main container". */
+    /* Layer_5 (312x64 @ 0,183) replaces the earlier Group_1 (308x55 @
+       0,192) spec for the player tag — same background assets
+       (playerh2hblue/red.png), just the corrected box. */
+    .ph2h-plate {
+      position: absolute; top: 183px; width: 312px; height: 64px;
+      background-size: 100% 100%; background-repeat: no-repeat;
+      z-index: 3;
+    }
+    .ph2h-plate.ph2h-home { left: 0px;    background-image: url('/assets/L3h2h/playerh2hblue.png'); }
+    .ph2h-plate.ph2h-away { left: 1007px; background-image: url('/assets/L3h2h/playerh2hred.png');  } /* mirrored: 1319 - 0 - 312 */
+
+    /* Rendered pure black regardless of the source icon's own color —
+       role/*.png icons are a light taupe, not black. */
+    .ph2h-role { position: absolute; top: 10px; width: 46px; height: 46px; object-fit: contain; filter: brightness(0); }
+    .ph2h-plate.ph2h-home .ph2h-role { left: 10px;  }
+    .ph2h-plate.ph2h-away .ph2h-role { left: 256px; } /* mirrored: 312 - 10 - 46 */
+
+    .ph2h-name {
+      position: absolute; top: 5px; width: 213px; height: 55px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 26px;
+      color: #fff; text-align: center; line-height: 1; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .ph2h-plate.ph2h-home .ph2h-name { left: 88px; }
+    .ph2h-plate.ph2h-away .ph2h-name { left: 11px; } /* mirrored: 312 - 88 - 213 */
+
+    .ph2h-hero { position: absolute; top: 2px; width: 194px; height: 190px; object-fit: contain; z-index: 1; }
+    .ph2h-hero.ph2h-home { left: 3px;    }
+    .ph2h-hero.ph2h-away { left: 1122px; } /* mirrored: 1319 - 3 - 194 */
+
+    .ph2h-title {
+      position: absolute; left: 392px; top: -31px; width: 532px; height: 59px;
+      background-image: url('/assets/L3h2h/playerh2h%20title.png');
+      background-size: 100% 100%; background-repeat: no-repeat;
+      overflow: hidden; border-radius: 8px; z-index: 6;
+    }
+    .ph2h-title-sheen {
+      position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
+      background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+      transform: skewX(-20deg);
+      pointer-events: none;
+    }
+    @keyframes ph2h-sheen-sweep { from { left: -60%; } to { left: 120%; } }
+    .ph2h-title.ph2h-sheen-play .ph2h-title-sheen { animation: ph2h-sheen-sweep 650ms ease-out; }
+    @keyframes ph2h-title-bounce {
+      0%   { transform: scale(1);    }
+      35%  { transform: scale(0.92); }
+      65%  { transform: scale(1.06); }
+      100% { transform: scale(1);    }
+    }
+    .ph2h-title.ph2h-bounce-play { animation: ph2h-title-bounce 350ms ease-out; }
+    .ph2h-title-text {
+      position: absolute; left: 41px; top: 0; width: 451px; height: 59px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 28px;
+      color: #000; text-align: center; line-height: 1; white-space: nowrap;
+      text-transform: uppercase; z-index: 1;
+    }
+
+    /* 5 stat rows, evenly spaced inside the 596x203 stats box (the
+       playerh2hguide.png reference only shows 3 rows — the user asked
+       for the same row treatment stretched to fit 5). Each row: a
+       centered label, then ONE continuous head-to-head bar — the red
+       track is the row's full width, a blue fill grows over it from
+       the left, so whichever side has the bigger value visibly takes
+       up more of the single bar (not two independent bars). Values
+       flank the bar on the outside, colored to match their side. */
+    /* left/width nudged in from the original 362/596 — the nameplates'
+       own right/left inner edges land at x:389 (home) and x:930 (away)
+       within .ph2h-back, and 362-958 overlapped both of them on the
+       GPM/TDPM rows. 405-915 clears both with ~15px to spare. */
+    .ph2h-stats { position: absolute; left: 405px; top: 37px; width: 510px; height: 203px; z-index: 6; }
+    .ph2h-row   { position: absolute; left: 0; width: 510px; height: 38px; }
+    .ph2h-row-label {
+      position: absolute; left: 0; top: 0; width: 510px; height: 15px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 16px;
+      letter-spacing: .03em; text-transform: uppercase; color: #2a2a2a;
+    }
+    .ph2h-value {
+      position: absolute; top: 17px; width: 70px; height: 20px;
+      display: flex; align-items: center;
+      font-family: 'Anton', sans-serif; font-size: 20px; white-space: nowrap; color: #000;
+    }
+    .ph2h-value.ph2h-value-home { left: -8px;  justify-content: flex-start; }
+    .ph2h-value.ph2h-value-away { left: 448px; justify-content: flex-end;  }
+    .ph2h-bar-track {
+      position: absolute; left: 74px; top: 17px; width: 362px; height: 20px;
+      background: #FF3232; overflow: hidden; border-radius: 3px;
+    }
+    .ph2h-bar-fill {
+      position: absolute; left: 0; top: 0; height: 100%; width: 0;
+      background: #1E64FF; transition: width 700ms ease-out;
+    }
+    /* Away/red advantage: fill grows from the bar's right edge instead
+       of the left — anchor flips, direction of growth flips with it. */
+    .ph2h-bar-fill.ph2h-fill-right { left: auto; right: 0; }
+    /* Advantage badge — only the leading side's box ever shows text
+       ("+8.9"-style); the trailing side's box stays empty. 4px above
+       the bar, left-aligned to the bar's own left edge for home,
+       mirrored to the bar's right edge for away. 11pt @144dpi = 22px. */
+    .ph2h-diff {
+      position: absolute; top: -6px; width: 147px; height: 27px;
+      display: flex; align-items: center;
+      font-family: 'Anton', sans-serif; font-size: 15px; white-space: nowrap;
+    }
+    .ph2h-diff.ph2h-diff-home { left: 74px;  justify-content: flex-start; color: #1E64FF; }
+    .ph2h-diff.ph2h-diff-away { left: 289px; justify-content: flex-end;  color: #FF3232; } /* mirrored: bar right(436) - 147 */
+
     /* ── Local debug bar (press ` to toggle) ── */
     #debug-bar {
       position: fixed; left: 0; bottom: 0; width: 100%;
@@ -213,6 +367,7 @@
 
 <div id="canvas">
   <div id="mapselect-page"></div>
+  <div id="ph2h-clip"><div id="ph2h-overlay"></div></div>
 </div>
 
 <div id="debug-bar">
@@ -220,6 +375,13 @@
   <button id="dbg-show">▶ SHOW (next game)</button>
   <button class="hide" id="dbg-hide">■ HIDE ALL</button>
   <span id="dbg-msg"></span>
+  <span class="dbg-label" style="margin-left:16px;">Player H2H (local test)</span>
+  <button id="ph2h-dbg-gold">GOLD</button>
+  <button id="ph2h-dbg-jungler">JUNGLER</button>
+  <button id="ph2h-dbg-exp">EXP</button>
+  <button id="ph2h-dbg-mid">MID</button>
+  <button id="ph2h-dbg-roamer">ROAMER</button>
+  <button class="hide" id="ph2h-dbg-hide">■ HIDE</button>
 </div>
 
 <script>
@@ -577,6 +739,437 @@
   document.getElementById('dbg-hide').addEventListener('click', function () {
     fetch('/overlay/mapselecttag/hide');
     document.getElementById('dbg-msg').textContent = '';
+  });
+})();
+
+/* ── Player H2H (Gold) tag ──────────────────────────────────────
+   Simple checkOverlays-pattern panel (see CLAUDE.md "Simpler show/hide"),
+   NOT part of Map Selection's sequential-reveal state above — its own
+   independent on/off toggle. Data isn't pushed over SSE (there's no
+   continuous poll for this file, unlike mploverlay_v7.html) — every
+   show fetches a fresh snapshot from /api/playerh2h-data itself, same
+   as how mplfs.html's Post scenes fetch their own data on each show. */
+(function () {
+  var CLIP    = document.getElementById('ph2h-clip');
+  var OVERLAY = document.getElementById('ph2h-overlay');
+  var COUNT_MS = 700;
+  var REVEAL_DELAY = 350; // matches the slide-in transition duration
+
+  // seat = which HOME_PLAYER_N / AWAY_PLAYER_N the role reads from the
+  // API (fixed seat->lane convention used everywhere else in this repo,
+  // e.g. overlay-golddiffcheck.js's GDC_ROW_TOPS).
+  var ROLE_META = {
+    gold:    { seat: 1, title: 'GOLD LANER HEAD-TO-HEAD' },
+    jungler: { seat: 2, title: 'JUNGLER HEAD-TO-HEAD' },
+    exp:     { seat: 3, title: 'EXP LANER HEAD-TO-HEAD' },
+    mid:     { seat: 4, title: 'MID LANER HEAD-TO-HEAD' },
+    roamer:  { seat: 5, title: 'ROAMER HEAD-TO-HEAD' },
+  };
+
+  var photoNameMap = null; // {UPPERNAME: "Exact_FRONT.png"} from /api/hires-front-names
+  fetch('/api/hires-front-names', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    photoNameMap = (d && d.names) || {};
+  }).catch(function () { photoNameMap = {}; });
+
+  function photoUrl(name) {
+    var key = String(name || '').toUpperCase();
+    var file = photoNameMap && photoNameMap[key];
+    return '/hires/FRONT/' + (file ? file : encodeURIComponent(name || '') + '_FRONT.png');
+  }
+  function heroUrl(heroId) { return '/hero/HERO_' + heroId + '_KOTAK.png'; }
+  // role/*.png on disk are named in fixed uppercase ("GOLD LANER.png"),
+  // not whatever case the API's ROLE_NAME happens to send — same
+  // roleFile() normalization mplfs.html uses everywhere it draws a role
+  // icon (matched on a substring so "Gold Laner"/"GOLD"/etc all resolve).
+  function roleFile(role) {
+    var r = (role || '').toLowerCase();
+    if (r.indexOf('gold') !== -1) return 'GOLD LANER';
+    if (r.indexOf('exp')  !== -1) return 'EXP LANER';
+    if (r.indexOf('mid')  !== -1) return 'MID LANER';
+    if (r.indexOf('roam') !== -1) return 'ROAMER';
+    if (r.indexOf('jung') !== -1) return 'JUNGLER';
+    return (role || '').toUpperCase();
+  }
+  function roleUrl(roleName) { return '/role/' + encodeURIComponent(roleFile(roleName)) + '.png'; }
+
+  function fitText(el, maxSize, minSize) {
+    var size = maxSize;
+    el.style.fontSize = size + 'px';
+    while (el.scrollWidth > el.clientWidth && size > minSize) {
+      size--;
+      el.style.fontSize = size + 'px';
+    }
+  }
+
+  // KP has no '%' in its own title text ("KP"); "DMG DEALT %"/"DMG TKN %"
+  // already carry a literal '%' in their title, which doubles as the
+  // signal that their VALUE also needs a trailing '%' appended.
+  function isPercentStat(title) {
+    var t = String(title || '');
+    return /%/.test(t) || t.trim().toUpperCase() === 'KP';
+  }
+  function formatValue(raw, title) {
+    var v = Number(raw) || 0;
+    if (Math.abs(v) >= 10000) return (v / 1000).toFixed(1) + 'k';
+    var s = (Math.round(v * 100) / 100).toString();
+    return isPercentStat(title) ? s + '%' : s;
+  }
+
+  function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+  function countTo(el, from, to, title) {
+    var startTime = performance.now();
+    cancelAnimationFrame(el._ph2hRaf);
+    function tick(now) {
+      var t = Math.min(1, (now - startTime) / COUNT_MS);
+      var eased = easeOutCubic(t);
+      var val = from + (to - from) * eased;
+      el.textContent = formatValue(val, title);
+      if (t < 1) el._ph2hRaf = requestAnimationFrame(tick);
+      else       el.textContent = formatValue(to, title);
+    }
+    el._ph2hRaf = requestAnimationFrame(tick);
+  }
+
+  /* ── Build (once) ── */
+  var rows = []; // 1-indexed, rows[1..5]
+  var refs = {};
+
+  function buildSide(side) {
+    // Photo, plate, and hero are all independent siblings inside
+    // .ph2h-back (the main container) — the plate's left/top (0/192
+    // home, mirrored 1011/192 away) are given "in relation to the main
+    // container", not the photo, despite visually sitting over it.
+    // Stacking (front to back): plate > photo > hero (see z-index).
+    var photo = document.createElement('img');
+    photo.className = 'ph2h-photo ph2h-' + side;
+    photo.alt = '';
+    photo.onerror = function () { photo.onerror = null; photo.removeAttribute('src'); };
+
+    var plate = document.createElement('div');
+    plate.className = 'ph2h-plate ph2h-' + side;
+    var role = document.createElement('img');
+    role.className = 'ph2h-role';
+    role.alt = '';
+    role.onerror = function () { role.onerror = null; role.removeAttribute('src'); };
+    var name = document.createElement('div');
+    name.className = 'ph2h-name';
+    plate.appendChild(role);
+    plate.appendChild(name);
+
+    var hero = document.createElement('img');
+    hero.className = 'ph2h-hero ph2h-' + side;
+    hero.alt = '';
+    hero.onerror = function () { hero.onerror = null; hero.removeAttribute('src'); };
+
+    refs[side] = { photo: photo, plate: plate, role: role, name: name, hero: hero };
+    return [photo, plate, hero];
+  }
+
+  function buildRow(i) {
+    var row = document.createElement('div');
+    row.className = 'ph2h-row';
+    row.style.top = Math.round((i - 1) * (203 / 5)) + 'px';
+
+    var label = document.createElement('div');
+    label.className = 'ph2h-row-label';
+
+    var homeText = document.createElement('div');
+    homeText.className = 'ph2h-value ph2h-value-home';
+
+    var track = document.createElement('div');
+    track.className = 'ph2h-bar-track';
+    var fill = document.createElement('div');
+    fill.className = 'ph2h-bar-fill';
+    track.appendChild(fill);
+
+    var awayText = document.createElement('div');
+    awayText.className = 'ph2h-value ph2h-value-away';
+
+    var diffHome = document.createElement('div');
+    diffHome.className = 'ph2h-diff ph2h-diff-home';
+    var diffAway = document.createElement('div');
+    diffAway.className = 'ph2h-diff ph2h-diff-away';
+
+    row.appendChild(label);
+    row.appendChild(homeText);
+    row.appendChild(track);
+    row.appendChild(awayText);
+    row.appendChild(diffHome);
+    row.appendChild(diffAway);
+
+    rows[i] = {
+      row: row, label: label, fill: fill, track: track,
+      homeText: homeText, homeVal: 0,
+      awayText: awayText, awayVal: 0,
+      diffHome: diffHome, diffAway: diffAway,
+      title: '',
+    };
+    return row;
+  }
+
+  var titleTextEl = null; // set by buildPanel(), read by startReveal() per role
+
+  function buildPanel() {
+    var back = document.createElement('div');
+    back.className = 'ph2h-back';
+
+    buildSide('home').forEach(function (el) { back.appendChild(el); });
+    buildSide('away').forEach(function (el) { back.appendChild(el); }); // photo, plate, hero
+
+    var title = document.createElement('div');
+    title.className = 'ph2h-title';
+    title.id = 'ph2h-title';
+    var titleSheen = document.createElement('div');
+    titleSheen.className = 'ph2h-title-sheen';
+    titleTextEl = document.createElement('div');
+    titleTextEl.className = 'ph2h-title-text';
+    title.appendChild(titleSheen);
+    title.appendChild(titleTextEl);
+    back.appendChild(title);
+
+    var stats = document.createElement('div');
+    stats.className = 'ph2h-stats';
+    for (var i = 1; i <= 5; i++) stats.appendChild(buildRow(i));
+    back.appendChild(stats);
+
+    OVERLAY.appendChild(back);
+  }
+  buildPanel();
+
+  /* ── Apply data ── */
+  function applySide(side, player) {
+    var ref = refs[side];
+    if (!player) return;
+    ref.photo.src = photoUrl(player.PLAYER);
+    ref.role.src  = roleUrl(player.ROLE_NAME);
+    ref.name.textContent = player.PLAYER || '';
+    requestAnimationFrame(function () { fitText(ref.name, 26, 12); });
+    if (player.HERO_1) ref.hero.src = heroUrl(player.HERO_1);
+  }
+
+  function applyStats(home, away) {
+    for (var i = 1; i <= 5; i++) {
+      var r = rows[i];
+      var title = (home && home['STATSTITILE_' + i]) || (away && away['STATSTITILE_' + i]) || '';
+      var homeVal = Number(home && home['VALUE_' + i]) || 0;
+      var awayVal = Number(away && away['VALUE_' + i]) || 0;
+      var total = Math.abs(homeVal) + Math.abs(awayVal);
+      var homePct = total > 0 ? Math.abs(homeVal) / total : 0.5;
+      var awayPct = 1 - homePct;
+
+      r.title = title;
+      r.label.textContent = title;
+
+      // ONE bar, one color animates "over" the other from whichever side
+      // is ahead: home/blue ahead -> blue grows from the left over a red
+      // base (track). away/red ahead -> red grows from the right over a
+      // blue base. Equal falls into the same left-growing default.
+      var diff = homeVal - awayVal;
+      if (diff < 0) {
+        r.track.style.background = '#1E64FF';
+        r.fill.style.background = '#FF3232';
+        r.fill.classList.add('ph2h-fill-right');
+        r.fill.style.width = (awayPct * 100) + '%';
+      } else {
+        r.track.style.background = '#FF3232';
+        r.fill.style.background = '#1E64FF';
+        r.fill.classList.remove('ph2h-fill-right');
+        r.fill.style.width = (homePct * 100) + '%';
+      }
+
+      countTo(r.homeText, r.homeVal, homeVal, title);
+      countTo(r.awayText, r.awayVal, awayVal, title);
+      r.homeVal = homeVal;
+      r.awayVal = awayVal;
+
+      // Advantage badge — only the leading side's box gets text.
+      if (diff > 0) {
+        r.diffHome.textContent = '+' + formatValue(Math.abs(diff), title);
+        r.diffAway.textContent = '';
+      } else if (diff < 0) {
+        r.diffAway.textContent = '+' + formatValue(Math.abs(diff), title);
+        r.diffHome.textContent = '';
+      } else {
+        r.diffHome.textContent = '';
+        r.diffAway.textContent = '';
+      }
+    }
+  }
+
+  function resetToZero() {
+    for (var i = 1; i <= 5; i++) {
+      var r = rows[i];
+      r.fill.style.transition = 'none';
+      r.fill.style.width = '0%';
+      r.homeText.textContent = formatValue(0, r.title);
+      r.awayText.textContent = formatValue(0, r.title);
+      r.diffHome.textContent = '';
+      r.diffAway.textContent = '';
+      r.homeVal = 0; r.awayVal = 0;
+      void r.row.offsetWidth; // force reflow before re-enabling the transition
+      r.fill.style.transition = '';
+    }
+  }
+
+  function playTitleFlourish() {
+    var title = document.getElementById('ph2h-title');
+    if (!title) return;
+    title.classList.remove('ph2h-bounce-play', 'ph2h-sheen-play');
+    void title.offsetWidth;
+    title.classList.add('ph2h-bounce-play', 'ph2h-sheen-play');
+  }
+
+  var revealTimer = null;
+  var shouldShow = false;
+
+  // Background poll — same reasoning as golddiff-check's lastData: fetch
+  // /api/playerh2h-data on a low-frequency timer (this is an aggregate
+  // stat comparison, not a per-second live value) so it's already sitting
+  // in memory the instant Show is pressed. Without this, every Show press
+  // paid for a live round-trip to the external API before the slide-in
+  // could even start, which read as a noticeable animation delay.
+  var lastData = null;
+  var waitingForData = false;
+  var POLL_MS = 5000;
+
+  function pollPlayerH2H() {
+    fetch('/api/playerh2h-data', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (data) {
+      lastData = data;
+      if (waitingForData && shouldShow && waitingRole) {
+        waitingForData = false;
+        startReveal(waitingRole, lastData);
+      }
+    }).catch(function () {});
+  }
+  pollPlayerH2H();
+  setInterval(pollPlayerH2H, POLL_MS);
+
+  function startReveal(role, data) {
+    var meta = ROLE_META[role];
+    var home = data && data['HOME_PLAYER_' + meta.seat];
+    var away = data && data['AWAY_PLAYER_' + meta.seat];
+    titleTextEl.textContent = meta.title;
+    CLIP.style.display = 'block';
+    resetToZero();
+    applySide('home', home);
+    applySide('away', away);
+    applyStats(home, away);
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      OVERLAY.classList.add('ph2h-in');
+    }); });
+    clearTimeout(revealTimer);
+    revealTimer = setTimeout(function () {
+      if (!shouldShow) return;
+      playTitleFlourish();
+    }, REVEAL_DELAY);
+  }
+
+  // Only one role is ever on screen — currentRole tracks it (null =
+  // hidden). Requesting a DIFFERENT role while one is already showing
+  // must animate the old one fully out first, then animate the new one
+  // in — never a hard cut or both on screen together. pendingRole holds
+  // the next role to reveal once that out-transition's 350ms finishes.
+  var currentRole = null;
+  var pendingRole = null;
+  var waitingRole = null;
+  var outTimer = null;
+
+  function doShow(role) {
+    shouldShow = true;
+    currentRole = role;
+    clearTimeout(outTimer);
+    if (!lastData) {
+      // No poll has landed yet (e.g. Show pressed within the first
+      // instant of page load) — hold off; pollPlayerH2H() starts the
+      // reveal itself the moment its first response arrives.
+      waitingForData = true;
+      waitingRole = role;
+      return;
+    }
+    waitingForData = false;
+    startReveal(role, lastData);
+  }
+
+  function animateOutThenShow(nextRole) {
+    pendingRole = nextRole;
+    shouldShow = false;
+    clearTimeout(revealTimer);
+    OVERLAY.classList.remove('ph2h-in');
+    clearTimeout(outTimer);
+    outTimer = setTimeout(function () {
+      CLIP.style.display = 'none';
+      currentRole = null;
+      if (pendingRole) {
+        var next = pendingRole;
+        pendingRole = null;
+        doShow(next);
+      }
+    }, 350);
+  }
+
+  function ph2hShow(role) {
+    if (!ROLE_META[role]) return;
+    if (currentRole && currentRole !== role) {
+      animateOutThenShow(role);
+      return;
+    }
+    pendingRole = null;
+    doShow(role);
+  }
+
+  function ph2hHide() {
+    shouldShow = false;
+    currentRole = null;
+    pendingRole = null;
+    waitingForData = false;
+    clearTimeout(revealTimer);
+    OVERLAY.classList.remove('ph2h-in');
+    clearTimeout(outTimer);
+    outTimer = setTimeout(function () { CLIP.style.display = 'none'; }, 350);
+  }
+
+  /* ── Restore-on-load + SSE ── */
+  function restore() {
+    fetch('/overlay/playerh2h-state', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.role) ph2hShow(d.role);
+    }).catch(function () {});
+  }
+
+  var wasDisconnected = false;
+  var es = createOverlaySSE();
+  es.onopen = function () {
+    if (wasDisconnected) restore();
+    wasDisconnected = false;
+  };
+  es.onerror = function () { wasDisconnected = true; };
+  es.addEventListener('playerh2h', function (e) {
+    var msg = JSON.parse(e.data);
+    if (msg.action === 'show') ph2hShow(msg.role);
+    else if (msg.action === 'hide') ph2hHide();
+  });
+
+  restore();
+
+  /* ── Preview hook — chain onto mapselect's window.previewTrigger,
+     defined by the IIFE above (script order guarantees it already ran).
+     ph2hShow()'s only side effect is a GET fetch of stat data, never a
+     write to shared state, so no PREVIEW_ONLY-style guard is needed. */
+  var prevTrigger = window.previewTrigger;
+  window.previewTrigger = function (event, action) {
+    if (event === 'playerh2h') {
+      if (action === 'hide') ph2hHide(); else ph2hShow(action);
+      return;
+    }
+    if (prevTrigger) prevTrigger(event, action);
+  };
+
+  /* ── Local debug bar ── */
+  Object.keys(ROLE_META).forEach(function (role) {
+    var btn = document.getElementById('ph2h-dbg-' + role);
+    if (btn) btn.addEventListener('click', function () { fetch('/overlay/playerh2h/' + role + '/show'); });
+  });
+  document.getElementById('ph2h-dbg-hide').addEventListener('click', function () {
+    fetch('/overlay/playerh2h/hide');
   });
 })();
 </script>

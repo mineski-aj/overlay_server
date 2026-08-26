@@ -425,6 +425,87 @@ router.get('/api/hexagon-data', async (req, res) => {
   }
 });
 
+// Player H2H (Gold Laner head-to-head) API base URL — GET to read, POST { url } to update
+const PLAYERH2H_URL_FILE    = path.join(__dirname, '..', 'playerh2h_api_url.json');
+const PLAYERH2H_URL_DEFAULT = 'https://theapi.dpdns.org/api/playerh2h/';
+
+router.get('/api/playerh2h-url', (req, res) => {
+  res.json({ url: readUrlForMode(PLAYERH2H_URL_FILE, PLAYERH2H_URL_DEFAULT) });
+});
+
+router.post('/api/playerh2h-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(PLAYERH2H_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the Player H2H API and returns JSON, avoids browser CORS issues
+router.get('/api/playerh2h-data', async (req, res) => {
+  try {
+    const url = readUrlForMode(PLAYERH2H_URL_FILE, PLAYERH2H_URL_DEFAULT).trim();
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// Gold vs Gold Sector (Side Gold Distri panel) API base URL — GET to read, POST { url } to update
+const GOLDDISTRI_URL_FILE    = path.join(__dirname, '..', 'golddistri_api_url.json');
+const GOLDDISTRI_URL_DEFAULT = 'https://theapi.dpdns.org/api/gold_vs_gold_sector';
+
+router.get('/api/golddistri-url', (req, res) => {
+  res.json({ url: readUrlForMode(GOLDDISTRI_URL_FILE, GOLDDISTRI_URL_DEFAULT) });
+});
+
+router.post('/api/golddistri-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(GOLDDISTRI_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the Gold vs Gold Sector API and returns JSON, avoids browser CORS issues
+router.get('/api/golddistri-data', async (req, res) => {
+  try {
+    const url = readUrlForMode(GOLDDISTRI_URL_FILE, GOLDDISTRI_URL_DEFAULT).trim();
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
+// Get Selection (Side KDA Distri panel) API base URL — GET to read, POST { url } to update
+const KDADISTRI_URL_FILE    = path.join(__dirname, '..', 'kdadistri_api_url.json');
+const KDADISTRI_URL_DEFAULT = 'https://theapi.dpdns.org/api/get-selection/';
+
+router.get('/api/kdadistri-url', (req, res) => {
+  res.json({ url: readUrlForMode(KDADISTRI_URL_FILE, KDADISTRI_URL_DEFAULT) });
+});
+
+router.post('/api/kdadistri-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(KDADISTRI_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy — fetches the Get Selection API and returns JSON, avoids browser CORS issues
+router.get('/api/kdadistri-data', async (req, res) => {
+  try {
+    const url = readUrlForMode(KDADISTRI_URL_FILE, KDADISTRI_URL_DEFAULT).trim();
+    const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // MVP Highlights (game-mvp/view) API base URL — GET to read, POST { url } to update
 const HIGHLIGHTS_URL_FILE    = path.join(__dirname, '..', 'highlights_api_url.json');
 const HIGHLIGHTS_URL_DEFAULT = 'https://theapi.dpdns.org/api/game-mvp/view/';
@@ -514,6 +595,23 @@ router.get('/api/draft-recap-url', (req, res) => {
 router.post('/api/draft-recap-url', (req, res) => {
   const url = ((req.body || {}).url || '').trim();
   writeUrlForMode(DRAFT_RECAP_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Draft Predict API URL — GET to read, POST { url } to update. This is the
+// FULL upstream URL (authKey + judgeId included), not a base — routes/proxy.js
+// forwards to it as-is. judgeId is tied to a specific match/judge session, so
+// this needs updating each time that changes.
+const PREDICTIONS_URL_FILE    = path.join(__dirname, '..', 'predictions_api_url.json');
+const PREDICTIONS_URL_DEFAULT = 'https://r3z8c353h3.ap-southeast-1.awsapprunner.com/api/live/predictions?authKey=18a86b9d-a35f-40d9-94ce-726779b3514a&judgeId=1370583970';
+
+router.get('/api/predictions-url', (req, res) => {
+  res.json({ url: readUrlForMode(PREDICTIONS_URL_FILE, PREDICTIONS_URL_DEFAULT) });
+});
+
+router.post('/api/predictions-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(PREDICTIONS_URL_FILE, url);
   res.json({ ok: true, url });
 });
 

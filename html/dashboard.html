@@ -997,6 +997,42 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Player H2H API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="playerh2h-api-input">Base URL</label>
+        <input type="text" id="playerh2h-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/playerh2h/" spellcheck="false" autocomplete="off" />
+        <button id="playerh2h-api-apply" class="settings-btn">Apply</button>
+        <span id="playerh2h-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Gold Distribution API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="golddistri-api-input">Base URL</label>
+        <input type="text" id="golddistri-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/gold_vs_gold_sector" spellcheck="false" autocomplete="off" />
+        <button id="golddistri-api-apply" class="settings-btn">Apply</button>
+        <span id="golddistri-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">KDA Distribution API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="kdadistri-api-input">Base URL</label>
+        <input type="text" id="kdadistri-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/get-selection/" spellcheck="false" autocomplete="off" />
+        <button id="kdadistri-api-apply" class="settings-btn">Apply</button>
+        <span id="kdadistri-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">MVP Highlights API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1064,6 +1100,21 @@
         <input type="text" id="lineuprate-api-input" class="settings-input" placeholder="https://theapi.dpdns.org/api/line-up-rate/" spellcheck="false" autocomplete="off" />
         <button id="lineuprate-api-apply" class="settings-btn">Apply</button>
         <span id="lineuprate-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-hdr">Draft Predict API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="draftpredict-api-input">Full URL (authKey + judgeId included)</label>
+        <input type="text" id="draftpredict-api-input" class="settings-input" placeholder="https://r3z8c353h3.ap-southeast-1.awsapprunner.com/api/live/predictions?authKey=...&judgeId=..." spellcheck="false" autocomplete="off" />
+        <button id="draftpredict-api-apply" class="settings-btn">Apply</button>
+        <span id="draftpredict-api-status" class="settings-status"></span>
+      </div>
+      <div style="font-size:11px;color:#555;margin-top:4px">
+        Leave blank and Apply to use predictions_test.json's candidate lists instead — no judgeId needed. Which slot is active still tracks the REAL draft on Draft.html's own feed, so it triggers exactly like a live game; only the AI candidate/probability content is borrowed from the file.
       </div>
     </div>
   </div>
@@ -1250,6 +1301,90 @@
   hexApiApply.addEventListener('click', saveHexagonApiUrl);
   hexApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveHexagonApiUrl(); });
 
+  /* ── Player H2H (Gold) API URL ─────────────────────────────── */
+  var ph2hApiInput  = document.getElementById('playerh2h-api-input');
+  var ph2hApiApply  = document.getElementById('playerh2h-api-apply');
+  var ph2hApiStatus = document.getElementById('playerh2h-api-status');
+
+  fetch('/api/playerh2h-url').then(function(r){ return r.json(); }).then(function(d){
+    ph2hApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function savePlayerh2hApiUrl() {
+    var url = ph2hApiInput.value.trim();
+    fetch('/api/playerh2h-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      ph2hApiStatus.textContent = 'Saved ✓';
+      ph2hApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ ph2hApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      ph2hApiStatus.textContent = 'Error';
+      ph2hApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  ph2hApiApply.addEventListener('click', savePlayerh2hApiUrl);
+  ph2hApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') savePlayerh2hApiUrl(); });
+
+  /* ── Gold Distribution (Side Gold Distri) API URL ─────────── */
+  var gdApiInput  = document.getElementById('golddistri-api-input');
+  var gdApiApply  = document.getElementById('golddistri-api-apply');
+  var gdApiStatus = document.getElementById('golddistri-api-status');
+
+  fetch('/api/golddistri-url').then(function(r){ return r.json(); }).then(function(d){
+    gdApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveGolddistriApiUrl() {
+    var url = gdApiInput.value.trim();
+    fetch('/api/golddistri-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      gdApiStatus.textContent = 'Saved ✓';
+      gdApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ gdApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      gdApiStatus.textContent = 'Error';
+      gdApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  gdApiApply.addEventListener('click', saveGolddistriApiUrl);
+  gdApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGolddistriApiUrl(); });
+
+  /* ── KDA Distribution (Side KDA Distri) API URL ────────────── */
+  var kdApiInput  = document.getElementById('kdadistri-api-input');
+  var kdApiApply  = document.getElementById('kdadistri-api-apply');
+  var kdApiStatus = document.getElementById('kdadistri-api-status');
+
+  fetch('/api/kdadistri-url').then(function(r){ return r.json(); }).then(function(d){
+    kdApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveKdadistriApiUrl() {
+    var url = kdApiInput.value.trim();
+    fetch('/api/kdadistri-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      kdApiStatus.textContent = 'Saved ✓';
+      kdApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ kdApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      kdApiStatus.textContent = 'Error';
+      kdApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  kdApiApply.addEventListener('click', saveKdadistriApiUrl);
+  kdApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveKdadistriApiUrl(); });
+
   /* ── MVP Highlights API URL ──────────────────────────────── */
   var hlApiInput  = document.getElementById('highlights-api-input');
   var hlApiApply  = document.getElementById('highlights-api-apply');
@@ -1361,6 +1496,34 @@
 
   draftRecapApiApply.addEventListener('click', saveDraftRecapApiUrl);
   draftRecapApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveDraftRecapApiUrl(); });
+
+  /* ── Draft Predict API URL ───────────────────────────────── */
+  var draftPredictApiInput  = document.getElementById('draftpredict-api-input');
+  var draftPredictApiApply  = document.getElementById('draftpredict-api-apply');
+  var draftPredictApiStatus = document.getElementById('draftpredict-api-status');
+
+  fetch('/api/predictions-url').then(function(r){ return r.json(); }).then(function(d){
+    draftPredictApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveDraftPredictApiUrl() {
+    var url = draftPredictApiInput.value.trim();
+    fetch('/api/predictions-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      draftPredictApiStatus.textContent = 'Saved ✓';
+      draftPredictApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ draftPredictApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      draftPredictApiStatus.textContent = 'Error';
+      draftPredictApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  draftPredictApiApply.addEventListener('click', saveDraftPredictApiUrl);
+  draftPredictApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveDraftPredictApiUrl(); });
 
   /* ── HRM Server URL ───────────────────────────────────────── */
   var hrmApiInput  = document.getElementById('hrm-api-input');
@@ -1759,7 +1922,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui', 'draftrecap'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -1939,6 +2102,7 @@
       photoModeToggle: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap' },
+        { name: 'Draft Predict', key: 'draftpredict' },
       ],
       featureToggles: [
         { name: 'Draft Stats', feature: 'draftstats' },
@@ -1946,6 +2110,10 @@
       extraActions: [
         { label: 'Test Draft Stats (P1, both sides)', action: '/overlay/draftstats/test' },
         { label: 'Test Debut Pick (P1, both sides)', action: '/overlay/draftstats/test-debut' },
+        { label: 'Test Buff Badge: Nerf', action: '/overlay/draftstats/test-buff/nerf' },
+        { label: 'Test Buff Badge: Buff', action: '/overlay/draftstats/test-buff/buff' },
+        { label: 'Test Buff Badge: Adjust', action: '/overlay/draftstats/test-buff/adjust' },
+        { label: 'Test Swap (badge only, no stats)', action: '/overlay/draftstats/test-swap/nerf' },
       ],
     },
     {
@@ -2045,6 +2213,23 @@
          per-feature preview buttons — so it only animates in the
          Control tab's preview pane, never the real broadcast/OBS state. */
       previewButton: true,
+      /* Player H2H — 5 roles sharing ONE panel/slot, mutually exclusive
+         (switching roles animates the old one out before the new one
+         in — see html/mpltag.html's ph2hShow()), so this is fire-and-
+         forget extraActions (each just hits its own real /show route)
+         rather than checkToggles, which is for independent on/off state. */
+      extraActions: [
+        { label: 'Player H2H: Gold',    action: '/overlay/playerh2h/gold/show'    },
+        { label: 'Player H2H: Jungler', action: '/overlay/playerh2h/jungler/show' },
+        { label: 'Player H2H: Exp',     action: '/overlay/playerh2h/exp/show'     },
+        { label: 'Player H2H: Mid',     action: '/overlay/playerh2h/mid/show'     },
+        { label: 'Player H2H: Roamer',  action: '/overlay/playerh2h/roamer/show'  },
+        { label: 'Player H2H: Hide',    action: '/overlay/playerh2h/hide'         },
+        /* Hides every independent panel on mpltag.html at once (Map
+           Selection + Player H2H today), not just Player H2H — see
+           /overlay/mpltagoverlays/hide in routes/overlay.js. */
+        { label: 'Hide All (MPL L3)',   action: '/overlay/mpltagoverlays/hide'    },
+      ],
     },
     {
       id: 'mploverlay7',
@@ -2068,6 +2253,8 @@
         { name: 'Side Taken Check',  key: 'sidetakencheck'   },
         { name: 'Side Damage Check', key: 'sidedamagecheck'  },
         { name: 'Side Gold Check',   key: 'sidegoldcheck'    },
+        { name: 'Side Gold Distri',  key: 'sidegolddistricheck' },
+        { name: 'Side KDA Distri',   key: 'sidekdadistricheck'  },
       ],
       featureToggles: [
         { name: 'Kill Events', feature: 'killevents' },
@@ -2109,13 +2296,6 @@
         { label: '−',     action: '/meter/minus' },
         { label: 'Clear', action: '/meter/clear' },
       ],
-    },
-    {
-      id: 'draftpredict',
-      name: 'Draft Predict',
-      file: null,
-      show: '/overlay/draftpredict/show',
-      hide: '/overlay/draftpredict/hide',
     },
     {
       id: 'bpm-status',
@@ -3478,6 +3658,22 @@
     { group: 'Text', id: '.draft-match-game-text', name: 'Match/Game Font Size' },
   ];
 
+  /* ── Draft Predict (Draft.html) — AI candidate carousels, blue at
+     screen-left, red at screen-right, both sitting directly on top of
+     the draft scene (never shown at the same time as Draft Recap). Each
+     panel moves/resizes as one whole box — the cards inside are
+     generated fresh per prediction, not individually editable. */
+  var DRAFTPREDICT_DEFAULTS = {
+    '#dp-blue-panel':  { left: 0,    top: 644, width: 758, height: 136 },
+    '#dp-red-panel':   { left: 1162, top: 644, width: 758, height: 136 },
+    '.dp-header-text': { fontSize: 19 },
+  };
+  var DRAFTPREDICT_ELEMENTS = [
+    { group: 'Blue Panel', id: '#dp-blue-panel',  name: 'Blue Panel' },
+    { group: 'Red Panel',  id: '#dp-red-panel',   name: 'Red Panel' },
+    { group: 'Text',       id: '.dp-header-text', name: 'Header Font Size' },
+  ];
+
   /* ── Draft Recap (Draft.html) — previous-game pick/ban recap, blue
      card at screen-left, red card at screen-right. Every hero/ban slot
      within each card is positioned relative to that card's own
@@ -4393,6 +4589,15 @@
       elements:    DRAFT_RECAP_ELEMENTS,
       defaults:    DRAFT_RECAP_DEFAULTS,
       showFn:      'showDraftRecapForEdit',
+    },
+    draft_predict: {
+      label:       'Draft Predict · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_predict',
+      elements:    DRAFTPREDICT_ELEMENTS,
+      defaults:    DRAFTPREDICT_DEFAULTS,
+      showFn:      'showDraftPredictForEdit',
     },
     mplfs_standings: {
       label:       'Standings · mplfs',

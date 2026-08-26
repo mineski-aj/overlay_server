@@ -469,6 +469,43 @@
       line-height: 1;
     }
 
+    /* Patch buff/nerf/adjust badge — pops in once the whole Draft Stats
+       container has fully slid back out (see startDraftStats()'s final
+       timer). Corner position is mirrored per camp so it never sits under
+       that camp's own hero-name banner (camp1's banner is at the card's
+       left edge, so the badge sits top-right; camp2's banner is at the
+       right edge, so the badge sits top-left instead). */
+    .dstats-buff-badge {
+      position: absolute;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5; /* above the hero-banner (4) — it's a corner overlay, meant to sit on top */
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.4);
+      transition: opacity 0.2s ease-out, transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .dstats-buff-badge.dstats-pop { opacity: 1; transform: scale(1); }
+    .dstats-buff-camp1 { top: 3px; right: 3px; }
+    .dstats-buff-camp2 { top: 3px; left: 3px; }
+    .dstats-buff-nerf   { background: #e8121f; }
+    .dstats-buff-buff   { background: #1fbf4c; }
+    .dstats-buff-adjust { background: #0055ff; }
+
+    /* Solid triangle, built the same clip-path way as .card-tri above. */
+    .dstats-buff-arrow {
+      width: 12px; height: 12px;
+      background: #fff;
+    }
+    .dstats-buff-arrow-down { clip-path: polygon(50% 100%, 0 20%, 100% 20%); }
+    .dstats-buff-arrow-up   { clip-path: polygon(50% 0%, 0 80%, 100% 80%); }
+
+    .dstats-buff-gear { width: 15px; height: 15px; color: #fff; }
+    .dstats-buff-gear svg { width: 100%; height: 100%; display: block; }
+
     /* ── Post-pick glow overlay (div above canvas, z-index 3) ──── */
     .plate-glow {
       position: absolute;
@@ -1089,6 +1126,169 @@
       100% { opacity: 1; transform: scale(1); }
     }
     .dr-status.dr-status-in { animation: dr-status-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+
+    /* ── Draft Predict — AI candidate carousels, blue at screen-left, red
+       at screen-right, sitting directly on top of the live draft (never
+       shown at the same time as Draft Recap, so the overlap is fine).
+       Ported from the standalone draftpredict.html; every id/class here
+       is 'dp'-prefixed to keep it out of the rest of this file's
+       namespace. Panels are appended straight to <body> (not #scene),
+       same as #draftrecap-page, so they show/hide independently of the
+       whole draft scene sliding. ── */
+    /* .dp-panel is the MASK — fixed position/size, overflow:hidden — not
+       the thing that slides. .dp-panel-inner (the actual header+body)
+       lives inside it and translates within that clipped box, so the
+       hidden position is invisible because the mask clips it, not
+       because it happens to land below the page's own 1080px edge.
+       This is what lets the panel sit anywhere on screen (not just
+       flush against the bottom) and still slide in from a masked
+       position instead of just popping/fading. */
+    .dp-panel {
+      position: absolute;
+      top: 644px;
+      width: 758px;
+      height: 136px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #dp-blue-panel { left: 0px; }
+    #dp-red-panel  { left: 1162px; }
+    .dp-panel-inner {
+      width: 758px;
+      height: 136px;
+      transform: translateY(136px);
+      transition: transform .45s cubic-bezier(.4,0,.2,1);
+    }
+    #dp-blue-panel.dp-visible .dp-panel-inner,
+    #dp-red-panel.dp-visible  .dp-panel-inner { transform: none; }
+    #dp-blue-panel.dp-no-anim .dp-panel-inner,
+    #dp-red-panel.dp-no-anim  .dp-panel-inner { transition: none !important; }
+
+    .dp-panel-header {
+      height: 26px;
+      display: flex; align-items: center;
+      padding: 0 12px;
+      position: relative; z-index: 2;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    }
+    #dp-blue-panel .dp-panel-header { background: #004dd5; justify-content: flex-end; }
+    #dp-red-panel  .dp-panel-header { background: #f31400; justify-content: flex-start; }
+
+    .dp-header-text {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .dp-panel-body {
+      height: 110px;
+      background: #161616;
+      position: relative;
+      overflow: hidden;
+    }
+    .dp-carousel-viewport { position: absolute; inset: 0; overflow: hidden; }
+
+    .dp-fade-edge {
+      position: absolute; top: 0; bottom: 0;
+      width: 60px; z-index: 10;
+      pointer-events: none;
+      transform: translateZ(0);
+    }
+    .dp-fade-edge-l { left: 0;  background: linear-gradient(to right, #161616, transparent); }
+    .dp-fade-edge-r { right: 0; background: linear-gradient(to left,  #161616, transparent); }
+
+    .dp-hero-card {
+      position: absolute; top: 0; left: 0;
+      width: 80px; height: 110px;
+      background: #fefefe;
+      will-change: transform;
+      transition: filter .35s;
+    }
+    .dp-portrait-wrap {
+      position: relative;
+      width: 80px; height: 87px;
+      overflow: hidden;
+      background: #1c1c1c;
+    }
+    .dp-portrait-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      display: block;
+    }
+    .dp-portrait-fallback {
+      width: 100%; height: 100%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 900; color: rgba(255,255,255,.1);
+    }
+    .dp-portrait-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      border: 2px solid rgba(22,22,22,0.7);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .dp-rank-badge {
+      position: absolute; top: 4px; left: 4px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4;
+    }
+    #dp-blue-panel .dp-rank-badge.dp-rank-top { background: #004dd5; }
+    #dp-red-panel  .dp-rank-badge.dp-rank-top { background: #f31400; }
+    .dp-rank-badge.dp-rank-low { background: #161616; }
+    .dp-rank-num {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 12px;
+      color: #fff;
+      line-height: 1;
+    }
+    .dp-pct-area {
+      width: 80px; height: 23px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fefefe;
+    }
+    .dp-pct-text {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 15px;
+      letter-spacing: .5px;
+    }
+    #dp-blue-panel .dp-pct-text { color: #004dd5; }
+    #dp-red-panel  .dp-pct-text { color: #f31400; }
+
+    .dp-hero-card.dp-dimmed {
+      opacity: .18;
+      filter: grayscale(1) brightness(.4);
+    }
+    .dp-hero-card.dp-pressing {
+      transform: translateX(var(--dp-tx,0px)) scale(.91) translateY(3px) !important;
+      transition: transform .07s ease-in !important;
+    }
+    .dp-hero-card.dp-chosen {
+      z-index: 10;
+      opacity: 1 !important; filter: none !important;
+      transform: translateX(var(--dp-tx,0px)) scale(1.10) translateY(-4px) !important;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .dp-hero-card.dp-chosen .dp-portrait-wrap::before {
+      border-color: #f0c040;
+      box-shadow: 0 0 14px rgba(240,192,64,.6), 0 0 32px rgba(240,192,64,.25);
+    }
+    .dp-hero-card.dp-chosen .dp-rank-badge { transform: translateY(8px); }
+    .dp-hero-card.dp-chosen .dp-pct-text { color: #161616 !important; }
+    .dp-hero-card.dp-chosen .dp-portrait-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 30%, rgba(240,192,64,.35) 50%, transparent 70%);
+      animation: dp-shimmer 1.5s ease infinite;
+    }
+    @keyframes dp-shimmer {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(220%); }
+    }
   </style>
 </head>
 <body>
@@ -1539,6 +1739,13 @@
 
         plateContent.appendChild(dstatsText);
 
+        /* Buff/nerf/adjust corner badge — its own independent element
+           (not inside dstatsText/dstatsRect), since it doesn't slide with
+           the rest of the reveal — it pops in afterward and stays. */
+        var dstatsBuffBadge = document.createElement('div');
+        dstatsBuffBadge.className = 'dstats-buff-badge dstats-buff-camp' + campid;
+        plateContent.appendChild(dstatsBuffBadge);
+
         plate.appendChild(plateContent);
 
         /* Player name sits below, centred in the seat-unit */
@@ -1566,7 +1773,8 @@
           dstatsPickValue: dstatsPickRow.querySelector('.dstats-pick-value'),
           dstatsContentionValue: dstatsContentionRow.querySelector('.dstats-contention-value'),
           dstatsWinrateValue: dstatsWinrateRow.querySelector('.dstats-winrate-value'),
-          dstatsDebutLabel: dstatsDebutLabel, dstatsDebutValue: dstatsDebutValue
+          dstatsDebutLabel: dstatsDebutLabel, dstatsDebutValue: dstatsDebutValue,
+          dstatsBuffBadge: dstatsBuffBadge
         };
         prevPick[key] = {
           heroid: undefined, picking: false, banning: false,
@@ -1989,6 +2197,828 @@
     .then(function (r) { return r.json(); })
     .then(function (d) { if (d && d.draftrecap) drAnimateIn(); })
     .catch(function () {});
+
+  /* ═══════════════════════════════════════════════════════════
+     Draft Predict — AI candidate carousels, ported from the
+     standalone draftpredict.html. Blue panel at screen-left, red at
+     screen-right, sitting directly on top of the draft scene (never
+     shown at the same time as Draft Recap, per design). Everything
+     here is 'dp'-prefixed to stay out of the rest of this file's
+     namespace. Own independent poll loop against /proxy/predictions
+     (separate cadence/shape from the main draft-info poll above,
+     same precedent as Draft Recap's own separate feed) and own
+     show/hide, wired to the existing 'draftpredict' checkOverlays
+     route/SSE event below — see the sse.addEventListener block. ── */
+
+  var DP_HERO_CONVERSIONS = {
+    1:"687742bd48e2c33fba3105cb",   2:"687742e248e2c33fba3105dc",
+    3:"6877446048e2c33fba3105e1",   4:"6877446e48e2c33fba3105e6",
+    5:"6877450c48e2c33fba3105eb",   6:"6877451448e2c33fba3105f0",
+    7:"6877457848e2c33fba3105f5",   8:"6877458248e2c33fba3105fa",
+    9:"6877458b48e2c33fba3105ff",  10:"6877459448e2c33fba310604",
+    11:"6877464148e2c33fba310609", 12:"6877464948e2c33fba31060e",
+    13:"6877465148e2c33fba310613", 14:"6877465b48e2c33fba310618",
+    15:"6877466648e2c33fba31061d", 16:"6877467048e2c33fba310622",
+    17:"6877467748e2c33fba310627", 18:"6877468248e2c33fba31062c",
+    19:"6877469348e2c33fba310631", 20:"6877469f48e2c33fba310636",
+    21:"687746f848e2c33fba31063b", 22:"6877470048e2c33fba310640",
+    23:"6877470748e2c33fba310645", 24:"6877471148e2c33fba31064a",
+    25:"6877471748e2c33fba31064f", 26:"6877472348e2c33fba310654",
+    27:"6877472a48e2c33fba310659", 28:"6877473048e2c33fba31065e",
+    29:"6877473648e2c33fba310663", 30:"6877474348e2c33fba310668",
+    31:"6877475a48e2c33fba31066d", 32:"6877476548e2c33fba310672",
+    33:"6877476f48e2c33fba310677", 34:"6877477c48e2c33fba31067c",
+    35:"6877478448e2c33fba310681", 36:"6877478a48e2c33fba310686",
+    37:"6877479a48e2c33fba31068b", 38:"687747a448e2c33fba310690",
+    39:"687747ad48e2c33fba310695", 40:"687747b648e2c33fba31069a",
+    41:"687747cd48e2c33fba31069f", 42:"687747d748e2c33fba3106a4",
+    43:"687747df48e2c33fba3106a9", 44:"687747ed48e2c33fba3106ae",
+    45:"687747f348e2c33fba3106b3", 46:"687747fd48e2c33fba3106b8",
+    47:"6877480448e2c33fba3106bd", 48:"6877480a48e2c33fba3106c2",
+    49:"6877481348e2c33fba3106c7", 50:"6877481948e2c33fba3106cc",
+    51:"6877485d48e2c33fba3106d1", 52:"6877486448e2c33fba3106d6",
+    53:"6877487048e2c33fba3106db", 54:"6877487848e2c33fba3106e0",
+    55:"6877487f48e2c33fba3106e5", 56:"6877488a48e2c33fba3106ea",
+    57:"6877489048e2c33fba3106ef", 58:"6877489948e2c33fba3106f4",
+    59:"687748a348e2c33fba3106f9", 60:"687748ab48e2c33fba3106fe",
+    61:"68774f2248e2c33fba310703", 62:"68774f3048e2c33fba310708",
+    63:"68774f5248e2c33fba31070d", 64:"68774f5c48e2c33fba310712",
+    65:"68774f6348e2c33fba310717", 66:"68774f6d48e2c33fba31071c",
+    67:"68774f7348e2c33fba310721", 68:"68774f7b48e2c33fba310726",
+    69:"68774f8848e2c33fba31072b", 70:"68774f9048e2c33fba310730",
+    71:"68774fb648e2c33fba310735", 72:"68774fbc48e2c33fba31073a",
+    73:"68774fc248e2c33fba31073f", 74:"68774fde48e2c33fba310744",
+    75:"68774fe948e2c33fba310749", 76:"68774ffa48e2c33fba31074e",
+    77:"6877500648e2c33fba310753", 78:"6877501c48e2c33fba310758",
+    79:"6877504348e2c33fba31075d", 80:"6877504b48e2c33fba310762",
+    81:"6877506448e2c33fba310767", 82:"6877506d48e2c33fba31076c",
+    83:"6877507548e2c33fba310771", 84:"6877507d48e2c33fba310776",
+    85:"6877508548e2c33fba31077b", 86:"6877509a48e2c33fba310780",
+    87:"687750a048e2c33fba310785", 88:"687750ac48e2c33fba31078a",
+    89:"687750b448e2c33fba31078f", 90:"687750e448e2c33fba310794",
+    91:"6877511448e2c33fba310799", 92:"6877511d48e2c33fba31079e",
+    93:"6877512348e2c33fba3107a3", 94:"6877512f48e2c33fba3107a8",
+    95:"6877513548e2c33fba3107ad", 96:"6877513e48e2c33fba3107b2",
+    97:"6877514b48e2c33fba3107b7", 98:"6877515948e2c33fba3107bc",
+    99:"6877516348e2c33fba3107c1",100:"6877516948e2c33fba3107c6",
+    101:"6877517948e2c33fba3107cb",102:"6877518348e2c33fba3107d0",
+    103:"6877518c48e2c33fba3107d5",104:"6877519548e2c33fba3107da",
+    105:"6877519c48e2c33fba3107df",106:"687751a648e2c33fba3107e4",
+    107:"687751ac48e2c33fba3107e9",108:"687751b248e2c33fba3107ee",
+    109:"687751ba48e2c33fba3107f3",110:"687751c148e2c33fba3107f8",
+    111:"687751d248e2c33fba3107fd",112:"687751d948e2c33fba310802",
+    113:"687751e048e2c33fba310807",114:"687751f548e2c33fba31080c",
+    115:"687751ff48e2c33fba310811",116:"6877521248e2c33fba310816",
+    117:"6877521d48e2c33fba31081b",118:"6877522248e2c33fba310820",
+    119:"6877522948e2c33fba310825",120:"6877523348e2c33fba31082a",
+    121:"6877523e48e2c33fba31082f",122:"6877524548e2c33fba310834",
+    123:"6877524b48e2c33fba310839",124:"6877525648e2c33fba31083e",
+    125:"6877525c48e2c33fba310843",126:"6877526848e2c33fba310848",
+    127:"6877527048e2c33fba31084d",128:"6877527848e2c33fba310852",
+    129:"6877528248e2c33fba310857",130:"68db3281bd5465287b6368ed",
+    131:"698d8537c3211cefa4eeb1e6",132:"69f1b9a8794458c796181eef"
+  };
+  var DP_HERO_ID_TO_NUM = {};
+  (function () {
+    for (var n in DP_HERO_CONVERSIONS) { DP_HERO_ID_TO_NUM[DP_HERO_CONVERSIONS[n]] = parseInt(n, 10); }
+  })();
+  function dpHeroImgSrc(heroId) {
+    /* 'numeric_N' form — see dpTrackRealDraftSeat — is a hero whose
+       numeric id has no entry in DP_HERO_CONVERSIONS (a newer hero
+       released after this table was last updated); N is already the
+       real numeric id in that case, no conversion table needed. */
+    var m = /^numeric_(\d+)$/.exec(heroId);
+    var n = m ? parseInt(m[1], 10) : DP_HERO_ID_TO_NUM[heroId];
+    return n ? ('hero/HERO_' + n + '_KOTAK.png') : null;
+  }
+
+  var DP_CARD_W = 85; /* 80px card + 5px gap */
+  var dpScrollSpeed = 0.5;
+
+  function dpFmtPct(p) { return p.toFixed(2) + '%'; }
+
+  function dpCreateCarousel(viewportEl, direction) {
+    /* direction: -1 = scrolls right (Blue), +1 = scrolls left (Red) */
+    var c = {
+      viewport: viewportEl, direction: direction,
+      cardEls: [], cardOffsets: [], scrollPos: 0,
+      state: 'stopped', raf: null, pickedIdx: -1,
+      clearTimer: null, onPickDone: null, isAnimating: false,
+    };
+
+    var FADE_PX = 55; /* px of fade zone on each edge */
+
+    function applyPositions() {
+      var viewW = c.viewport.offsetWidth;
+      var N = c.cardEls.length;
+      if (!N) return;
+      var SET_W = N * DP_CARD_W;
+      var inMotion = c.state === 'roulette' || c.state === 'settling';
+
+      c.cardEls.forEach(function (el, i) {
+        var x = c.cardOffsets[i] - c.scrollPos;
+        if (x + DP_CARD_W < 0) { c.cardOffsets[i] += SET_W; x += SET_W; }
+        if (x > viewW)         { c.cardOffsets[i] -= SET_W; x -= SET_W; }
+        el.style.setProperty('--dp-tx', x + 'px');
+        el.style.transform = 'translateX(' + x + 'px)';
+
+        if (inMotion) {
+          var t = c.direction === -1
+            ? Math.min(1, Math.max(0, (x + FADE_PX) / FADE_PX))
+            : Math.min(1, Math.max(0, (viewW - x) / FADE_PX));
+          el.style.opacity = t;
+        } else {
+          el.style.opacity = '';
+        }
+      });
+    }
+
+    function tick() {
+      var viewW = c.viewport.offsetWidth;
+      if (c.state === 'roulette') {
+        c.scrollPos += c.direction * dpScrollSpeed;
+      } else if (c.state === 'settling') {
+        var targetX = viewW / 2 - DP_CARD_W / 2;
+        var targetScroll = c.cardOffsets[c.pickedIdx] - targetX;
+        var diff = targetScroll - c.scrollPos;
+        c.scrollPos += diff * 0.10;
+        if (Math.abs(diff) < 0.6) {
+          c.scrollPos = targetScroll;
+          c.state = 'picked';
+          applyPositions();
+          triggerPress();
+          return;
+        }
+      }
+      applyPositions();
+      if (c.state === 'roulette' || c.state === 'settling') {
+        c.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function triggerPress() {
+      var chosen = c.cardEls[c.pickedIdx];
+      if (!chosen) return;
+      c.cardEls.forEach(function (el, i) {
+        if (i !== c.pickedIdx) el.classList.add('dp-dimmed');
+      });
+      chosen.classList.add('dp-pressing');
+      setTimeout(function () {
+        chosen.classList.remove('dp-pressing');
+        chosen.classList.add('dp-chosen');
+      }, 90);
+      c.clearTimer = setTimeout(function () {
+        c.cardEls.forEach(function (el) { el.classList.remove('dp-dimmed', 'dp-pressing', 'dp-chosen'); });
+        c.isAnimating = false;
+        if (c.onPickDone) c.onPickDone();
+      }, c._clearMs || 2250);
+    }
+
+    c.init = function (candidates) {
+      viewportEl.innerHTML = '';
+      c.cardEls = [];
+      c.cardOffsets = [];
+      c.scrollPos = 0;
+      var viewW = viewportEl.offsetWidth;
+      var N = candidates.length;
+      candidates.forEach(function (cand, i) {
+        var src = dpHeroImgSrc(cand.heroId);
+        var el = document.createElement('div');
+        el.className = 'dp-hero-card';
+        el.dataset.heroId = cand.heroId;
+        el.innerHTML =
+          '<div class="dp-portrait-wrap">' +
+          (src
+            ? '<img src="' + src + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+            : '') +
+          '<div class="dp-portrait-fallback" style="' + (src ? '' : 'display:flex') + '">' + cand.heroName.charAt(0) + '</div>' +
+          '<div class="dp-rank-badge ' + (i < 5 ? 'dp-rank-top' : 'dp-rank-low') + '"><span class="dp-rank-num">' + (i + 1) + '</span></div>' +
+          '</div>' +
+          '<div class="dp-pct-area"><span class="dp-pct-text">' + dpFmtPct(cand.probability) + '</span></div>';
+        viewportEl.appendChild(el);
+        c.cardEls.push(el);
+        c.cardOffsets.push(i * DP_CARD_W);
+      });
+      var startOffset = viewW / 2 - (N * DP_CARD_W) / 2;
+      c.cardOffsets = c.cardOffsets.map(function (o) { return o + startOffset; });
+      applyPositions();
+    };
+
+    c.startRoulette = function () {
+      cancelAnimationFrame(c.raf);
+      clearTimeout(c.clearTimer);
+      c.cardEls.forEach(function (el) {
+        el.classList.remove('dp-dimmed', 'dp-pressing', 'dp-chosen');
+        el.style.opacity = ''; /* clear stale inline opacity before rAF takes over */
+      });
+      c.state = 'roulette';
+      c.isAnimating = false;
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.settle = function (heroId, onDone, clearMs) {
+      c._clearMs = clearMs || 4500;
+      var idx = -1;
+      for (var i = 0; i < c.cardEls.length; i++) { if (c.cardEls[i].dataset.heroId === heroId) { idx = i; break; } }
+      if (idx === -1) { c.startRoulette(); if (onDone) setTimeout(onDone, c._clearMs); return; }
+      c.pickedIdx = idx;
+      c.onPickDone = onDone || null;
+      c.isAnimating = true;
+      c.state = 'settling';
+      cancelAnimationFrame(c.raf);
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.reset = function () {
+      clearTimeout(c.clearTimer);
+      c.startRoulette();
+    };
+
+    c.applyPositions = applyPositions;
+    return c;
+  }
+
+  /* ── App state ─────────────────────────────────────────────── */
+  var dpBluePanelEl, dpRedPanelEl, dpBlueHeaderTextEl, dpRedHeaderTextEl;
+  var dpBlueC = null;
+  var dpRedC  = null;
+  var dpActivePanel    = null;
+  var dpPanelVisible   = false;
+  var dpPrevData       = null;
+  var dpActiveData     = null;
+  var dpDisplayedSlot  = null;
+  var dpUserHidden     = true; /* starts hidden — matches state.checkOverlays.draftpredict's default */
+  var dpDisplayedDraftRef = null;
+  var dpPickQueue       = [];
+  var dpPrevDraftKey    = null;
+
+  /* Real, live draft progression (see dpTrackRealDraftSeat, hooked into
+     poll() below) — straight from THIS page's own already-trusted draft
+     feed (converted from numeric heroid to the MongoID form the Draft
+     Predict API uses via DP_HERO_CONVERSIONS), kept in TRUE chronological
+     order via the feed's own ban_order/pick_order (see normalizeDraftPayload)
+     rather than assumed from seat position or poll-discovery order — a
+     seat is which lane/role a player plays, not when they picked, so
+     seat order alone can't be trusted as pick order (bans happen to be
+     seat-order-safe, being a fixed order-filling row, but picks are not).
+     Each entry is {order, heroId}, kept sorted by order; dpFetchLive maps
+     these down to plain heroId arrays for draftState. Used to override
+     draftState whenever /proxy/predictions is serving the local
+     predictions_test.json fallback (no Draft Predict API URL configured)
+     — so "which slot is active" always tracks the REAL draft actually
+     happening, and only the candidate/probability content is borrowed
+     from the JSON file. A new real battle triggers poll()'s own
+     window.location.reload(), which naturally resets these to []. */
+  var dpRealBlueBanEntries  = [];
+  var dpRealRedBanEntries   = [];
+  var dpRealBluePickEntries = [];
+  var dpRealRedPickEntries  = [];
+  var dpRealBlueTeamName    = '';
+  var dpRealRedTeamName     = '';
+  /* False until poll() has completed at least one full pass over every
+     seat — set right after the loop below. dpFetchLive defers using
+     _localFallback data until this flips true, otherwise the very
+     first snapshot it sees is the pre-populated empty arrays (poll()
+     hasn't run yet, gated behind /api/draft-url resolving first) —
+     opening mid-draft would then render slot 1 as "current" and queue
+     every already-decided slot as a fresh reveal to visually replay
+     one at a time, instead of just starting wherever the real draft
+     actually is. */
+  var dpRealDataReady    = false;
+
+  function dpSortByOrder(a, b) { return a.order - b.order; }
+
+  /* Records of which pick_order/ban_order numbers have already been
+     recorded — the PRIMARY, stable dedup key (see dpTrackRealDraftSeat
+     below for why array position isn't safe to key on). Split by camp
+     since blue and red each have their own independent 1-5 sequence. */
+  var dpSeenPickOrders = { 1: {}, 2: {} };
+  var dpSeenBanOrders  = { 1: {}, 2: {} };
+
+  window.__dpDebug = function () {
+    return {
+      bluePick: dpRealBluePickEntries.map(function(e){return e.order+':'+e.heroId;}),
+      redPick:  dpRealRedPickEntries.map(function(e){return e.order+':'+e.heroId;}),
+      blueBan:  dpRealBlueBanEntries.map(function(e){return e.order+':'+e.heroId;}),
+      redBan:   dpRealRedBanEntries.map(function(e){return e.order+':'+e.heroId;}),
+      seenPick: JSON.parse(JSON.stringify(dpSeenPickOrders)),
+      seenBan:  JSON.parse(JSON.stringify(dpSeenBanOrders)),
+      queue:    dpPickQueue.map(function(e){return e.side+'/'+e.type+'/'+e.heroId;}),
+      dataReady: dpRealDataReady
+    };
+  };
+
+  /* Converts a real numeric heroid to the MongoID form Draft Predict's
+     candidate lists use, falling back to a synthetic 'numeric_<id>'
+     identifier for a hero released after DP_HERO_CONVERSIONS was last
+     updated (shipped live: hero 133 has a real hero/HERO_133_KOTAK.png
+     asset but no table entry) — silently dropping it instead would
+     leave "how many decided so far" permanently one behind reality for
+     the rest of the draft, freezing the panel on the previous phase
+     forever (the "doesn't transfer to the next phase" bug). dpHeroImgSrc
+     understands the 'numeric_N' form directly, so the portrait still
+     renders correctly; only AI-candidate matching can't place it, which
+     is fine (see dpProcessPickQueue's own "not predicted at all" path). */
+  function dpConvertHeroId(numericId) {
+    return DP_HERO_CONVERSIONS[numericId] || ('numeric_' + numericId);
+  }
+
+  function dpTrackRealDraftSeat(campid, seatIdx, seat) {
+    var newHeroid    = seat.heroid || 0;
+    var newBanHeroid = seat.ban_heroid || 0;
+
+    if (newHeroid > 0 && seat.pick_order) {
+      /* Keyed by the seat's OWN pick_order — a stable, semantically-real
+         "this is blue/red's Nth pick" identifier — never by array
+         position (campid+seatIdx). normalizeDraftPayload's own comment
+         already flags player_list-order-matches-seat-order as merely
+         "observed so far", not a guaranteed contract; if that ordering
+         ever shifts between two polls (plausible in a fast bot/test
+         draft), position-keyed tracking can misattribute a real pick to
+         the wrong recorded slot. This shipped live: two distinct real
+         picks (different real heroes, different pick_order) were
+         recorded with the SAME heroId — this is what actually caused
+         "spun to the same hero twice", not a timing/animation bug. */
+      if (!dpSeenPickOrders[campid][seat.pick_order]) {
+        dpSeenPickOrders[campid][seat.pick_order] = true;
+        var pickEntries = campid === 1 ? dpRealBluePickEntries : dpRealRedPickEntries;
+        pickEntries.push({ order: seat.pick_order, heroId: dpConvertHeroId(newHeroid) });
+        pickEntries.sort(dpSortByOrder);
+      }
+    }
+    if (newBanHeroid > 0 && seat.ban_order) {
+      if (!dpSeenBanOrders[campid][seat.ban_order]) {
+        dpSeenBanOrders[campid][seat.ban_order] = true;
+        var banEntries = campid === 1 ? dpRealBlueBanEntries : dpRealRedBanEntries;
+        banEntries.push({ order: seat.ban_order, heroId: dpConvertHeroId(newBanHeroid) });
+        banEntries.sort(dpSortByOrder);
+      }
+    }
+  }
+
+  function dpEntryHeroIds(entries) {
+    return entries.map(function (e) { return e.heroId; });
+  }
+
+  function dpGetActiveCarousel() {
+    return dpActivePanel === 'blue' ? dpBlueC : dpActivePanel === 'red' ? dpRedC : null;
+  }
+
+  /* ── Panel visibility ─────────────────────────────────────── */
+  function dpSetPanelInstant(el) {
+    el.classList.add('dp-no-anim');
+    el.offsetHeight; /* force reflow */
+    el.classList.remove('dp-no-anim');
+  }
+
+  function dpShowPanel(side, animated) {
+    /* Animate whenever the requested side isn't ALREADY the one on
+       screen — i.e. a genuine transition (switching sides, or first
+       reveal from fully hidden) — and skip the slide for a same-side
+       re-render (a new slot for the same team; the panel's already
+       docked there, only its contents need to refresh). Checking the
+       DOM directly (not a per-side "ever shown this session" flag) is
+       what makes this correct on the SECOND and later switches too —
+       a flag that's never cleared except by hideAll() would otherwise
+       report every side as "already shown" after the first couple of
+       turns and make every later switch instant instead of animated,
+       which is exactly the bug this replaced. */
+    var el = side === 'blue' ? dpBluePanelEl : dpRedPanelEl;
+    var alreadyVisible = el.classList.contains('dp-visible');
+    var useAnim = animated === true || (animated === undefined && !alreadyVisible);
+
+    var hiddenC = side === 'blue' ? dpRedC : dpBlueC;
+    if (hiddenC && hiddenC.state === 'roulette') {
+      cancelAnimationFrame(hiddenC.raf); hiddenC.state = 'stopped';
+    }
+
+    if (!useAnim) {
+      dpSetPanelInstant(dpBluePanelEl);
+      dpSetPanelInstant(dpRedPanelEl);
+    }
+
+    dpBluePanelEl.classList.toggle('dp-visible', side === 'blue');
+    dpRedPanelEl.classList.toggle('dp-visible', side === 'red');
+
+    dpActivePanel  = side;
+    dpPanelVisible = true;
+  }
+
+  function dpHideAll() {
+    dpBluePanelEl.classList.remove('dp-visible');
+    dpRedPanelEl.classList.remove('dp-visible');
+    dpPanelVisible  = false;
+    dpUserHidden    = true;
+  }
+
+  /* ── Header ────────────────────────────────────────────────── */
+  function dpSetHeaderText(side, teamName, type) {
+    var tricode = (teamName || side).toUpperCase();
+    if (side === 'blue') {
+      dpBlueHeaderTextEl.textContent = 'AI DRAFT PREDICTOR — ' + tricode + ' ' + type;
+    } else {
+      dpRedHeaderTextEl.textContent = type + ' ' + tricode + ' — AI DRAFT PREDICTOR';
+    }
+  }
+
+  /* ── Render prediction ────────────────────────────────────── */
+  function dpRenderPrediction(pred, data) {
+    dpDisplayedSlot = pred.slot;
+    var side     = pred.side.toLowerCase();
+    var team     = side === 'blue' ? (data.blueTeam && data.blueTeam.name) : (data.redTeam && data.redTeam.name);
+    var carousel = side === 'blue' ? dpBlueC : dpRedC;
+
+    dpSetHeaderText(side, team, pred.type);
+
+    var candidates = pred.candidates.slice(0, 10);
+    carousel.init(candidates);
+    carousel.startRoulette();
+
+    dpActivePanel = side;
+    if (!dpUserHidden) dpShowPanel(side);
+  }
+
+  /* ── Pick detection ───────────────────────────────────────── */
+  function dpDetectReveal(newData) {
+    if (!dpDisplayedDraftRef) return false;
+
+    var ns = newData.draftState || {};
+
+    /* Newly-added entries are found by ARRAY-LENGTH DIFF against what we
+       last processed (dpDisplayedDraftRef), not by "is this heroId
+       anywhere in the old set" membership testing — these arrays are
+       append-only in a real draft, so a length diff is both simpler and
+       exact about WHICH POSITION each new entry landed at. That position
+       is what dpPredictionAt uses to find its prediction — never a
+       search for "some prediction whose candidates include this heroId",
+       which is ambiguous the moment the same strong candidate appears in
+       more than one slot's top-10 (extremely common in practice, and the
+       actual cause of this panel randomly flipping to the wrong side). */
+    var added = [];
+    function collect(arrName, side, type) {
+      var newArr   = ns[arrName] || [];
+      var knownLen = (dpDisplayedDraftRef[arrName] || []).length;
+      for (var i = knownLen; i < newArr.length; i++) {
+        var pred = dpPredictionAt((dpPrevData && dpPrevData.predictions) || newData.predictions, side, type, i);
+        added.push({ heroId: newArr[i], side: side.toLowerCase(), type: type.toLowerCase(), pred: pred, occurrence: i });
+      }
+    }
+    collect('bluePicks', 'BLUE', 'PICK');
+    collect('redPicks',  'RED',  'PICK');
+    collect('blueBans',  'BLUE', 'BAN');
+    collect('redBans',   'RED',  'BAN');
+    if (!added.length) return false;
+
+    /* We've now accounted for every element currently in ns — advance
+       the ref to match it exactly (prevents re-detection next poll). */
+    dpDisplayedDraftRef = JSON.parse(JSON.stringify(ns));
+
+    /* When hidden, silently acknowledge picks — no animation, no
+       catch-up on show. */
+    if (dpUserHidden) return true;
+
+    /* Sort by slot so picks are processed in true draft order. */
+    added.sort(function (a, b) { return (a.pred ? a.pred.slot : 999) - (b.pred ? b.pred.slot : 999); });
+
+    var wasAnimating = (dpBlueC && dpBlueC.isAnimating) || (dpRedC && dpRedC.isAnimating);
+    var wasIdle = dpPickQueue.length === 0 && !wasAnimating;
+
+    /* Each reveal takes ~2-2.5s to animate (roulette settle + glow +
+       clear). If the real draft is moving faster than that, appending
+       every new one without bound would grow a backlog the panel can
+       never work off — it would keep confirming turns from further and
+       further in the past instead of ever catching up to "what's
+       actually happening now".
+       A double-pick/double-ban turn (Red pick1+2, Blue pick2+3, Blue
+       pick4+5, etc.) always produces exactly 2 same-side same-type
+       reveals in one burst — that's normal and bounded, not "falling
+       behind", so when idle both still get shown in sequence rather than
+       silently dropping the first. Only when we're ALREADY behind
+       (something mid-animation from an earlier poll) does a new arrival
+       replace whatever was merely queued-but-not-yet-started, capping
+       the queue at 2 (current + next) so a genuine pile-up still can't
+       grow without bound. */
+    if (wasIdle) {
+      /* >2 in one burst means we've fallen behind across more than a
+         single double-turn (e.g. reopened after being hidden through
+         several turns) — same "just show the newest" fallback as the
+         already-behind branch below. */
+      dpPickQueue = added.length <= 2 ? added : [added[added.length - 1]];
+      dpProcessPickQueue(newData);
+    } else {
+      var latest = added[added.length - 1];
+      dpPickQueue = dpPickQueue.length ? [dpPickQueue[0], latest] : [latest];
+    }
+    return true;
+  }
+
+  function dpProcessPickQueue(fallbackData) {
+    if (!dpPickQueue.length) return;
+    var entry = dpPickQueue[0];
+    var next  = dpPickQueue[1];
+
+    /* Shorten display time only for same-side same-type runs. */
+    var consecutive = next && next.side === entry.side && next.type === entry.type;
+    var clearMs = consecutive ? 1000 : 2250;
+
+    var targetC = entry.side === 'blue' ? dpBlueC : dpRedC;
+    if (!targetC) { dpPickQueue.shift(); dpProcessPickQueue(fallbackData); return; }
+
+    if (!dpUserHidden) dpShowPanel(entry.side);
+
+    function onDone() {
+      dpPickQueue.shift();
+      var data = dpActiveData || fallbackData;
+      if (dpPickQueue.length) {
+        dpProcessPickQueue(data);
+      } else {
+        var latest = dpDeriveActivePrediction(data);
+        if (latest) {
+          dpRenderPrediction(latest, data);
+        } else {
+          /* No more predictions — draft is complete, hide the overlay */
+          dpHideAll();
+        }
+      }
+    }
+
+    var idx = -1;
+    for (var i = 0; i < targetC.cardEls.length; i++) { if (targetC.cardEls[i].dataset.heroId === entry.heroId) { idx = i; break; } }
+
+    if (idx === -1) {
+      /* entry.pred was already resolved POSITIONALLY at detection time
+         (dpDetectReveal) — trust it directly rather than re-searching
+         predictions[] by "candidates includes this heroId", which is
+         ambiguous whenever the same candidate appears in more than one
+         slot's top-10 (see dpDetectReveal's comment). */
+      var data2    = dpActiveData || fallbackData;
+      var sidePred = entry.pred;
+      if (sidePred) {
+        dpSetHeaderText(entry.side,
+          entry.side === 'blue' ? (data2.blueTeam && data2.blueTeam.name) : (data2.redTeam && data2.redTeam.name),
+          sidePred.type);
+        var cands = sidePred.candidates.slice(0, 10);
+        if (!cands.some(function (c) { return c.heroId === entry.heroId; })) {
+          /* The real pick/ban is genuinely outside the AI's whole
+             candidate list, not just outside the top 10 it sliced to
+             — an entirely normal outcome (the model's guess doesn't
+             always include what actually happens). Without this,
+             `actual` comes back undefined, the splice never runs,
+             `cands` never contains entry.heroId, idx stays -1 below,
+             and the settle animation gets silently skipped — this was
+             the actual cause of "the pick animation isn't working". */
+          var actual = sidePred.candidates.filter(function (c) { return c.heroId === entry.heroId; })[0]
+            || { heroId: entry.heroId, heroName: '', probability: 0 };
+          cands.splice(cands.length - 1, 1, actual);
+        }
+        targetC.init(cands);
+        dpActivePanel   = entry.side;
+        dpDisplayedSlot = sidePred.slot;
+        for (var j = 0; j < targetC.cardEls.length; j++) { if (targetC.cardEls[j].dataset.heroId === entry.heroId) { idx = j; break; } }
+      }
+    }
+
+    /* Hero still not in carousel (no prediction data at all) — advance
+       queue immediately. */
+    if (idx === -1) { onDone(); return; }
+
+    var wasRouletting = targetC.state === 'roulette';
+    if (!wasRouletting) targetC.startRoulette();
+    setTimeout(function () {
+      targetC.settle(entry.heroId, onDone, clearMs);
+    }, wasRouletting ? 0 : 400);
+  }
+
+  /* ── Live fetch ────────────────────────────────────────────── */
+  /* Finds the Nth (0-indexed `occurrence`) predictions[] entry matching
+     side+type, walking predictions in slot order — a side can have up
+     to 5 bans (or picks), each with its own predictions[] entry sharing
+     the same side+type, so "first match" isn't enough. */
+  function dpPredictionAt(predictions, side, type, occurrence) {
+    var sorted = (predictions || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var count = 0;
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      if (p.side === side && p.type === type) {
+        if (count === occurrence) return p;
+        count++;
+      }
+    }
+    return null;
+  }
+
+  /* Returns the predictions[] entry for the current/next undecided slot
+     — deliberately NOT the API's own currentSlot field (trusted nowhere
+     below), and NOT a hardcoded guess at the real MPL ban/pick order.
+     Instead: walk predictions[] in the API's OWN slot order (this IS the
+     real order — slot numbers are assigned in true chronological
+     sequence by the backend, whatever that sequence actually is) and
+     return the first entry whose side+type "occurrence so far" hasn't
+     been reached yet by the actual counts in draftState. Since this is
+     driven purely by counts that are already true regardless of when
+     the page (re)loads, a (re)load mid-draft self-corrects instantly. */
+  function dpDeriveActivePrediction(data) {
+    var ds     = (data && data.draftState) || {};
+    var sorted = ((data && data.predictions) || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var counts = {
+      BLUE_BAN:  (ds.blueBans  || []).length,
+      RED_BAN:   (ds.redBans   || []).length,
+      BLUE_PICK: (ds.bluePicks || []).length,
+      RED_PICK:  (ds.redPicks  || []).length,
+    };
+    var seen = { BLUE_BAN: 0, RED_BAN: 0, BLUE_PICK: 0, RED_PICK: 0 };
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      var key = p.side + '_' + p.type;
+      if (seen[key] === undefined) continue; /* unrecognized side/type — skip defensively */
+      if (seen[key] >= counts[key]) return p;
+      seen[key]++;
+    }
+    return null; /* every predictions[] entry already accounted for */
+  }
+
+  function dpDraftKey(data) {
+    /* battleId is a single stable per-match id — prefer it outright.
+       Falling back to roomName+team-names (the only option when
+       battleId is absent) risks a false "new draft" if either team
+       name is ever transiently blank in one poll response, which would
+       wrongly reset display state and skip the animated reveal for
+       whatever was mid-flight at that moment. */
+    if (data.battleId) return String(data.battleId);
+    var r = data.roomName || '';
+    var b = (data.blueTeam && data.blueTeam.name) || '';
+    var rd = (data.redTeam  && data.redTeam.name)  || '';
+    if (!r && !b && !rd) return null; /* empty / between-game state */
+    return r + '|' + b + '|' + rd;
+  }
+
+  function dpFetchLive() {
+    fetch('/proxy/predictions', { cache: 'no-store' }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      /* No Draft Predict API URL configured (Settings left blank) —
+         routes/proxy.js serves predictions_test.json's candidate lists
+         but flags it with _localFallback so "which slot is active" can
+         be overridden with the REAL draft actually happening on this
+         page's own feed (dpTrackRealDraftSeat, hooked into poll() above)
+         instead of the static file's own canned draftState. This is what
+         makes it "trigger as normal as if it's running a live game" —
+         only the candidate/probability content is borrowed from the
+         file; the timing always tracks the real draft. */
+      if (data._localFallback && !dpRealDataReady) {
+        /* poll() (this page's own real draft tracking) hasn't completed
+           its first pass yet — the arrays below are still their initial
+           empty state, not "nothing has happened in the real draft".
+           Retry shortly instead of applying a known-incomplete snapshot,
+           which would otherwise render slot 1 as current and queue
+           everything already decided as a fresh reveal to animate
+           through one at a time. */
+        setTimeout(dpFetchLive, 300);
+        return;
+      }
+
+      if (data._localFallback) {
+        data = Object.assign({}, data, {
+          draftState: {
+            blueBans:  dpEntryHeroIds(dpRealBlueBanEntries),
+            redBans:   dpEntryHeroIds(dpRealRedBanEntries),
+            bluePicks: dpEntryHeroIds(dpRealBluePickEntries),
+            redPicks:  dpEntryHeroIds(dpRealRedPickEntries),
+          },
+          blueTeam: Object.assign({}, data.blueTeam, dpRealBlueTeamName ? { name: dpRealBlueTeamName } : null),
+          redTeam:  Object.assign({}, data.redTeam,  dpRealRedTeamName  ? { name: dpRealRedTeamName }  : null),
+        });
+      }
+
+      var key = dpDraftKey(data);
+      var isNewDraft = dpPrevData && dpPrevDraftKey && key && key !== dpPrevDraftKey;
+
+      if (!dpPrevData || isNewDraft) {
+        if (isNewDraft) {
+          /* New game detected — reset animation state cleanly before
+             reinit. Visibility itself is left alone: whether the panel
+             shows is the operator's call (Control tab), not something
+             a new draft should silently flip on its own. */
+          if (dpBlueC) { clearTimeout(dpBlueC.clearTimer); cancelAnimationFrame(dpBlueC.raf); dpBlueC.isAnimating = false; }
+          if (dpRedC)  { clearTimeout(dpRedC.clearTimer);  cancelAnimationFrame(dpRedC.raf);  dpRedC.isAnimating  = false; }
+          dpPickQueue = [];
+        }
+        dpApplyData(data);
+      } else {
+        /* Always call dpDetectReveal — queue handles sequencing even
+           while animating. */
+        var didReveal = dpDetectReveal(data);
+        dpActiveData = data;
+        if (!didReveal && !(dpBlueC && dpBlueC.isAnimating) && !(dpRedC && dpRedC.isAnimating)) {
+          /* Draft complete — every predictions[] entry already decided */
+          if (dpPanelVisible && !dpDeriveActivePrediction(data)) dpHideAll();
+        }
+      }
+
+      dpPrevDraftKey = key || dpPrevDraftKey; /* don't overwrite with null between games */
+      dpPrevData = data;
+    }).catch(function () {});
+  }
+
+  function dpApplyData(data) {
+    dpActiveData = data;
+    dpPrevData   = null;
+    dpPickQueue  = [];
+    dpDisplayedDraftRef = JSON.parse(JSON.stringify(data.draftState || {}));
+    var latest = dpDeriveActivePrediction(data);
+    if (latest) dpRenderPrediction(latest, data);
+  }
+
+  /* ── Remote control — 'draftpredict' show/hide (checkOverlays
+     pattern, see routes/overlay.js) ────────────────────────────── */
+  function dpApplyCmd(action) {
+    if (action === 'show') {
+      if (dpBlueC) { clearTimeout(dpBlueC.clearTimer); cancelAnimationFrame(dpBlueC.raf); dpBlueC.isAnimating = false; }
+      if (dpRedC)  { clearTimeout(dpRedC.clearTimer);  cancelAnimationFrame(dpRedC.raf);  dpRedC.isAnimating  = false; }
+      dpPickQueue  = [];
+      dpUserHidden = false;
+      var latest = dpActiveData && dpDeriveActivePrediction(dpActiveData);
+      if (latest) {
+        dpRenderPrediction(latest, dpActiveData);
+      } else if (dpActivePanel) {
+        dpShowPanel(dpActivePanel, true);
+        var ac = dpGetActiveCarousel();
+        if (ac) ac.startRoulette();
+      }
+    } else if (action === 'hide') {
+      if (dpBlueC) { clearTimeout(dpBlueC.clearTimer); cancelAnimationFrame(dpBlueC.raf); dpBlueC.isAnimating = false; }
+      if (dpRedC)  { clearTimeout(dpRedC.clearTimer);  cancelAnimationFrame(dpRedC.raf);  dpRedC.isAnimating  = false; }
+      dpPickQueue = [];
+      dpHideAll();
+    }
+  }
+
+  /* Dashboard Edit-tab force-show (see EDIT_CONFIGS' draft_predict in
+     dashboard.html) — shows the latest known prediction (or an empty
+     roulette if none polled yet) so the panels sit at realistic sizes
+     while dragging. */
+  window.showDraftPredictForEdit = function () {
+    dpUserHidden = false;
+    var latest = dpActiveData && dpDeriveActivePrediction(dpActiveData);
+    if (latest) { dpRenderPrediction(latest, dpActiveData); return; }
+    dpShowPanel('blue', true);
+  };
+
+  /* ── Build panels (appended to <body>, not #scene — see the CSS
+     comment above for why) ─────────────────────────────────────── */
+  function buildDraftPredict() {
+    dpBluePanelEl = document.createElement('div');
+    dpBluePanelEl.id = 'dp-blue-panel';
+    dpBluePanelEl.className = 'dp-panel';
+    dpBluePanelEl.innerHTML =
+      '<div class="dp-panel-inner">' +
+        '<div class="dp-panel-header"><span class="dp-header-text" id="dp-blue-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp-panel-body">' +
+          '<div class="dp-carousel-viewport" id="dp-blue-viewport"></div>' +
+          '<div class="dp-fade-edge dp-fade-edge-l"></div>' +
+          '<div class="dp-fade-edge dp-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dpBluePanelEl);
+
+    dpRedPanelEl = document.createElement('div');
+    dpRedPanelEl.id = 'dp-red-panel';
+    dpRedPanelEl.className = 'dp-panel';
+    dpRedPanelEl.innerHTML =
+      '<div class="dp-panel-inner">' +
+        '<div class="dp-panel-header"><span class="dp-header-text" id="dp-red-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp-panel-body">' +
+          '<div class="dp-carousel-viewport" id="dp-red-viewport"></div>' +
+          '<div class="dp-fade-edge dp-fade-edge-l"></div>' +
+          '<div class="dp-fade-edge dp-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dpRedPanelEl);
+
+    dpBlueHeaderTextEl = document.getElementById('dp-blue-header-text');
+    dpRedHeaderTextEl  = document.getElementById('dp-red-header-text');
+    dpBlueC = dpCreateCarousel(document.getElementById('dp-blue-viewport'), -1);
+    dpRedC  = dpCreateCarousel(document.getElementById('dp-red-viewport'),  +1);
+  }
+  buildDraftPredict();
+
+  /* Restore real server-side shown/hidden state on load
+     (checkOverlays.draftpredict) — mirrors the Draft Recap restore
+     fetch right above. Unlike draft/draftrecap, this runs even when
+     PREVIEW_ONLY: Draft Predict is a pure read-only display (a poll +
+     a visual reveal, no writes to shared state), so there's none of
+     the "preview silently flips real broadcast state" risk PREVIEW_ONLY
+     exists to prevent elsewhere — and reacting live is exactly what
+     lets the dashboard's Draft Predict Test buttons be checked from
+     the Control-tab Preview iframe instead of a separate open tab. */
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.draftpredict) dpApplyCmd('show'); })
+    .catch(function () {});
+
+  dpFetchLive();
+  setInterval(dpFetchLive, 3000);
 
   /* ── Build coach BPM + headset + name (home + away) ──────────── */
   var DCOACH_HEART_SVG =
@@ -2450,8 +3480,57 @@
      numbers come straight from the draft API's pickCnt/contentionRate/
      winRate fields (see normalizeDraftPayload() and updatePickSeat()) —
      a pick count of 0 (hero never picked before) is a special case,
-     see startDraftStats()'s isDebut branch below. */
+     see startDraftStats()'s isDebut branch below. Buffstatus (NONE/
+     ADJUST/BUFF/NERF, from the same API) drives the small corner badge
+     that pops in once the whole reveal below has slid back out — see
+     showBuffBadge(). */
   var draftStatsEnabled = true; /* confirmed by /overlay/features fetch + 'featuretoggle' SSE below */
+
+  /* Gear/cog — standard chunky 8-tooth gear silhouette (the FontAwesome
+     "gear" glyph outline), not a thin-spoked sun/asterisk shape. The
+     center hole is punched automatically by the inner circle subpath
+     winding the opposite direction from the outer gear body — default
+     nonzero fill-rule handles that with no separate cutout element
+     needed. viewBox fills edge-to-edge so this icon maximizes inside its
+     own box, in turn sized to nearly fill the 20px badge. */
+  var DBUFF_GEAR_SVG =
+    '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="currentColor">' +
+    '<path d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4l-55.6 17.6c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"/>' +
+    '</svg>';
+  var BUFF_BADGE_CLASS = { NERF: 'dstats-buff-nerf', BUFF: 'dstats-buff-buff', ADJUST: 'dstats-buff-adjust' };
+  var BUFF_BADGE_ICON = {
+    NERF: '<div class="dstats-buff-arrow dstats-buff-arrow-down"></div>',
+    BUFF: '<div class="dstats-buff-arrow dstats-buff-arrow-up"></div>',
+    ADJUST: '<div class="dstats-buff-gear">' + DBUFF_GEAR_SVG + '</div>'
+  };
+
+  function showBuffBadge(e, status) {
+    var cls = BUFF_BADGE_CLASS[status];
+    if (!cls) return; /* NONE, or unrecognized — no badge */
+    e.dstatsBuffBadge.innerHTML = BUFF_BADGE_ICON[status];
+    e.dstatsBuffBadge.className = 'dstats-buff-badge dstats-buff-camp' + e.campid + ' ' + cls;
+    void e.dstatsBuffBadge.offsetWidth;
+    e.dstatsBuffBadge.classList.add('dstats-pop');
+  }
+
+  function hideBuffBadge(e) {
+    e.dstatsBuffBadge.classList.remove('dstats-pop');
+    e.dstatsBuffBadge.innerHTML = '';
+  }
+
+  /* Suppressed-reveal path (Final Changes seat swap — see the
+     draftStatsAllowed gate in poll()): skip the whole Draft Stats
+     slide-in/hold/slide-out entirely and just pop the buff badge in
+     right away, once the hero-reveal (matte wipe + glow + banner
+     slide-in) has already finished. Still cancels/resets any Draft
+     Stats visual that might be mid-flight from a previous, allowed
+     reveal on this same seat, so nothing gets stuck half-shown. */
+  function showBadgeOnly(e, p, status) {
+    if (p.dstatsTimers) { p.dstatsTimers.forEach(clearTimeout); p.dstatsTimers = null; }
+    dstatsSlideReset(e);
+    dstatsClearContent(e);
+    showBuffBadge(e, status);
+  }
 
   /* Normal reveal — phase 1 (slide, 300ms) → phase 2 starts right after
      (PICK pops in oversized and holds, ~750ms — 500ms longer than a plain
@@ -2496,6 +3575,7 @@
     e.dstatsWinrateRow.classList.remove('dstats-pop', 'dstats-settle');
     e.dstatsDebutLabel.classList.remove('dstats-pop');
     e.dstatsDebutValue.classList.remove('dstats-pop');
+    hideBuffBadge(e);
   }
 
   function startDraftStats(e, p, stats) {
@@ -2554,10 +3634,12 @@
       dstatsSlideOut(e);
     }, introEndMs + DSTATS_HOLD_MS));
 
-    /* Fully offscreen — clear row state so the next pick starts clean. */
+    /* Fully offscreen — clear row state, then pop in the buff/nerf/adjust
+       corner badge (if any — NONE shows nothing). */
     p.dstatsTimers.push(setTimeout(function () {
       dstatsSlideReset(e);
       dstatsClearContent(e);
+      showBuffBadge(e, stats.buffStatus);
       p.dstatsTimers = null;
     }, introEndMs + DSTATS_HOLD_MS + DSTATS_OUT_MS));
   }
@@ -2591,32 +3673,69 @@
       heroVid.classList.add('brightening');
       /* picked-glow-gold runs 0.9s — use setTimeout instead of animationend */
       setTimeout(function () {
+        /* Captured BEFORE resetting below — true only when this reveal
+           came from a genuine picking turn (the plate actually grew for
+           it). A Final Changes seat swap into an already-occupied seat
+           never sets this: `pick` stays false throughout (see the "Plate
+           expand" block in updatePickSeat), so the plate never grows in
+           the first place. This matters below: it decides whether there
+           are real CSS transitions worth waiting on at all. */
+        var wasExpanded = prevPick[e.key].expanded;
         prevPick[e.key].expanded = false;
         e.seatUnit.classList.remove('picking-expand');
         updateCampPickerClass(campid);
-        /* Slide banner in once the plate width transition finishes */
-        function onCollapse(ev) {
-          if (ev.propertyName !== 'width') return;
-          e.seatUnit.removeEventListener('transitionend', onCollapse);
-          e.banner.classList.add('slide-in');
-          /* Draft Stats — starts once the name tag has actually finished
-             sliding in (its own transform transition), not the instant
-             the class is added. p.pickCnt/contentionRate/winRate were
-             stashed from the live seat data in updatePickSeat() below. */
-          if (draftStatsEnabled) {
+
+        /* Draft Stats / buff badge trigger — p.pickCnt/contentionRate/
+           winRate/buffStatus/draftStatsAllowed were stashed from the live
+           seat data in updatePickSeat() below. draftStatsAllowed false
+           means this reveal is a Final Changes swap, not a genuine pick
+           (see the gate in poll()) — skip the stats reveal and just pop
+           the badge for the hero now sitting in this seat. */
+        function triggerStatsOrBadge() {
+          if (!draftStatsEnabled) return;
+          if (p.draftStatsAllowed) {
+            startDraftStats(e, p, {
+              pick: String(p.pickCnt),
+              contention: Math.round(p.contentionRate) + '%',
+              winrate: Math.round(p.winRate) + '%',
+              buffStatus: p.buffStatus
+            });
+          } else {
+            showBadgeOnly(e, p, p.buffStatus);
+          }
+        }
+
+        if (wasExpanded) {
+          /* Genuine picking turn — the plate really did grow, so wait for
+             its real collapse transition, then the banner's own real
+             slide-in transition, before triggering (existing
+             choreography: keeps the reveal reading as one sequence
+             instead of everything popping in at once). */
+          function onCollapse(ev) {
+            if (ev.propertyName !== 'width') return;
+            e.seatUnit.removeEventListener('transitionend', onCollapse);
+            e.banner.classList.add('slide-in');
             function onBannerIn(bev) {
               if (bev.propertyName !== 'transform') return;
               e.banner.removeEventListener('transitionend', onBannerIn);
-              startDraftStats(e, p, {
-                pick: String(p.pickCnt),
-                contention: Math.round(p.contentionRate) + '%',
-                winrate: Math.round(p.winRate) + '%'
-              });
+              triggerStatsOrBadge();
             }
             e.banner.addEventListener('transitionend', onBannerIn);
           }
+          e.seatUnit.addEventListener('transitionend', onCollapse);
+        } else {
+          /* Not a genuine picking turn this cycle — a Final Changes seat
+             swap into an already-occupied seat. Neither the plate width
+             nor the banner's slide-in transform actually CHANGES value
+             here (the plate never expanded; the banner was already
+             showing from the hero this one replaced), so neither would
+             ever fire a transitionend — waiting on either, as the
+             wasExpanded branch does, would silently hang forever and the
+             badge would never appear. Nothing left to visually wait on,
+             so trigger immediately. */
+          e.banner.classList.add('slide-in'); // no-op if already present
+          triggerStatsOrBadge();
         }
-        e.seatUnit.addEventListener('transitionend', onCollapse);
       }, 900);
     }
 
@@ -2771,6 +3890,8 @@
           p.pickCnt        = seat.pickCnt || 0;
           p.contentionRate = seat.contentionRate || 0;
           p.winRate        = seat.winRate || 0;
+          p.buffStatus     = seat.buffStatus || 'NONE';
+          p.draftStatsAllowed = seat.draftStatsAllowed !== false;
           e.heroVid.style.display = 'none'; /* hidden until canvas reveals it */
           p.matteActive = true;
           startMatteReveal(e, campid, p);
@@ -3071,7 +4192,12 @@
       var out = {
         campid: (players[0] && players[0].campid) || (idx + 1),
         team_simple_name: camp.team_name_simple || camp.team_name || '',
-        coach_in: camp.coach_in || ''
+        coach_in: camp.coach_in || '',
+        /* Per-camp draft phase state (e.g. "waiting") — see the
+           draftStatsAllowed computation in poll() below, which uses this
+           to tell a genuine live pick apart from a Final Changes seat
+           swap (both look identical as a bare heroid change). */
+        state: camp.state || ''
       };
       players.forEach(function (p, seatIdx) {
         /* No explicit seat/position field in this feed — player_list order
@@ -3087,6 +4213,15 @@
           banning: !!p.banning,
           picking: !!p.picking,
           role: p.role || '',
+          /* Draft Predict (dpTrackRealDraftSeat) — the true chronological
+             slot number for this seat's ban/pick, straight from the API
+             rather than assumed from array position. Needed because that
+             assumption holds for bans (a fixed 5-slot-per-side row that
+             fills in real order) but NOT for picks — a player's seat is
+             which lane/role they play, not when they picked, so seat
+             order alone can't be trusted as pick order. */
+          ban_order: p.ban_order || 0,
+          pick_order: p.pick_order || 0,
           /* Draft Stats (see startDraftStats()) — pickCnt is this hero's
              pick count for the current patch (0 = never picked, triggers
              the Debut Pick reveal instead). contentionRate/winRate are
@@ -3095,7 +4230,11 @@
              this assumption once real non-zero values are seen live. */
           pickCnt: p.pickCnt || 0,
           contentionRate: p.contentionRate || 0,
-          winRate: p.winRate || 0
+          winRate: p.winRate || 0,
+          /* Patch balance status for this hero: NONE/ADJUST/BUFF/NERF.
+             Renamed from the API's oddly-cased "Buffstatus" to camelCase
+             for consistency with the fields above — see showBuffBadge(). */
+          buffStatus: p.Buffstatus || 'NONE'
         };
       });
       return out;
@@ -3123,6 +4262,9 @@
         var campList = json.data.camp_list || [];
         var camp1 = campList.find(function (c) { return c.campid === 1; });
         var camp2 = campList.find(function (c) { return c.campid === 2; });
+
+        if (camp1 && camp1.team_simple_name) dpRealBlueTeamName = camp1.team_simple_name;
+        if (camp2 && camp2.team_simple_name) dpRealRedTeamName  = camp2.team_simple_name;
 
         if (teamEls[1]) teamEls[1].textContent = (camp1 && camp1.team_simple_name) || '';
         if (teamEls[2]) teamEls[2].textContent = (camp2 && camp2.team_simple_name) || '';
@@ -3160,19 +4302,60 @@
 
         var allSeats = [];
 
+        /* Draft Stats gate — a bare heroid change on a seat that already
+           had a hero looks identical whether it's a genuine live pick or
+           a Final Changes seat swap between two already-picked heroes
+           (updatePickSeat() has no other way to tell them apart). Guard
+           on "every seat on this camp ALREADY had a hero before this
+           poll's incoming changes" — camp.state's "waiting" value was
+           tried as an additional signal here but turned out to not
+           reliably mean "done drafting, only swapping now" on the real
+           live feed (Draft Stats stopped firing at all), so it's been
+           dropped; this per-seat check is the only signal now. When
+           suppressed, the hero-reveal (matte wipe + glow) still plays as
+           normal — only the Draft Stats stats reveal is skipped, replaced
+           by the buff/nerf/adjust badge popping in immediately instead of
+           after a stats reveal — see onBannerIn() below.
+
+           campAllPreviouslyPicked() deliberately reads prevPick's cached
+           heroid (this camp's state as of the LAST poll), not the fresh
+           seat data about to be applied this tick — reading the fresh
+           data instead is a real bug that shipped once: the very poll
+           tick that fills a camp's last empty seat (a completely genuine,
+           deserved pick) makes "every seat now has a hero" true on that
+           SAME tick, which incorrectly suppressed that pick's own stats
+           reveal down to just the badge. Checking the PREVIOUS state
+           correctly excludes that tick — "already picked" only becomes
+           true starting the NEXT poll after the camp was actually
+           already fully picked, which is exactly the swap window. */
+        function campAllPreviouslyPicked(campid) {
+          for (var s = 0; s < 5; s++) {
+            var pp = prevPick[campid + '_' + s];
+            if (!pp || !(pp.heroid > 0)) return false;
+          }
+          return true;
+        }
+        var draftStatsAllowed1 = !(camp1 && campAllPreviouslyPicked(1));
+        var draftStatsAllowed2 = !(camp2 && campAllPreviouslyPicked(2));
+
         for (var i = 1; i <= 5; i++) {
           if (camp1 && camp1['seat_' + i]) {
+            dpTrackRealDraftSeat(1, i - 1, camp1['seat_' + i]);
+            camp1['seat_' + i].draftStatsAllowed = draftStatsAllowed1;
             updatePickSeat(1, i - 1, camp1['seat_' + i]);
             updateBanSeat (1, i - 1, camp1['seat_' + i]);
             allSeats.push(camp1['seat_' + i]);
           }
           if (camp2 && camp2['seat_' + i]) {
+            dpTrackRealDraftSeat(2, i - 1, camp2['seat_' + i]);
+            camp2['seat_' + i].draftStatsAllowed = draftStatsAllowed2;
             updatePickSeat(2, i - 1, camp2['seat_' + i]);
             updateBanSeat (2, i - 1, camp2['seat_' + i]);
             allSeats.push(camp2['seat_' + i]);
           }
         }
 
+        dpRealDataReady = true;
         updateStatus(json.data, allSeats);
       })
       .catch(function () {});
@@ -3247,6 +4430,20 @@
         else if (d.action === 'hide') drAnimateOut();
       } catch (e) {}
     });
+    /* Draft Predict — checkOverlays show/hide (routes/overlay.js).
+       Deliberately NOT gated behind PREVIEW_ONLY, unlike draft/draftrecap
+       above — same exception this file already makes for 'featuretoggle'/
+       'draftstats' test triggers: a pure read-only display with nothing
+       written to shared state, so there's no "preview silently flips
+       real broadcast state" risk to guard against, and reacting live is
+       what lets the dashboard's Draft Predict Test buttons be checked
+       from the Control-tab Preview iframe. */
+    sse.addEventListener('draftpredict', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        dpApplyCmd(d.action);
+      } catch (e) {}
+    });
     /* Draft Stats — arm/disarm toggle (Control tab → Draft Overlay →
        Feature Toggles). Runs even in a preview instance — this only
        gates a local visual reveal, no real broadcast state gets written. */
@@ -3267,9 +4464,15 @@
         var e2  = pickEls[key];
         var p2  = prevPick[key];
         if (e2 && p2) {
-          startDraftStats(e2, p2, {
-            pick: String(d.pick), contention: d.contention + '%', winrate: d.winrate + '%'
-          });
+          if (d.swapOnly) {
+            /* Final Changes swap test — badge pops in directly, no stats reveal. */
+            showBadgeOnly(e2, p2, d.buffStatus || 'NONE');
+          } else {
+            startDraftStats(e2, p2, {
+              pick: String(d.pick), contention: d.contention + '%', winrate: d.winrate + '%',
+              buffStatus: d.buffStatus || 'NONE'
+            });
+          }
         }
       } catch (e) {}
     });
@@ -3283,16 +4486,22 @@
        listening yet to catch it). Re-fetch the real state now and
        reconcile instead of trusting the earlier restore-fetch, which
        ran before any of this could have happened. */
-    if (!PREVIEW_ONLY) {
-      fetch('/overlay/check-overlays', { cache: 'no-store' })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
+    /* draftpredict's half of this re-fetch runs even when PREVIEW_ONLY —
+       see the "Deliberately NOT gated behind PREVIEW_ONLY" comment on
+       its SSE listener above for why that's safe for this feature. */
+    fetch('/overlay/check-overlays', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!PREVIEW_ONLY) {
           var shouldShow = !!(d && d.draftrecap);
           if (shouldShow && !drShouldShow) drAnimateIn();
           else if (!shouldShow && drShouldShow) drAnimateOut();
-        })
-        .catch(function () {});
-    }
+        }
+        var dpShouldShow = !!(d && d.draftpredict);
+        if (dpShouldShow && dpUserHidden) dpApplyCmd('show');
+        else if (!dpShouldShow && !dpUserHidden) dpApplyCmd('hide');
+      })
+      .catch(function () {});
   }, 2000);
 
   /* ── Local-only preview trigger — called directly by the dashboard's
@@ -3307,6 +4516,8 @@
     } else if (event === 'draftrecap') {
       if (action === 'show') drAnimateIn();
       else drAnimateOut();
+    } else if (event === 'draftpredict') {
+      dpApplyCmd(action);
     }
   };
 

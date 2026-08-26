@@ -410,6 +410,8 @@ masterPoll();
     sidetakencheck:  { in: function () { stcAnimateIn(); }, out: function () { stcAnimateOut(); } },
     sidedamagecheck: { in: function () { sdcAnimateIn(); }, out: function () { sdcAnimateOut(); } },
     sidegoldcheck:   { in: function () { sgcAnimateIn(); }, out: function () { sgcAnimateOut(); } },
+    sidegolddistricheck: { in: function () { sgdcAnimateIn(); }, out: function () { sgdcAnimateOut(); } },
+    sidekdadistricheck:  { in: function () { skdcAnimateIn(); }, out: function () { skdcAnimateOut(); } },
   };
   sse.addEventListener('sidecheck', function(e) {
     try {

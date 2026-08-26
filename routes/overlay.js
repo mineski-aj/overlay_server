@@ -6,9 +6,6 @@ const router  = express.Router();
 const state   = require('../lib/state');
 const matchState = require('../lib/matchState');
 
-// Local state for draftpredict commands
-const _draftpredictCmds = [];
-
 // GET /api/player-photos — basenames with both FRONT and VICTORY photos available
 const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
 let _playerPhotoNames = null;
@@ -29,6 +26,28 @@ router.get('/api/player-photos', (req, res) => {
     }
   }
   res.set({ 'Cache-Control': 'no-store' }).json({ names: _playerPhotoNames });
+});
+
+// GET /api/hires-front-names — {UPPERNAME: exactFilename} map for
+// hires/FRONT/*_FRONT.png, used by Player H2H (Gold) to case-insensitively
+// resolve the API's all-caps PLAYER field to the mixed-case filenames
+// actually on disk (e.g. "SHIZOU" -> "Shizou_FRONT.png"). Separate from
+// /api/player-photos above (photos/FRONT, resized thumbnails for kill
+// events) — this is the full-res hires/FRONT set.
+const HIRES_FRONT_DIR = path.join(__dirname, '..', 'hires', 'FRONT');
+let _hiresFrontMap = null;
+router.get('/api/hires-front-names', (req, res) => {
+  if (!_hiresFrontMap) {
+    try {
+      _hiresFrontMap = {};
+      fs.readdirSync(HIRES_FRONT_DIR)
+        .filter(f => f.endsWith('_FRONT.png'))
+        .forEach(f => { _hiresFrontMap[f.slice(0, -'_FRONT.png'.length).toUpperCase()] = f; });
+    } catch (e) {
+      _hiresFrontMap = {};
+    }
+  }
+  res.set({ 'Cache-Control': 'no-store' }).json({ names: _hiresFrontMap });
 });
 
 // GET /overlay/force-reload — hard-reload every open overlay page (mplfs.html,
@@ -200,6 +219,61 @@ router.get('/overlay/golddiffcheck/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// Player H2H — one of 5 roles at a time, mutually exclusive (unlike the
+// plain checkOverlays pattern above). The client itself is responsible
+// for animating the previously-shown role out before animating a newly
+// requested one in — this route just records which role is "wanted" and
+// broadcasts it; see html/mpltag.html's ph2hShow() for the actual
+// out-then-in sequencing.
+const PLAYERH2H_ROLES = ['gold', 'jungler', 'exp', 'mid', 'roamer'];
+
+// GET /overlay/playerh2h/:role/show
+router.get('/overlay/playerh2h/:role/show', (req, res) => {
+  const role = req.params.role;
+  if (!PLAYERH2H_ROLES.includes(role)) {
+    return res.status(400).json({ ok: false, error: 'unknown role' });
+  }
+  state.playerh2h.role = role;
+  const payload = JSON.stringify({ action: 'show', role });
+  state.overlayClients.forEach(c => { try { c.write(`event: playerh2h\ndata: ${payload}\n\n`); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show", role });
+});
+
+// GET /overlay/playerh2h/hide
+router.get('/overlay/playerh2h/hide', (req, res) => {
+  state.playerh2h.role = null;
+  state.overlayClients.forEach(c => { try { c.write('event: playerh2h\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/playerh2h-state — current role (or null), for restore-on-load
+router.get('/overlay/playerh2h-state', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json(state.playerh2h);
+});
+
+// GET /overlay/mpltagoverlays/hide — universal hide for every independent
+// panel on html/mpltag.html ("MPL L3") at once. Same reasoning as
+// bottomoverlays/sideoverlays below: reset each panel's own state and
+// re-broadcast its OWN existing event/payload shape — do NOT invent a new
+// event for this. Zero client-side changes needed, since each panel
+// already has a listener for its own event.
+//
+// When a NEW mpltag.html feature is added, add its own reset + broadcast
+// line here too (this is the one place a "hide everything on this page"
+// button has to know about every panel — nothing else auto-discovers it).
+router.get('/overlay/mpltagoverlays/hide', (req, res) => {
+  state.mapSelectTag.revealedGames = 0;
+  state.mapSelectTag.revealedWins = 0;
+  state.playerh2h.role = null;
+  state.overlayClients.forEach(c => {
+    try {
+      c.write('event: mapselecttag\ndata: {"action":"hide"}\n\n');
+      c.write('event: playerh2h\ndata: {"action":"hide"}\n\n');
+    } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true });
+});
+
 // GET /overlay/scoreboard/show
 router.get('/overlay/scoreboard/show', (req, res) => {
   state.checkOverlays.scoreboard = true;
@@ -265,6 +339,37 @@ router.get('/overlay/draftstats/test-debut', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true });
 });
 
+// GET /overlay/draftstats/test-buff/:status — same as /test above, but also
+// carries a buffStatus (NERF/BUFF/ADJUST) so Draft.html's corner badge pops
+// in once the reveal finishes sliding out (see showBuffBadge()).
+router.get('/overlay/draftstats/test-buff/:status', (req, res) => {
+  const status = String(req.params.status || '').toUpperCase();
+  if (!['NERF', 'BUFF', 'ADJUST'].includes(status)) {
+    return res.status(400).json({ ok: false, error: 'status must be nerf, buff, or adjust' });
+  }
+  [1, 2].forEach((campid) => {
+    const payload = JSON.stringify({ campid, seatIdx: 0, pick: 27, contention: 64, winrate: 58, buffStatus: status });
+    state.overlayClients.forEach(c => { try { c.write(`event: draftstats\ndata: ${payload}\n\n`); } catch {} });
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, status });
+});
+
+// GET /overlay/draftstats/test-swap/:status — simulates a Final Changes
+// seat swap: Draft.html's showBadgeOnly() pops the corner badge directly,
+// skipping the PICK/CONTENTION RATE/WIN RATE (or DEBUT PICK) reveal
+// entirely (see the draftStatsAllowed gate in poll() / onBannerIn()).
+router.get('/overlay/draftstats/test-swap/:status', (req, res) => {
+  const status = String(req.params.status || '').toUpperCase();
+  if (!['NERF', 'BUFF', 'ADJUST'].includes(status)) {
+    return res.status(400).json({ ok: false, error: 'status must be nerf, buff, or adjust' });
+  }
+  [1, 2].forEach((campid) => {
+    const payload = JSON.stringify({ campid, seatIdx: 0, swapOnly: true, buffStatus: status });
+    state.overlayClients.forEach(c => { try { c.write(`event: draftstats\ndata: ${payload}\n\n`); } catch {} });
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, status });
+});
+
 // GET /overlay/hrm-state — current per-player heart-rate meter on/off
 // state (ingame_red.html / ingame_blue.html), so any page (dashboard,
 // ingame overlays on a different browser/machine, vMix) can poll the
@@ -299,7 +404,7 @@ router.get('/overlay/hrm/:slot/hide', (req, res) => {
 // `check` field identifying which panel, instead of a separate named
 // event per panel. Keeps the client down to one listener and keeps
 // adding a new side-check down to one array entry.
-const SIDE_CHECK_KEYS = ['sideexpcheck', 'sidetakencheck', 'sidedamagecheck', 'sidegoldcheck'];
+const SIDE_CHECK_KEYS = ['sideexpcheck', 'sidetakencheck', 'sidedamagecheck', 'sidegoldcheck', 'sidegolddistricheck', 'sidekdadistricheck'];
 SIDE_CHECK_KEYS.forEach((key) => {
   router.get(`/overlay/${key}/show`, (req, res) => {
     state.checkOverlays[key] = true;
@@ -822,20 +927,22 @@ router.get('/overlay/post4key/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
-// GET /overlay/draftpredict/show|hide|poll
-router.get('/overlay/draftpredict/:cmd', (req, res) => {
-  const cmd = req.params.cmd;
-  res.set({ "Cache-Control": "no-store" });
-  if (cmd === "show" || cmd === "hide") {
-    _draftpredictCmds.push(cmd);
-    state.overlayClients.forEach(c => { try { c.write(`event: draftpredict\ndata: {"cmd":"${cmd}"}\n\n`); } catch {} });
-    res.json({ ok: true });
-  } else if (cmd === "poll") {
-    const cmds = _draftpredictCmds.splice(0);
-    res.json({ commands: cmds });
-  } else {
-    res.status(404).json({});
-  }
+// GET /overlay/draftpredict/show
+// Draft Predict lives inside Draft.html as a checkOverlays-style panel
+// (see state.checkOverlays.draftpredict) — same shape as draftrecap, so
+// restore-on-load and the dashboard's live-sync SSE array both work for
+// it without any bespoke plumbing.
+router.get('/overlay/draftpredict/show', (req, res) => {
+  state.checkOverlays.draftpredict = true;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/draftpredict/hide
+router.get('/overlay/draftpredict/hide', (req, res) => {
+  state.checkOverlays.draftpredict = false;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
 // GET /overlay/debugoff — hide debug bars on all overlays

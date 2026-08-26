@@ -1109,7 +1109,7 @@
      layers; only position/size carried over, not their guide fills. ── */
   #sb-map {
     position: absolute;
-    left: 1638px;
+    left: 1627px;
     top: 141px;
     width: 294px;
     height: 69px;
@@ -1871,6 +1871,433 @@
     text-shadow: 0 1px 2px rgba(0,0,0,0.6);
     z-index: 2;
   }
+
+  /* ── [FEATURE: sidegolddistricheck] ────────────────────────────
+     Reuses the shared .sidecheck-clip/.sidecheck-overlay/.sidecheck-bg
+     /.sidecheck-header shell above (sidestatback.png background,
+     "GOLD DISTRIBUTION" Anton title) — everything below is this
+     panel's own bespoke content, replacing the standard 10-row ranked
+     list the other four side-*-check panels use.
+
+     Coordinates measured directly off the pasted design-tool spec,
+     converted into offsets relative to their REAL parent (per the
+     project's "Working from pasted design-tool CSS" rule) wherever the
+     pasted block gave them in a shared/absolute frame instead of a
+     parent-relative one. Font sizes were given in points at a 300dpi
+     document scale — converted to CSS px via px = pt × 300/72
+     (3.2pt→13.33px, 6.51pt→27.13px, 3.32pt→13.83px).
+
+     Per CLAUDE.md's "Working from pasted design-tool CSS" rule: every
+     pasted block's background-color/opacity/border is export noise —
+     ONLY position/size is real, and every box here is transparent
+     unless a real asset was explicitly named for it (sidedistriback.png
+     on .sgdc-distriback, distrirole.png on .sgdc-role-badge — nothing
+     else has a named asset, so nothing else gets a fill). All text
+     defaults to black; stat VALUES swap to blue/red (see
+     .sgdc-adv-blue/red below) when that side's number is the bigger
+     one for that row — applied in JS (sgdcApplyData), not here. */
+  .sgdc-distriback {
+    position: absolute;
+    left: 8px; top: 54px;
+    width: 259px; height: 167px;
+    background-image: url('/assets/ingame/sidedistriback.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+  /* Photo crop windows — Rectangle_2/Rectangle_2_copy, 128x128, flush
+     against the distriback's top-left / top-right (3px gap between,
+     matching the same 3px rhythm used between the 8 stat rows below). */
+  .sgdc-photo-crop {
+    position: absolute;
+    top: 0;
+    width: 128px; height: 128px;
+    overflow: hidden;
+    z-index: 2;
+  }
+  .sgdc-photo-crop-home { left: 0px;   }
+  .sgdc-photo-crop-away { left: 131px; }
+  /* Oversized photo, manually offset inside its crop window — same
+     "bigger image + absolute offset + overflow:hidden mask" technique
+     as mpltag.html's .ph2h-photo. Home offset -38/-2 is relative to
+     distriback (crop box left 0); away's pasted offset (108/-2) is
+     also relative to distriback, so relative-to-ITS OWN crop box
+     (left 131) it's 108-131 = -23px. */
+  .sgdc-photo {
+    position: absolute;
+    top: -2px;
+    width: 196px; height: 198px;
+    object-fit: cover;
+    object-position: top center;
+  }
+  .sgdc-photo-home { left: -38px; }
+  .sgdc-photo-away { left: -23px; }
+
+  .sgdc-plate {
+    position: absolute;
+    top: 131px;
+    width: 126px; height: 33px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+  .sgdc-plate-home { left: 2px;   }
+  .sgdc-plate-away { left: 131px; }
+  .sgdc-name {
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 13.33px;
+    color: #fff;
+    text-align: center;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 116px;
+  }
+
+  /* Role badge — distrirole.png. .sgdc-role-badge is a CHILD of
+     .sgdc-distriback (nested in the DOM, see sgdcBuildPanel), so its
+     own left/top are already distriback-relative — Layer_3's pasted
+     spec (110/90) IS that frame. The later Rectangle_2 (112/138) and
+     Layer_2 (117/143) re-pastes turned out to be the SAME point given
+     in the outer PANEL's frame instead (distriback itself sits at
+     panel-relative 8/54: 117-8=109≈110, 143-54=89≈90 — same point,
+     just off by rounding) — using those numbers directly as this
+     child's own left/top double-applied distriback's offset, pushing
+     the badge ~53px too far down into the nameplate/hero-row overlap.
+     110/90 is correct. Background-image name in each pasted block
+     ("Layer 3.png"/"Layer 2.png") is the design tool's own placeholder
+     export name, not a real asset — distrirole.png is the real,
+     explicitly-named one regardless. Icon inside rendered black via
+     brightness(0), same convention as .sidecheck-role-icon/.ph2h-role. */
+  .sgdc-role-badge {
+    position: absolute;
+    left: 110px; top: 90px;
+    width: 40px; height: 40px;
+    background-image: url('/assets/ingame/distrirole.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 4;
+  }
+  .sgdc-role-icon {
+    width: 26px; height: 26px;
+    object-fit: contain;
+    filter: brightness(0);
+  }
+
+  /* Hero crops — directly below distriback (which ends at top:221),
+     one per side, flush against it with no gap; 3px between the two
+     (139 - (8+128) = 3), matching the same rhythm used everywhere else
+     in this panel. Portrait hero art into a wide/short box, so
+     object-fit:cover crops off the top and bottom to fill the width,
+     per "crop from top and bottom accordingly". */
+  .sgdc-hero {
+    position: absolute;
+    top: 221px;
+    width: 128px; height: 49px;
+    object-fit: cover;
+    object-position: center center;
+  }
+  .sgdc-hero-home { left: 8px;   }
+  .sgdc-hero-away { left: 139px; }
+
+  /* 7 stat rows below the hero crops. Each row (Rectangle_3) holds a
+     blue-value cell flush left, a red-value cell flush right, and a
+     centered label in between — offsets below are the pasted spec's
+     numbers re-based onto the row's own left edge (8px) instead of the
+     panel's, e.g. the label's pasted left:102 - row's left:8 = 94px.
+     Row top/gap are computed in JS from the given first-row (276) and
+     last-row (526) anchors. Only the 20%-black bottom divider is real
+     (a prose instruction, not part of a pasted block) — the row
+     itself, and every cell in it, is transparent. */
+  .sgdc-stat-row {
+    position: absolute;
+    left: 8px;
+    width: 259px; height: 39px;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+  }
+  .sgdc-stat-value {
+    position: absolute;
+    top: 0;
+    width: 82px; height: 39px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 27.13px;
+    color: #0a0a0a;
+  }
+  .sgdc-stat-home { left: 0px;   }
+  .sgdc-stat-away { left: 177px; }
+  /* Advantage highlight — whichever side's raw value is bigger for
+     that row gets its team color instead of the default black
+     (toggled in sgdcApplyData, never both at once, neither on a tie). */
+  .sgdc-stat-value.sgdc-adv-blue { color: #1E64FF; }
+  .sgdc-stat-value.sgdc-adv-red  { color: #FF3232; }
+  .sgdc-stat-label {
+    position: absolute;
+    left: 94px; top: 0;
+    width: 71px; height: 39px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.83px;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: #0a0a0a;
+    text-align: center;
+  }
+  .sgdc-stat-label span { white-space: nowrap; }
+
+  /* ── [FEATURE: sidekdadistricheck] ───────────────────────────────
+     "Side KDA Distri" — a featured/selected player card (top) plus 5
+     enemy-lane stat bars (below), same shared .sidecheck-clip/
+     .sidecheck-overlay shell as sidegolddistricheck (sidestatback.png
+     + "KDA DISTRIBUTION" header). Own bespoke content below the header,
+     same reasons as sidegolddistricheck (createSideCheck's ranked-list
+     factory doesn't fit this shape either).
+
+     Same rules as sidegolddistricheck's block above: only left/top/
+     width/height survive from each pasted design-tool block; every box
+     is transparent unless a real named asset/color was given in prose
+     (sidedistriblue/red.png, distristatblue/red.png, and the three
+     explicit bg-color call-outs below — everything else, including the
+     two black Rectangle_12/13 fills in the stat bars that would have
+     made their own black text invisible, is export noise). Font sizes
+     given in points at 300dpi, converted via px = pt × 300/72, same as
+     sidegolddistricheck. All background-image url()s use a leading
+     slash — CSS url() resolves relative to the STYLESHEET's own
+     location (/html/), not the page's <base href="/">, and omitting it
+     silently 404s (see sidegolddistricheck's .sgdc-distriback/.sgdc-
+     role-badge history above for exactly this bug). */
+
+  /* Featured/selected player square — bg color swaps blue/red per
+     selected.camp (toggled via .skdc-camp-blue/red in JS), holds the
+     oversized+offset signature photo, same crop technique as
+     .sgdc-photo. */
+  .skdc-square {
+    position: absolute;
+    left: 8px; top: 54px;
+    width: 128px; height: 128px;
+    overflow: hidden;
+  }
+  .skdc-square.skdc-camp-blue { background: #274FFF; }
+  .skdc-square.skdc-camp-red  { background: #FF3838; }
+  .skdc-photo {
+    position: absolute;
+    left: -32px; top: 0;
+    width: 185px; height: 185px;
+    object-fit: cover;
+    object-position: top center;
+  }
+  /* Hero level chip. */
+  .skdc-level {
+    position: absolute;
+    left: 139px; top: 54px;
+    width: 38px; height: 25px;
+    background: #2f2f2f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 18.75px;
+    color: #fff;
+    text-align: center;
+  }
+  /* Hero art — wide/short box, crop top/bottom to fill (object-fit:cover). */
+  .skdc-hero {
+    position: absolute;
+    left: 177px; top: 54px;
+    width: 90px; height: 63px;
+    object-fit: cover;
+    object-position: center center;
+  }
+  /* Role badge — distrirole.png, tucked into the gap between the level
+     chip and the KDA label. Icon inside rendered black via
+     brightness(0), same convention as sidegolddistricheck's
+     .sgdc-role-badge/.sgdc-role-icon. */
+  .skdc-role-badge {
+    position: absolute;
+    left: 138px; top: 78px;
+    width: 40px; height: 40px;
+    background-image: url('/assets/ingame/distrirole.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .skdc-role-badge-icon {
+    width: 26px; height: 26px;
+    object-fit: contain;
+    filter: brightness(0);
+  }
+  .skdc-kda-label {
+    position: absolute;
+    left: 139px; top: 117px;
+    width: 128px; height: 21px;
+    background: #f2f2f2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.71px;
+    color: #0a0a0a;
+    text-align: center;
+  }
+  .skdc-kda-value {
+    position: absolute;
+    left: 139px; top: 138px;
+    width: 128px; height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 27.92px;
+    color: #0a0a0a;
+    text-align: center;
+  }
+  /* Nameplate — sidedistriblue.png/sidedistrired.png per selected.camp
+     (src swapped in JS, not CSS — no per-camp class needed since it's
+     one <img>, not a solid color). */
+  .skdc-nameplate {
+    position: absolute;
+    left: 8px; top: 184px;
+    width: 259px; height: 34px;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+  .skdc-nameplate.skdc-camp-blue { background-image: url('/assets/ingame/sidedistriblue.png'); }
+  .skdc-nameplate.skdc-camp-red  { background-image: url('/assets/ingame/sidedistrired.png');  }
+  .skdc-nameplate-name {
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 22.92px;
+    color: #fff;
+    text-align: center;
+  }
+  .skdc-versus {
+    position: absolute;
+    left: 8px; top: 218px;
+    width: 259px; height: 22px;
+    background: #dddddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 14.25px;
+    color: #0a0a0a;
+    text-align: center;
+  }
+
+  /* 5 enemy-lane stat bars — top/gap computed in JS from the given
+     first-row (240) and last-row (500) anchors, same anchor-derived
+     spacing as sidegolddistricheck's stat rows. Row background is
+     distristatblue.png/distristatred.png per THAT row's own camp field
+     (not necessarily the opposite of selected — driven directly by
+     data, correct regardless of which side is "selected"). */
+  .skdc-stat-row {
+    position: absolute;
+    left: 8px;
+    width: 259px; height: 62px;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+  }
+  .skdc-stat-row.skdc-camp-blue { background-image: url('/assets/ingame/distristatblue.png'); }
+  .skdc-stat-row.skdc-camp-red  { background-image: url('/assets/ingame/distristatred.png');  }
+  .skdc-stat-photobox {
+    position: absolute;
+    left: 0; top: 0;
+    width: 59px; height: 62px;
+    overflow: hidden;
+  }
+  .skdc-stat-photobox.skdc-camp-blue { background: #274FFF; }
+  .skdc-stat-photobox.skdc-camp-red  { background: #FF3838; }
+  .skdc-stat-photo {
+    position: absolute;
+    left: -23px; top: 0;
+    width: 106px; height: 106px;
+    object-fit: cover;
+    object-position: top center;
+  }
+  /* Tall/narrow hero box — crop left/right to fill (object-fit:cover
+     does this automatically once the box is narrower than the source's
+     scaled width). */
+  .skdc-stat-hero {
+    position: absolute;
+    left: 59px; top: 0;
+    width: 50px; height: 62px;
+    object-fit: cover;
+    object-position: center center;
+  }
+  .skdc-stat-role {
+    position: absolute;
+    left: 113px; top: 4px;
+    width: 21px; height: 21px;
+    object-fit: contain;
+    filter: brightness(0);
+  }
+  .skdc-stat-name {
+    position: absolute;
+    left: 142px; top: 3px;
+    width: 114px; height: 23px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 700;
+    font-size: 14.58px;
+    color: #fff;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .skdc-stat-kda-label {
+    position: absolute;
+    left: 109px; top: 29px;
+    width: 59px; height: 33px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'General Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.88px;
+    color: #0a0a0a;
+    text-align: center;
+  }
+  .skdc-stat-kda-value {
+    position: absolute;
+    left: 168px; top: 29px;
+    width: 91px; height: 33px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 27.92px;
+    color: #0a0a0a;
+    text-align: center;
+  }
+  /* Only the death number goes red when deaths > 0 (toggled via this
+     class on that one inner span — kills/assists/slashes stay black). */
+  .skdc-stat-kda-value .skdc-death-nonzero { color: #fe2626; }
 
   /* ── [FEATURE: player-ui] ──────────────────────────────────────
      Per-player card, 1:1 render of assets/ingame/ui/uiblue.png /

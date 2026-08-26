@@ -30,7 +30,9 @@ function gdcFormatGoldK(v) {
   return ((v || 0) / 1000).toFixed(1) + 'K';
 }
 function gdcFormatDiffK(v) {
-  return (Math.abs(v || 0) / 1000).toFixed(1) + 'K';
+  const abs = Math.abs(v || 0);
+  if (abs < 1000) return Math.round(abs).toString();
+  return (abs / 1000).toFixed(1) + 'K';
 }
 
 function gdcEaseOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
