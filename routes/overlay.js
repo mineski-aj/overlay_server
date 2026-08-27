@@ -219,6 +219,20 @@ router.get('/overlay/golddiffcheck/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/goldgraphcheck/show
+router.get('/overlay/goldgraphcheck/show', (req, res) => {
+  state.checkOverlays.goldgraphcheck = true;
+  state.overlayClients.forEach(c => { try { c.write('event: goldgraphcheck\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/goldgraphcheck/hide
+router.get('/overlay/goldgraphcheck/hide', (req, res) => {
+  state.checkOverlays.goldgraphcheck = false;
+  state.overlayClients.forEach(c => { try { c.write('event: goldgraphcheck\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // Player H2H — one of 5 roles at a time, mutually exclusive (unlike the
 // plain checkOverlays pattern above). The client itself is responsible
 // for animating the previously-shown role out before animating a newly
@@ -439,15 +453,17 @@ router.get('/overlay/sideoverlays/hide', (req, res) => {
 // recap). Reuses the same named SSE events each panel already listens
 // for, so no client-side changes were needed to wire this up.
 router.get('/overlay/bottomoverlays/hide', (req, res) => {
-  state.checkOverlays.itemcheck     = false;
-  state.checkOverlays.emblemcheck   = false;
-  state.checkOverlays.golddiffcheck = false;
+  state.checkOverlays.itemcheck      = false;
+  state.checkOverlays.emblemcheck    = false;
+  state.checkOverlays.golddiffcheck  = false;
+  state.checkOverlays.goldgraphcheck = false;
   state.fightsPendingAction = { action: "hide", ts: Date.now() };
   state.overlayClients.forEach(c => {
     try {
       c.write('event: itemcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: emblemcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: golddiffcheck\ndata: {"action":"hide"}\n\n');
+      c.write('event: goldgraphcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: fights\ndata: {"action":"hide"}\n\n');
     } catch {}
   });

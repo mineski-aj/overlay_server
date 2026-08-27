@@ -1,0 +1,1208 @@
+{
+  "judgeId": "1370583970",
+  "battleId": "3602904215062071440",
+  "roomName": "PH20260821M2G3",
+  "status": "completed",
+  "currentSlot": 21,
+  "draftState": {
+    "blueBans": [
+      "6877467748e2c33fba310627",
+      "687751f548e2c33fba31080c",
+      "68774f5248e2c33fba31070d",
+      "6877466648e2c33fba31061d",
+      "6877519548e2c33fba3107da"
+    ],
+    "redBans": [
+      "6877470048e2c33fba310640",
+      "6877518c48e2c33fba3107d5",
+      "687748a348e2c33fba3106f9",
+      "6877506d48e2c33fba31076c",
+      "6877473648e2c33fba310663"
+    ],
+    "bluePicks": [
+      "69f1b9a8794458c796181eef",
+      "687747d748e2c33fba3106a4",
+      "6877522948e2c33fba310825",
+      "6877512348e2c33fba3107a3",
+      "6877465148e2c33fba310613"
+    ],
+    "redPicks": [
+      "6877516348e2c33fba3107c1",
+      "6a436608d1385863aaf080ed",
+      "6877465b48e2c33fba310618",
+      "6877516948e2c33fba3107c6",
+      "687751c148e2c33fba3107f8"
+    ]
+  },
+  "blueTeam": {
+    "id": "68a56bef12067d1c730c9638",
+    "name": "TLPH"
+  },
+  "redTeam": {
+    "id": "68a56bfb12067d1c730c9647",
+    "name": "FLCN"
+  },
+  "predictions": [
+    {
+      "slot": 1,
+      "side": "BLUE",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877467748e2c33fba310627",
+          "heroName": "FANNY",
+          "probability": 20.32442834543964
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 10.0302946580292
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 6.751955880665743
+        },
+        {
+          "heroId": "6877518c48e2c33fba3107d5",
+          "heroName": "PAQUITO",
+          "probability": 5.241832884997278
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 4.889922932166846
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 4.378601887001545
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 4.116971867492472
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 3.603388045030946
+        },
+        {
+          "heroId": "687751f548e2c33fba31080c",
+          "heroName": "MELISSA",
+          "probability": 2.355992084620904
+        },
+        {
+          "heroId": "6877470048e2c33fba310640",
+          "heroName": "FREYA",
+          "probability": 1.9961745456193618
+        }
+      ],
+      "rationale": "Fanny continues to see strong relevance in the current patch at 75% presence, and has been one of FLCN's highest-priority heroes in the draft, appearing in all five of their games, so TLPH removed them early."
+    },
+    {
+      "slot": 2,
+      "side": "RED",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877470048e2c33fba310640",
+          "heroName": "FREYA",
+          "probability": 22.264465663573542
+        },
+        {
+          "heroId": "6877518c48e2c33fba3107d5",
+          "heroName": "PAQUITO",
+          "probability": 10.637395089148715
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 6.818873630883565
+        },
+        {
+          "heroId": "687748a348e2c33fba3106f9",
+          "heroName": "URANUS",
+          "probability": 5.207787193955575
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 4.4464474628449
+        },
+        {
+          "heroId": "687751f548e2c33fba31080c",
+          "heroName": "MELISSA",
+          "probability": 3.674231363411166
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 2.64617007376792
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 2.482402422612927
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 1.8250176829292541
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 1.6505181618308284
+        }
+      ],
+      "rationale": "Freya is one of TLPH's highest-priority heroes in the draft, appearing in all five of their games, so FLCN removed them early."
+    },
+    {
+      "slot": 3,
+      "side": "BLUE",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "687751f548e2c33fba31080c",
+          "heroName": "MELISSA",
+          "probability": 12.903044722701495
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 10.899658793127903
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 9.895832222232656
+        },
+        {
+          "heroId": "6877518c48e2c33fba3107d5",
+          "heroName": "PAQUITO",
+          "probability": 8.03562287268219
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 7.481527276774156
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 7.28003238299675
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 7.097977152989984
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 5.279652437750961
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 4.281346791984446
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 1.68714993091835
+        }
+      ],
+      "rationale": "Melissa is one of FLCN's highest-priority heroes in the draft, appearing in all five of their games and consistently an early-phase priority, so TLPH removed them first."
+    },
+    {
+      "slot": 4,
+      "side": "RED",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877518c48e2c33fba3107d5",
+          "heroName": "PAQUITO",
+          "probability": 19.835285590819808
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 14.263326308900107
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 12.438773381083715
+        },
+        {
+          "heroId": "687748a348e2c33fba3106f9",
+          "heroName": "URANUS",
+          "probability": 6.032564946401642
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 3.2445072447719214
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 3.000696886919064
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 2.2715290123939296
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 1.9789645934337101
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 1.714666363067234
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 1.4571827938262347
+        }
+      ],
+      "rationale": "FLCN removed Paquito early because they are one of TLPH's highest-priority heroes in the draft, having been picked or banned in all of their five games."
+    },
+    {
+      "slot": 5,
+      "side": "BLUE",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 15.381052338470235
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 10.875724023632491
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 10.024760603283015
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 9.584087002458912
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 8.927164403604355
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 6.164148959030646
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 5.9160899370091435
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 2.1563551492339093
+        },
+        {
+          "heroId": "6877524548e2c33fba310834",
+          "heroName": "NOLAN",
+          "probability": 2.0293622711069728
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 1.5902488763036622
+        }
+      ],
+      "rationale": "TLPH removed Selena early because she continues to see strong relevance for FLCN, appearing in half of their five games and in the first phase twice."
+    },
+    {
+      "slot": 6,
+      "side": "RED",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "687748a348e2c33fba3106f9",
+          "heroName": "URANUS",
+          "probability": 20.199545550710983
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 13.479999559208371
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 11.500184837553144
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 5.868972805300941
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 3.794164773773657
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 3.2393619664332776
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 2.8213395461191713
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 2.0458616396735323
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 1.9419283742885336
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 1.4341511675680891
+        }
+      ],
+      "rationale": "Uranus continues to see strong relevance for TLPH, appearing in five of their five games, so FLCN removed them early."
+    },
+    {
+      "slot": 7,
+      "side": "BLUE",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 23.112841886277423
+        },
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 18.754452287918337
+        },
+        {
+          "heroId": "69f1b9a8794458c796181eef",
+          "heroName": "MARCEL",
+          "probability": 7.1122408359908
+        },
+        {
+          "heroId": "6877524548e2c33fba310834",
+          "heroName": "NOLAN",
+          "probability": 3.4071254855461994
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 2.6914068169275733
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 2.2318811000795065
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 1.9506557522187624
+        },
+        {
+          "heroId": "687747d748e2c33fba3106a4",
+          "heroName": "HARLEY",
+          "probability": 1.7323311996304411
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 1.427577315557353
+        },
+        {
+          "heroId": "6877519548e2c33fba3107da",
+          "heroName": "GLOO",
+          "probability": 1.1991924491071981
+        }
+      ],
+      "rationale": "Marcel is one of TLPH's highest-priority heroes in the draft, appearing in four of their five games, and they continue to see strong relevance in the current patch at 100% presence."
+    },
+    {
+      "slot": 8,
+      "side": "RED",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877516348e2c33fba3107c1",
+          "heroName": "BARATS",
+          "probability": 23.621270025050904
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 11.384011851332774
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 9.074225519919626
+        },
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 5.043096494844024
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 4.563012655447214
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 2.4888546701932404
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 1.8629413673550765
+        },
+        {
+          "heroId": "6877524548e2c33fba310834",
+          "heroName": "NOLAN",
+          "probability": 1.6517513060604343
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 1.4950854217598843
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 1.3582618658728942
+        }
+      ],
+      "rationale": "Barats is one of the more contested options in the current patch for FLCN, having been picked or banned in 4 of their 5 games, and they continue to see strong relevance in the current patch at 92% presence."
+    },
+    {
+      "slot": 9,
+      "side": "RED",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6a436608d1385863aaf080ed",
+          "heroName": "HIRARA",
+          "probability": 24.458917262872134
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 14.758722405095423
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 9.80538904797602
+        },
+        {
+          "heroId": "6877524548e2c33fba310834",
+          "heroName": "NOLAN",
+          "probability": 3.675948665602958
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 2.1417435714007667
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 1.8654023614981297
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 1.599796231617389
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 1.4345983282824573
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 1.2949332349097469
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 1.1774945276187763
+        }
+      ],
+      "rationale": "Hirara is one of the more contested options in the current patch league-wide at 100% presence, and FLCN have proven confidence on them."
+    },
+    {
+      "slot": 10,
+      "side": "BLUE",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877524548e2c33fba310834",
+          "heroName": "NOLAN",
+          "probability": 25.39079944952789
+        },
+        {
+          "heroId": "687747d748e2c33fba3106a4",
+          "heroName": "HARLEY",
+          "probability": 11.58297808909462
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 8.671004139250787
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 4.572801679242674
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 2.651155506735475
+        },
+        {
+          "heroId": "687746f848e2c33fba31063b",
+          "heroName": "HAYABUSA",
+          "probability": 2.093016730614669
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 1.7710374988238056
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 1.5067277585543026
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 1.3724037336974253
+        },
+        {
+          "heroId": "6877507d48e2c33fba310776",
+          "heroName": "LING",
+          "probability": 1.256742388897757
+        }
+      ],
+      "rationale": "Harley has been highly contested in TLPH's recent drafts, appearing in 2 of their 5 games, and TLPH have consistently shown confidence on them."
+    },
+    {
+      "slot": 11,
+      "side": "BLUE",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 27.26337443466852
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 12.49451339670727
+        },
+        {
+          "heroId": "6877522948e2c33fba310825",
+          "heroName": "NOVARIA",
+          "probability": 5.141632427144708
+        },
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 2.9678159802351334
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 2.3128968028274866
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 1.9945802706209663
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 1.7669906348609048
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 1.5904995522913294
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 1.4384054954417511
+        },
+        {
+          "heroId": "6877511d48e2c33fba31079e",
+          "heroName": "CARMILLA",
+          "probability": 1.3100451652055665
+        }
+      ],
+      "rationale": "Novaria continues to see strong relevance in the current patch at 75% presence, has consistently been an early-phase priority for TLPH, and is a proven comfort pick for them."
+    },
+    {
+      "slot": 12,
+      "side": "RED",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877465b48e2c33fba310618",
+          "heroName": "RAFAELA",
+          "probability": 28.27122480520636
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 11.732048615450166
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 3.535175477026787
+        },
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 2.8107667540266825
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 2.3516122757102464
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 2.028538682088303
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 1.7908544006163984
+        },
+        {
+          "heroId": "6877518348e2c33fba3107d0",
+          "heroName": "MATHILDA",
+          "probability": 1.609293144052484
+        },
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 1.4635169720322665
+        },
+        {
+          "heroId": "6877519548e2c33fba3107da",
+          "heroName": "GLOO",
+          "probability": 1.3450238951781741
+        }
+      ],
+      "rationale": "Rafaela has consistently been an early-phase priority for FLCN, appearing in 4 of their 5 games, and is a proven comfort pick for them with a perfect 4-0 record."
+    },
+    {
+      "slot": 13,
+      "side": "RED",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 22.275829752558554
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 15.25463664342035
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 9.682922876122012
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 8.921282057660724
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 3.036081558729284
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 1.913461381600023
+        },
+        {
+          "heroId": "6877479a48e2c33fba31068b",
+          "heroName": "LAPU-LAPU",
+          "probability": 1.534366279310003
+        },
+        {
+          "heroId": "6877473648e2c33fba310663",
+          "heroName": "RUBY",
+          "probability": 1.2991164305660619
+        },
+        {
+          "heroId": "6877506d48e2c33fba31076c",
+          "heroName": "TERIZLA",
+          "probability": 1.1828228045234102
+        },
+        {
+          "heroId": "68774fc248e2c33fba31073f",
+          "heroName": "HARITH",
+          "probability": 1.0697558017237958
+        }
+      ],
+      "rationale": "Terizla has occasionally appeared around TLPH's drafts, but FLCN removed them early, despite them offering little answer into Hirara."
+    },
+    {
+      "slot": 14,
+      "side": "BLUE",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877466648e2c33fba31061d",
+          "heroName": "EUDORA",
+          "probability": 25.016668654436558
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 12.248539816292077
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 9.253913301679248
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 5.897238735137432
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 2.3166964267882637
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 1.9296650145012912
+        },
+        {
+          "heroId": "687751a648e2c33fba3107e4",
+          "heroName": "PHOVEUS",
+          "probability": 1.6315638193415045
+        },
+        {
+          "heroId": "6877464948e2c33fba31060e",
+          "heroName": "BRUNO",
+          "probability": 1.4250997127866138
+        },
+        {
+          "heroId": "6877504348e2c33fba31075d",
+          "heroName": "GRANGER",
+          "probability": 1.296771766455339
+        },
+        {
+          "heroId": "6877473648e2c33fba310663",
+          "heroName": "RUBY",
+          "probability": 1.1918348539033559
+        }
+      ],
+      "rationale": "Eudora has consistently been an early-phase priority for FLCN, appearing in 4 of their 5 games, so TLPH removed them early."
+    },
+    {
+      "slot": 15,
+      "side": "RED",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 22.20491323627863
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 15.753470354867979
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 10.3447685522534
+        },
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 8.146585732940945
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 2.9676494997825267
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 1.9727193858382053
+        },
+        {
+          "heroId": "6877473648e2c33fba310663",
+          "heroName": "RUBY",
+          "probability": 1.5816170828267762
+        },
+        {
+          "heroId": "6877479a48e2c33fba31068b",
+          "heroName": "LAPU-LAPU",
+          "probability": 1.3790391046552344
+        },
+        {
+          "heroId": "68774fc248e2c33fba31073f",
+          "heroName": "HARITH",
+          "probability": 1.1600736550235562
+        },
+        {
+          "heroId": "6877513548e2c33fba3107ad",
+          "heroName": "YU ZHONG",
+          "probability": 1.0628870571843307
+        }
+      ],
+      "rationale": "Ruby has been highly contested in TLPH's recent drafts, appearing in 2 of their 5 games, and directly addresses one of the key threats in FLCN's composition, so they removed them early."
+    },
+    {
+      "slot": 16,
+      "side": "BLUE",
+      "type": "BAN",
+      "candidates": [
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 24.13023551858837
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 16.685329092109882
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 10.725536211768482
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 2.980933963735408
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 2.2272608758588475
+        },
+        {
+          "heroId": "687751a648e2c33fba3107e4",
+          "heroName": "PHOVEUS",
+          "probability": 1.8037866080682998
+        },
+        {
+          "heroId": "6877464948e2c33fba31060e",
+          "heroName": "BRUNO",
+          "probability": 1.5311403692325734
+        },
+        {
+          "heroId": "6877504348e2c33fba31075d",
+          "heroName": "GRANGER",
+          "probability": 1.3757867764714726
+        },
+        {
+          "heroId": "687747ad48e2c33fba310695",
+          "heroName": "ROGER",
+          "probability": 1.2515463926363537
+        },
+        {
+          "heroId": "68774f7b48e2c33fba310726",
+          "heroName": "LUNOX",
+          "probability": 1.1500180924336383
+        }
+      ],
+      "rationale": "Gloo continues to see strong relevance for FLCN, and they have been a strong response to Marcel, so TLPH removed them early."
+    },
+    {
+      "slot": 17,
+      "side": "RED",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877516948e2c33fba3107c6",
+          "heroName": "BRODY",
+          "probability": 26.98933243123358
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 10.962564828716644
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 8.388833176940611
+        },
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 3.1595634111308524
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 2.3912711814184173
+        },
+        {
+          "heroId": "687747a448e2c33fba310690",
+          "heroName": "VEXANA",
+          "probability": 1.9488502745216876
+        },
+        {
+          "heroId": "6877509a48e2c33fba310780",
+          "heroName": "LYLIA",
+          "probability": 1.7167150540674871
+        },
+        {
+          "heroId": "687751a648e2c33fba3107e4",
+          "heroName": "PHOVEUS",
+          "probability": 1.534436460611522
+        },
+        {
+          "heroId": "68774fc248e2c33fba31073f",
+          "heroName": "HARITH",
+          "probability": 1.3962053485703572
+        },
+        {
+          "heroId": "6877519c48e2c33fba3107df",
+          "heroName": "BEATRIX",
+          "probability": 1.2833508257734483
+        }
+      ],
+      "rationale": "Brody is a proven comfort pick for FLCN, who have shown experience on them, and they give FLCN a response to Marcel."
+    },
+    {
+      "slot": 18,
+      "side": "BLUE",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "6877512348e2c33fba3107a3",
+          "heroName": "ATLAS",
+          "probability": 29.195541157382976
+        },
+        {
+          "heroId": "68774f9048e2c33fba310730",
+          "heroName": "BELERICK",
+          "probability": 9.82557725813877
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 3.7522912688426837
+        },
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 2.9571746587902807
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 2.448466389259827
+        },
+        {
+          "heroId": "6877511d48e2c33fba31079e",
+          "heroName": "CARMILLA",
+          "probability": 2.092074973303787
+        },
+        {
+          "heroId": "6877508548e2c33fba31077b",
+          "heroName": "DYRROTH",
+          "probability": 1.847565402977153
+        },
+        {
+          "heroId": "6877479a48e2c33fba31068b",
+          "heroName": "LAPU-LAPU",
+          "probability": 1.659512725917472
+        },
+        {
+          "heroId": "6877513548e2c33fba3107ad",
+          "heroName": "YU ZHONG",
+          "probability": 1.5102795203933177
+        },
+        {
+          "heroId": "68774fe948e2c33fba310749",
+          "heroName": "KADITA",
+          "probability": 1.3881915002424734
+        }
+      ],
+      "rationale": "Atlas has consistently been an early-phase priority for TLPH, appearing in four of their five games, and they directly address one of the key threats in TLPH's composition, having followed Barats once."
+    },
+    {
+      "slot": 19,
+      "side": "BLUE",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "68774f6348e2c33fba310717",
+          "heroName": "CLAUDE",
+          "probability": 24.38527482715525
+        },
+        {
+          "heroId": "6877465148e2c33fba310613",
+          "heroName": "CLINT",
+          "probability": 18.79549083092124
+        },
+        {
+          "heroId": "6877475a48e2c33fba31066d",
+          "heroName": "MOSKOV",
+          "probability": 9.269941231706355
+        },
+        {
+          "heroId": "68774fc248e2c33fba31073f",
+          "heroName": "HARITH",
+          "probability": 2.413666921728911
+        },
+        {
+          "heroId": "6877464948e2c33fba31060e",
+          "heroName": "BRUNO",
+          "probability": 2.0191231357471446
+        },
+        {
+          "heroId": "6877519c48e2c33fba3107df",
+          "heroName": "BEATRIX",
+          "probability": 1.7449182554423583
+        },
+        {
+          "heroId": "6877468248e2c33fba31062c",
+          "heroName": "LAYLA",
+          "probability": 1.542403243750765
+        },
+        {
+          "heroId": "687751ac48e2c33fba3107e9",
+          "heroName": "NATAN",
+          "probability": 1.3861278058503648
+        },
+        {
+          "heroId": "6877504348e2c33fba31075d",
+          "heroName": "GRANGER",
+          "probability": 1.2614763507416535
+        },
+        {
+          "heroId": "6877524b48e2c33fba310839",
+          "heroName": "CICI",
+          "probability": 1.159477752973779
+        }
+      ],
+      "rationale": "Clint is a proven comfort pick for TLPH, having taken him in 3 of their games, and they see him as a strong counter to Brody, having followed him three times."
+    },
+    {
+      "slot": 20,
+      "side": "RED",
+      "type": "PICK",
+      "candidates": [
+        {
+          "heroId": "687751c148e2c33fba3107f8",
+          "heroName": "VALENTINA",
+          "probability": 30.663447482216167
+        },
+        {
+          "heroId": "687747a448e2c33fba310690",
+          "heroName": "VEXANA",
+          "probability": 5.653163714163584
+        },
+        {
+          "heroId": "6877509a48e2c33fba310780",
+          "heroName": "LYLIA",
+          "probability": 4.0906043373132235
+        },
+        {
+          "heroId": "6877487f48e2c33fba3106e5",
+          "heroName": "ANGELA",
+          "probability": 3.042185584224467
+        },
+        {
+          "heroId": "687751a648e2c33fba3107e4",
+          "heroName": "PHOVEUS",
+          "probability": 2.5389784410508485
+        },
+        {
+          "heroId": "6877517948e2c33fba3107cb",
+          "heroName": "YVE",
+          "probability": 2.1943715360558054
+        },
+        {
+          "heroId": "6877480a48e2c33fba3106c2",
+          "heroName": "DIGGIE",
+          "probability": 1.9397539772117327
+        },
+        {
+          "heroId": "6877528248e2c33fba310857",
+          "heroName": "ZETIAN",
+          "probability": 1.7432587596032671
+        },
+        {
+          "heroId": "6877470748e2c33fba310645",
+          "heroName": "GORD",
+          "probability": 1.5863544418656943
+        },
+        {
+          "heroId": "6877525c48e2c33fba310843",
+          "heroName": "ZHUXIN",
+          "probability": 1.4581289766557866
+        }
+      ],
+      "rationale": "Valentina has consistently shown confidence for FLCN, with a perfect record in their one game on her, and they take her as a response to Clint."
+    }
+  ],
+  "updatedAt": "2026-08-24T12:58:24.542Z"
+}

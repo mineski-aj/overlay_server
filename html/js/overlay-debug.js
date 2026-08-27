@@ -402,6 +402,13 @@ masterPoll();
       if (d.action === 'hide') gdcAnimateOut();
     } catch {}
   });
+  sse.addEventListener('goldgraphcheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') ggcAnimateIn();
+      if (d.action === 'hide') ggcAnimateOut();
+    } catch {}
+  });
   /* Shared by every "side *check" ranking panel — one SSE event
      ('sidecheck') carries a `check` field naming which panel, instead
      of a dedicated event per panel. Add new side-checks here. */

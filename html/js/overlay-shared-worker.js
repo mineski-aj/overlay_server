@@ -34,7 +34,7 @@
 const KNOWN_EVENTS = [
   'consolidated_post', 'consolidated_post_2', 'credits', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
   'draftpredict', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
-  'golddiffcheck', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
+  'golddiffcheck', 'goldgraphcheck', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerh2h', 'playerui',
   'post_emblems', 'post_hearts', 'post_itemline', 'post_itemline_itemin',

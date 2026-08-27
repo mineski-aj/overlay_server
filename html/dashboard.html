@@ -1922,7 +1922,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2249,6 +2249,7 @@
         { name: 'Item Check',        key: 'itemcheck'        },
         { name: 'Emblem Check',      key: 'emblemcheck'      },
         { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
+        { name: 'Gold Graph Check',  key: 'goldgraphcheck'   },
         { name: 'Side EXP Check',    key: 'sideexpcheck'     },
         { name: 'Side Taken Check',  key: 'sidetakencheck'   },
         { name: 'Side Damage Check', key: 'sidedamagecheck'  },

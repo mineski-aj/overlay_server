@@ -1536,11 +1536,30 @@
       background: transparent; /* #scene-video shows through — see showSceneVideo */
       opacity: 0;
       transition: opacity 400ms ease;
+      /* Only takes effect once .*-on flips display:block (will-change is a
+         no-op on a display:none element) — see luRevealLineup's double-rAF,
+         which leaves a couple of frames between that and .*-visible so this
+         layer is already promoted before the opacity transition (and the
+         Phase 1 group-photo animation inside it) actually starts. */
+      will-change: opacity;
     }
     #team-lineup-blue-page.lub-on { display: block; }
     #team-lineup-blue-page.lub-visible { opacity: 1; }
     #team-lineup-red-page.lur-on { display: block; }
     #team-lineup-red-page.lur-visible { opacity: 1; }
+
+    /* ── Phase 0 — fullscreen intro + stinger (shared by Blue AND Red — see
+       luStartPhase0) ── The per-team intro clip (<tricode>_intro.webm) and
+       lineupstinger.webm both sit on their own fullscreen layers ABOVE
+       everything else on the canvas (highest z-index in the whole document,
+       short of the dev #config-bar) since they're meant to fully cover
+       whatever else is on screen. See luPlayIntroThenShow(). */
+    #lu-intro-video, #lu-stinger-video {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      object-fit: cover; display: none; pointer-events: none;
+    }
+    #lu-intro-video   { z-index: 300; }
+    #lu-stinger-video { z-index: 301; }
 
     /* ── Phase 1 — group photo intro ──
        Full-bleed 1920×1080 team photo (see /photos/Group/<TRICODE>_GROUP.png)
@@ -1579,6 +1598,13 @@
       opacity: 0; transform: scale(0.42) translateY(160px) rotateZ(-11deg);
       transition: opacity 320ms ease-out,
                   transform 700ms cubic-bezier(0.34, 1.61, 0.64, 1);
+      /* Pre-promotes this to its own compositor layer well ahead of the
+         reveal, instead of the browser allocating one on the same frame
+         .lu-group-in first lands — for Team Line-up Blue that frame can
+         land while the fullscreen stinger video is still decoding on top,
+         and layer allocation competing with that is what caused the
+         stutter. */
+      will-change: opacity, transform;
     }
     .lu-group-photo.lu-group-in .lu-group-photo-stage {
       opacity: 1; transform: scale(1) translateY(0) rotateZ(0deg);
@@ -1604,6 +1630,7 @@
     .lu-group-photo-flash {
       position: absolute; inset: 0; width: 100%; height: 100%;
       background: #fff; opacity: 0; pointer-events: none;
+      will-change: opacity; /* same pre-promotion reasoning as .lu-group-photo-stage above */
     }
     @keyframes lu-group-flash-pop {
       0%   { opacity: 0; }
@@ -1612,6 +1639,20 @@
     }
     .lu-group-photo.lu-group-in .lu-group-photo-flash {
       animation: lu-group-flash-pop 550ms ease-out;
+    }
+
+    /* Backmost layer — full-bleed 1920×1080 team background (see
+       /photos/groupbg/<tricode-lowercase>_bg.png), set once by
+       showTeamLineup and left alone for the rest of the run. Unlike
+       .lu-group-photo (Phase 1 only, buttons out into Phase 2), this sits
+       behind everything and persists across both phases. Same bottom-fade
+       mask as .lu-photo below, so it blends into #scene-video underneath
+       instead of hard-cutting at its own edge. */
+    .lu-bg-photo {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      z-index: 0; object-fit: cover; display: block;
+      -webkit-mask-image: linear-gradient(to top, transparent 0%, transparent 25%, #000 50%);
+              mask-image: linear-gradient(to top, transparent 0%, transparent 25%, #000 50%);
     }
 
     /* Hidden until Phase 2 explicitly reveals them (.lu-phase2, set by
@@ -3336,7 +3377,13 @@
       <!-- [FEATURE: final-team-cards] 10 cards built dynamically via buildFtCards() -->
       <div id="ft-cards"></div>
     </div>
+    <!-- Team Line-up Phase 0 — fullscreen intro + stinger, blue only for
+         now. Not autoplay/loop — src/currentTime/play() driven entirely by
+         luPlayIntroThenShow(). -->
+    <video id="lu-intro-video" muted playsinline preload="auto"></video>
+    <video id="lu-stinger-video" muted playsinline preload="auto"></video>
     <div id="team-lineup-blue-page">
+      <img class="lu-bg-photo" id="lub-bg-photo" src="" alt="" onerror="this.style.visibility='hidden'">
       <div class="lu-group-photo" id="lub-group-photo">
         <div class="lu-group-photo-stage">
           <img class="lu-group-photo-img" id="lub-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
@@ -3397,6 +3444,7 @@
       <div class="lu-teambar-match" id="lub-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
     </div>
     <div id="team-lineup-red-page">
+      <img class="lu-bg-photo" id="lur-bg-photo" src="" alt="" onerror="this.style.visibility='hidden'">
       <div class="lu-group-photo" id="lur-group-photo">
         <div class="lu-group-photo-stage">
           <img class="lu-group-photo-img" id="lur-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
@@ -6262,9 +6310,40 @@
       return Promise.all(Array.from(els).map(el => new Promise(resolve => {
         if (!el.getAttribute('src')) return resolve();
         const isVideo = el.tagName === 'VIDEO';
-        if (isVideo ? el.readyState >= 2 : el.complete) return resolve();
-        el.addEventListener(isVideo ? 'loadeddata' : 'load', resolve, { once: true });
-        el.addEventListener('error', resolve, { once: true });
+        if (isVideo) {
+          if (el.readyState >= 2) return resolve();
+          // Only one of 'loadeddata'/'error' ever fires — {once:true} only
+          // auto-removes the one that DID fire, so the other sat attached
+          // to this element forever (these <img>/<video> slots are fixed,
+          // reused DOM nodes, not recreated per show — every preload call
+          // over a long broadcast left one more stale listener behind).
+          // Removing both explicitly on whichever settles first is what
+          // actually stops that from accumulating.
+          const onSettle = () => {
+            el.removeEventListener('loadeddata', onSettle);
+            el.removeEventListener('error', onSettle);
+            resolve();
+          };
+          el.addEventListener('loadeddata', onSettle);
+          el.addEventListener('error', onSettle);
+          setTimeout(resolve, maxWaitMs);
+          return;
+        }
+        // Images: decode() forces the actual pixel decode to finish, not
+        // just the byte download ('load'/.complete only guarantee the
+        // latter) — so the first paint once revealed is free. Without this,
+        // a big photo's decode cost lands on whichever frame it first
+        // becomes visible on, which for Team Line-up is the same frame
+        // that's also busy compositing the still-playing fullscreen
+        // stinger video — exactly the stutter this is fixing.
+        const decodeThenResolve = () => {
+          el.removeEventListener('load', decodeThenResolve);
+          el.removeEventListener('error', decodeThenResolve);
+          el.decode ? el.decode().then(resolve, resolve) : resolve();
+        };
+        if (el.complete) { decodeThenResolve(); return; }
+        el.addEventListener('load', decodeThenResolve);
+        el.addEventListener('error', decodeThenResolve);
         setTimeout(resolve, maxWaitMs);
       })));
     }
@@ -7136,6 +7215,16 @@
       imgEl.src = (teamObj && teamObj.short) ? '/photos/Group/' + encodeURIComponent(teamObj.short) + '_GROUP.png' : '';
     }
 
+    /* Backmost background — set once alongside the group photo, but (unlike
+       it) never touched again for the rest of the show() run, so it just
+       sits there through Phase 1 and Phase 2 both. */
+    function luApplyBgPhoto(side, teamObj) {
+      const s = LU_SIDES[side];
+      const imgEl = document.getElementById(s.prefix + '-bg-photo');
+      imgEl.style.visibility = '';
+      imgEl.src = (teamObj && teamObj.short) ? '/photos/groupbg/' + encodeURIComponent(teamObj.short.toLowerCase()) + '_bg.png' : '';
+    }
+
     function luApplyTeamBar(side, teamObj, ms) {
       const s = LU_SIDES[side];
       const logoEl = document.getElementById(s.prefix + '-teambar-logo');
@@ -7223,33 +7312,74 @@
       }, LU_GROUP_BUTTON_IN_MS + LU_GROUP_FLOAT_MS + LU_PHASE2_DELAY_MS);
     }
 
-    async function showTeamLineup(side) {
-      const s = LU_SIDES[side];
-      const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
-      const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
+    /* Data fetch + DOM fill + full media preload — everything that can
+       safely happen before anything is actually shown. Split out from
+       luRevealLineup below (which just flips the visible classes and
+       starts the Phase 1 animation) so Phase 0 can kick this off the
+       instant it starts playing instead of waiting until the stinger's
+       midpoint — see luPlayIntroThenShow. Returns true once everything is
+       loaded and ready to reveal, or false if superseded mid-flight. */
+    function luFetchMatchState() {
+      return fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
+    }
+
+    /* msPromise is optional — pass one in to share a single /match/state
+       fetch with a caller that also needs it (Phase 0 below needs the
+       team's tricode before it can even pick which intro clip to play, so
+       it fetches match state itself and hands the same promise in here
+       instead of firing a second redundant request). */
+    async function luPreloadLineup(side, feature, msPromise) {
+      const s = LU_SIDES[side];
+      msPromise = msPromise || luFetchMatchState();
       await transitionTo(feature);
       const ms = await msPromise;
-      if (activeFeature !== feature) return; /* superseded while awaiting match state */
+      if (activeFeature !== feature) return false; /* superseded while awaiting match state */
 
       const teamObj = ms ? ms[s.camp] : null;
       const lineup  = (teamObj && teamObj.lineup) || [];
       luApplyPlayers(side, lineup);
       luApplyTeamBar(side, teamObj, ms);
       luApplyGroupPhoto(side, teamObj);
+      luApplyBgPhoto(side, teamObj);
       luResetAnimation(side);
 
       // Wait for every signature/left/right photo + logo/plate image to be
       // fully loaded before revealing anything — a half-loaded roster
       // popping in piece by piece is exactly what this guards against.
       await preloadMedia(s.page.querySelectorAll('img, video'), 1500);
-      if (activeFeature !== feature) return; /* superseded while preloading */
+      if (activeFeature !== feature) return false; /* superseded while preloading */
+      return true;
+    }
 
+    /* Just the reveal — assumes luPreloadLineup already finished (DOM
+       filled, media loaded). Safe to call on its own for the non-Phase-0
+       path (Red, via showTeamLineup below). */
+    function luRevealLineup(side, feature) {
+      const s = LU_SIDES[side];
       showSceneVideo(feature);
       s.page.classList.add(s.onClass);
-      void s.page.offsetWidth; /* force reflow so the opacity transition runs */
-      s.page.classList.add(s.visClass);
-      luPlayGroupPhotoIntro(side, feature);
+      // Two rAFs (not a forced `void el.offsetWidth` read) so the browser
+      // gets to actually paint the display:none -> block frame before the
+      // opacity transition class lands — a synchronous layout read here
+      // blocks the main thread for that instant, which for Team Line-up
+      // Blue is the same instant the stinger video is still decoding a
+      // frame on top; forcing it right then is what caused the stutter.
+      requestAnimationFrame(() => {
+        if (activeFeature !== feature) return; /* superseded before the frame landed */
+        requestAnimationFrame(() => {
+          if (activeFeature !== feature) return; /* superseded before the frame landed */
+          s.page.classList.add(s.visClass);
+          luPlayGroupPhotoIntro(side, feature);
+        });
+      });
+    }
+
+    async function showTeamLineup(side) {
+      const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
+      const ready = await luPreloadLineup(side, feature);
+      if (!ready) return;
+      luRevealLineup(side, feature);
     }
 
     function hideTeamLineup(side) {
@@ -7266,10 +7396,219 @@
       });
     }
 
-    function showTeamLineupBlue() { return showTeamLineup('blue'); }
-    function hideTeamLineupBlue() { return hideTeamLineup('blue'); }
-    function showTeamLineupRed()  { return showTeamLineup('red'); }
-    function hideTeamLineupRed()  { return hideTeamLineup('red'); }
+    /* ── Phase 0 — fullscreen intro + stinger (shared by Blue and Red — see
+       luStartPhase0/luHidePhase0 further down) ──
+       Plays before Phase 1 (group photo) above: the intro webm plays, then
+       the stinger webm plays on top of it (both on their own fullscreen
+       video layers above everything else — see the CSS). The Phase 1/2
+       reveal (luRevealLineup) is kicked off at the stinger's own midpoint,
+       so it's already running (hidden underneath the stinger) by the time
+       the stinger's overlay comes down.
+
+       luPreloadLineup(side, feature) — the /match/state fetch, DOM fill,
+       and full image preload that used to only start at the stinger's
+       midpoint — is instead fired the instant Phase 0 begins, in parallel
+       with the intro/stinger playing. That's ~8s+ of headroom instead of
+       whatever's left of the stinger, so a slow fetch or a heavy photo
+       doesn't stall the reveal past the point the stinger's already gone.
+       This also means transitionTo(feature) (inside luPreloadLineup) runs
+       immediately, which sets activeFeature = feature right away instead
+       of only once the stinger reaches its midpoint — that's what lets an
+       external hide/scene-switch landing DURING Phase 0 actually find
+       'lineupblue'/'lineupred' as the active feature and route through
+       luHidePhase0() (via hideTeamLineupBlue/Red) to tear the video layers
+       down, instead of activeFeature still pointing at whatever was active
+       before Phase 0 started and the hide having nothing to tear down.
+
+       Every playback timing below is derived from each clip's OWN measured
+       .duration (via luWaitVideoMeta), never a hardcoded number — the
+       intro/stinger webms differ per team and their durations differ
+       clip to clip, so anything computed from an assumed fixed length
+       would drift or misfire the moment a different pair of clips is
+       wired in for the other side.
+         - Stinger starts LU_STINGER_LEAD_MS before the INTRO's own end,
+           not on the intro's 'ended' event — so the two visibly overlap
+           instead of hard-cutting. The intro is then immediately hidden —
+           it's done its job the moment the stinger takes over, and leaving
+           it sitting underneath (still decoding, on a layer above the
+           reveal) is what was bleeding through/lingering visibly.
+         - The stinger itself is left to play its FULL course — hidden only
+           on its own real 'ended' event, never cut short.
+       luIntroTokens[side] guards a hide/re-show landing mid-intro or
+       mid-stinger (same idea as the activeFeature !== feature checks in
+       luPlayGroupPhotoIntro above) — keyed per side, see its declaration
+       below for why. */
+    const LU_STINGER_SRC = '/assets/lineup/lineupstinger.webm';
+    const LU_STINGER_LEAD_MS = 500; // stinger starts this long before the intro ends
+    const luIntroVideo   = document.getElementById('lu-intro-video');
+    const luStingerVideo = document.getElementById('lu-stinger-video');
+    /* One token PER SIDE, not one shared counter — triggering Red right
+       after Blue (back to back, no explicit hide in between) routes through
+       Red's own transitionTo('lineupred') -> hideActiveFeature() ->
+       hideTeamLineupBlue(), which needs to cancel BLUE's in-flight Phase 0
+       as a side effect. With a single shared token, that cancellation
+       bumped the same counter Red had just captured for itself moments
+       earlier — so Red's own run immediately saw itself as "superseded"
+       and bailed out before ever setting a video src. Separate counters
+       mean hiding one side can never cancel the other side's run. */
+    let luIntroTokens = { blue: 0, red: 0 };
+
+    /* One intro clip per team — <tricode-lowercase>_intro.webm, same
+       folder as the stinger (e.g. APBR -> apbr_intro.webm, FLCN ->
+       flcn_intro.webm). No tricode (or the clip 404s) skips straight to
+       the stinger instead of hanging on a video that'll never load — see
+       luWaitVideoMeta's 'error' handling below. */
+    function luIntroSrcForTricode(tricode) {
+      return tricode ? '/assets/lineup/' + encodeURIComponent(tricode.toLowerCase()) + '_intro.webm' : null;
+    }
+
+    function luHideVideoLayer(el) {
+      el.pause();
+      el.style.display = 'none';
+      el.removeAttribute('src');
+      el.load();
+    }
+
+    /* Tracks the stinger's pending 'ended' listener (registered fresh per
+       Phase 0 run — see luPlayIntroThenShow) so an external teardown
+       (luHideIntroLayers, called whenever a hide/side-switch lands mid-
+       stinger) can explicitly remove it instead of leaving it orphaned —
+       {once:true} only auto-removes a listener that actually FIRES, and a
+       cancelled run's stinger never reaches its own natural 'ended'. Left
+       unremoved, that's one more permanently-dead listener piling up on
+       this shared, reused element every time a run gets cut short instead
+       of completing on its own — routine in production (switching sides,
+       toggling off) over a long broadcast. */
+    let luStingerEndedHandler = null;
+
+    function luHideIntroLayers() {
+      luHideVideoLayer(luIntroVideo);
+      if (luStingerEndedHandler) {
+        luStingerVideo.removeEventListener('ended', luStingerEndedHandler);
+        luStingerEndedHandler = null;
+      }
+      luHideVideoLayer(luStingerVideo);
+    }
+
+    function luWaitVideoMeta(videoEl) {
+      if (videoEl.readyState >= 1) return Promise.resolve(); // HAVE_METADATA — duration already known
+      return new Promise(resolve => {
+        // Only one of these two ever fires — {once:true} only auto-removes
+        // the one that DID, leaving the other attached to this shared,
+        // reused video element forever. luIntroVideo/luStingerVideo go
+        // through this on every single Team Line-up show, so left alone
+        // that's one more permanently-dead listener per reveal over a
+        // whole broadcast. Removing both explicitly on whichever settles
+        // first is what actually stops that from accumulating.
+        const onSettle = () => {
+          videoEl.removeEventListener('loadedmetadata', onSettle);
+          videoEl.removeEventListener('error', onSettle);
+          resolve();
+        };
+        videoEl.addEventListener('loadedmetadata', onSettle);
+        // A missing/broken clip (e.g. no <tricode>_intro.webm for this team
+        // yet) would otherwise wait forever for a 'loadedmetadata' that's
+        // never coming — resolve anyway so the caller's duration reads 0
+        // and moves straight on instead of stalling the whole scene.
+        videoEl.addEventListener('error', onSettle);
+      });
+    }
+
+    /* setTimeout(ms) as a promise, floored at 0 — a clip shorter than its
+       own lead time (e.g. a quick-cut intro under 500ms) fires immediately
+       instead of computing a negative delay. */
+    function luDelay(ms) {
+      return new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
+    }
+
+    async function luPlayIntroThenShow(side, token) {
+      const s = LU_SIDES[side];
+      const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
+      const msPromise = luFetchMatchState();
+      // Fire-and-await-later: starts immediately, resolves whenever it
+      // resolves — awaited only once we actually reach the reveal point.
+      // Hands msPromise in so this doesn't fire a second /match/state
+      // fetch on top of the one below (same tricode lookup needs it too).
+      const preloadPromise = luPreloadLineup(side, feature, msPromise);
+
+      const ms = await msPromise;
+      if (token !== luIntroTokens[side]) return; /* superseded while fetching match state for the intro clip */
+      const tricode = ms && ms[s.camp] && ms[s.camp].short;
+      const introSrc = luIntroSrcForTricode(tricode);
+
+      let introDurationMs = 0;
+      if (introSrc) {
+        luIntroVideo.src = introSrc;
+        luIntroVideo.currentTime = 0;
+        luIntroVideo.style.display = 'block';
+        await luWaitVideoMeta(luIntroVideo);
+        if (token !== luIntroTokens[side]) return; /* superseded while loading the intro */
+        introDurationMs = (luIntroVideo.duration || 0) * 1000;
+        try { await luIntroVideo.play(); } catch (e) {}
+      }
+
+      await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
+      if (token !== luIntroTokens[side]) return; /* superseded mid-intro */
+
+      luStingerVideo.src = LU_STINGER_SRC;
+      luStingerVideo.currentTime = 0;
+      luStingerVideo.style.display = 'block';
+      await luWaitVideoMeta(luStingerVideo);
+      if (token !== luIntroTokens[side]) return; /* superseded while loading the stinger */
+      const stingerDurationMs = (luStingerVideo.duration || 0) * 1000;
+      try { await luStingerVideo.play(); } catch (e) {}
+
+      /* The stinger has taken over — the intro is done, hide it now instead
+         of leaving it lingering underneath until the whole overlay comes
+         down later. */
+      luHideVideoLayer(luIntroVideo);
+
+      setTimeout(async () => {
+        if (token !== luIntroTokens[side]) return; /* superseded mid-stinger */
+        const ready = await preloadPromise;
+        if (token !== luIntroTokens[side]) return; /* superseded while the preload above was still finishing */
+        if (ready) luRevealLineup(side, feature);
+      }, stingerDurationMs / 2);
+
+      /* Let the stinger run its full course — hide it only once it actually
+         ends, never cut short. Tracked in luStingerEndedHandler so an
+         external teardown can remove it explicitly instead of leaving it
+         orphaned — see that declaration for why. */
+      luStingerEndedHandler = () => {
+        luStingerEndedHandler = null;
+        if (token !== luIntroTokens[side]) return; /* superseded mid-stinger */
+        luHideVideoLayer(luStingerVideo);
+      };
+      luStingerVideo.addEventListener('ended', luStingerEndedHandler, { once: true });
+    }
+
+    /* Blue and Red share this one Phase 0 pipeline and the one pair of
+       video layers it drives (never each getting their own) — the two are
+       never shown together (see the CSS comment above
+       #team-lineup-blue-page), so there's never real simultaneous use of
+       the shared elements to arbitrate. luIntroTokens is still keyed per
+       side, though — see its declaration above for why a single shared
+       counter doesn't work for back-to-back Blue -> Red / Red -> Blue. */
+    function luStartPhase0(side) {
+      const token = ++luIntroTokens[side];
+      return luPlayIntroThenShow(side, token);
+    }
+    function luHidePhase0(side) {
+      luIntroTokens[side]++; /* cancel any in-flight Phase 0 preload/intro/stinger for THIS side only */
+      luHideIntroLayers();
+      /* Always run the real hide, even mid-Phase-0 (before .lub-on/.lur-on
+         is ever added) — luPreloadLineup's transitionTo() call now sets
+         activeFeature the instant Phase 0 starts (see luPlayIntroThenShow),
+         so this is never clobbering a DIFFERENT feature's state the way it
+         could have before. Without this, a hide landing during Phase 0 tore
+         down the video layers above but left activeFeature stuck and the
+         scene background loop still running underneath. */
+      return hideTeamLineup(side);
+    }
+    function showTeamLineupBlue() { return luStartPhase0('blue'); }
+    function hideTeamLineupBlue() { return luHidePhase0('blue'); }
+    function showTeamLineupRed()  { return luStartPhase0('red'); }
+    function hideTeamLineupRed()  { return luHidePhase0('red'); }
 
     /* Sponsor category label — the white box at the left of every sponsor
        box, showing which category (Official Sponsor, Partner in Esports,

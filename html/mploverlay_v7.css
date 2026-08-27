@@ -1747,6 +1747,50 @@
   .gdc-tri.gdc-tri-away { color: #FF3232; }
   .gdc-tri.gdc-tri-on   { opacity: 1; }
 
+  /* ── [FEATURE: goldgraph-check] ──────────────────────────────────────
+     Same fixed-clip / sliding-inner pattern as item-check. Background is
+     assets/ingame/graphbarback.png (887×282, confirmed via `sips` — the
+     887 width matches item-check's own panel width exactly, as guessed).
+     .ggc-rect is the white plotting canvas (the pasted .Rectangle_1
+     spec: 857×253 at 15,15 — 14px bottom margin, 15px on the other three
+     sides) the gold-diff chart draws into — same real intentional white
+     backing as mplfs.html's #cpg-board, not placeholder design-tool
+     noise. */
+  #gold-graph-check-clip {
+    position: absolute;
+    left: 516px; top: 798px; /* horizontally centered (like item-check); bottom flush with the 1080px scene */
+    width: 887px; height: 282px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #gold-graph-check-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 887px; height: 282px;
+    transform: translateY(282px);
+    transition: transform 350ms ease-in;
+  }
+  #gold-graph-check-overlay.ggc-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .ggc-bg {
+    position: absolute; left: 0; top: 0;
+    width: 887px; height: 282px;
+  }
+  .ggc-rect {
+    position: absolute;
+    left: 15px; top: 15px;
+    width: 857px; height: 253px;
+    background-color: rgb(255, 255, 255);
+  }
+  .ggc-chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ggc-axis-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #555; } /* +50% over the original 10px */
+  .ggc-diff-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 16.5px; } /* +50% over the original 11px */
+  .ggc-time-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #fff; } /* +50% over the original 10px, matching .ggc-timebox's own +50% */
+
   /* ── [FEATURE: side-check family] ──────────────────────────────────
      Shared layout for every "side *check" ranking panel (exp, damage
      taken, and future ones) — same fixed-clip / sliding-inner pattern
