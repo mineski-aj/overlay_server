@@ -3658,6 +3658,7 @@
     '.st-l3':        { left: 1303, top: 0,  width: 260,  height: 27 },
     '.st-l4':        { left: 1555, top: 0,  width: 260,  height: 27 },
     '#st-rows':      { left: 0,    top: 0,   width: 1920, height: 1080 },
+    '.str-medal':    { visible: true },
   };
   var ST_ELEMENTS = [
     { group: 'Header',    id: '#st-header',    name: 'Title / Season / Week' },
@@ -3669,6 +3670,7 @@
     { group: 'Game W-L Label',    id: '.st-l3',   name: 'Game W-L Label (within bar)'     },
     { group: 'Net Game Win Label', id: '.st-l4',  name: 'Net Game Win Label (within bar)' },
     { group: 'Body',   id: '#st-rows',      name: 'Team Rows'             },
+    { group: 'Medal',  id: '.str-medal',    name: 'Rank 1/2 Medallion'    },
   ];
 
   /* ── Map bug (Draft.html) — same box as mploverlay_v7's ingame
@@ -4979,6 +4981,7 @@
         if (p.height !== undefined) d.push('height:' + p.height + 'px !important');
       }
       if (p.fontSize !== undefined && !skipFontSize) d.push('font-size:' + p.fontSize + 'px !important');
+      if (p.visible === false) d.push('display:none !important');
       return sel + '{' + d.join(';') + '}';
     }).join('\n');
     var s = doc.getElementById('sb-live-edit');
@@ -5303,6 +5306,32 @@
       }
       ctrl.appendChild(row);
     });
+
+    /* Visible toggle — only for elements that declare a `visible` default
+       (e.g. Standings' rank 1/2 medallion). Not one of PROPS above since
+       it's a boolean show/hide, not a numeric box dimension. */
+    if ('visible' in defs) {
+      var vrow = document.createElement('div');
+      vrow.className = 'edit-ctrl-row';
+
+      var vlbl = document.createElement('div');
+      vlbl.className = 'edit-ctrl-label';
+      vlbl.textContent = 'Visible';
+
+      var vchk = document.createElement('input');
+      vchk.type = 'checkbox';
+      vchk.checked = vals.visible !== undefined ? vals.visible : defs.visible;
+      vchk.addEventListener('change', function() {
+        pushHistory();
+        if (!editValues[id]) editValues[id] = {};
+        editValues[id].visible = vchk.checked;
+        applyToEditIframe();
+      });
+
+      vrow.appendChild(vlbl);
+      vrow.appendChild(vchk);
+      ctrl.appendChild(vrow);
+    }
   }
 
   /* Build element list — re-runs whenever the active config changes */
@@ -5430,6 +5459,7 @@
       if (v.width    !== undefined) out[sel].width    = v.width    + 'px';
       if (v.height   !== undefined) out[sel].height   = v.height   + 'px';
       if (v.fontSize !== undefined) out[sel].fontSize = v.fontSize + 'px';
+      if (v.visible === false) out[sel].display = 'none';
     });
     var styleFile = EDIT_CONFIGS[currentConfigKey].styleFile;
     /* Multiple configs can share one style file (Waiting Lobby / Team
@@ -5475,6 +5505,7 @@
       if (s.width    !== undefined) editValues[sel].width    = parseNum(s.width);
       if (s.height   !== undefined) editValues[sel].height   = parseNum(s.height);
       if (s.fontSize !== undefined) editValues[sel].fontSize = parseNum(s.fontSize);
+      if (s.display  !== undefined) editValues[sel].visible  = (s.display !== 'none');
     });
   }
 
