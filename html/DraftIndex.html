@@ -510,6 +510,48 @@
     return { blue: t1, red: t2 };
   }
 
+  /* ── Data validity guard ──────────────────────────────────────────
+     showDraftIndexScene's Promise.all only waits for the phase-2
+     fetches to SETTLE, not for what comes back to be usable — a fetch
+     "succeeds" (200, parses as JSON) even when the upstream body is
+     empty/malformed (e.g. /api/draft-index-1 responding with no `t1`/
+     `t2`, or a shape missing every stat field), which is
+     indistinguishable from a real response by truthiness alone. Left
+     unchecked, diNum()'s `parseFloat(v) || 0` fallback silently turns
+     "field missing" into a real-looking 0.0 instead of that section
+     just staying hidden — this is what actually shipped: match state/
+     game data resolved fine, Line-Up Rate came back malformed, and the
+     stat bars revealed real zeros instead of holding back.
+     diHasNumber checks for a genuinely present, parseable number
+     rather than requiring `typeof === 'number'` specifically, since
+     this is a 3rd-party API and its exact field types aren't
+     guaranteed (see diNum's own comment above). */
+  function diHasNumber(v) {
+    if (typeof v === 'number') return !isNaN(v);
+    if (typeof v === 'string') return v.trim() !== '' && !isNaN(parseFloat(v));
+    return false;
+  }
+  function diHasLineupStats(sideObj) {
+    if (!sideObj) return false;
+    if (diHasNumber(sideObj.lineup_rating) || diHasNumber(sideObj.counter_the_opponent)) return true;
+    return DI_BARS.some(function (bar) { return diHasNumber(sideObj[bar.key]); });
+  }
+  /* Valid if EITHER side has at least one real stat — a real response
+     can legitimately have a blank side (unpicked lineup slot), but a
+     response with zero numeric fields on both sides is a dead/malformed
+     fetch, not real data. */
+  function diIsValidLineupData(lu) {
+    var sides = diNormalizeSides(lu);
+    return diHasLineupStats(sides.blue) || diHasLineupStats(sides.red);
+  }
+  function diIsValidTeamData(ms, gd) {
+    var home = (ms && ms.home) || {};
+    var away = (ms && ms.away) || {};
+    if (home.short || away.short) return true;
+    var liveTri = diResolveCamps(gd);
+    return !!(liveTri.blue || liveTri.red);
+  }
+
   function diApplyPhase2Data(ms, lu, animate, gd) {
     var home = (ms && ms.home) || {};
     var away = (ms && ms.away) || {};
@@ -550,23 +592,35 @@
      real data actually lands, whenever that is relative to the shell
      reveal — see diTransitionToPhase2(). Bar LABELS aren't included
      here since they're static (from DI_BARS), not fetched. */
-  var DI_DATA_SELECTORS = [
+  /* Split into two independently-gated groups — team identity (logos/
+     names) comes from /match/state + /api/gamedata-proxy, stats
+     (counters/lineup numbers/bars) comes from /api/lineuprate-data —
+     two unrelated upstreams that fail independently, so one group can
+     be valid while the other isn't (see diIsValidTeamData/
+     diIsValidLineupData above). */
+  var DI_TEAM_SELECTORS = [
     '#di-blue-logo', '#di-red-logo',
     '#di-blue-name', '#di-red-name',
+  ];
+  var DI_STATS_SELECTORS = [
     '#di-blue-counter .di-stat-value', '#di-red-counter .di-stat-value',
     '#di-blue-lineup .di-stat-value',  '#di-red-lineup .di-stat-value',
   ];
-  function diSetDataOpacity(value, animate) {
-    DI_DATA_SELECTORS.forEach(function (sel) {
+  function diSetSelectorOpacity(selectors, value, animate) {
+    selectors.forEach(function (sel) {
       var el = document.querySelector(sel);
       if (!el) return;
       el.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
       el.style.opacity = String(value);
     });
+  }
+  function diSetDataOpacity(teamValue, statsValue, animate) {
+    diSetSelectorOpacity(DI_TEAM_SELECTORS, teamValue, animate);
+    diSetSelectorOpacity(DI_STATS_SELECTORS, statsValue, animate);
     diBarEls.forEach(function (els) {
       if (!els.line) return;
       els.line.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
-      els.line.style.opacity = String(value);
+      els.line.style.opacity = String(statsValue);
     });
   }
 
@@ -639,6 +693,54 @@
     }));
   }
 
+  /* ── Phase 2 data polling ─────────────────────────────────────────
+     A single fetch attempt meant one failed/malformed response
+     permanently left a section (team identity or stats) hidden for the
+     rest of the scene's life, even if the upstream recovered a moment
+     later — a real risk given the Line-Up Rate upstream's known
+     hangs/errors (see /api/lineuprate-data's own comment). Instead,
+     keep retrying every DI_POLL_MS for as long as this scene is
+     active: starting the moment phase 1 begins, so the title card gets
+     every chance to have real data ready before anything is asked to
+     cut over. Each tick applies whatever came back and reveals (fades
+     in) only the section(s) that just became valid for the first time
+     — already-revealed sections are left alone, so a later hiccup
+     can't re-hide something already shown. Returns a promise that
+     resolves once BOTH sections have validated — showDraftIndexScene
+     awaits this before ever cutting to phase 2 (see below), so phase 1
+     stays up for as long as it takes; this loop never gives up on its
+     own — only sceneToken changing (scene hidden or re-shown) stops
+     it. */
+  var DI_POLL_MS = 300;
+  function diPollPhase2Data(token, revealed, isAnimated) {
+    return new Promise(function (resolveWhenComplete) {
+      function tick() {
+        if (token !== sceneToken) return;
+        diFetchPhase2Data().then(function (r) {
+          if (token !== sceneToken) return;
+          var animate = isAnimated();
+          diApplyPhase2Data(r[0], r[1], animate, r[2]);
+          if (diIsValidTeamData(r[0], r[2]) && !revealed.team) {
+            diSetSelectorOpacity(DI_TEAM_SELECTORS, 1, animate);
+            revealed.team = true;
+          }
+          if (diIsValidLineupData(r[1]) && !revealed.stats) {
+            diSetSelectorOpacity(DI_STATS_SELECTORS, 1, animate);
+            diBarEls.forEach(function (els) {
+              if (!els.line) return;
+              els.line.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+              els.line.style.opacity = '1';
+            });
+            revealed.stats = true;
+          }
+          if (!revealed.team || !revealed.stats) setTimeout(tick, DI_POLL_MS);
+          else resolveWhenComplete();
+        });
+      }
+      tick();
+    });
+  }
+
   /* ── Main sequence ─────────────────────────────────────────────
      skipIntro=true restores an already-active scene straight into
      its settled phase-2 state (e.g. a browser source reloading
@@ -658,10 +760,13 @@
       diRedBox.style.opacity = '1';
       diRedBox.style.transform = 'translateX(0)';
       diBarsContainer.style.opacity = '1';
-      diFetchPhase2Data().then(function (r) {
-        if (token !== sceneToken) return;
-        diApplyPhase2Data(r[0], r[1], false, r[2]);
-      });
+      /* Data content itself starts hidden (independent of the shell
+         above, which restores instantly) and fades in per-section as
+         diPollPhase2Data validates it — same never-give-up polling as
+         the main sequence below, since a reload-mid-show can hit the
+         exact same malformed/failed-upstream case. */
+      diSetDataOpacity(0, 0, false);
+      diPollPhase2Data(token, { team: false, stats: false }, function () { return true; });
       return;
     }
 
@@ -675,41 +780,50 @@
 
     diPhase1.style.display = 'block';
     diResetPhase1();
+    diSetDataOpacity(0, 0, false);
 
-    /* Kick the data fetch off now, in parallel with the whole phase-1
-       title card, instead of waiting for the phase-2 cut — the Line-Up
-       Rate API alone can take 2-2.6s to answer, so this gives it as
-       much of a head start as the title card's runway allows. Same
-       shape as Team Hexagon's showTeamHexagon(), which starts its
-       /match/state fetch before the transition even begins. */
-    var dataPromise = diFetchPhase2Data();
+    /* Start polling now, in parallel with the whole phase-1 title
+       card, instead of waiting for the phase-2 cut — the Line-Up Rate
+       API alone can take 2-2.6s to answer even on a healthy response,
+       so this gives it as much of a head start as the title card's
+       runway allows. Same shape as Team Hexagon's showTeamHexagon(),
+       which starts its /match/state fetch before the transition even
+       begins — except this keeps retrying instead of firing once.
+       isAnimated is false throughout phase 1: phase 2 is display:none
+       underneath, so there's nothing to animate yet — each section's
+       opacity is simply set to 1 the instant it validates, ready and
+       already-visible the moment phase 2 actually shows. */
+    var revealed = { team: false, stats: false };
+    var dataReady = diPollPhase2Data(token, revealed, function () { return false; });
 
     diPreload([diLogoP1], 500).then(function () {
       if (token !== sceneToken) return;
       diRevealPhase1();
 
-      /* Hold phase 1 (the branded title card) until EITHER the normal
-         pacing time has elapsed OR the data fetch actually settles —
-         whichever is longer — instead of cutting to phase 2 on a fixed
-         timer and hoping the data is ready. The fetch started above (in
-         parallel with the whole title card) already gives it a head
-         start, so on the common/fast path this behaves exactly like the
-         old fixed timer. On a slow Line-Up Rate response, phase 1 (which
-         is itself sponsored, always-safe content) just stays up a bit
-         longer instead of cutting to an empty/incomplete phase 2 — this
-         is bounded by /api/lineuprate-data's own ~5s server-side
-         timeout (see diFetchLineupRate above), never indefinite. */
+      /* Hold phase 1 (the branded title card) until BOTH the normal
+         pacing floor has elapsed AND real phase-2 data has actually
+         validated — never cut to an empty/zeroed phase 2 on a fixed
+         timer alone. Phase 1 is itself sponsored, always-safe content,
+         so if the upstream is slow or down, it just keeps polling
+         (diPollPhase2Data above never gives up on its own) and phase 1
+         stays up for as long as it takes — there is no timeout here. */
       var minHold = new Promise(function (resolve) {
         setTimeout(resolve, REVEAL_MS + PHASE1_HOLD_MS);
       });
-      Promise.all([dataPromise, minHold]).then(function (results) {
+      Promise.all([minHold, dataReady]).then(function () {
         if (token !== sceneToken) return;
-        diTransitionToPhase2(token, results[0]);
+        diTransitionToPhase2(token);
       });
     });
   }
 
-  function diTransitionToPhase2(token, data) {
+  /* Only reached once diPollPhase2Data's promise has resolved (see
+     showDraftIndexScene), so team + stats are already validated,
+     applied, and at full opacity by this point — this just plays the
+     shell reveal (mini logo pop, box slide-in, bars fade), waiting for
+     the now-real team logos to preload first so it doesn't flash a
+     half-drawn frame. */
+  function diTransitionToPhase2(token) {
     diHidePhase1(380);
 
     setTimeout(function () {
@@ -717,24 +831,10 @@
       diPhase1.style.display = 'none';
       diPhase2.style.display = 'block';
 
-      /* Data already finished loading during phase 1's hold above, so
-         apply it and decide up front whether there's anything to show —
-         no more waiting once we get here. If every source failed, leave
-         the data content transparent so the shell (mini logo pop, box
-         slide-in, bars fade) still plays on schedule without showing
-         broken/zeroed placeholders. */
-      var gotData = !!(data[0] || data[1] || data[2]);
-      diApplyPhase2Data(data[0], data[1], true, data[2]);
-      diSetDataOpacity(gotData ? 1 : 0, false);
-
-      if (gotData) {
-        diPreload(diPhase2.querySelectorAll('img'), 900).then(function () {
-          if (token !== sceneToken) return;
-          diRevealPhase2();
-        });
-      } else {
+      diPreload(diPhase2.querySelectorAll('img'), 900).then(function () {
+        if (token !== sceneToken) return;
         diRevealPhase2();
-      }
+      });
     }, 380);
   }
 

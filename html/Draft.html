@@ -1290,41 +1290,89 @@
       100% { transform: translateX(220%); }
     }
 
-    /* ── Rationale bubble — sits in the exact box the OTHER side's panel
-       just vacated, same mask/slide approach as .dp-panel (see comment
-       above it): fixed-size masked box, inner content translates within
-       it, so it slides in from the same "just animated out" spot instead
-       of popping in place. ── */
-    .dp-rationale {
+    /* ── Rationale — an AI button pops in first, then a speech bubble
+       grows up from behind it (z-index below the button). The bubble
+       only ever animates its `height`, never a transform scale, so its
+       36px border-radius stays a true circle at every size — scaling
+       height via transform would squash the corners into an ellipse
+       instead. It's anchored with `bottom` (not `top`), so growing
+       taller pushes the top edge up ("grows upward") while the bottom
+       edge — and its overlap with the button sitting in front of it —
+       never moves. Both elements are independently positioned/mirrored,
+       same as .dp-panel above (see "#1 rule" in CLAUDE.md). ── */
+    .dp-ai-button {
       position: absolute;
-      top: 644px;
-      width: 758px;
-      height: 136px;
-      overflow: hidden;
+      top: 700px;
+      width: 153px;
+      height: 72px;
+      background-image: url('/assets/draft/ai_button.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      z-index: 22;
       pointer-events: none;
-    }
-    #dp-rationale-blue { left: 0px; }
-    #dp-rationale-red  { left: 1162px; }
-    .dp-rationale-inner {
-      width: 100%; height: 100%;
-      box-sizing: border-box;
-      display: flex; align-items: center;
-      padding: 16px 26px;
-      background: rgba(22,22,22,.95);
-      border-left: 4px solid #666;
-      transform: translateY(136px);
       opacity: 0;
-      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s ease;
+      transform: scale(.35);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s ease;
     }
-    #dp-rationale-blue .dp-rationale-inner { border-left-color: #004dd5; }
-    #dp-rationale-red  .dp-rationale-inner { border-left-color: #f31400; }
-    .dp-rationale.dp-visible .dp-rationale-inner { transform: none; opacity: 1; }
+    #dp-ai-button-blue { left: 546px; }
+    #dp-ai-button-red  { left: 1221px; } /* mirror of left:546/width:153 across the 1920-wide canvas */
+    .dp-ai-button.dp-visible { opacity: 1; transform: scale(1); }
+
+    /* The bubble's actual box (left/bottom/width/height) is ALWAYS its
+       real final size for the current rationale — JS sets `height`
+       directly (no transition on it) the instant the text changes, no
+       matter whether the bubble is shown or hidden. The "grows out of
+       the AI button" motion is a `transform: scale()` on TOP of that —
+       uniform (same factor on both axes), so it never distorts the
+       36px border-radius into an ellipse the way a height-only/
+       non-uniform scale would. `transform-origin` is pinned to the AI
+       button's own center point, expressed as a % of THIS box (recomputed
+       automatically whenever `height` changes, since percentages are
+       relative to the element's own current size) — 100% on the Y axis
+       (the box's bottom edge, which sits right behind the button
+       regardless of content height) so it grows straight up, and a fixed
+       X derived from the button's center relative to the bubble's fixed
+       left/width. Scaling down to ~0 from that point visually collapses
+       the bubble back into the button, not into thin air. */
+    .dp-rationale-bubble {
+      position: absolute;
+      bottom: 343px; /* 1080 - (500 top + 237 max height) — keeps the bottom edge fixed at every size */
+      width: 725px;
+      height: 110px;
+      border-radius: 36px;
+      background-image: linear-gradient(-104deg, rgb(218,218,218) 0%, rgb(240,240,240) 49%, rgb(255,255,255) 100%);
+      box-shadow: inset 0px 0px 24px 0px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(.06);
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+    }
+    /* X = (button center 622.5px − box left 16px) / box width 725px.
+       Mirrored box for red uses the mirrored button center the same way. */
+    #dp-rationale-bubble-blue { left: 16px;   transform-origin: 83.66% 100%; }
+    #dp-rationale-bubble-red  { left: 1179px; transform-origin: 16.34% 100%; }
+    .dp-rationale-bubble.dp-visible { opacity: 1; transform: scale(1); }
+    .dp-rationale-bubble-inner {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      box-sizing: border-box;
+      /* Extra bottom padding (vs. the sides/top) keeps text clear of the
+         AI button, which overlaps this box's bottom-right corner at a
+         FIXED canvas position (top:700–772px) regardless of the bubble's
+         current height, since the bubble's own bottom edge is anchored
+         at a fixed canvas position too (see .dp-rationale-bubble's
+         `bottom` above) — 50px of clearance keeps every line above
+         y:700 with a small margin to spare. */
+      padding: 20px 34px 50px 34px;
+    }
     .dp-rationale-text {
       font-family: 'General Sans', sans-serif;
       font-weight: 600;
       font-size: 20px;
       line-height: 1.35;
-      color: #fff;
+      color: #161616;
     }
   </style>
 </head>
@@ -2478,7 +2526,9 @@
 
   /* ── App state ─────────────────────────────────────────────── */
   var dpBluePanelEl, dpRedPanelEl, dpBlueHeaderTextEl, dpRedHeaderTextEl;
-  var dpBlueRationaleEl, dpRedRationaleEl, dpBlueRationaleTextEl, dpRedRationaleTextEl;
+  var dpBlueAiBtnEl, dpRedAiBtnEl;
+  var dpBlueRationaleBubbleEl, dpRedRationaleBubbleEl, dpBlueRationaleInnerEl, dpRedRationaleInnerEl;
+  var dpBlueRationaleTextEl, dpRedRationaleTextEl;
   var dpBlueC = null;
   var dpRedC  = null;
   var dpActivePanel    = null;
@@ -2491,7 +2541,14 @@
   var dpPickQueue       = [];
   var dpPrevDraftKey    = null;
 
-  var dpRationaleTimers  = { blue: null, red: null };
+  var dpRationaleTimers    = { blue: null, red: null }; /* the 10s auto-hide-after-showing timer */
+  var dpRationaleSeqTimers = { blue: null, red: null }; /* the button-pop -> bubble-grow handoff timer */
+
+  var DP_AI_BTN_POP_MS       = 350;  /* button pop-in duration */
+  var DP_BUBBLE_GROW_MS      = 400;  /* bubble grow duration */
+  var DP_RATIONALE_MIN_H     = 110;  /* shortest bubble height, px — clears the AI button's overlap zone comfortably even for a one-line rationale */
+  var DP_RATIONALE_MAX_H     = 237;  /* tallest bubble height, px — matches the provided max-size CSS */
+  var DP_RATIONALE_HIDE_MULT = 2;    /* hide sequence runs this many times faster than show */
 
   /* Set true for the duration of a __dpTestReveal() debug run — makes
      dpFetchLive() skip its real poll entirely, so the REAL live draft
@@ -2650,13 +2707,13 @@
     dpBluePanelEl.classList.toggle('dp-visible', side === 'blue');
     dpRedPanelEl.classList.toggle('dp-visible', side === 'red');
 
-    /* If this same side's rationale bubble is still up (within its 4s
+    /* If this same side's AI button/bubble is still up (within its 10s
        window) when this side's own panel comes back — e.g. a fast
-       back-to-back turn on the same side — just let the panel take the
-       spot back immediately rather than waiting out the bubble's timer. */
+       back-to-back turn on the same side — clear it immediately rather
+       than waiting out its timer, so a follow-up dpShowRationaleBubble
+       call (if one comes) starts from a clean state. */
     clearTimeout(dpRationaleTimers[side]);
-    var ownBubbleEl = side === 'blue' ? dpBlueRationaleEl : dpRedRationaleEl;
-    if (ownBubbleEl) ownBubbleEl.classList.remove('dp-visible');
+    dpHideRationaleSide(side);
 
     dpActivePanel  = side;
     dpPanelVisible = true;
@@ -2670,13 +2727,21 @@
     dpHideRationaleBubbles();
   }
 
-  /* ── Rationale bubble ─────────────────────────────────────────
-     Shows a just-completed reveal's rationale text immediately, in the
-     same box that reveal's own panel is vacating — fires from
+  /* ── Rationale — AI button + growing speech bubble ────────────
+     Shows a just-completed reveal's rationale immediately — fires from
      dpProcessPickQueue's onDone the instant that pick's settle animation
      finishes, not deferred to whatever comes next. Only for a top-5 AI
      call (see the rank check at its call site) and only when a real
-     rationale string is present. */
+     rationale string is present.
+
+     Sequence: the AI button pops in first (DP_AI_BTN_POP_MS). The bubble
+     behind it is sized to its real final height up front — computed
+     from the rationale text, clamped to [DP_RATIONALE_MIN_H,
+     DP_RATIONALE_MAX_H] — then grows into view out of the button via a
+     uniform `transform: scale()` anchored at the button's position (see
+     .dp-rationale-bubble's CSS), over DP_BUBBLE_GROW_MS. Hiding is the
+     exact reverse order (bubble shrinks back into the button, then the
+     button pops out) at DP_RATIONALE_HIDE_MULT× the speed. */
   /* Guards against the API sending a literal null, an empty string, a
      whitespace-only string, or the literal text "null"/"undefined" (seen
      coming through as a string, not an actual null, at least once) —
@@ -2690,22 +2755,73 @@
   }
 
   function dpShowRationaleBubble(side, text) {
-    var el     = side === 'blue' ? dpBlueRationaleEl : dpRedRationaleEl;
-    var textEl = side === 'blue' ? dpBlueRationaleTextEl : dpRedRationaleTextEl;
-    if (!el || !textEl || !dpIsValidRationale(text)) return;
+    var btnEl    = side === 'blue' ? dpBlueAiBtnEl : dpRedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
+    var innerEl  = side === 'blue' ? dpBlueRationaleInnerEl : dpRedRationaleInnerEl;
+    var textEl   = side === 'blue' ? dpBlueRationaleTextEl : dpRedRationaleTextEl;
+    if (!btnEl || !bubbleEl || !innerEl || !textEl || !dpIsValidRationale(text)) return;
+
     clearTimeout(dpRationaleTimers[side]);
+    clearTimeout(dpRationaleSeqTimers[side]);
+
     textEl.textContent = text;
-    el.classList.add('dp-visible');
+
+    /* innerEl is absolutely positioned (bottom:0, no top), so its own
+       height is intrinsic to the text content regardless of the
+       bubble's current height/transform — scrollHeight here is the
+       real target. Set it on the box directly (no transition on
+       `height` itself — only `transform`/`opacity` animate) so the
+       box is already the correct final size before the grow-in
+       transform starts playing. */
+    var targetH = Math.max(DP_RATIONALE_MIN_H, Math.min(DP_RATIONALE_MAX_H, innerEl.scrollHeight));
+    bubbleEl.style.height = targetH + 'px';
+
+    /* Always restart from the fully-hidden state so a rapid re-trigger
+       (this side firing again mid-animation) replays the whole
+       pop-then-grow sequence cleanly instead of jumping from wherever
+       the previous animation happened to be. */
+    btnEl.style.transitionDuration = '';
+    bubbleEl.style.transitionDuration = '';
+    btnEl.classList.remove('dp-visible');
+    bubbleEl.classList.remove('dp-visible');
+    void btnEl.offsetWidth; /* force reflow so the class re-add below reliably re-triggers the transition */
+
+    btnEl.classList.add('dp-visible');
+
+    dpRationaleSeqTimers[side] = setTimeout(function () {
+      bubbleEl.classList.add('dp-visible');
+    }, DP_AI_BTN_POP_MS);
+
     dpRationaleTimers[side] = setTimeout(function () {
-      el.classList.remove('dp-visible');
-    }, 8000);
+      dpHideRationaleSide(side);
+    }, 10000);
+  }
+
+  function dpHideRationaleSide(side) {
+    var btnEl    = side === 'blue' ? dpBlueAiBtnEl : dpRedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
+    if (!btnEl || !bubbleEl) return;
+    clearTimeout(dpRationaleSeqTimers[side]);
+
+    var bubbleHideMs = DP_BUBBLE_GROW_MS / DP_RATIONALE_HIDE_MULT;
+    var btnHideMs    = DP_AI_BTN_POP_MS  / DP_RATIONALE_HIDE_MULT;
+
+    /* Reverse of the show sequence — bubble shrinks first, then the
+       button pops out — at half the duration each. */
+    bubbleEl.style.transitionDuration = bubbleHideMs + 'ms';
+    bubbleEl.classList.remove('dp-visible');
+
+    dpRationaleSeqTimers[side] = setTimeout(function () {
+      btnEl.style.transitionDuration = btnHideMs + 'ms';
+      btnEl.classList.remove('dp-visible');
+    }, bubbleHideMs);
   }
 
   function dpHideRationaleBubbles() {
     clearTimeout(dpRationaleTimers.blue);
     clearTimeout(dpRationaleTimers.red);
-    if (dpBlueRationaleEl) dpBlueRationaleEl.classList.remove('dp-visible');
-    if (dpRedRationaleEl)  dpRedRationaleEl.classList.remove('dp-visible');
+    dpHideRationaleSide('blue');
+    dpHideRationaleSide('red');
   }
 
   /* ── Header ────────────────────────────────────────────────── */
@@ -3173,30 +3289,43 @@
     dpBlueC = dpCreateCarousel(document.getElementById('dp-blue-viewport'), -1);
     dpRedC  = dpCreateCarousel(document.getElementById('dp-red-viewport'),  +1);
 
-    dpBlueRationaleEl = document.createElement('div');
-    dpBlueRationaleEl.id = 'dp-rationale-blue';
-    dpBlueRationaleEl.className = 'dp-rationale';
-    dpBlueRationaleEl.innerHTML = '<div class="dp-rationale-inner"><span class="dp-rationale-text" id="dp-rationale-blue-text"></span></div>';
-    document.body.appendChild(dpBlueRationaleEl);
+    dpBlueAiBtnEl = document.createElement('div');
+    dpBlueAiBtnEl.id = 'dp-ai-button-blue';
+    dpBlueAiBtnEl.className = 'dp-ai-button';
+    document.body.appendChild(dpBlueAiBtnEl);
 
-    dpRedRationaleEl = document.createElement('div');
-    dpRedRationaleEl.id = 'dp-rationale-red';
-    dpRedRationaleEl.className = 'dp-rationale';
-    dpRedRationaleEl.innerHTML = '<div class="dp-rationale-inner"><span class="dp-rationale-text" id="dp-rationale-red-text"></span></div>';
-    document.body.appendChild(dpRedRationaleEl);
+    dpRedAiBtnEl = document.createElement('div');
+    dpRedAiBtnEl.id = 'dp-ai-button-red';
+    dpRedAiBtnEl.className = 'dp-ai-button';
+    document.body.appendChild(dpRedAiBtnEl);
 
-    dpBlueRationaleTextEl = document.getElementById('dp-rationale-blue-text');
-    dpRedRationaleTextEl  = document.getElementById('dp-rationale-red-text');
+    dpBlueRationaleBubbleEl = document.createElement('div');
+    dpBlueRationaleBubbleEl.id = 'dp-rationale-bubble-blue';
+    dpBlueRationaleBubbleEl.className = 'dp-rationale-bubble';
+    dpBlueRationaleBubbleEl.innerHTML = '<div class="dp-rationale-bubble-inner"><span class="dp-rationale-text" id="dp-rationale-blue-text"></span></div>';
+    document.body.appendChild(dpBlueRationaleBubbleEl);
+
+    dpRedRationaleBubbleEl = document.createElement('div');
+    dpRedRationaleBubbleEl.id = 'dp-rationale-bubble-red';
+    dpRedRationaleBubbleEl.className = 'dp-rationale-bubble';
+    dpRedRationaleBubbleEl.innerHTML = '<div class="dp-rationale-bubble-inner"><span class="dp-rationale-text" id="dp-rationale-red-text"></span></div>';
+    document.body.appendChild(dpRedRationaleBubbleEl);
+
+    dpBlueRationaleInnerEl = dpBlueRationaleBubbleEl.querySelector('.dp-rationale-bubble-inner');
+    dpRedRationaleInnerEl  = dpRedRationaleBubbleEl.querySelector('.dp-rationale-bubble-inner');
+    dpBlueRationaleTextEl  = document.getElementById('dp-rationale-blue-text');
+    dpRedRationaleTextEl   = document.getElementById('dp-rationale-red-text');
   }
   buildDraftPredict();
 
-  /* ── Draft Predict debug button — local layout/behavior testing only.
-     Fires a fake blue-side reveal (with rationale), then 3s later a fake
-     red-side reveal — enough to see the reveal settle AND the rationale
-     bubble appear in the spot the other side's panel just vacated,
-     without needing a real draft running. Gated behind ?debugdp=1 so it
-     never appears on a real broadcast page load. */
+  /* ── Draft Predict debug buttons — local layout/behavior testing only.
+     Gated behind ?debugdp=1 so neither ever appears on a real broadcast
+     page load. */
   if (/[?&]debugdp=1(?:&|$)/.test(location.search)) {
+    /* Fires a fake blue-side reveal (with rationale), then 3s later a
+       fake red-side reveal — enough to see the reveal settle AND the
+       rationale bubble/button sequence fire, without needing a real
+       draft running. */
     var dpDebugBtn = document.createElement('button');
     dpDebugBtn.textContent = 'TEST DRAFT PREDICT';
     dpDebugBtn.style.cssText =
@@ -3206,7 +3335,46 @@
       'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
     dpDebugBtn.onclick = function () { window.__dpTestReveal(); };
     document.body.appendChild(dpDebugBtn);
+
+    /* Fires ONLY the rationale button-pop/bubble-grow sequence directly
+       (bypassing the whole pick-queue/reveal dance above) — for tuning
+       the animation/sizing itself in isolation. Toggles show/hide on
+       repeat clicks, cycling through a short/medium/long sample
+       rationale each time so the height-scaling behavior is easy to
+       see across the min/max range. */
+    var dpDebugRationaleBtn = document.createElement('button');
+    dpDebugRationaleBtn.textContent = 'TEST RATIONALE';
+    dpDebugRationaleBtn.style.cssText =
+      'position:fixed;top:10px;left:170px;z-index:99999;' +
+      'background:#40c0f0;color:#161616;border:none;border-radius:4px;' +
+      'padding:8px 14px;font-family:sans-serif;font-weight:700;font-size:13px;' +
+      'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+    dpDebugRationaleBtn.onclick = function () { window.__dpTestRationale(); };
+    document.body.appendChild(dpDebugRationaleBtn);
   }
+
+  var DP_TEST_RATIONALES = [
+    'Short and simple call.',
+    'This hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex picks and keeps the mid lane matchup favorable heading into the late game.',
+    'A long one to stress-test the maximum bubble height: this pick counters their core carry directly, denies a critical objective-control tool, and keeps the draft flexible enough for a follow-up ban if the enemy shows a different priority next rotation, which the data suggests is a live possibility given their last five games and their coach’s tendencies in similar series.'
+  ];
+  var dpTestRationaleIdx    = 0;
+  var dpDebugRationaleShown = false;
+
+  window.__dpTestRationale = function () {
+    if (dpDebugRationaleShown) {
+      dpHideRationaleBubbles();
+      dpDebugRationaleShown = false;
+      return;
+    }
+    var blueText = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
+    dpTestRationaleIdx++;
+    var redText = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
+    dpTestRationaleIdx++;
+    dpShowRationaleBubble('blue', blueText);
+    dpShowRationaleBubble('red', redText);
+    dpDebugRationaleShown = true;
+  };
 
   window.__dpTestReveal = function () {
     var fakeCands = function (prefix) {

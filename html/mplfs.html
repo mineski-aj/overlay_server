@@ -1557,9 +1557,21 @@
     #lu-intro-video, #lu-stinger-video {
       position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
       object-fit: cover; display: none; pointer-events: none;
+      /* Fades in instead of popping the instant a frame is decoded — see
+         the double-rAF class-add in luPlayIntroThenShow. Opacity-only
+         transition (no layout/paint properties touched), same cheap
+         compositor-driven approach as #scene-video-0/1's crossfade, so
+         this costs nothing extra on top of the video decode itself. Reset
+         to opacity:0 by luHideVideoLayer on every teardown — these two
+         elements are shared/reused across every Team Line-up show AND
+         every Blue<->Red switch, so a stale 'lu-video-visible' left over
+         from the previous run would otherwise skip the fade and pop in. */
+      opacity: 0;
+      transition: opacity 250ms ease;
     }
     #lu-intro-video   { z-index: 300; }
     #lu-stinger-video { z-index: 301; }
+    #lu-intro-video.lu-video-visible, #lu-stinger-video.lu-video-visible { opacity: 1; }
 
     /* ── Phase 1 — group photo intro ──
        Full-bleed 1920×1080 team photo (see /photos/Group/<TRICODE>_GROUP.png)
@@ -4989,6 +5001,18 @@
       items:      '/assets/bgloopwaves2.webm',
       stats:      '/assets/bgloopwaves2.webm',
     };
+    /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
+       needs to know which file to play once THEY start it) but must NOT
+       get transitionToImpl's automatic immediate showSceneVideo call
+       below — Team Line-up's Phase 0 is its own fullscreen intro+stinger
+       (see #lu-intro-video/#lu-stinger-video) meant to fully cover the
+       screen before anything else is visible; starting the ambient loop
+       immediately at transition time exposed it underneath the still-
+       loading Phase 0 video (match-state fetch + clip metadata/decode).
+       luRevealLineup already calls showSceneVideo itself, later, at the
+       correct moment — once the stinger is already covering the screen —
+       so this only suppresses the redundant EARLY call, not the feature. */
+    const SCENE_VIDEO_DEFERRED_START = new Set(['lineupblue', 'lineupred']);
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
     let sceneVideoVisible = false;
@@ -7479,6 +7503,7 @@
     function luHideVideoLayer(el) {
       el.pause();
       el.style.display = 'none';
+      el.classList.remove('lu-video-visible'); /* reset for the next run's fade-in — see CSS comment */
       el.removeAttribute('src');
       el.load();
     }
@@ -7535,6 +7560,26 @@
       return new Promise(resolve => setTimeout(resolve, Math.max(0, ms)));
     }
 
+    /* Fades a Phase-0 video layer in via CSS opacity once it has actually
+       started playing — waiting for .play() to resolve (not just setting
+       src/display) means the fade ramps up over a real decoded frame
+       instead of dissolving in from nothing. Two rAFs (not a synchronous
+       `void el.offsetWidth` layout read) for the same stutter-avoiding
+       reason as luRevealLineup's double-rAF elsewhere in this file —
+       this runs mid-video-decode too, and a synchronous layout read
+       right then is what caused that earlier stutter. Token-guarded so a
+       side switch (Blue -> Red or vice versa) that lands mid-fade can't
+       apply a stale class add after this run's been superseded. */
+    function luFadeInVideoLayer(el, token, side) {
+      requestAnimationFrame(() => {
+        if (token !== luIntroTokens[side]) return;
+        requestAnimationFrame(() => {
+          if (token !== luIntroTokens[side]) return;
+          el.classList.add('lu-video-visible');
+        });
+      });
+    }
+
     async function luPlayIntroThenShow(side, token) {
       const s = LU_SIDES[side];
       const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
@@ -7559,6 +7604,7 @@
         if (token !== luIntroTokens[side]) return; /* superseded while loading the intro */
         introDurationMs = (luIntroVideo.duration || 0) * 1000;
         try { await luIntroVideo.play(); } catch (e) {}
+        luFadeInVideoLayer(luIntroVideo, token, side);
       }
 
       await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
@@ -7571,6 +7617,7 @@
       if (token !== luIntroTokens[side]) return; /* superseded while loading the stinger */
       const stingerDurationMs = (luStingerVideo.duration || 0) * 1000;
       try { await luStingerVideo.play(); } catch (e) {}
+      luFadeInVideoLayer(luStingerVideo, token, side);
 
       /* The stinger has taken over — the intro is done, hide it now instead
          of leaving it lingering underneath until the whole overlay comes
@@ -8145,8 +8192,10 @@
          for them would set the video src to undefined instead. Every
          scene's own showSceneVideo(...) call further down the line still
          fires too, but by then it's a same-src no-op for anything already
-         started here (see showSceneVideo's early-return branch). */
-      if (SCENE_VIDEO_SRC[newFeature]) showSceneVideo(newFeature);
+         started here (see showSceneVideo's early-return branch).
+         SCENE_VIDEO_DEFERRED_START features (Team Line-up) are skipped
+         here on purpose too — see that Set's own comment above. */
+      if (SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature)) showSceneVideo(newFeature);
       activeFeature = newFeature;
     }
 
