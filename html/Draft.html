@@ -1289,6 +1289,43 @@
       0%   { transform: translateX(-120%); }
       100% { transform: translateX(220%); }
     }
+
+    /* ── Rationale bubble — sits in the exact box the OTHER side's panel
+       just vacated, same mask/slide approach as .dp-panel (see comment
+       above it): fixed-size masked box, inner content translates within
+       it, so it slides in from the same "just animated out" spot instead
+       of popping in place. ── */
+    .dp-rationale {
+      position: absolute;
+      top: 644px;
+      width: 758px;
+      height: 136px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #dp-rationale-blue { left: 0px; }
+    #dp-rationale-red  { left: 1162px; }
+    .dp-rationale-inner {
+      width: 100%; height: 100%;
+      box-sizing: border-box;
+      display: flex; align-items: center;
+      padding: 16px 26px;
+      background: rgba(22,22,22,.95);
+      border-left: 4px solid #666;
+      transform: translateY(136px);
+      opacity: 0;
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .4s ease;
+    }
+    #dp-rationale-blue .dp-rationale-inner { border-left-color: #004dd5; }
+    #dp-rationale-red  .dp-rationale-inner { border-left-color: #f31400; }
+    .dp-rationale.dp-visible .dp-rationale-inner { transform: none; opacity: 1; }
+    .dp-rationale-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      line-height: 1.35;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
@@ -2441,6 +2478,7 @@
 
   /* ── App state ─────────────────────────────────────────────── */
   var dpBluePanelEl, dpRedPanelEl, dpBlueHeaderTextEl, dpRedHeaderTextEl;
+  var dpBlueRationaleEl, dpRedRationaleEl, dpBlueRationaleTextEl, dpRedRationaleTextEl;
   var dpBlueC = null;
   var dpRedC  = null;
   var dpActivePanel    = null;
@@ -2452,6 +2490,17 @@
   var dpDisplayedDraftRef = null;
   var dpPickQueue       = [];
   var dpPrevDraftKey    = null;
+
+  var dpRationaleTimers  = { blue: null, red: null };
+
+  /* Set true for the duration of a __dpTestReveal() debug run — makes
+     dpFetchLive() skip its real poll entirely, so the REAL live draft
+     feed (still polling every 3s in the background regardless of
+     debug mode) can't clobber the fake test state with real production
+     data mid-demo (this genuinely happened: the real feed's current
+     battle is fully decided, so its own poll concluded "draft over" and
+     called dpHideAll() on top of the fake test ~3s in, wiping it). */
+  var dpDebugTestActive = false;
 
   /* Real, live draft progression (see dpTrackRealDraftSeat, hooked into
      poll() below) — straight from THIS page's own already-trusted draft
@@ -2601,6 +2650,14 @@
     dpBluePanelEl.classList.toggle('dp-visible', side === 'blue');
     dpRedPanelEl.classList.toggle('dp-visible', side === 'red');
 
+    /* If this same side's rationale bubble is still up (within its 4s
+       window) when this side's own panel comes back — e.g. a fast
+       back-to-back turn on the same side — just let the panel take the
+       spot back immediately rather than waiting out the bubble's timer. */
+    clearTimeout(dpRationaleTimers[side]);
+    var ownBubbleEl = side === 'blue' ? dpBlueRationaleEl : dpRedRationaleEl;
+    if (ownBubbleEl) ownBubbleEl.classList.remove('dp-visible');
+
     dpActivePanel  = side;
     dpPanelVisible = true;
   }
@@ -2610,6 +2667,45 @@
     dpRedPanelEl.classList.remove('dp-visible');
     dpPanelVisible  = false;
     dpUserHidden    = true;
+    dpHideRationaleBubbles();
+  }
+
+  /* ── Rationale bubble ─────────────────────────────────────────
+     Shows a just-completed reveal's rationale text immediately, in the
+     same box that reveal's own panel is vacating — fires from
+     dpProcessPickQueue's onDone the instant that pick's settle animation
+     finishes, not deferred to whatever comes next. Only for a top-5 AI
+     call (see the rank check at its call site) and only when a real
+     rationale string is present. */
+  /* Guards against the API sending a literal null, an empty string, a
+     whitespace-only string, or the literal text "null"/"undefined" (seen
+     coming through as a string, not an actual null, at least once) —
+     none of these are a real rationale worth showing a bubble for. */
+  function dpIsValidRationale(text) {
+    if (!text || typeof text !== 'string') return false;
+    var t = text.trim();
+    if (!t) return false;
+    var lower = t.toLowerCase();
+    return lower !== 'null' && lower !== 'undefined';
+  }
+
+  function dpShowRationaleBubble(side, text) {
+    var el     = side === 'blue' ? dpBlueRationaleEl : dpRedRationaleEl;
+    var textEl = side === 'blue' ? dpBlueRationaleTextEl : dpRedRationaleTextEl;
+    if (!el || !textEl || !dpIsValidRationale(text)) return;
+    clearTimeout(dpRationaleTimers[side]);
+    textEl.textContent = text;
+    el.classList.add('dp-visible');
+    dpRationaleTimers[side] = setTimeout(function () {
+      el.classList.remove('dp-visible');
+    }, 6000);
+  }
+
+  function dpHideRationaleBubbles() {
+    clearTimeout(dpRationaleTimers.blue);
+    clearTimeout(dpRationaleTimers.red);
+    if (dpBlueRationaleEl) dpBlueRationaleEl.classList.remove('dp-visible');
+    if (dpRedRationaleEl)  dpRedRationaleEl.classList.remove('dp-visible');
   }
 
   /* ── Header ────────────────────────────────────────────────── */
@@ -2660,7 +2756,15 @@
       var newArr   = ns[arrName] || [];
       var knownLen = (dpDisplayedDraftRef[arrName] || []).length;
       for (var i = knownLen; i < newArr.length; i++) {
-        var pred = dpPredictionAt((dpPrevData && dpPrevData.predictions) || newData.predictions, side, type, i);
+        /* newData.predictions FIRST, not dpPrevData's — the API only
+           fills in a slot's `rationale` once that pick/ban has actually
+           happened; dpPrevData is the poll from BEFORE this reveal, where
+           rationale was still null. Using it here silently starved the
+           rationale bubble of real text for every single reveal (real
+           confirmed bug: slot 14 above had a full rationale in the
+           CURRENT poll, but dpPrevData's copy of that same slot still had
+           rationale:null since it hadn't happened yet as of that poll). */
+        var pred = dpPredictionAt(newData.predictions || (dpPrevData && dpPrevData.predictions), side, type, i);
         added.push({ heroId: newArr[i], side: side.toLowerCase(), type: type.toLowerCase(), pred: pred, occurrence: i });
       }
     }
@@ -2728,19 +2832,75 @@
     if (!dpUserHidden) dpShowPanel(entry.side);
 
     function onDone() {
-      dpPickQueue.shift();
-      var data = dpActiveData || fallbackData;
-      if (dpPickQueue.length) {
-        dpProcessPickQueue(data);
-      } else {
-        var latest = dpDeriveActivePrediction(data);
-        if (latest) {
-          dpRenderPrediction(latest, data);
-        } else {
-          /* No more predictions — draft is complete, hide the overlay */
-          dpHideAll();
+      function decide() {
+        /* Rationale bubble fires immediately as THIS pick's own reveal
+           finishes — in the same box that pick's panel is about to
+           vacate — not deferred to whenever the opposite side happens
+           to go next (that could be a while away, or never, if this is
+           the last slot). Only for a top-5 AI call — see
+           dpShowRationaleBubble and its own comment for why
+           6th-10th/unranked isn't shown. */
+        var showedBubble = false;
+        if (!dpUserHidden && entry.pred && dpIsValidRationale(entry.pred.rationale)) {
+          var rankIdx = entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; });
+          if (rankIdx > -1 && rankIdx < 5) {
+            dpShowRationaleBubble(entry.side, entry.pred.rationale);
+            showedBubble = true;
+          }
         }
+
+        function advance() {
+          dpPickQueue.shift();
+          var data = dpActiveData || fallbackData;
+          if (dpPickQueue.length) {
+            dpProcessPickQueue(data);
+          } else {
+            var latest = dpDeriveActivePrediction(data);
+            if (latest) {
+              dpRenderPrediction(latest, data);
+            } else {
+              /* No more predictions — draft is complete, hide the overlay */
+              dpHideAll();
+            }
+          }
+        }
+
+        /* A same-side back-to-back turn (MLBB's pick phase has these —
+           e.g. Red picks twice in a row) would otherwise advance to the
+           next entry in this SAME synchronous tick, whose own dpShowPanel
+           call clears this side's bubble as part of the normal "let a
+           same-side interrupt just happen" behavior — before the browser
+           ever paints a frame with the bubble visible at all. Net result:
+           the bubble gets added and removed with zero visible duration,
+           every single time, for the first half of any same-side pair —
+           this was the actual reason rationale "never showed" in
+           practice, not a wrong-slot lookup (verified separately that the
+           slot/occurrence matching itself is correct). A short deferral
+           guarantees at least one real paint before that can happen. */
+        if (showedBubble) setTimeout(advance, 50);
+        else advance();
       }
+
+      if (entry.pred && !dpIsValidRationale(entry.pred.rationale)) {
+        /* The API doesn't always have this slot's rationale ready the
+           INSTANT the pick/ban lands — it can take a beat to backfill
+           (confirmed live: a slot that was null right as the pick
+           happened had full rationale text moments later). Rather than
+           give up immediately on a null captured at detection time, do
+           one extra fetch after a short grace period and use whatever
+           it finds for this exact slot before finally deciding to skip. */
+        setTimeout(function () {
+          fetch('/proxy/predictions', { cache: 'no-store' }).then(function (r) { return r.json(); })
+            .then(function (fresh) {
+              var freshPred = dpPredictionAt(fresh && fresh.predictions, entry.pred.side, entry.pred.type, entry.occurrence);
+              if (freshPred && dpIsValidRationale(freshPred.rationale)) entry.pred = freshPred;
+              decide();
+            })
+            .catch(decide);
+        }, 1500);
+        return;
+      }
+      decide();
     }
 
     var idx = -1;
@@ -2754,24 +2914,18 @@
          slot's top-10 (see dpDetectReveal's comment). */
       var data2    = dpActiveData || fallbackData;
       var sidePred = entry.pred;
-      if (sidePred) {
+      var cands    = sidePred ? sidePred.candidates.slice(0, 10) : [];
+      var realIdx  = -1;
+      for (var k = 0; k < cands.length; k++) { if (cands[k].heroId === entry.heroId) { realIdx = k; break; } }
+      /* The real pick/ban is genuinely outside the AI's top 10 (or there
+         was no predictions[] entry for this slot at all) — deliberately
+         NOT shown at all in that case (no fabricated placeholder card):
+         just fall through to the idx===-1 check below and move straight
+         on to the next prediction. */
+      if (realIdx > -1) {
         dpSetHeaderText(entry.side,
           entry.side === 'blue' ? (data2.blueTeam && data2.blueTeam.name) : (data2.redTeam && data2.redTeam.name),
           sidePred.type);
-        var cands = sidePred.candidates.slice(0, 10);
-        if (!cands.some(function (c) { return c.heroId === entry.heroId; })) {
-          /* The real pick/ban is genuinely outside the AI's whole
-             candidate list, not just outside the top 10 it sliced to
-             — an entirely normal outcome (the model's guess doesn't
-             always include what actually happens). Without this,
-             `actual` comes back undefined, the splice never runs,
-             `cands` never contains entry.heroId, idx stays -1 below,
-             and the settle animation gets silently skipped — this was
-             the actual cause of "the pick animation isn't working". */
-          var actual = sidePred.candidates.filter(function (c) { return c.heroId === entry.heroId; })[0]
-            || { heroId: entry.heroId, heroName: '', probability: 0 };
-          cands.splice(cands.length - 1, 1, actual);
-        }
         targetC.init(cands);
         dpActivePanel   = entry.side;
         dpDisplayedSlot = sidePred.slot;
@@ -2779,9 +2933,24 @@
       }
     }
 
-    /* Hero still not in carousel (no prediction data at all) — advance
-       queue immediately. */
-    if (idx === -1) { onDone(); return; }
+    /* Hero not among the top 10 (or no prediction data at all) — nothing
+       to reveal for this one. The panel was already slid IN for this
+       entry (dpShowPanel above, before we knew there'd be no card to
+       settle on) — slide it back OUT properly instead of just cutting
+       to whatever's next, matching every other exit from this panel.
+       Waits for the panel's own .45s slide transition (see .dp-panel-inner
+       in the <style> block) before continuing. */
+    if (idx === -1) {
+      if (!dpUserHidden) {
+        var elSide = entry.side === 'blue' ? dpBluePanelEl : dpRedPanelEl;
+        elSide.classList.remove('dp-visible');
+        dpPanelVisible = false;
+        setTimeout(onDone, 460);
+      } else {
+        onDone();
+      }
+      return;
+    }
 
     var wasRouletting = targetC.state === 'roulette';
     if (!wasRouletting) targetC.startRoulette();
@@ -2854,6 +3023,7 @@
   }
 
   function dpFetchLive() {
+    if (dpDebugTestActive) return; /* real polling suspended during a __dpTestReveal() run — see there */
     fetch('/proxy/predictions', { cache: 'no-store' }).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
@@ -2904,6 +3074,7 @@
           if (dpBlueC) { clearTimeout(dpBlueC.clearTimer); cancelAnimationFrame(dpBlueC.raf); dpBlueC.isAnimating = false; }
           if (dpRedC)  { clearTimeout(dpRedC.clearTimer);  cancelAnimationFrame(dpRedC.raf);  dpRedC.isAnimating  = false; }
           dpPickQueue = [];
+          dpHideRationaleBubbles();
         }
         dpApplyData(data);
       } else {
@@ -3001,8 +3172,104 @@
     dpRedHeaderTextEl  = document.getElementById('dp-red-header-text');
     dpBlueC = dpCreateCarousel(document.getElementById('dp-blue-viewport'), -1);
     dpRedC  = dpCreateCarousel(document.getElementById('dp-red-viewport'),  +1);
+
+    dpBlueRationaleEl = document.createElement('div');
+    dpBlueRationaleEl.id = 'dp-rationale-blue';
+    dpBlueRationaleEl.className = 'dp-rationale';
+    dpBlueRationaleEl.innerHTML = '<div class="dp-rationale-inner"><span class="dp-rationale-text" id="dp-rationale-blue-text"></span></div>';
+    document.body.appendChild(dpBlueRationaleEl);
+
+    dpRedRationaleEl = document.createElement('div');
+    dpRedRationaleEl.id = 'dp-rationale-red';
+    dpRedRationaleEl.className = 'dp-rationale';
+    dpRedRationaleEl.innerHTML = '<div class="dp-rationale-inner"><span class="dp-rationale-text" id="dp-rationale-red-text"></span></div>';
+    document.body.appendChild(dpRedRationaleEl);
+
+    dpBlueRationaleTextEl = document.getElementById('dp-rationale-blue-text');
+    dpRedRationaleTextEl  = document.getElementById('dp-rationale-red-text');
   }
   buildDraftPredict();
+
+  /* ── Draft Predict debug button — local layout/behavior testing only.
+     Fires a fake blue-side reveal (with rationale), then 3s later a fake
+     red-side reveal — enough to see the reveal settle AND the rationale
+     bubble appear in the spot the other side's panel just vacated,
+     without needing a real draft running. Gated behind ?debugdp=1 so it
+     never appears on a real broadcast page load. */
+  if (/[?&]debugdp=1(?:&|$)/.test(location.search)) {
+    var dpDebugBtn = document.createElement('button');
+    dpDebugBtn.textContent = 'TEST DRAFT PREDICT';
+    dpDebugBtn.style.cssText =
+      'position:fixed;top:10px;left:10px;z-index:99999;' +
+      'background:#f0c040;color:#161616;border:none;border-radius:4px;' +
+      'padding:8px 14px;font-family:sans-serif;font-weight:700;font-size:13px;' +
+      'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+    dpDebugBtn.onclick = function () { window.__dpTestReveal(); };
+    document.body.appendChild(dpDebugBtn);
+  }
+
+  window.__dpTestReveal = function () {
+    var fakeCands = function (prefix) {
+      var arr = [];
+      for (var i = 0; i < 10; i++) {
+        arr.push({ heroId: prefix + '_' + i, heroName: 'HERO ' + (i + 1), probability: 28 - i * 2.4 });
+      }
+      return arr;
+    };
+    var bluePred = {
+      slot: 1, side: 'BLUE', type: 'BAN', candidates: fakeCands('blue'),
+      rationale: 'Sample rationale for the BLUE ban — this hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex picks.'
+    };
+    var redPred = {
+      slot: 2, side: 'RED', type: 'BAN', candidates: fakeCands('red'),
+      rationale: 'Sample rationale for the RED ban — a second explanation, on the other side, to confirm the bubble reappears correctly opposite the first one.'
+    };
+    /* A 3rd, permanently-undecided prediction — never added to
+       draftState, so dpDeriveActivePrediction always finds it as the
+       still-active slot after blue+red resolve, instead of concluding
+       "draft complete" and calling dpHideAll() right after red settles.
+       Without this, the whole panel (and the bubble, mid-4s-hold) got
+       wiped within ~100ms of red's reveal finishing — fine for a REAL
+       draft (that's the correct end-of-draft behavior), but it cut this
+       debug tool's own demo off before you could see the bubble's full
+       timing/layout. */
+    var thirdPred = {
+      slot: 3, side: 'BLUE', type: 'BAN', candidates: fakeCands('blue3'),
+      rationale: null
+    };
+    /* predictions[] must list every slot (not just the one being
+       revealed) and draftState must already reflect "blue decided, red
+       not yet" BEFORE the blue reveal starts — otherwise, the instant
+       blue's reveal finishes, dpDeriveActivePrediction sees nothing left
+       undecided, concludes the draft is over, and dpHideAll() wipes the
+       whole panel (and the pending rationale) before the red reveal ever
+       gets a chance to run. This exact mistake was why the rationale
+       bubble never appeared in the first version of this harness — a bug
+       in the fake test data, not in the real reveal logic it exercises. */
+    var fakeData = {
+      blueTeam: { name: 'BLUE' }, redTeam: { name: 'RED' },
+      predictions: [bluePred, redPred, thirdPred],
+      draftState: { blueBans: ['blue_2'], redBans: [], bluePicks: [], redPicks: [] }
+    };
+
+    dpDebugTestActive = true;
+    dpHideRationaleBubbles();
+    dpActiveData = fakeData;
+    dpUserHidden = false;
+    dpPickQueue = [{ heroId: 'blue_2', side: 'blue', type: 'ban', pred: bluePred, occurrence: 0 }];
+    dpProcessPickQueue(fakeData);
+
+    /* Real polling resumes 10s in — comfortably past both reveals
+       (~2.7s + ~2.7s) and the bubble's own 4s hold, so the real feed
+       can take back over cleanly once the demo's done. */
+    setTimeout(function () { dpDebugTestActive = false; }, 10000);
+
+    setTimeout(function () {
+      fakeData.draftState.redBans = ['red_3']; /* lets dpDeriveActivePrediction correctly conclude "done" after this reveal instead of re-showing red's roulette forever */
+      dpPickQueue = [{ heroId: 'red_3', side: 'red', type: 'ban', pred: redPred, occurrence: 0 }];
+      dpProcessPickQueue(fakeData);
+    }, 3000);
+  };
 
   /* Restore real server-side shown/hidden state on load
      (checkOverlays.draftpredict) — mirrors the Draft Recap restore

@@ -1,211 +1,149 @@
 {
-  "battleid": "3602881791038403108",
+  "battleid": "3602881756678663025",
   "date": "2026-08-28",
-  "game_start_time": "2026-08-28T07:00:56.988Z",
-  "game_end_time": "2026-08-28T07:09:26.554Z",
-  "game_duration": "00:28",
-  "camp1_tricode": "ONIC",
-  "camp2_tricode": "TWIS",
-  "camp1": {
-    "tricode": "ONIC",
+  "game_start_time": "2026-08-28T06:32:43.977Z",
+  "game_end_time": "2026-08-28T06:44:04.665Z",
+  "game_duration": "01:10",
+  "home": {
+    "tricode": "TWIS",
+    "camp_code": "10975",
+    "camp_name": "Twisted Minds PH",
     "players": [
       {
         "player1": {
-          "slot": "slot1",
-          "name": "watch1",
-          "player_name": "Kirk",
+          "player_name": "Lansu",
           "role": "EXP LANER",
-          "hero_id": 131,
           "avg_bpm": 104,
           "peak_bpm": 104,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 104,
-          "item_timeline": []
+          "avg_clash_bpm": 104,
+          "bpm_on_end": 104
         }
       },
       {
         "player2": {
-          "slot": "slot2",
-          "name": "watch2",
-          "player_name": "K1NGKONG",
+          "player_name": "Sensu1",
           "role": "JUNGLER",
-          "hero_id": 3,
           "avg_bpm": 75,
           "peak_bpm": 75,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 75,
-          "item_timeline": []
+          "avg_clash_bpm": 75,
+          "bpm_on_end": 75
         }
       },
       {
         "player3": {
-          "slot": "slot3",
-          "name": "watch3",
-          "player_name": "SuperFrince",
+          "player_name": "Sionnn",
           "role": "MID LANER",
-          "hero_id": 38,
           "avg_bpm": 110,
           "peak_bpm": 110,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 110,
-          "item_timeline": [
-            {
-              "game_time_s": 6,
-              "game_time_fmt": "00:06",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "avg_clash_bpm": 110,
+          "bpm_on_end": 110
         }
       },
       {
         "player4": {
-          "slot": "slot4",
-          "name": "watch4",
-          "player_name": "SUPERYOSHI",
+          "player_name": "Tracyyy",
           "role": "ROAMER",
-          "hero_id": 132,
           "avg_bpm": 88,
           "peak_bpm": 88,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 88,
-          "item_timeline": []
+          "avg_clash_bpm": 88,
+          "bpm_on_end": 88
         }
       },
       {
         "player5": {
-          "slot": "slot5",
-          "name": "watch5",
-          "player_name": "Savero",
+          "player_name": "Bennyqt",
           "role": "GOLD LANER",
-          "hero_id": 105,
           "avg_bpm": 101,
           "peak_bpm": 101,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 101,
-          "item_timeline": [
-            {
-              "game_time_s": 9,
-              "game_time_fmt": "00:09",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "avg_clash_bpm": 101,
+          "bpm_on_end": 101
         }
       }
     ]
   },
-  "camp2": {
-    "tricode": "TWIS",
+  "away": {
+    "tricode": "ONIC",
+    "camp_code": "10764",
+    "camp_name": "ONIC PH",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
-          "player_name": "Lansu",
+          "player_name": "Kirk",
           "role": "EXP LANER",
-          "hero_id": 93,
           "avg_bpm": 89,
           "peak_bpm": 89,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 89,
-          "item_timeline": []
+          "avg_clash_bpm": 89,
+          "bpm_on_end": 89
         }
       },
       {
         "player2": {
-          "slot": "slot9",
-          "name": "watch9",
-          "player_name": "Sensu1",
+          "player_name": "K1NGKONG",
           "role": "JUNGLER",
-          "hero_id": 15,
           "avg_bpm": 89,
           "peak_bpm": 89,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 89,
-          "item_timeline": []
+          "avg_clash_bpm": 89,
+          "bpm_on_end": 89
         }
       },
       {
         "player3": {
-          "slot": "slot8",
-          "name": "watch8",
-          "player_name": "Sionnn",
+          "player_name": "SuperFrince",
           "role": "MID LANER",
-          "hero_id": 14,
           "avg_bpm": 105,
           "peak_bpm": 105,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 105,
-          "item_timeline": []
+          "avg_clash_bpm": 105,
+          "bpm_on_end": 105
         }
       },
       {
         "player4": {
-          "slot": "slot7",
-          "name": "watch7",
-          "player_name": "Tracyyy",
+          "player_name": "SUPERYOSHI",
           "role": "ROAMER",
-          "hero_id": 17,
           "avg_bpm": 84,
           "peak_bpm": 84,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 84,
-          "item_timeline": []
+          "avg_clash_bpm": 84,
+          "bpm_on_end": 84
         }
       },
       {
         "player5": {
-          "slot": "slot6",
-          "name": "watch6",
-          "player_name": "Bennyqt",
+          "player_name": "Savero",
           "role": "GOLD LANER",
-          "hero_id": 100,
           "avg_bpm": 76,
           "peak_bpm": 76,
           "pct_above_120": "0%",
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
-          "avg_clash_bpm": null,
-          "bpm_on_end": 76,
-          "item_timeline": [
-            {
-              "game_time_s": 2,
-              "game_time_fmt": "00:02",
-              "item_id": 1301,
-              "item_name": null,
-              "is_tier3": false
-            }
-          ]
+          "avg_clash_bpm": 76,
+          "bpm_on_end": 76
         }
       }
     ]
@@ -214,7 +152,7 @@
     "lowest_avg_bpm": {
       "camp": "camp1",
       "player": "player2",
-      "player_name": "K1NGKONG",
+      "player_name": "Sensu1",
       "slot": "slot2",
       "name": "watch2",
       "role": "JUNGLER",
@@ -223,12 +161,12 @@
       "pct_above_120": "0%",
       "avg_bpm_at_objectives": null,
       "peak_bpm_at_objectives": null,
-      "avg_clash_bpm": null
+      "avg_clash_bpm": 75
     },
     "highest_avg_bpm": {
       "camp": "camp1",
       "player": "player3",
-      "player_name": "SuperFrince",
+      "player_name": "Sionnn",
       "slot": "slot3",
       "name": "watch3",
       "role": "MID LANER",
@@ -237,12 +175,12 @@
       "pct_above_120": "0%",
       "avg_bpm_at_objectives": null,
       "peak_bpm_at_objectives": null,
-      "avg_clash_bpm": null
+      "avg_clash_bpm": 110
     },
     "highest_peak_bpm": {
       "camp": "camp1",
       "player": "player3",
-      "player_name": "SuperFrince",
+      "player_name": "Sionnn",
       "slot": "slot3",
       "name": "watch3",
       "role": "MID LANER",
@@ -251,17 +189,51 @@
       "pct_above_120": "0%",
       "avg_bpm_at_objectives": null,
       "peak_bpm_at_objectives": null,
-      "avg_clash_bpm": null
+      "avg_clash_bpm": 110
     },
     "lowest_avg_at_objectives": null,
     "highest_peak_at_objectives": null,
-    "lowest_avg_clash_bpm": null,
-    "highest_avg_clash_bpm": null
+    "lowest_avg_clash_bpm": {
+      "camp": "camp1",
+      "player": "player2",
+      "player_name": "Sensu1",
+      "slot": "slot2",
+      "name": "watch2",
+      "role": "JUNGLER",
+      "avg_bpm": 75,
+      "peak_bpm": 75,
+      "pct_above_120": "0%",
+      "avg_bpm_at_objectives": null,
+      "peak_bpm_at_objectives": null,
+      "avg_clash_bpm": 75
+    },
+    "highest_avg_clash_bpm": {
+      "camp": "camp1",
+      "player": "player3",
+      "player_name": "Sionnn",
+      "slot": "slot3",
+      "name": "watch3",
+      "role": "MID LANER",
+      "avg_bpm": 110,
+      "peak_bpm": 110,
+      "pct_above_120": "0%",
+      "avg_bpm_at_objectives": null,
+      "peak_bpm_at_objectives": null,
+      "avg_clash_bpm": 110
+    }
   },
   "clashes": {
-    "clash_count": null,
-    "camp1_avg_bpm_in_clashes": null,
-    "camp2_avg_bpm_in_clashes": null,
-    "clashes": []
+    "clash_count": 1,
+    "camp1_avg_bpm_in_clashes": 96,
+    "camp2_avg_bpm_in_clashes": 89,
+    "clashes": [
+      {
+        "fight_id": 119,
+        "game_time": "00:44",
+        "duration_s": 7,
+        "camp1_avg_bpm": 96,
+        "camp2_avg_bpm": 89
+      }
+    ]
   }
 }

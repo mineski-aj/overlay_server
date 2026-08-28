@@ -1902,16 +1902,25 @@
     }
     .str-logo {
       position: absolute;
-      left: 182px; top: 5px;
+      left: 140px; top: 5px;
       width: 54px; height: 54px;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .str-logo img { max-width: 54px; max-height: 54px; }
+    .str-medal {
+      position: absolute;
+      left: 300px; top: 5px;
+      width: 54px; height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .str-medal img { max-width: 54px; max-height: 54px; }
     .str-tri {
       position: absolute;
-      left: 294px; top: 4px;
+      left: 205px; top: 4px;
       height: 56px;
       display: flex;
       align-items: center;
@@ -6134,8 +6143,8 @@
       }
       requestAnimationFrame(tick);
     }
-    function thFmtPct(v)  { return (Math.max(0, Math.min(100, v))).toFixed(2) + '%'; }
-    function thFmtInt(v)  { return String(Math.round(v)); }
+    function thFmtPct(v)  { return String(Math.round(Math.max(0, Math.min(100, v)))) + '%'; }
+    function thFmtInt(v)  { return Math.round(v).toLocaleString('en-US'); }
     function thFmtDec2(v) { return v.toFixed(2); }
     function thFmtTime(v) {
       const s = Math.max(0, Math.round(v));
@@ -6243,9 +6252,14 @@
        segment first (left column is blue-then-red, right column mirrors
        it as red-then-blue — see hexagonguide.png). Segment width is set
        immediately (only the number inside counts up). ── */
-    function setThBar(elId, blueVal, redVal, blueFmt, redFmt, reversed, animate = true) {
-      const total    = blueVal + redVal;
-      const bluePct  = total > 0 ? (blueVal / total * 100) : 50;
+    function setThBar(elId, blueVal, redVal, blueFmt, redFmt, reversed, animate = true, invertBar = false) {
+      /* invertBar: for stats where LOWER is better (AVG GAME TIME), the
+         bigger bar segment should go to the lower value — weight each
+         side by its inverse instead of its raw value. */
+      const blueWeight = invertBar ? (blueVal > 0 ? 1 / blueVal : 0) : blueVal;
+      const redWeight  = invertBar ? (redVal  > 0 ? 1 / redVal  : 0) : redVal;
+      const total    = blueWeight + redWeight;
+      const bluePct  = total > 0 ? (blueWeight / total * 100) : 50;
       const redPct   = 100 - bluePct;
       const blueId = elId + '-blue', redId = elId + '-red';
       const blueSeg = `<div class="th-bar-seg th-bar-seg-blue" style="width:${bluePct}%"><span id="${blueId}"></span></div>`;
@@ -6284,7 +6298,7 @@
       setThBar('th-bar-dpm',  0, 0, thFmtInt,  thFmtInt,  false, false);
       setThBar('th-bar-dmg',  0, 0, thFmtInt,  thFmtInt,  true,  false);
       setThBar('th-bar-hero', 0, 0, thFmtInt,  thFmtInt,  true,  false);
-      setThBar('th-bar-time', 0, 0, thFmtTime, thFmtTime, true,  false);
+      setThBar('th-bar-time', 0, 0, thFmtTime, thFmtTime, true,  false, true);
     }
 
     function updateThRadarAndBars(ms, h2h) {
@@ -6295,7 +6309,7 @@
       setThBar('th-bar-dpm',  blue.dpm, red.dpm, thFmtInt,  thFmtInt,  false);
       setThBar('th-bar-dmg',  blue.dmg, red.dmg, thFmtInt,  thFmtInt,  true);
       setThBar('th-bar-hero', blue.hero, red.hero, thFmtInt, thFmtInt, true);
-      setThBar('th-bar-time', blue.timeSec, red.timeSec, thFmtTime, thFmtTime, true);
+      setThBar('th-bar-time', blue.timeSec, red.timeSec, thFmtTime, thFmtTime, true, true, true);
     }
 
     /* Wait for <img>/<video> elements to finish loading (or fail) before
@@ -7890,10 +7904,13 @@
       root.innerHTML = stTeams.map((t, i) => {
         const status = statusImg[t.status]
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
+        const medalImg = i === 0 ? 'mplgold.png' : i === 1 ? 'mplsilver.png' : null;
+        const medal = medalImg
+          ? `<div class="str-medal"><img src="${ST_ASSET}${medalImg}" alt=""></div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
           `<img class="str-bg" src="${ST_ASSET}Team_Box.png" alt="">` +
           `<div class="str-move"><img src="${ST_ASSET}${moveImg[t.move] || moveImg.neutral}" alt=""></div>` +
-          `<div class="str-rank">${i + 1}</div>` +
+          `<div class="str-rank">${i + 1}</div>` + medal +
           `<div class="str-logo"><img src="/logos/${encodeURIComponent(t.tri)}.png" onerror="this.style.display='none'" alt=""></div>` +
           `<div class="str-tri">${t.tri}</div>` + status +
           `<div class="str-stat str-c1">${t.mp}</div>` +

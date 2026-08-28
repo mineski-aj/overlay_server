@@ -2100,6 +2100,7 @@
       toggleShowHide: true,
       deferredPreview: true,
       photoModeToggle: true,
+      draftPredictTestButton: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap' },
         { name: 'Draft Predict', key: 'draftpredict' },
@@ -2939,6 +2940,45 @@
           });
         })(ov);
         row.appendChild(dpvb);
+
+        /* Test Draft Predict — fires Draft.html's own window.__dpTestReveal()
+           (a fake blue-then-red reveal, with rationale, for tuning layout —
+           see html/Draft.html) directly inside the preview iframe's
+           contentWindow, same "reach into the loaded page's own JS, no
+           network call" approach as the ◈ Preview button above. Never a
+           real /overlay/... route, so nothing here can ever touch real
+           broadcast state — it only does anything to whatever's currently
+           sitting in this Control-tab preview pane. */
+        if (ov.draftPredictTestButton) {
+          var dptb = document.createElement('button');
+          dptb.className = 'btn btn-action';
+          dptb.textContent = '▶ Test Draft Predict';
+          dptb.addEventListener('click', function () {
+            function fireTest() {
+              var iw = previewIframe.contentWindow;
+              if (iw && typeof iw.__dpTestReveal === 'function') iw.__dpTestReveal();
+            }
+            if (draftPreviewActive) {
+              fireTest();
+            } else {
+              /* Preview iframe isn't loaded yet — piggyback on the ◈
+                 Preview button's own load/activate logic, then chain our
+                 test call onto its onload instead of duplicating the
+                 load/activate bookkeeping here. */
+              var route     = ov.show || ov.hide;
+              var parts     = route.split('/');
+              var eventName = parts[parts.length - 2];
+              dpvb.click();
+              previewIframe.onload = function () {
+                previewIframe.onload = null;
+                var iw = previewIframe.contentWindow;
+                if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
+                fireTest();
+              };
+            }
+          });
+          row.appendChild(dptb);
+        }
       }
       body.appendChild(row);
     }

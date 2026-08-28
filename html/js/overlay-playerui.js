@@ -95,7 +95,7 @@ function puiBuildCard(i) {
 const puiUltiState = {};
 
 function puiUltiColor(i) {
-  return i <= 5 ? '#1E64FF' : '#FF3232';
+  return '#FF3232';
 }
 
 function puiUpdateUlti(i, ref, p) {
