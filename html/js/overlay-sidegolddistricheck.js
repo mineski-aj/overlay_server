@@ -82,10 +82,10 @@ function sgdcPhotoSrc(name, side) {
   return `/photos/${folder}/${encodeURIComponent(name + '_' + folder + '_resized.png')}`;
 }
 
-/* hero/HERO_<heroid>_KOTAK.png — same asset convention as the ranked
-   side-check portraits (overlay-sidecheck-core.js). */
+/* posthero/<heroid>_POST_HERO.png — same asset convention as
+   ingame_red.html/ingame_blue.html's hero portraits. */
 function sgdcHeroSrc(heroid) {
-  return heroid ? `hero/HERO_${heroid}_KOTAK.png` : '';
+  return heroid ? `posthero/${heroid}_POST_HERO.png` : '';
 }
 
 function sgdcFormatGold(v) {
