@@ -135,6 +135,27 @@
     <video id="objective-spawn-video" preload="auto" muted></video>
   </div>
 
+  <!-- [FEATURE: bpm-meter] "Heart-Stopping Moment" BPM meter, built
+       dynamically via overlay-bpmmeter.js. See the #bpmmeter-* CSS block
+       in mploverlay_v7.css for what each of the four nested layers here
+       is responsible for. -->
+  <div id="bpmmeter-clip">
+    <div id="bpmmeter-slide">
+      <div id="bpmmeter-sizewrap">
+        <div class="bpmmeter-shell" id="bpmmeter-shell">
+          <div class="bpmmeter-img-slot">
+            <div class="bpmmeter-img-slot-inner"></div>
+          </div>
+          <div class="bpmmeter-area">
+            <div class="bpmmeter-bar-track" id="bpmmeter-track-a"></div>
+            <div class="bpmmeter-scale-row"><div class="bpmmeter-scale-inner" id="bpmmeter-scale-inner"></div></div>
+            <div class="bpmmeter-bar-track" id="bpmmeter-track-b"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="debug-area">
     <div id="url-row">
       <span class="debug-label">API URL</span>
@@ -232,4 +253,5 @@
 <script src="html/js/overlay-sidegolddistricheck.js"></script>
 <script src="html/js/overlay-sidekdadistricheck.js"></script>
 <script src="html/js/overlay-playerui.js"></script>
+<script src="html/js/overlay-bpmmeter.js"></script>
 <script src="html/js/overlay-debug.js"></script>

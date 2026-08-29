@@ -100,15 +100,48 @@ router.get('/overlay/events', (req, res) => {
   });
 });
 
-// GET /meter/show|hide|plus|minus|clear
+// GET /meter/plus|minus|clear — BPM meter level nudges (mploverlay_v7's
+// overlay-bpmmeter.js). Show/hide moved to the standard checkOverlays
+// pattern below (/overlay/bpmmeter/show|hide) so the dashboard's toggle
+// button gets real showing/hidden state instead of this being fire-and-forget.
 router.get('/meter/:cmd', (req, res) => {
   const cmd = req.params.cmd;
-  if (["show", "hide", "plus", "minus", "clear"].includes(cmd)) {
+  if (["plus", "minus", "clear"].includes(cmd)) {
     state.overlayClients.forEach(c => { try { c.write(`event: meter\ndata: {"cmd":"${cmd}"}\n\n`); } catch {} });
     res.set({ "Cache-Control": "no-store" }).json({ ok: true, cmd });
   } else {
     res.status(404).json({ error: "unknown meter command" });
   }
+});
+
+// GET /overlay/bpmmeter/show
+router.get('/overlay/bpmmeter/show', (req, res) => {
+  state.checkOverlays.bpmmeter = true;
+  state.overlayClients.forEach(c => { try { c.write('event: bpmmeter\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/bpmmeter/hide
+router.get('/overlay/bpmmeter/hide', (req, res) => {
+  state.checkOverlays.bpmmeter = false;
+  state.overlayClients.forEach(c => { try { c.write('event: bpmmeter\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/bpmmeter_tag/show|hide — mpltag.html's independent copy of
+// the BPM meter (see html/mpltag.html's third IIFE). Separate show/hide
+// state from mploverlay_v7's /overlay/bpmmeter above; the level itself is
+// still shared between both via the /meter/plus|minus|clear routes.
+router.get('/overlay/bpmmeter_tag/show', (req, res) => {
+  state.checkOverlays.bpmmeter_tag = true;
+  state.overlayClients.forEach(c => { try { c.write('event: bpmmeter_tag\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+router.get('/overlay/bpmmeter_tag/hide', (req, res) => {
+  state.checkOverlays.bpmmeter_tag = false;
+  state.overlayClients.forEach(c => { try { c.write('event: bpmmeter_tag\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
 // GET /api/draft-roles — returns server-locked player→role assignments for current battleid

@@ -159,12 +159,18 @@ Verified live: opening all 7 of those simultaneously in one browser
 produces exactly **one** `GET /overlay/events` request server-side,
 regardless of how many are open.
 
-**Not yet migrated — `html/fights.html` and
-`html/heart_stopping_moment_v14.html`.** Both use non-standard
-connection patterns (an explicit `host`/`baseUrl` variable instead of
-same-origin, plus their own manual reconnect-on-error logic) that need
+**Not yet migrated — `html/fights.html`.** Uses a non-standard
+connection pattern (an explicit `host`/`baseUrl` variable instead of
+same-origin, plus its own manual reconnect-on-error logic) that needs
 individual verification of same-origin assumptions before swapping in
 the shim — deliberately deferred rather than migrated blind.
+
+(`html/heart_stopping_moment_v14.html`, the old standalone BPM meter
+page previously listed here, is retired — the feature now lives inside
+`mploverlay_v7.html` as a normal checkOverlays panel, see
+`html/js/overlay-bpmmeter.js`, so it rides the shared SharedWorker
+connection like every other mploverlay_v7 feature and was never a
+migration candidate on its own.)
 
 **dashboard.html's own internal relay (previous section) still
 exists and composes with this cleanly** — `dashboardSSE` is now itself

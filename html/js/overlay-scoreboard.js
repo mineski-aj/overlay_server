@@ -630,6 +630,21 @@ setInterval(sbPollMatchState, 3000);
       });
       var css = Object.keys(styles).map(function(sel) {
         var props = styles[sel];
+        /* #bpmmeter-sizewrap's saved width/height are NOT literal CSS box
+           dimensions — .bpmmeter-shell inside it is a fixed 508x97 flex
+           layout, so resizing the container would just clip/underfill it
+           instead of resizing anything inside. Read them as a target box
+           and convert to transform:scale() against the natural 508x97
+           size instead (right top origin so growing it expands into the
+           canvas, not past the right edge — see the #bpmmeter-* CSS
+           comment in mploverlay_v7.css). Same conversion dashboard.html's
+           applyToEditIframe() does for the live Edit-tab preview via
+           TW_MATCHES_SCALE_NATIVE. */
+        if (sel === '#bpmmeter-sizewrap') {
+          var bw = props.width  !== undefined ? parseFloat(props.width)  : 508;
+          var bh = props.height !== undefined ? parseFloat(props.height) : 97;
+          return sel + '{transform:scale(' + (bw / 508) + ',' + (bh / 97) + ') !important;transform-origin:right top !important;}';
+        }
         /* .sidecheck-name's saved font-size (only — left/top go through
            the normal path below) is read directly by
            overlay-sidecheck-core.js (SIDECHECK_NAME_FONT_CEILING) instead

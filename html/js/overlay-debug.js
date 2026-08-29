@@ -409,6 +409,23 @@ masterPoll();
       if (d.action === 'hide') ggcAnimateOut();
     } catch {}
   });
+  sse.addEventListener('bpmmeter', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') bpmmeterAnimateIn();
+      if (d.action === 'hide') bpmmeterAnimateOut();
+    } catch {}
+  });
+  // BPM meter level nudges — separate from the show/hide event above,
+  // kept as the pre-existing /meter/plus|minus|clear routes/event.
+  sse.addEventListener('meter', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.cmd === 'plus')  bpmmeterPressPlus();
+      if (d.cmd === 'minus') bpmmeterPressMinus();
+      if (d.cmd === 'clear') bpmmeterPressClear();
+    } catch {}
+  });
   /* Shared by every "side *check" ranking panel — one SSE event
      ('sidecheck') carries a `check` field naming which panel, instead
      of a dedicated event per panel. Add new side-checks here. */

@@ -1922,7 +1922,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2089,6 +2089,16 @@
     }
   });
 
+  /* Shared +/-/Clear nudge buttons, rendered inside BOTH mploverlay_v7's
+     and mpltag's "BPM Meter" checkToggle row (see the extraButtons
+     handling in the checkToggles renderer below) — one definition so the
+     two copies can't drift out of sync with each other. */
+  var BPM_METER_EXTRA_BUTTONS = [
+    { label: '+',     action: '/meter/plus'  },
+    { label: '−',     action: '/meter/minus' },
+    { label: 'Clear', action: '/meter/clear' },
+  ];
+
   /* ── Overlay definitions ──────────────────────────────────── */
   var OVERLAYS = [
     {
@@ -2231,6 +2241,15 @@
            /overlay/mpltagoverlays/hide in routes/overlay.js. */
         { label: 'Hide All (MPL L3)',   action: '/overlay/mpltagoverlays/hide'    },
       ],
+      /* Independent on/off toggle (mpltag.html's own copy of the BPM
+         meter — see html/mpltag.html's third IIFE). extraButtons are the
+         same shared +/-/Clear routes/event as the MPL Player Overlay v7
+         card's BPM Meter row — both meters' level moves together either
+         way, this is just a convenience copy living in the same
+         enclosure as this card's own BPM Meter show/hide toggle. */
+      checkToggles: [
+        { name: 'BPM Meter', key: 'bpmmeter_tag', extraButtons: BPM_METER_EXTRA_BUTTONS },
+      ],
     },
     {
       id: 'mploverlay7',
@@ -2257,6 +2276,7 @@
         { name: 'Side Gold Check',   key: 'sidegoldcheck'    },
         { name: 'Side Gold Distri',  key: 'sidegolddistricheck' },
         { name: 'Side KDA Distri',   key: 'sidekdadistricheck'  },
+        { name: 'BPM Meter',         key: 'bpmmeter', extraButtons: BPM_METER_EXTRA_BUTTONS },
       ],
       featureToggles: [
         { name: 'Kill Events', feature: 'killevents' },
@@ -2286,18 +2306,6 @@
       name: 'Ingame Red',
       file: 'ingame_red.html',
       ingameHrmControls: 'red',
-    },
-    {
-      id: 'bpm',
-      name: 'BPM Meter',
-      file: 'heart_stopping_moment_v14.html',
-      show: '/meter/show',
-      hide: '/meter/hide',
-      extraActions: [
-        { label: '+',     action: '/meter/plus'  },
-        { label: '−',     action: '/meter/minus' },
-        { label: 'Clear', action: '/meter/clear' },
-      ],
     },
     {
       id: 'bpm-status',
@@ -3039,6 +3047,16 @@
         applyCheckToggleBtn(ct.key, !!checkOverlayStates[ct.key]);
         btnGroup.appendChild(tb);
 
+        /* Optional extra action buttons inside this SAME enclosure (e.g.
+           BPM Meter's +/-/Clear nudges) — distinct from the card-level
+           `extraActions` above, which render as their own separate row.
+           Any checkToggle entry can opt into this. */
+        if (ct.extraButtons && ct.extraButtons.length) {
+          ct.extraButtons.forEach(function (a) {
+            btnGroup.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
+          });
+        }
+
         [['show', 'Show'], ['hide', 'Hide']].forEach(function (pair) {
           var path  = '/overlay/' + ct.key + '/' + pair[0];
           var label = ct.name + ' ' + pair[1];
@@ -3421,6 +3439,36 @@
     { group: 'Role Icons',      id: '.sidecheck-role-icon', name: 'Role Icon Scale'  },
   ];
 
+  /* ── BPM Meter (mploverlay_v7) element defaults ──────────────────
+     Always docked flush against the right edge — no `left` here on
+     purpose, so Edit only exposes Y position. `#bpmmeter-sizewrap`'s
+     width/height aren't literal CSS box dimensions; they're a target box
+     converted to transform:scale() against its 508x97 natural size (see
+     TW_MATCHES_SCALE_NATIVE above and the matching loadSbOverrides()
+     branch in overlay-scoreboard.js) so resizing scales the whole meter
+     — noise image, LEDs, glow, everything — as one unit. */
+  var BPMMETER_DEFAULTS = {
+    '#bpmmeter-clip':     { top: 491 },
+    '#bpmmeter-sizewrap': { width: 508, height: 97 },
+  };
+  var BPMMETER_ELEMENTS = [
+    { group: 'BPM Meter Position', id: '#bpmmeter-clip',     name: 'Meter Position (Y)' },
+    { group: 'BPM Meter Size',     id: '#bpmmeter-sizewrap', name: 'Meter Size'         },
+  ];
+
+  /* ── BPM Meter (mpltag) element defaults — mpltag.html's independent
+     copy of the same feature, using 'bpmtag' prefixed ids so it never
+     collides with mploverlay_v7's own '#bpmmeter-*' selectors above. Same
+     Y-only position + width/height-as-scale convention. */
+  var BPMTAG_DEFAULTS = {
+    '#bpmtag-clip':     { top: 491 },
+    '#bpmtag-sizewrap': { width: 508, height: 97 },
+  };
+  var BPMTAG_ELEMENTS = [
+    { group: 'BPM Meter Position', id: '#bpmtag-clip',     name: 'Meter Position (Y)' },
+    { group: 'BPM Meter Size',     id: '#bpmtag-sizewrap', name: 'Meter Size'         },
+  ];
+
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
   var WL_DEFAULTS = {
     '#wl-header':         { left: 40,   top: 80,  width: 967, height: 150 },
@@ -3636,6 +3684,8 @@
   var TW_MATCHES_SCALE_NATIVE = {
     '#tw-matches.tsm-count-2': { w: 858, h: 472 },
     '#tw-matches.tsm-count-3': { w: 858, h: 712 },
+    '#bpmmeter-sizewrap':      { w: 508, h: 97  },
+    '#bpmtag-sizewrap':        { w: 508, h: 97  },
   };
 
   var TW_COUNT2_DEFAULTS = {
@@ -4423,6 +4473,24 @@
       defaults:    {},
       showFn:      'icAnimateIn',
     },
+    mploverlay_v7_bpmmeter: {
+      label:       'BPM Meter · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_bpmmeter',
+      elements:    BPMMETER_ELEMENTS,
+      defaults:    BPMMETER_DEFAULTS,
+      showFn:      'bpmmeterAnimateIn',
+    },
+    mpltag_bpmmeter: {
+      label:       'BPM Meter · mpltag',
+      file:        'mpltag.html',
+      styleFile:   'mpltag',
+      defaultsKey: 'sb_edit_defaults_mpltag_bpmmeter',
+      elements:    BPMTAG_ELEMENTS,
+      defaults:    BPMTAG_DEFAULTS,
+      showFn:      'bpmTagAnimateIn',
+    },
     mplfs_lobby: {
       label:       'Waiting Lobby · mplfs',
       file:        'mplfs.html',
@@ -4993,11 +5061,16 @@
       if (p.top  !== undefined) d.push('top:'  + p.top  + 'px !important');
       if (native && (p.width !== undefined || p.height !== undefined)) {
         /* See TW_MATCHES_SCALE_NATIVE note above — width/height here mean
-           "target box", not literal CSS box dimensions. */
+           "target box", not literal CSS box dimensions. #bpmmeter-sizewrap
+           and its mpltag twin #bpmtag-sizewrap anchor from their right
+           edge (right top), not the usual left top, so growing them
+           expands into the canvas instead of pushing their right edge
+           past x=1920 — both are always docked flush against the right
+           edge with no X control to compensate. */
         var w = p.width  !== undefined ? p.width  : native.w;
         var h = p.height !== undefined ? p.height : native.h;
         d.push('transform:scale(' + (w / native.w) + ',' + (h / native.h) + ') !important');
-        d.push('transform-origin:left top !important');
+        d.push('transform-origin:' + ((sel === '#bpmmeter-sizewrap' || sel === '#bpmtag-sizewrap') ? 'right top' : 'left top') + ' !important');
       } else {
         if (p.width  !== undefined) d.push('width:'  + p.width  + 'px !important');
         if (p.height !== undefined) d.push('height:' + p.height + 'px !important');

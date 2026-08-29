@@ -68,7 +68,6 @@ overlay_server2/
 │   ├── mploverlay_v6.html ← v5 + fight recap (single file, legacy)
 │   ├── mploverlay_v7.html ← v6 refactored into split files (thin HTML shell only)
 │   ├── mploverlay_v7.css  ← All CSS for v7
-│   ├── heart_stopping_moment_v14.html ← BPM meter overlay
 │   └── js/                ← v7 JavaScript modules (load order matters)
 │       ├── overlay-core.js    ← [1] Constants, all state, utilities, poll engine
 │       ├── overlay-lvl15.js   ← [2] Level 15 overlay
@@ -106,7 +105,6 @@ http://<server-ip>:3000/html/mplfs.html
 http://<server-ip>:3000/html/fights.html
 http://<server-ip>:3000/html/ingame_camv1.html
 http://<server-ip>:3000/html/mploverlay_v5.html
-http://<server-ip>:3000/html/heart_stopping_moment_v14.html
 ```
 
 All asset folders (`hero/`, `items/`, `logos/`, etc.) are also served by `express.static` — no explicit routes needed.  
@@ -144,7 +142,8 @@ All asset folders (`hero/`, `items/`, `logos/`, etc.) are also served by `expres
 | GET | `/overlay/fs/debugoff` | routes/overlay.js | Hides debug bar on mplfs.html |
 | GET | `/overlay/draftpredict/show\|hide` | routes/overlay.js | Draft predict overlay control |
 | GET | `/overlay/draftpredict/poll` | routes/overlay.js | Poll fallback for draftpredict |
-| GET | `/meter/show\|hide\|plus\|minus\|clear` | routes/overlay.js | BPM meter overlay control |
+| GET | `/meter/plus\|minus\|clear` | routes/overlay.js | BPM meter level nudges |
+| GET | `/overlay/bpmmeter/show\|hide` | routes/overlay.js | BPM meter show/hide |
 | GET | `/led/home\|swap` | routes/led.js | LED side assignment |
 | GET | `/led/fightshow\|fighthide` | routes/led.js | LED fight damage display |
 | GET | `/led/draftpredshow\|draftpredhide` | routes/led.js | LED draft predict display |
@@ -163,7 +162,7 @@ All overlays connect to one shared SSE stream at `/overlay/events`.
 
 | SSE Event | Listener |
 |-----------|----------|
-| `meter` | heart_stopping_moment_v14.html |
+| `meter` / `bpmmeter` | mploverlay_v7.html (overlay-bpmmeter.js) |
 | `fights` | fights.html (+ 500ms poll fallback at `/overlay/fights/pending`) |
 | `show` / `hide` | General player BPM overlays |
 | `post_hearts` | mplfs.html — postgame BPM hearts |
