@@ -34,54 +34,54 @@
     "coach": "Bitoy"
   },
   "away": {
-    "teamId": "10763",
+    "teamId": "10765",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Sanford",
-        "id": "1025593308"
+        "ign": "Ryota",
+        "id": "915241466"
       },
       {
         "role": "JUNGLER",
-        "ign": "KarlTzy",
-        "id": "1271650163"
+        "ign": "Zaida",
+        "id": "1271650180"
       },
       {
         "role": "MID LANER",
-        "ign": "Sanji",
-        "id": "1271650190"
+        "ign": "Vinnn",
+        "id": "1475950692"
       },
       {
         "role": "ROAMER",
-        "ign": "Jaypee",
-        "id": "1582754314"
+        "ign": "Zehn",
+        "id": "1475950734"
       },
       {
         "role": "GOLD LANER",
-        "ign": "Teddy",
-        "id": "1810330654"
+        "ign": "Jowm",
+        "id": "1155833611"
       }
     ],
-    "name": "Team Liquid PH",
-    "short": "TLPH",
+    "name": "TNC Pro Team PH",
+    "short": "TNC",
     "score": 0,
-    "coach": "Aeon"
+    "coach": "E2max"
   },
   "series": "BO3",
   "game": 1,
   "swapped": false,
   "official": true,
   "week": 2,
-  "day": 1,
+  "day": 2,
   "patch": "Scarlet Embers 0826",
   "hosts": [
-    "Denisse",
+    "Odin",
     "Thea",
     "None"
   ],
   "casters": [
-    "Hans",
-    "Midnight",
+    "Uomi",
+    "Rockhart",
     "Joshycakes"
   ],
   "todayMatches": [
@@ -89,43 +89,43 @@
       "team1Id": "11149",
       "team1Name": "AP.BREN",
       "team1Short": "APBR",
-      "team2Id": "10763",
-      "team2Name": "Team Liquid PH",
-      "team2Short": "TLPH",
-      "score1": 0,
-      "score2": 2,
-      "vsDisplay": "0 - 2",
-      "time": "5:00 PM",
-      "star": false,
-      "matchType": "regular"
-    },
-    {
-      "team1Id": "10975",
-      "team1Name": "Twisted Minds PH",
-      "team1Short": "TWIS",
-      "team2Id": "10764",
-      "team2Name": "ONIC PH",
-      "team2Short": "ONIC",
-      "score1": 0,
-      "score2": 0,
-      "vsDisplay": "VS",
-      "time": "7:30 PM",
-      "star": false,
-      "matchType": "regular"
-    },
-    {
-      "team1Id": "10973",
-      "team1Name": "Team Falcons",
-      "team1Short": "FLCN",
       "team2Id": "10765",
       "team2Name": "TNC Pro Team PH",
       "team2Short": "TNC",
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
+      "time": "5:00 PM",
+      "star": false,
+      "matchType": "regular"
+    },
+    {
+      "team1Id": "11150",
+      "team1Name": "Smart Omega",
+      "team1Short": "OMG",
+      "team2Id": "10973",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN",
+      "score1": 0,
+      "score2": 0,
+      "vsDisplay": "VS",
       "time": "7:30 PM",
       "star": false,
       "matchType": "regular"
+    },
+    {
+      "team1Id": "10763",
+      "team1Name": "Team Liquid PH",
+      "team1Short": "TLPH",
+      "team2Id": "10845",
+      "team2Name": "Aurora Gaming PH",
+      "team2Short": "RORA",
+      "score1": 0,
+      "score2": 0,
+      "vsDisplay": "VS",
+      "time": "7:30 PM",
+      "star": true,
+      "matchType": "epic"
     }
   ],
   "tomorrowMatches": [
@@ -142,9 +142,9 @@
       "matchType": "regular"
     },
     {
-      "team1Id": "11150",
-      "team1Name": "Smart Omega",
-      "team1Short": "OMG",
+      "team1Id": "10975",
+      "team1Name": "Twisted Minds PH",
+      "team1Short": "TWIS",
       "team2Id": "10973",
       "team2Name": "Team Falcons",
       "team2Short": "FLCN",
@@ -154,16 +154,16 @@
       "matchType": "regular"
     },
     {
-      "team1Id": "10763",
-      "team1Name": "Team Liquid PH",
-      "team1Short": "TLPH",
-      "team2Id": "10845",
-      "team2Name": "Aurora Gaming PH",
-      "team2Short": "RORA",
+      "team1Id": "10764",
+      "team1Name": "ONIC PH",
+      "team1Short": "ONIC",
+      "team2Id": "11150",
+      "team2Name": "Smart Omega",
+      "team2Short": "OMG",
       "vsDisplay": "VS",
       "time": "7:30 PM",
-      "star": true,
-      "matchType": "epic"
+      "star": false,
+      "matchType": "regular"
     }
   ],
   "countdownLabel": "SHOW STARTS IN",
@@ -171,14 +171,14 @@
   "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 0
+    "running": true,
+    "endAt": 1787983799657,
+    "remaining": 12480
   },
   "map": "Broken Walls",
   "enCasters": [
-    "Leo",
-    "Naisou",
-    "Wolf"
+    "Hans",
+    "Brigida",
+    "Renmar"
   ]
 }

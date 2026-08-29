@@ -1921,15 +1921,15 @@
       justify-content: center;
     }
     .str-logo img { max-width: 54px; max-height: 54px; }
-    .str-medal {
+    .str-medals {
       position: absolute;
       left: 300px; top: 5px;
-      width: 54px; height: 54px;
+      height: 54px;
       display: flex;
       align-items: center;
-      justify-content: center;
+      gap: 6px;
     }
-    .str-medal img { max-width: 54px; max-height: 54px; }
+    .str-medal-icon { width: 44px; height: 44px; }
     .str-tri {
       position: absolute;
       left: 205px; top: 4px;
@@ -7931,14 +7931,14 @@
        status: null | 'secured' | 'eliminated' (playoffs chip on the team box) */
     const ST_ASSET = '/assets/Standings/';
     const ST_TEAMS = [
-      { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'ONIC', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'RORA', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'APBR', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'TWIS', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
-      { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0 },
+      { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'ONIC', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'RORA', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'APBR', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'TWIS', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
     ];
     const ST_ROW_TOP = 354, ST_ROW_PITCH = 77;
     let stTeams = ST_TEAMS;
@@ -7951,9 +7951,12 @@
       root.innerHTML = stTeams.map((t, i) => {
         const status = statusImg[t.status]
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
-        const medalImg = i === 0 ? 'mplgold.png' : i === 1 ? 'mplsilver.png' : null;
-        const medal = medalImg
-          ? `<div class="str-medal"><img src="${ST_ASSET}${medalImg}" alt=""></div>` : '';
+        const goldCount   = Math.max(0, t.gold   || 0);
+        const silverCount = Math.max(0, t.silver || 0);
+        const medalIcons  =
+          ('<img class="str-medal-icon" src="' + ST_ASSET + 'mplgold.png" alt="">').repeat(goldCount) +
+          ('<img class="str-medal-icon" src="' + ST_ASSET + 'mplsilver.png" alt="">').repeat(silverCount);
+        const medal = medalIcons ? `<div class="str-medals">${medalIcons}</div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
           `<img class="str-bg" src="${ST_ASSET}Team_Box.png" alt="">` +
           `<div class="str-move"><img src="${ST_ASSET}${moveImg[t.move] || moveImg.neutral}" alt=""></div>` +
