@@ -2385,7 +2385,7 @@
     /* direction: -1 = scrolls right (Blue), +1 = scrolls left (Red) */
     var c = {
       viewport: viewportEl, direction: direction,
-      cardEls: [], cardOffsets: [], scrollPos: 0,
+      cardEls: [], cardOffsets: [], cardOpacity: [], scrollPos: 0,
       state: 'stopped', raf: null, pickedIdx: -1,
       clearTimer: null, onPickDone: null, isAnimating: false,
     };
@@ -2403,16 +2403,29 @@
         var x = c.cardOffsets[i] - c.scrollPos;
         if (x + DP_CARD_W < 0) { c.cardOffsets[i] += SET_W; x += SET_W; }
         if (x > viewW)         { c.cardOffsets[i] -= SET_W; x -= SET_W; }
-        el.style.setProperty('--dp-tx', x + 'px');
         el.style.transform = 'translateX(' + x + 'px)';
+        /* --dp-tx only feeds the frozen .dp-pressing/.dp-chosen CSS
+           states (see their `var(--dp-tx,0px)` reads), which only ever
+           apply once rAF has already stopped (!inMotion) — writing it on
+           every roulette/settling frame was pure per-card style-recalc
+           cost with nothing downstream consuming it until the freeze
+           frame below. */
+        if (!inMotion) el.style.setProperty('--dp-tx', x + 'px');
 
         if (inMotion) {
           var t = c.direction === -1
             ? Math.min(1, Math.max(0, (x + FADE_PX) / FADE_PX))
             : Math.min(1, Math.max(0, (viewW - x) / FADE_PX));
-          el.style.opacity = t;
-        } else {
+          /* Most cards sit fully visible (t=1) for many consecutive
+             frames — re-writing an unchanged inline opacity still costs
+             a style recalc, so skip it unless the value actually moved. */
+          if (c.cardOpacity[i] === undefined || Math.abs(c.cardOpacity[i] - t) > 0.004) {
+            el.style.opacity = t;
+            c.cardOpacity[i] = t;
+          }
+        } else if (c.cardOpacity[i] !== '') {
           el.style.opacity = '';
+          c.cardOpacity[i] = '';
         }
       });
     }
@@ -2462,6 +2475,7 @@
       viewportEl.innerHTML = '';
       c.cardEls = [];
       c.cardOffsets = [];
+      c.cardOpacity = [];
       c.scrollPos = 0;
       var viewW = viewportEl.offsetWidth;
       var N = candidates.length;
@@ -2495,6 +2509,7 @@
         el.classList.remove('dp-dimmed', 'dp-pressing', 'dp-chosen');
         el.style.opacity = ''; /* clear stale inline opacity before rAF takes over */
       });
+      c.cardOpacity = []; /* keep the dirty-check array in sync with the manual clear above */
       c.state = 'roulette';
       c.isAnimating = false;
       c.raf = requestAnimationFrame(tick);
@@ -2951,12 +2966,56 @@
     var consecutive = next && next.side === entry.side && next.type === entry.type;
     var clearMs = consecutive ? 1000 : 2250;
 
+    /* Broader than `consecutive` above (any type, not just same-type) —
+       gates whether THIS entry is even allowed to attempt a rationale
+       bubble. Whenever the same team is up again immediately next
+       (another pick, e.g. Red-Red; or a different type across a phase
+       boundary, e.g. Red's last pick then Red's first ban of Ban Phase
+       2), showing a bubble now would only flash for a fraction of a
+       second before that next turn's own dpShowPanel(side) call — same
+       side, so it DOES clear this side's bubble — wipes it. See the two
+       branches below for what happens in each case. */
+    var sameTeamNext = !!(next && next.side === entry.side);
+    var doubleType   = sameTeamNext && next.type === entry.type;
+
     var targetC = entry.side === 'blue' ? dpBlueC : dpRedC;
     if (!targetC) { dpPickQueue.shift(); dpProcessPickQueue(fallbackData); return; }
 
     if (!dpUserHidden) dpShowPanel(entry.side);
 
     function onDone() {
+      function advance() {
+        dpPickQueue.shift();
+        var data = dpActiveData || fallbackData;
+        if (dpPickQueue.length) {
+          dpProcessPickQueue(data);
+        } else {
+          var latest = dpDeriveActivePrediction(data);
+          if (latest) {
+            dpRenderPrediction(latest, data);
+          } else {
+            /* No more predictions — draft is complete, hide the overlay */
+            dpHideAll();
+          }
+        }
+      }
+
+      if (sameTeamNext) {
+        /* Never attempt a bubble for this entry — see sameTeamNext's own
+           comment above for why. For a genuine double-type pair (same
+           side AND same type — e.g. Red pick, Red pick), hand this entry
+           off to the second pick's own decide() below as a fallback
+           candidate: show the SECOND pick's rationale if it qualifies,
+           otherwise fall back to this (the first pick's) rationale.
+           For a type-mismatched same-side pair (e.g. Red pick, then
+           Red's own next ban) there's nothing to hand off — it just
+           quietly gets no rationale, and the next entry proceeds as a
+           completely ordinary turn, unaffected by this one. */
+        if (doubleType) next._dpFallbackEntry = entry;
+        advance();
+        return;
+      }
+
       function decide() {
         /* Rationale bubble fires immediately as THIS pick's own reveal
            finishes — in the same box that pick's panel is about to
@@ -2974,19 +3033,18 @@
           }
         }
 
-        function advance() {
-          dpPickQueue.shift();
-          var data = dpActiveData || fallbackData;
-          if (dpPickQueue.length) {
-            dpProcessPickQueue(data);
-          } else {
-            var latest = dpDeriveActivePrediction(data);
-            if (latest) {
-              dpRenderPrediction(latest, data);
-            } else {
-              /* No more predictions — draft is complete, hide the overlay */
-              dpHideAll();
-            }
+        /* This entry is the SECOND half of a double-type pair (see
+           doubleType above) and its own rationale didn't qualify (missing,
+           or outside the top 5) — fall back to the FIRST pick's rationale
+           instead of showing nothing, per "prefer the 2nd pick, fall back
+           to the 1st". */
+        if (!showedBubble && !dpUserHidden && entry._dpFallbackEntry && entry._dpFallbackEntry.pred &&
+            dpIsValidRationale(entry._dpFallbackEntry.pred.rationale)) {
+          var fb = entry._dpFallbackEntry;
+          var fbRank = fb.pred.candidates.findIndex(function (c) { return c.heroId === fb.heroId; });
+          if (fbRank > -1 && fbRank < 5) {
+            dpShowRationaleBubble(fb.side, fb.pred.rationale);
+            showedBubble = true;
           }
         }
 
@@ -3348,6 +3406,15 @@
   }
   buildDraftPredict();
 
+  /* Free-spins the roulette with REAL hero ids/portraits/probabilities
+     pulled from live-predictions.json instead of __dpTestReveal's
+     synthetic 'blue_0'..'blue_9' placeholder ids (those never resolve
+     through dpHeroImgSrc, so that harness never exercises real <img>
+     decode/paint cost). See window.__dpTestRouletteLive below. */
+  var dpLiveRouletteData  = null;
+  var dpLiveRouletteState = 'off'; /* 'off' | 'blue' | 'red' */
+  var dpLiveRouletteBtn   = null;
+
   /* ── Draft Predict debug buttons — local layout/behavior testing only.
      Gated behind ?debugdp=1 so neither ever appears on a real broadcast
      page load. */
@@ -3381,6 +3448,21 @@
       'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
     dpDebugRationaleBtn.onclick = function () { window.__dpTestRationale(); };
     document.body.appendChild(dpDebugRationaleBtn);
+
+    /* Free-spins BLUE's roulette with real candidates from
+       live-predictions.json (no settle), for profiling sustained
+       per-frame scroll cost with real hero portraits loaded. Click again
+       to switch to RED's roulette, click a third time to stop. See
+       window.__dpTestRouletteLive below for the full sequence. */
+    dpLiveRouletteBtn = document.createElement('button');
+    dpLiveRouletteBtn.textContent = '▶ TEST ROULETTE (LIVE DATA)';
+    dpLiveRouletteBtn.style.cssText =
+      'position:fixed;top:10px;left:330px;z-index:99999;' +
+      'background:#40f090;color:#161616;border:none;border-radius:4px;' +
+      'padding:8px 14px;font-family:sans-serif;font-weight:700;font-size:13px;' +
+      'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+    dpLiveRouletteBtn.onclick = function () { window.__dpTestRouletteLive(); };
+    document.body.appendChild(dpLiveRouletteBtn);
   }
 
   var DP_TEST_RATIONALES = [
@@ -3467,6 +3549,65 @@
       dpPickQueue = [{ heroId: 'red_3', side: 'red', type: 'ban', pred: redPred, occurrence: 0 }];
       dpProcessPickQueue(fakeData);
     }, 3000);
+  };
+
+  /* Returns the first side-matching predictions[] entry's real candidate
+     list (real heroIds/heroNames/probabilities), capped at 10 same as the
+     real dpRenderPrediction/dpProcessPickQueue call sites. */
+  function dpLiveRouletteCands(side) {
+    var preds = (dpLiveRouletteData && dpLiveRouletteData.predictions) || [];
+    for (var i = 0; i < preds.length; i++) {
+      if (preds[i].side === side && preds[i].candidates && preds[i].candidates.length) {
+        return preds[i].candidates.slice(0, 10);
+      }
+    }
+    return [];
+  }
+
+  function dpLiveRouletteStop() {
+    if (dpBlueC && dpBlueC.raf) { cancelAnimationFrame(dpBlueC.raf); dpBlueC.state = 'stopped'; }
+    if (dpRedC  && dpRedC.raf)  { cancelAnimationFrame(dpRedC.raf);  dpRedC.state  = 'stopped'; }
+    dpHideAll();
+    dpDebugTestActive = false;
+    dpLiveRouletteState = 'off';
+    if (dpLiveRouletteBtn) dpLiveRouletteBtn.textContent = '▶ TEST ROULETTE (LIVE DATA)';
+  }
+
+  /* off -> BLUE free-spins -> RED free-spins -> off. Deliberately never
+     calls carousel.settle() — it stays in the 'roulette' state
+     indefinitely so tick()/applyPositions() (the hot path the two perf
+     fixes above target) can be profiled under sustained real-asset load
+     via DevTools' Performance panel, not just a ~1s one-shot roll. */
+  function dpLiveRouletteAdvance() {
+    if (dpLiveRouletteState === 'off') {
+      var blueCands = dpLiveRouletteCands('BLUE');
+      if (!blueCands.length) { console.warn('Draft Predict: no BLUE candidates in live-predictions.json'); return; }
+      dpDebugTestActive = true; /* suspend real polling while this runs, same guard __dpTestReveal uses */
+      dpUserHidden = false;
+      dpShowPanel('blue');
+      dpBlueC.init(blueCands);
+      dpBlueC.startRoulette();
+      dpLiveRouletteState = 'blue';
+      if (dpLiveRouletteBtn) dpLiveRouletteBtn.textContent = '■ LIVE ROULETTE: BLUE (click for RED)';
+    } else if (dpLiveRouletteState === 'blue') {
+      var redCands = dpLiveRouletteCands('RED');
+      if (!redCands.length) { dpLiveRouletteStop(); return; }
+      dpShowPanel('red'); /* also cancels blue's rAF as the now-hidden side, same as a real turn switch */
+      dpRedC.init(redCands);
+      dpRedC.startRoulette();
+      dpLiveRouletteState = 'red';
+      if (dpLiveRouletteBtn) dpLiveRouletteBtn.textContent = '■ LIVE ROULETTE: RED (click to stop)';
+    } else {
+      dpLiveRouletteStop();
+    }
+  }
+
+  window.__dpTestRouletteLive = function () {
+    if (dpLiveRouletteData) { dpLiveRouletteAdvance(); return; }
+    fetch('/live-predictions.json', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { dpLiveRouletteData = d; dpLiveRouletteAdvance(); })
+      .catch(function (err) { console.error('Draft Predict: could not load live-predictions.json for roulette test', err); });
   };
 
   /* Restore real server-side shown/hidden state on load
