@@ -1000,6 +1000,37 @@ router.get('/overlay/debugoff', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ ok: true });
 });
 
+// Persisted Debug Mode flag — gates whether mplfs.html's on-page debug bar
+// (the ` -toggled panel with SHOW/HIDE/PREVIEW buttons per feature, plus
+// any placeholder-data test tools like Final Team's) is reachable at all.
+// Defaults OFF so it's never silently live on a real broadcast machine.
+const DEBUG_MODE_FILE = path.join(__dirname, '..', 'debug_mode.json');
+function readDebugMode() {
+  try { return !!JSON.parse(fs.readFileSync(DEBUG_MODE_FILE, 'utf8')).enabled; }
+  catch { return false; }
+}
+function writeDebugMode(enabled) {
+  fs.writeFileSync(DEBUG_MODE_FILE, JSON.stringify({ enabled: !!enabled }));
+}
+
+// GET /overlay/debug-mode — current persisted state; every overlay page
+// fetches this once on load to decide whether to wire up its debug bar's
+// ` keydown listener at all.
+router.get('/overlay/debug-mode', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json({ enabled: readDebugMode() });
+});
+
+// POST /overlay/debug-mode { enabled } — persists the flag AND broadcasts
+// it live to every already-open overlay page over SSE, so a page that's
+// been open since before the change reacts immediately instead of needing
+// a reload (same round-trip requirement as every other live toggle here).
+router.post('/overlay/debug-mode', (req, res) => {
+  const enabled = !!(req.body || {}).enabled;
+  writeDebugMode(enabled);
+  state.overlayClients.forEach(c => { try { c.write('event: debugmode\ndata: ' + JSON.stringify({ enabled }) + '\n\n'); } catch {} });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, enabled });
+});
+
 // GET /overlay/features — return current feature toggle states
 router.get('/overlay/features', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json(state.featureToggles);

@@ -938,8 +938,15 @@
     <div class="settings-section-hdr">Debug</div>
     <div class="settings-section-body">
       <div class="settings-row">
-        <label>Overlays</label>
-        <button id="btn-debugoff" class="settings-btn settings-btn-danger">Hide Debug Bars</button>
+        <label>Debug Mode</label>
+        <button id="btn-debug-mode" class="settings-btn">Debug Mode: …</button>
+        <span id="debug-mode-status" class="settings-status"></span>
+      </div>
+      <div style="font-size:11px;color:#666;">
+        Off by default so overlay debug bars (SHOW/HIDE/PREVIEW per feature,
+        plus any placeholder-data test tools) are never one keypress away
+        on a real broadcast. Turn this ON here first, then press <code>`</code>
+        on the overlay page itself to open its debug bar.
       </div>
     </div>
   </div>
@@ -1609,8 +1616,36 @@
   piApiApply.addEventListener('click', savePostInfoApiUrl);
   piApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') savePostInfoApiUrl(); });
 
-  document.getElementById('btn-debugoff').addEventListener('click', function() {
-    fetch('/overlay/debugoff').catch(function(){});
+  /* Debug Mode — persisted server-side, gates whether any overlay page's
+     ` -toggled debug bar is even reachable (see debugModeEnabled in
+     mplfs.html). Button label always reflects real server state, read on
+     load and kept live via the debugmode SSE event below — never
+     hardcoded, same rule as every other toggle in this file. */
+  var debugModeBtn    = document.getElementById('btn-debug-mode');
+  var debugModeStatus = document.getElementById('debug-mode-status');
+  function renderDebugModeBtn(enabled) {
+    debugModeBtn.textContent = 'Debug Mode: ' + (enabled ? 'ON' : 'OFF');
+    debugModeBtn.className = 'settings-btn' + (enabled ? ' settings-btn-danger' : '');
+  }
+  fetch('/overlay/debug-mode', { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ renderDebugModeBtn(!!(d && d.enabled)); })
+    .catch(function(){ renderDebugModeBtn(false); });
+  debugModeBtn.addEventListener('click', function() {
+    var next = debugModeBtn.textContent.indexOf('OFF') !== -1;
+    fetch('/overlay/debug-mode', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ enabled: next })
+    }).then(function(r){ return r.json(); }).then(function(d){
+      renderDebugModeBtn(!!(d && d.enabled));
+      debugModeStatus.textContent = 'Saved ✓';
+      debugModeStatus.style.color = '#44cc88';
+      setTimeout(function(){ debugModeStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      debugModeStatus.textContent = 'Error';
+      debugModeStatus.style.color = '#ff4455';
+    });
   });
 
   /* Hard-reloads every open overlay page at once (mplfs.html, ENTVC.html,
@@ -1913,6 +1948,10 @@
   // this page opens zero real connections of its own, same as every other
   // overlay page now; see CLAUDE.md's "Dashboard architecture" section.
   var dashboardSSE = createOverlaySSE();
+
+  dashboardSSE.addEventListener('debugmode', function(e) {
+    renderDebugModeBtn(!!JSON.parse(e.data).enabled);
+  });
 
   dashboardSSE.addEventListener('featuretoggle', function (e) {
     try {

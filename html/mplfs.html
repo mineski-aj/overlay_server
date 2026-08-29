@@ -89,6 +89,8 @@
     .dbg-btn.hide:hover { background: #ef4444; color: #fff; }
     .dbg-btn.preview { border-color: #d97706; color: #d97706; }
     .dbg-btn.preview:hover, .dbg-btn.preview.active { background: #d97706; color: #000; border-color: #d97706; }
+    .dbg-btn.test { border-color: #8b5cf6; color: #8b5cf6; }
+    .dbg-btn.test:hover { background: #8b5cf6; color: #fff; }
     .feature-card { border-top: 1px solid #222; padding: 5px 0 4px; }
     .feature-card-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 5px; }
     .feature-card-btns { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -1400,6 +1402,19 @@
     #final-team-page.ft-on { display: block; }
     #final-team-page.ft-visible { opacity: 1; }
 
+    /* Reveal choreography (see showFinalTeam/.ft-reveal) — these three
+       "frame" pieces fade in together, un-staggered, as soon as the scene
+       is shown; the 10-card wall's own staggered fade (.ft-card-rest) and
+       the hero webms' later delayed fade+slide are layered on top. */
+    .ft-teambox, #ft-mpl-logo, #ft-matchbar {
+      opacity: 0;
+      transition: opacity 280ms ease;
+    }
+    #final-team-page.ft-reveal .ft-teambox,
+    #final-team-page.ft-reveal #ft-mpl-logo,
+    #final-team-page.ft-reveal #ft-matchbar {
+      opacity: 1;
+    }
     .ft-teambox { position: absolute; width: 446px; height: 108px; z-index: 4; }
     .ft-teambox-blue { left: 196px;  top: 109px; }
     .ft-teambox-red  { left: 1278px; top: 109px; }
@@ -1476,7 +1491,33 @@
       object-fit: cover;
       z-index: 1;
       background: #111;
+      /* Reveal choreography (see showFinalTeam) — starts invisible and
+         slid down, fades + slides up to its final position once JS adds
+         .ft-hero-in, deliberately later than everything else below (see
+         FT_HERO_START_DELAY_MS). This is ALSO load-bearing for performance,
+         not just looks: the <video> itself has no `autoplay` (see
+         ftBuildCardHtml) specifically so its decode/playback-start cost
+         doesn't land on the same frames as the rest of the scene's own
+         reveal — .play() is called by the same JS that adds this class. */
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 450ms cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
     }
+    .ft-card-hero.ft-hero-in { opacity: 1; transform: translateY(0); }
+    /* Everything on a card EXCEPT the hero webm (fader/photo/spell/name/
+       role) — grouped under one wrapper so it fades in as a single unit,
+       staggered per-card via --ft-delay (set inline per card in
+       ftBuildCardHtml: 0 at the two outer columns, increasing inward) —
+       "left and right first, then next to it" per card wall. Positioned
+       to exactly cover .ft-card (inset:0) so the existing child left/top
+       values (already relative to a 183x650 box) don't need to change. */
+    .ft-card-rest {
+      position: absolute; inset: 0; z-index: 2;
+      opacity: 0;
+      transition: opacity 280ms ease var(--ft-delay, 0ms);
+    }
+    #final-team-page.ft-reveal .ft-card-rest { opacity: 1; }
     /* Fader sandwiched between the hero webm and the player photo — tinted
        per side (see ftBuildCardHtml/hue-rotate below), scaled to the full
        card even though its own native size doesn't match it exactly. */
@@ -3077,6 +3118,7 @@
         <button class="dbg-btn show" onclick="showFinalTeam()">▶ SHOW</button>
         <button class="dbg-btn hide" onclick="hideFinalTeam()">■ HIDE</button>
         <button class="dbg-btn preview" id="preview-finalteam" onclick="toggleLocalPreview('finalteam', this)">◈ PREVIEW</button>
+        <button class="dbg-btn test" onclick="__ftTestReveal()">⚡ TEST (placeholder data)</button>
       </div>
     </div>
 
@@ -4272,6 +4314,18 @@
       sseSource.addEventListener('debugoff', () => {
         const bar = document.getElementById('config-bar');
         if (bar) bar.classList.remove('debug-open');
+      });
+      /* Live round-trip for the Debug Mode setting (see debugModeEnabled
+         above) — a page that's been open since before someone flipped it
+         in the dashboard picks up the change immediately, and gets its
+         bar force-closed if it was open when Debug Mode turned off. */
+      sseSource.addEventListener('debugmode', (e) => {
+        const d = JSON.parse(e.data);
+        debugModeEnabled = !!d.enabled;
+        if (!debugModeEnabled) {
+          const bar = document.getElementById('config-bar');
+          if (bar) bar.classList.remove('debug-open');
+        }
       });
       sseSource.addEventListener('featuretoggle', (e) => {
         try {
@@ -7039,6 +7093,17 @@
 
     const FT_CARD_W = 183, FT_MARGIN = 45;
 
+    /* Reveal stagger — both the card wall's own fade-in AND (separately,
+       see showFinalTeam) the hero webms' later fade-in converge outward->
+       inward toward the center, meeting in the middle: columns 0&9 first,
+       then 1&8, 2&7, 3&6, 4&5 last. ftStaggerRing gives the shared "ring"
+       index (0-4) for a column; each caller applies its own per-ring step
+       (card wall: FT_STAGGER_STEP_MS via --ft-delay below; hero webms:
+       FT_HERO_STAGGER_STEP_MS, see showFinalTeam). */
+    function ftStaggerRing(colIndex) { return Math.min(colIndex, 9 - colIndex); }
+    const FT_STAGGER_STEP_MS = 60;
+    function ftStaggerDelayMs(colIndex) { return ftStaggerRing(colIndex) * FT_STAGGER_STEP_MS; }
+
     /* Everything here — name, hero, spell, role — comes from the live
        game_api feed (via blueLive/redLive, see ftLiveRoleMap), not the
        dashboard-managed roster Team Hexagon/Waiting Lobby use. `roleKey`
@@ -7054,14 +7119,19 @@
          asset and red (right-side) cards use the LEFT-facing one. */
       const photoSrc = ign ? wlPhotoUrl(ign, side === 'blue' ? 'red' : 'blue') : '';
       const roleSrc  = '/role/' + encodeURIComponent(roleFile(roleKey)) + '.png';
+      /* No `autoplay` here on purpose — this <video> is the actual perf
+         fix (see .ft-card-hero's own CSS comment): decode/playback only
+         starts later, via an explicit .play() call in showFinalTeam(),
+         well after the rest of the scene has already faded in. */
       return `<div class="ft-card" style="left:${left}px;">` +
-        (heroSrc  ? `<video class="ft-card-hero" src="${heroSrc}" autoplay loop muted playsinline></video>` : '') +
+        (heroSrc  ? `<video class="ft-card-hero" src="${heroSrc}" loop muted playsinline preload="auto"></video>` : '') +
+        `<div class="ft-card-rest" style="--ft-delay:${ftStaggerDelayMs(colIndex)}ms;">` +
         `<img class="ft-card-fader ft-${side}" src="/assets/finalteam/finalfader.png" alt="">` +
         (photoSrc ? `<img class="ft-card-photo" src="${photoSrc}" alt="" onerror="this.style.display='none'">` : '') +
         (spellSrc ? `<img class="ft-card-spell" src="${spellSrc}" alt="" onerror="this.style.display='none'">` : '') +
         `<div class="ft-card-name ft-${side}">${ign}</div>` +
         `<div class="ft-card-role ft-${side}"><img src="${roleSrc}" alt="" onerror="this.parentElement.style.display='none'"></div>` +
-        `</div>`;
+        `</div></div>`;
     }
 
     /* Long IGNs would otherwise overflow the 183px-wide card (and get
@@ -7160,9 +7230,36 @@
        cards/logos just fill in whenever (if ever) it resolves. */
     const FT_FEED_TIMEOUT_MS = 1200;
 
+    /* Debug-only escape hatch — see __ftTestReveal below. Set right before
+       calling showFinalTeam() to feed placeholder game data through the
+       normal gdPromise path instead of hitting the (possibly-down) live
+       feed. Consumed exactly once so a later real SHOW isn't silently
+       affected by a stale override. */
+    let ftDebugOverrideGameData = null;
+
+    /* Hero webms fade in + slide up (.ft-card-hero/.ft-hero-in, see their
+       CSS) this long after everything else starts revealing — comfortably
+       past the card wall's own last stagger ring (4 * FT_STAGGER_STEP_MS)
+       plus its fade duration. Each video's own .play() — and so its real
+       decode/playback start — is staggered the same outward->inward,
+       meet-in-the-middle way as the card wall itself (ftStaggerRing), one
+       ring every FT_HERO_STAGGER_STEP_MS, both for the visual effect and
+       so all 10 decodes don't start on the exact same frame. This IS the
+       actual performance fix (see .ft-card-hero's own CSS comment and
+       ftBuildCardHtml dropping `autoplay`) — the fade+slide is what makes
+       the deliberate delay look intentional instead of a pop-in. */
+    const FT_HERO_START_DELAY_MS   = 600;
+    const FT_HERO_STAGGER_STEP_MS  = 70;
+
     async function showFinalTeam() {
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
-      const gdPromise = fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      let gdPromise;
+      if (ftDebugOverrideGameData) {
+        gdPromise = Promise.resolve(ftDebugOverrideGameData);
+        ftDebugOverrideGameData = null;
+      } else {
+        gdPromise = fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null);
+      }
       await transitionTo('finalteam');
       const ms = await msPromise;
       if (activeFeature !== 'finalteam') return; /* superseded while awaiting match state */
@@ -7186,6 +7283,26 @@
       ftPage.classList.add('ft-on');
       void ftPage.offsetWidth; /* force reflow so the opacity transition runs */
       ftPage.classList.add('ft-visible');
+
+      /* Everything except the hero webms fades in now — team boxes/logo/
+         matchbar together, the 10-card wall staggered outward->inward
+         (see .ft-reveal's CSS). The hero webms are deliberately held back
+         further, below. */
+      ftPage.classList.add('ft-reveal');
+
+      /* heroEls[i]'s index IS its column index — buildFtCards appends
+         cards in column order (blue 0-4, then red 5-9), so DOM order and
+         column order match here without needing to read anything back
+         off the element. */
+      const heroEls = Array.from(ftPage.querySelectorAll('.ft-card-hero'));
+      heroEls.forEach((video, colIndex) => {
+        const delay = FT_HERO_START_DELAY_MS + ftStaggerRing(colIndex) * FT_HERO_STAGGER_STEP_MS;
+        setTimeout(() => {
+          if (activeFeature !== 'finalteam') return; /* scene superseded before this video's turn */
+          video.play().catch(() => {});
+          video.classList.add('ft-hero-in');
+        }, delay);
+      });
     }
 
     function hideFinalTeam() {
@@ -7194,11 +7311,50 @@
       return new Promise(resolve => {
         setTimeout(() => {
           ftPage.classList.remove('ft-on');
+          /* Reset the reveal choreography for next time — safe to do the
+             instant ft-on is also gone (display:none), so nothing visibly
+             snaps; leaving this set would skip the whole staggered
+             fade-in on a subsequent show. */
+          ftPage.classList.remove('ft-reveal');
           hideSceneVideo();
           resolve();
         }, 420);
       });
     }
+
+    /* Debug — exercises the reveal choreography above (staggered card
+       wall + delayed hero fade/slide) with placeholder game data instead
+       of the real live feed, for when that feed is down/unavailable.
+       Reuses real hero ids 1-10 (so real HERO_PICK_DRAFT_*.webm portraits
+       actually load, same as production) with fake team/player names —
+       those 404 gracefully (onerror already hides logos/photos) same as
+       any other missing asset. See ftDebugOverrideGameData's one-shot
+       consumption in showFinalTeam. */
+    function ftTestSeat(n, heroid) {
+      return { name: 'PLAYER' + n, heroid: String(heroid), skillid: '20020', role: '' };
+    }
+    const FT_TEST_GAMEDATA = {
+      code: 0, message: 'ok',
+      data: {
+        game_time: 300, state: 'play',
+        camp_list: [
+          {
+            campid: 1, team_name: 'TEST BLUE', team_simple_name: 'BLU', score: 3,
+            seat_1: ftTestSeat(1, 1), seat_2: ftTestSeat(2, 2), seat_3: ftTestSeat(3, 3),
+            seat_4: ftTestSeat(4, 4), seat_5: ftTestSeat(5, 5),
+          },
+          {
+            campid: 2, team_name: 'TEST RED', team_simple_name: 'RED', score: 2,
+            seat_1: ftTestSeat(6, 6), seat_2: ftTestSeat(7, 7), seat_3: ftTestSeat(8, 8),
+            seat_4: ftTestSeat(9, 9), seat_5: ftTestSeat(10, 10),
+          },
+        ],
+      },
+    };
+    window.__ftTestReveal = function () {
+      ftDebugOverrideGameData = FT_TEST_GAMEDATA;
+      showFinalTeam();
+    };
 
     /* ════════════════════════════════════════════════
        TEAM LINE-UP — fullscreen 5-player roster reveal
@@ -10417,8 +10573,19 @@
     }
     restoreScene();
 
+    /* Debug Mode — gates the ` -toggled debug bar (SHOW/HIDE/PREVIEW per
+       feature, plus placeholder-data test tools like Final Team's) behind
+       a persisted, dashboard-controlled setting instead of it always
+       being one keypress away. Defaults OFF (fail-safe if the fetch is
+       slow/fails) — enable it from the dashboard's Settings > Debug
+       section, then press ` here to open the bar. */
+    let debugModeEnabled = false;
+    fetch('/overlay/debug-mode', { cache: 'no-store' })
+      .then(r => r.json()).then(d => { debugModeEnabled = !!(d && d.enabled); })
+      .catch(() => {});
+
     document.addEventListener('keydown', e => {
-      if (e.key === '`') {
+      if (e.key === '`' && debugModeEnabled) {
         document.getElementById('config-bar').classList.toggle('debug-open');
       }
     });

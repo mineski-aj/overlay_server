@@ -32,7 +32,7 @@
 // instance (SharedWorkers persist per exact script URL across reloads)
 // and will silently never learn the new event otherwise.
 const KNOWN_EVENTS = [
-  'bpmmeter', 'bpmmeter_tag', 'consolidated_post', 'consolidated_post_2', 'credits', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
+  'bpmmeter', 'bpmmeter_tag', 'consolidated_post', 'consolidated_post_2', 'credits', 'debugmode', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
   'draftpredict', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
   'golddiffcheck', 'goldgraphcheck', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
