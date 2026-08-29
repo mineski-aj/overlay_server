@@ -1305,9 +1305,7 @@
       top: 700px;
       width: 153px;
       height: 72px;
-      background-image: url('/assets/draft/ai_button.png');
-      background-size: contain;
-      background-repeat: no-repeat;
+      object-fit: contain;
       z-index: 22;
       pointer-events: none;
       opacity: 0;
@@ -2787,6 +2785,12 @@
     void btnEl.offsetWidth; /* force reflow so the class re-add below reliably re-triggers the transition */
 
     btnEl.classList.add('dp-visible');
+    /* Restart the loop from frame 0 on every fresh reveal (same "replay
+       cleanly, never resume mid-animation" intent as the reflow/class
+       reset above) and resume decoding — paused while hidden, see
+       dpHideRationaleSide's pause() below. */
+    btnEl.currentTime = 0;
+    btnEl.play().catch(function () {});
 
     dpRationaleSeqTimers[side] = setTimeout(function () {
       bubbleEl.classList.add('dp-visible');
@@ -2814,6 +2818,11 @@
     dpRationaleSeqTimers[side] = setTimeout(function () {
       btnEl.style.transitionDuration = btnHideMs + 'ms';
       btnEl.classList.remove('dp-visible');
+      /* Stop decoding once fully hidden — same GPU-saving reasoning as
+         showSceneVideo/hideSceneVideo pausing an ambient loop on fade-out
+         (see CLAUDE.md's "Video-heavy overlays" section); this button
+         sits idle far more than it's shown over a full draft. */
+      setTimeout(function () { btnEl.pause(); }, btnHideMs);
     }, bubbleHideMs);
   }
 
@@ -3289,14 +3298,35 @@
     dpBlueC = dpCreateCarousel(document.getElementById('dp-blue-viewport'), -1);
     dpRedC  = dpCreateCarousel(document.getElementById('dp-red-viewport'),  +1);
 
-    dpBlueAiBtnEl = document.createElement('div');
+    /* <video> (not a background-image div) — ai_button.webm is a looping
+       animated clip with a real alpha channel (yuva420p, encoded from the
+       PNG's own alpha as a mask over the source .mov's color, so the
+       transparent pill-shaped corners are pixel-identical to the old
+       ai_button.png). Muted+playsinline+preload=auto matches this
+       codebase's standard video-element convention (see mplfs.html);
+       autoplay is intentionally omitted — dpShowRationaleBubble/
+       dpHideRationaleSide explicitly play()/pause() it in step with the
+       button's own visibility instead, so it isn't decoding while hidden
+       for the ~10s stretches between reveals (same GPU-saving reasoning
+       as showSceneVideo/hideSceneVideo). */
+    dpBlueAiBtnEl = document.createElement('video');
     dpBlueAiBtnEl.id = 'dp-ai-button-blue';
     dpBlueAiBtnEl.className = 'dp-ai-button';
+    dpBlueAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dpBlueAiBtnEl.loop = true;
+    dpBlueAiBtnEl.muted = true;
+    dpBlueAiBtnEl.playsInline = true;
+    dpBlueAiBtnEl.preload = 'auto';
     document.body.appendChild(dpBlueAiBtnEl);
 
-    dpRedAiBtnEl = document.createElement('div');
+    dpRedAiBtnEl = document.createElement('video');
     dpRedAiBtnEl.id = 'dp-ai-button-red';
     dpRedAiBtnEl.className = 'dp-ai-button';
+    dpRedAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dpRedAiBtnEl.loop = true;
+    dpRedAiBtnEl.muted = true;
+    dpRedAiBtnEl.playsInline = true;
+    dpRedAiBtnEl.preload = 'auto';
     document.body.appendChild(dpRedAiBtnEl);
 
     dpBlueRationaleBubbleEl = document.createElement('div');
