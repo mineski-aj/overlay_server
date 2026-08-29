@@ -136,18 +136,19 @@
     }
 
     /* Same /api/sponsors source as every other sponsor loop, but with
-       ?ingame=1 — the flag overlay-scoreboard.js's sponsor loop uses to
-       drop any logo toggled "hide in in-game loop" on the dashboard's
-       Sponsors tab (currently JOYTIFY.png, see sponsors_config.json's
-       hiddenInIngame). Every other sponsor loop (Waiting Lobby, Waiting
-       Screen TVC itself, Today's/Tomorrow's Schedule, Draft, Credit Reel)
-       still shows it — only this page filters it out. */
+       ?sponsorspage=1 — a flag independent from overlay-scoreboard.js's own
+       ?ingame=1, so hiding a logo here never affects the real in-game
+       scoreboard loop. Filtered against sponsors_config.json's
+       hiddenInSponsorsPage (currently JOYTIFY.png). Every other sponsor
+       loop (Waiting Lobby, Waiting Screen TVC itself, Today's/Tomorrow's
+       Schedule, Draft, Credit Reel, and the real in-game scoreboard) still
+       shows it — only this page filters it out. */
     let wsSponsors = [], wsSponsorIdx = 0, wsSponsorActive = false;
     let wsSponsorInHandler = null, wsSponsorOutHandler = null, wsSponsorHoldTimer = null;
 
     function startWsSponsorLoop() {
       wsSponsorActive = true;
-      fetch('/api/sponsors?ingame=1').then(r => r.json()).then(list => {
+      fetch('/api/sponsors?sponsorspage=1').then(r => r.json()).then(list => {
         if (!wsSponsorActive || !list || !list.length) return;
         wsSponsors = list;
         wsSponsorIdx = 0;
@@ -191,13 +192,15 @@
     /* In-game style loop, transparent/no-box — independent from the boxed
        loop above (its own fetch, own index), same as how Draft.html's
        #sponsor-loop and overlay-scoreboard.js's #sb-sponsor-loop each run
-       on their own. Still ?ingame=1, so Joytify is dropped here too. */
+       on their own. Still ?sponsorspage=1, so Joytify is dropped here too
+       (but not from the real in-game scoreboard, which uses its own
+       ?ingame=1 flag). */
     let igSponsors = [], igSponsorIdx = 0, igSponsorActive = false;
     let igSponsorInHandler = null, igSponsorOutHandler = null, igSponsorHoldTimer = null;
 
     function startIgSponsorLoop() {
       igSponsorActive = true;
-      fetch('/api/sponsors?ingame=1').then(r => r.json()).then(list => {
+      fetch('/api/sponsors?sponsorspage=1').then(r => r.json()).then(list => {
         if (!igSponsorActive || !list || !list.length) return;
         igSponsors = list;
         igSponsorIdx = 0;

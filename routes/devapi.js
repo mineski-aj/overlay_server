@@ -69,29 +69,38 @@ function readSponsorsConfig() {
   try {
     const data = JSON.parse(fs.readFileSync(SPONSORS_CONFIG_FILE, 'utf8'));
     if (data && Array.isArray(data.categories)) {
-      return { categories: data.categories, hiddenInIngame: Array.isArray(data.hiddenInIngame) ? data.hiddenInIngame : [] };
+      return {
+        categories: data.categories,
+        hiddenInIngame: Array.isArray(data.hiddenInIngame) ? data.hiddenInIngame : [],
+        hiddenInSponsorsPage: Array.isArray(data.hiddenInSponsorsPage) ? data.hiddenInSponsorsPage : [],
+      };
     }
   } catch (e) {}
-  return { categories: [], hiddenInIngame: [] };
+  return { categories: [], hiddenInIngame: [], hiddenInSponsorsPage: [] };
 }
 
 // Public — overlays read this for the ordered, timed play list
-// (category order → each category's logo order, dur in ms). The always-on
-// ingame scoreboard overlay (overlay-scoreboard.js) passes ?ingame=1 to
-// additionally drop any logo toggled "hide in in-game loop" on the
-// dashboard's Sponsors tab — every other loop (Waiting Lobby, Waiting
-// Screen TVC, Today's/Tomorrow's Schedule, Draft, Credit Reel) still
-// shows it, only this call filters it out.
+// (category order → each category's logo order, dur in ms). Two independent
+// opt-in filters, each its own query flag + config list, so hiding a logo
+// from one loop never affects the other:
+//   ?ingame=1       — the always-on scoreboard overlay (overlay-scoreboard.js),
+//                     filtered against hiddenInIngame.
+//   ?sponsorspage=1 — sponsors.html's own boxed + transparent in-game-style
+//                     loops, filtered against hiddenInSponsorsPage.
+// Every other loop (Waiting Lobby, Waiting Screen TVC, Today's/Tomorrow's
+// Schedule, Draft, Credit Reel) passes neither flag and always shows everything.
 router.get('/api/sponsors', (req, res) => {
   const files  = new Set(readSponsorFiles());
   const config = readSponsorsConfig();
-  const hidden = req.query.ingame ? new Set(config.hiddenInIngame) : null;
+  const hiddenIngame = req.query.ingame ? new Set(config.hiddenInIngame) : null;
+  const hiddenSponsorsPage = req.query.sponsorspage ? new Set(config.hiddenInSponsorsPage) : null;
   const sponsors = [];
   config.categories.forEach(cat => {
     const dur = Math.max(0.5, Number(cat.duration) || 3) * 1000;
     (cat.logos || []).forEach(f => {
       if (!files.has(f)) return;
-      if (hidden && hidden.has(f)) return;
+      if (hiddenIngame && hiddenIngame.has(f)) return;
+      if (hiddenSponsorsPage && hiddenSponsorsPage.has(f)) return;
       sponsors.push({ src: '/sponsors/' + encodeURIComponent(f), dur, category: cat.name });
     });
   });
@@ -105,6 +114,7 @@ router.get('/api/sponsors-config', (req, res) => {
   res.set('Cache-Control', 'no-store').json({
     categories: config.categories,
     hiddenInIngame: config.hiddenInIngame,
+    hiddenInSponsorsPage: config.hiddenInSponsorsPage,
     availableFiles: readSponsorFiles(),
   });
 });
@@ -118,8 +128,9 @@ router.post('/api/sponsors-config', (req, res) => {
     return res.status(400).json({ error: 'Payload must include a categories array' });
   }
   const hiddenInIngame = Array.isArray(data.hiddenInIngame) ? data.hiddenInIngame.filter(f => typeof f === 'string') : [];
+  const hiddenInSponsorsPage = Array.isArray(data.hiddenInSponsorsPage) ? data.hiddenInSponsorsPage.filter(f => typeof f === 'string') : [];
   try {
-    fs.writeFileSync(SPONSORS_CONFIG_FILE, JSON.stringify({ categories: data.categories, hiddenInIngame }, null, 2));
+    fs.writeFileSync(SPONSORS_CONFIG_FILE, JSON.stringify({ categories: data.categories, hiddenInIngame, hiddenInSponsorsPage }, null, 2));
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Could not write sponsors_config.json' });
