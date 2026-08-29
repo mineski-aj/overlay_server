@@ -2178,8 +2178,8 @@
           nudges: [ { label: 'Photo', selector: '.hl-player-photo-wrap', fallback: 1360 } ] },
         { name: 'MVP Scene', show: '/overlay/mvp/show', hide: '/overlay/mvp/hide',
           nudges: [
-            { label: 'Hero',  selector: '#mv-hero-img', fallback: 953 },
-            { label: 'Photo', selector: '#mv-photo',    fallback: 953 },
+            { label: 'Hero',  selector: '#mv-hero-img', fallback: 953, topFallback: 74 },
+            { label: 'Photo', selector: '#mv-photo',    fallback: 953, topFallback: 74 },
           ] },
         { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
@@ -2376,14 +2376,21 @@
      change. */
   var NUDGE_STEP = 10;
   var nudgeLeftCache = {}; // selector -> current left (px, number)
-  function nudgeGetCurrentLeft(selector, fallback) {
-    if (nudgeLeftCache[selector] !== undefined) return Promise.resolve(nudgeLeftCache[selector]);
+  var nudgeTopCache = {};  // selector -> current top (px, number)
+  function nudgeGetCurrentProp(cache, prop, selector, fallback) {
+    if (cache[selector] !== undefined) return Promise.resolve(cache[selector]);
     return fetch('/api/overlay-styles?file=mplfs').then(function (r) { return r.json(); }).then(function (saved) {
-      var v = saved && saved[selector] && saved[selector].left;
-      var left = v !== undefined ? parseFloat(v) : fallback;
-      nudgeLeftCache[selector] = left;
-      return left;
+      var v = saved && saved[selector] && saved[selector][prop];
+      var val = v !== undefined ? parseFloat(v) : fallback;
+      cache[selector] = val;
+      return val;
     }).catch(function () { return fallback; });
+  }
+  function nudgeGetCurrentLeft(selector, fallback) {
+    return nudgeGetCurrentProp(nudgeLeftCache, 'left', selector, fallback);
+  }
+  function nudgeGetCurrentTop(selector, fallback) {
+    return nudgeGetCurrentProp(nudgeTopCache, 'top', selector, fallback);
   }
   function buildNudgeControl(n) {
     var wrap = el('span', 'nudge-group');
@@ -2399,8 +2406,23 @@
         }).catch(function () {});
       });
     }
+    function doNudgeTop(delta) {
+      nudgeGetCurrentTop(n.selector, n.topFallback).then(function (cur) {
+        var next = cur + delta;
+        nudgeTopCache[n.selector] = next;
+        fetch('/api/overlay-nudge', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file: 'mplfs', selector: n.selector, props: { top: next + 'px' } }),
+        }).catch(function () {});
+      });
+    }
     wrap.appendChild(btn('◀', 'btn-nudge', function () { doNudge(-NUDGE_STEP); }));
     wrap.appendChild(btn('▶', 'btn-nudge', function () { doNudge(NUDGE_STEP); }));
+    if (n.topFallback !== undefined) {
+      wrap.appendChild(btn('▲', 'btn-nudge', function () { doNudgeTop(-NUDGE_STEP); }));
+      wrap.appendChild(btn('▼', 'btn-nudge', function () { doNudgeTop(NUDGE_STEP); }));
+    }
     return wrap;
   }
 
