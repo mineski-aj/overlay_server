@@ -7,6 +7,7 @@ const secPanel = createSideCheck({
   overlayId:  'sideexp-check-overlay',
   headerText: 'EXP LEVEL RANKING',
   statField:  'exp',
+  pctField:   'level_percent',
   formatStat: seat => 'LVL ' + ((seat && seat.level) || 1),
 });
 

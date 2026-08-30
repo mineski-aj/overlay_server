@@ -9,8 +9,11 @@
      headerText,             // Anton header title — omit to skip the header entirely
                              // (e.g. when bgSrc's own art already bakes in a title)
      bgSrc,                  // panel background image — defaults to sidestatback.png
-     statField,              // seat property this panel ranks/fills by, e.g. 'exp'
-     formatStat(seat),        // returns the display string for the stat text, e.g. 'LVL 15'
+     statField,              // seat property this panel ranks by, e.g. 'exp'
+     formatStat(seat),        // returns the display string for the right-side stat text, e.g. 'LVL 15'
+     pctField,                // optional: seat property (already 0-100) that drives the bar
+                              // fill width AND the left-side "NN%" text directly, e.g.
+                              // 'level_percent' — bypasses the default max-relative fill below.
    })
    returns { animateIn, animateOut, update } — update is also
    auto-registered with registerPollHandler.
@@ -122,13 +125,16 @@ function createSideCheck(opts) {
     barTrack.className = 'sidecheck-bar-track';
     const barFill = document.createElement('div');
     barFill.className = 'sidecheck-bar-fill ' + (side === 'home' ? 'sidecheck-bar-home' : 'sidecheck-bar-away');
+    const pctText = document.createElement('div');
+    pctText.className = 'sidecheck-pct-text';
     const statText = document.createElement('div');
     statText.className = 'sidecheck-stat-text';
     barTrack.appendChild(barFill);
+    barTrack.appendChild(pctText);
     barTrack.appendChild(statText);
     row.appendChild(barTrack);
 
-    refs[side][slotIdx] = { row, portrait, nameInner, barFill, statText, currentTop: initialTop };
+    refs[side][slotIdx] = { row, portrait, nameInner, barFill, pctText, statText, currentTop: initialTop };
     return row;
   }
 
@@ -212,8 +218,14 @@ function createSideCheck(opts) {
       sidecheckFitName(ref.nameInner);
       ref.statText.textContent = opts.formatStat(seat);
 
-      const val = statOf(entry);
-      const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+      let pct;
+      if (opts.pctField) {
+        pct = (seat && seat[opts.pctField]) || 0;
+        ref.pctText.textContent = Math.round(pct) + '%';
+      } else {
+        const val = statOf(entry);
+        pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+      }
       ref.barFill.style.width = pct + '%';
     });
   }

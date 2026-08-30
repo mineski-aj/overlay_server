@@ -1109,6 +1109,13 @@
     }
     .dr-status-stolen .dr-status-label { display: flex; background: #3a3a3a; }
 
+    /* pick_status: "repick" */
+    .dr-status-repick {
+      border: 3px solid #ffcc00;
+      box-shadow: inset 0 0 12px rgba(255, 204, 0, 0.85);
+    }
+    .dr-status-repick .dr-status-label { display: flex; background: #ffcc00; color: #0a0a0a; }
+
     /* ban_status: "ban_again" (ban slots only — no label) */
     .dr-status-ban-again {
       border: 2px solid #e8121f;
@@ -2044,11 +2051,10 @@
   var drOutTimer = null;
   var drPollTimer = null;
 
-  /* pick_status → border/glow class + label text. Only "banned" and
-     "stolen" get special treatment — "repick"/"none"/anything else
+  /* pick_status → border/glow class + label text. "none"/anything else
      renders as a plain slot (see drSetStatus). */
-  var DR_PICK_STATUS_CLASS = { banned: 'dr-status-banned', stolen: 'dr-status-stolen' };
-  var DR_PICK_STATUS_LABEL = { banned: 'BANNED', stolen: 'STOLEN' };
+  var DR_PICK_STATUS_CLASS = { banned: 'dr-status-banned', stolen: 'dr-status-stolen', repick: 'dr-status-repick' };
+  var DR_PICK_STATUS_LABEL = { banned: 'BANNED', stolen: 'STOLEN', repick: 'REPICKED' };
   /* ban_status → border/glow class. No label on ban slots. */
   var DR_BAN_STATUS_CLASS  = { ban_again: 'dr-status-ban-again', ban_to_pick: 'dr-status-ban-to-pick' };
 

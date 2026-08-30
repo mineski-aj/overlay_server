@@ -1902,6 +1902,22 @@
   }
   .sidecheck-bar-fill.sidecheck-bar-home { background: linear-gradient(to bottom, #0e3d99 0%, #1E64FF 100%); }
   .sidecheck-bar-fill.sidecheck-bar-away { background: linear-gradient(to bottom, #99201f 0%, #FF3232 100%); }
+  /* Left-side "NN%" text — only populated when a panel is configured
+     with opts.pctField (e.g. Side Exp's level_percent); empty/unused
+     for panels that keep the default max-relative fill. */
+  .sidecheck-pct-text {
+    position: absolute;
+    left: 6px; top: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 14px;
+    letter-spacing: 0.3px;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    z-index: 2;
+  }
   .sidecheck-stat-text {
     position: absolute;
     top: 0; right: 6px;

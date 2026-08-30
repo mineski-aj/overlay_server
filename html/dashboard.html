@@ -1921,6 +1921,61 @@
     }
   });
 
+  /* ── Preview button for a checkToggle that lives on a `deferredPreview`
+     overlay (currently Draft Recap / Draft Predict, both on Draft
+     Overlay) — unlike buildPreviewToggleBtn above, this can't assume the
+     iframe already has the right page loaded, since deferredPreview
+     overlays sit at about:blank until something asks for them. Pressing
+     this loads Draft.html fresh (if it isn't already sitting in the
+     iframe from the main ◈ Preview button or another one of these), then
+     fires previewTrigger on top of it — same show/hide contract as
+     buildPreviewToggleBtn, just with an extra "make sure the page is
+     even there" step first. Turning it off only hides this one panel
+     inside the iframe; it deliberately does NOT unload the iframe, since
+     the main ◈ Preview button or a sibling checkToggle preview may still
+     need it. */
+  function buildDraftDeferredPreviewBtn(ov, eventName) {
+    var pvb = document.createElement('button');
+    pvb.className = 'btn btn-preview-live';
+    pvb.textContent = '◈ Preview';
+    var active = false;
+
+    function trigger(action) {
+      var iw = previewIframe && previewIframe.contentWindow;
+      if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, action);
+    }
+
+    pvb.addEventListener('click', function () {
+      if (active) {
+        active = false;
+        pvb.classList.remove('active');
+        trigger('hide');
+        return;
+      }
+      active = true;
+      pvb.classList.add('active');
+      if (draftPreviewActive) {
+        trigger('show');
+        return;
+      }
+      draftPreviewActive = true;
+      if (draftPreviewMainBtn) draftPreviewMainBtn.classList.add('active');
+      previewDisabledMsg.style.display = 'none';
+      previewIframe.onload = function () {
+        previewIframe.onload = null;
+        trigger('show');
+      };
+      previewIframe.src = '/html/' + ov.file + '?t=' + Date.now() + '&preview=1';
+    });
+
+    draftSubPreviewResets.push(function () {
+      active = false;
+      pvb.classList.remove('active');
+    });
+
+    return pvb;
+  }
+
   function applyMapSelectTagBadge() {
     if (!mapSelectTagBadge) return;
     var n = mapSelectTagState.revealedGames || 0;
@@ -2151,8 +2206,8 @@
       photoModeToggle: true,
       draftPredictTestButton: true,
       checkToggles: [
-        { name: 'Draft Recap', key: 'draftrecap' },
-        { name: 'Draft Predict', key: 'draftpredict' },
+        { name: 'Draft Recap', key: 'draftrecap', previewButton: true },
+        { name: 'Draft Predict', key: 'draftpredict', previewButton: true },
       ],
       featureToggles: [
         { name: 'Draft Stats', feature: 'draftstats' },
@@ -2495,6 +2550,16 @@
      iframe loaded. Reset whenever selectOverlay/deselectOverlay runs so
      switching away always leaves it off for next time. */
   var draftPreviewActive = false;
+  /* The main Draft Overlay ◈ Preview button (dpvb below) and the list of
+     "turn myself off" resets for the per-checkToggle preview buttons
+     (Draft Recap/Draft Predict) built in buildDraftDeferredPreviewBtn —
+     both need to be reset whenever the shared deferred iframe unloads,
+     since that invalidates every sub-preview's "currently showing"
+     state at once (see the iframe-unload branch below and
+     buildControlBody's per-render reset, mirroring activePreviewOff's
+     own reset for the same body.innerHTML-wipe reason). */
+  var draftPreviewMainBtn = null;
+  var draftSubPreviewResets = [];
   var controlPanel      = document.getElementById('control-panel');
   var controlPanelTitle = document.getElementById('control-panel-title');
   var controlPanelOpen  = document.getElementById('control-panel-open');
@@ -2532,10 +2597,10 @@
     } else {
       controlPanelOpen.style.display = 'none';
     }
+    draftPreviewActive = false;
     buildControlBody(ov);
     previewTitle.textContent = ov.name;
     previewLabel.textContent = ov.url || ov.file || '';
-    draftPreviewActive = false;
     if (ov.deferredPreview) {
       /* GPU-saving: don't auto-load this overlay into the iframe just
          because it's selected — it stays unloaded until its own Preview
@@ -2560,6 +2625,8 @@
     lastOverlay = null;
     lastItem = null;
     draftPreviewActive = false;
+    draftPreviewMainBtn = null;
+    draftSubPreviewResets = [];
     layout.classList.remove('split');
     previewIframe.onload = null;
     previewIframe.src = 'about:blank';
@@ -2898,6 +2965,8 @@
     mplfsLiveBadge = null;
     activePreviewOff = null; // body.innerHTML just wiped whichever preview button held this
     previewToggleRegistry = {};
+    draftPreviewMainBtn = null; // same reason — the button element itself is gone
+    draftSubPreviewResets = [];
 
     if (ov.ingameControls)    { buildIngameControls(body);    return; }
     if (ov.ingameHrmControls) { buildIngameHrmControls(body, ov.ingameHrmControls); return; }
@@ -3005,10 +3074,16 @@
               previewIframe.onload = null;
               previewIframe.src = 'about:blank';
               previewDisabledMsg.style.display = 'flex';
+              /* The iframe just unloaded out from under any Draft
+                 Recap/Draft Predict preview buttons too — reset their
+                 visual state so they don't keep showing "active" for a
+                 panel that no longer exists. */
+              draftSubPreviewResets.forEach(function (reset) { reset(); });
             }
           });
         })(ov);
         row.appendChild(dpvb);
+        draftPreviewMainBtn = dpvb;
 
         /* Test Draft Predict — fires Draft.html's own window.__dpTestReveal()
            (a fake blue-then-red reveal, with rationale, for tuning layout —
@@ -3093,7 +3168,27 @@
         if (ct.extraButtons && ct.extraButtons.length) {
           ct.extraButtons.forEach(function (a) {
             btnGroup.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
+            var ecb = document.createElement('button');
+            ecb.className = 'btn btn-copy';
+            ecb.title = 'Copy ' + a.label + ' route';
+            ecb.innerHTML = '<span class="copy-icon">⧉</span>';
+            (function (p, l, b) {
+              b.addEventListener('click', function () { copyRoute(p, l + ' route', b); });
+            })(a.action, a.label, ecb);
+            btnGroup.appendChild(ecb);
           });
+        }
+
+        /* Optional ◈ Preview button — for a checkToggle on a
+           `deferredPreview` overlay (Draft Recap/Draft Predict, both on
+           Draft Overlay) this has to go through buildDraftDeferredPreviewBtn
+           since the shared iframe may not even have the page loaded yet;
+           a checkToggle on a normal always-loaded overlay could instead
+           use the plain buildPreviewToggleBtn, same as featureToggles do. */
+        if (ct.previewButton) {
+          btnGroup.appendChild(ov.deferredPreview
+            ? buildDraftDeferredPreviewBtn(ov, ct.key)
+            : buildPreviewToggleBtn(ct.key));
         }
 
         [['show', 'Show'], ['hide', 'Hide']].forEach(function (pair) {
