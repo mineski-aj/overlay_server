@@ -1287,10 +1287,10 @@
     #mv-hero-img {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
       z-index: 11; object-fit: contain; object-position: 50% 100%; display: block;
-      /* Feather the bottom 50px so the hero art fades into #mv-box-bg
-         instead of cutting off with a hard edge. */
-      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 50px), transparent 100%);
-      mask-image: linear-gradient(to bottom, #000 0%, #000 calc(100% - 50px), transparent 100%);
+      /* Feather the top and bottom 50px so the hero art fades into
+         #mv-box-bg instead of cutting off with a hard edge on either side. */
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 50px, #000 calc(100% - 50px), transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, #000 50px, #000 calc(100% - 50px), transparent 100%);
     }
     #mv-photo {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
@@ -6648,6 +6648,108 @@
       return '/heromvp/MVP_' + heroid + '.png';
     }
 
+    /* #mv-hero-img is object-fit:contain + object-position:50% 100%, so
+       depending on the box's aspect ratio (draggable/resizable from the
+       Edit tab) the actual artwork often doesn't fill the box's full
+       height — there's a gap of empty (fully transparent) space above it
+       before the drawn pixels start. The static CSS mask feathers a fixed
+       50px band measured from the BOX's own top edge, which usually lands
+       entirely inside that empty gap and never touches the real boundary
+       between "no pixels" and "art" — leaving that boundary looking like a
+       hard crop. Compute where the art actually starts (contain-fit math)
+       and center the feather on THAT line instead, so it moves with the
+       box whenever it's repositioned/resized. */
+    /* Smoothstep (ease-in-out) samples across [start,end] instead of a
+       straight linear ramp — a plain 2-stop linear-gradient fades at a
+       constant rate the whole way, which still reads as an edge near the
+       ends where the eye is most sensitive to the transparent/opaque
+       boundary. Sampling the S-curve gives stops that start and end
+       nearly flat and do all the fast changing in the middle, which
+       looks like a much softer feather for the same fade distance. */
+    function mvSmoothstepStops(start, end, rising) {
+      const stops = [];
+      for (let i = 0; i <= 8; i++) {
+        const t = i / 8;
+        const eased = t * t * (3 - 2 * t);
+        const alpha = rising ? eased : 1 - eased;
+        const pos = start + (end - start) * t;
+        stops.push(`rgba(0,0,0,${alpha.toFixed(3)}) ${pos}px`);
+      }
+      return stops;
+    }
+
+    /* Pixel-scanned MVP_68.png (Natalia) to actually find where this crop
+       lives, instead of guessing further: the top/left silhouette edges
+       are genuinely soft (anti-aliased over ~1-2px, i.e. normal character
+       outline), but the RIGHT edge's alpha is still 255 one pixel before
+       the raw canvas boundary — the artist's exported canvas clips the
+       arm/gauntlet directly, with no anti-aliasing margin at all. Because
+       this box is width-constrained (object-fit:contain scales it to
+       exactly fill the box's full width with zero horizontal letterbox),
+       that raw-canvas edge sits exactly on the box's own left/right edges
+       — a hard line no amount of the vertical-only top/bottom mask above
+       could ever reach, no matter how far Intensity pushed it (that was
+       only ever eating into the face/horns from the top instead). Fixed
+       by feathering all 4 box edges together — left/right included — and
+       combining the two gradients with mask-composite:intersect so a
+       corner fades from both directions if it's inside both bands. */
+    function mvFeatherHeroImg(imgEl) {
+      const boxW = imgEl.clientWidth, boxH = imgEl.clientHeight;
+      const natW = imgEl.naturalWidth, natH = imgEl.naturalHeight;
+      if (!boxW || !boxH || !natW || !natH) return;
+      const scale = Math.min(boxW / natW, boxH / natH);
+      const contentW = natW * scale, contentH = natH * scale;
+      /* naturalWidth/naturalHeight measure the PNG's whole exported canvas,
+         not the actual non-transparent artwork inside it — most hero
+         renders carry extra transparent padding baked into the file around
+         the character, so these content edges (the edges of the CANVAS)
+         can sit noticeably inside/outside of where the visible art actually
+         starts. Intensity is a manual per-hero-set correction that pushes
+         all 4 edges inward by that unknown padding amount — there's no way
+         to measure it from the tag alone without decoding actual pixel
+         alpha, so it's a dial, not something computed. */
+      const intensity = MV_HERO_FEATHER_INTENSITY;
+      const contentLeft   = (boxW - contentW) / 2 + intensity; // centered (object-position 50% ...)
+      const contentRight  = boxW - (boxW - contentW) / 2 - intensity;
+      const contentTop    = boxH - contentH + intensity;       // bottom-anchored (... 100%)
+      const contentBottom = boxH - intensity;
+      const feather = MV_HERO_FEATHER;
+      function edgeStops(lo, hi, boxSize) {
+        const fadeStart = Math.max(0, lo - feather);
+        const fadeEnd = Math.min(boxSize, lo + feather);
+        const fadeBackStart = Math.max(fadeEnd, hi - feather);
+        return [
+          ...mvSmoothstepStops(fadeStart, fadeEnd, true),
+          ...mvSmoothstepStops(fadeBackStart, hi, false),
+        ];
+      }
+      const vGrad = `linear-gradient(to bottom, ${edgeStops(contentTop, contentBottom, boxH).join(', ')})`;
+      const hGrad = `linear-gradient(to right, ${edgeStops(contentLeft, contentRight, boxW).join(', ')})`;
+      const masks = `${vGrad}, ${hGrad}`;
+      imgEl.style.webkitMaskImage = masks;
+      imgEl.style.maskImage = masks;
+      imgEl.style.webkitMaskComposite = 'source-in';
+      imgEl.style.maskComposite = 'intersect';
+    }
+    /* Called from dashboard.html's applyToEditIframe() while dragging the
+       Feather field for #mv-hero-img — same cross-frame-call pattern as
+       window.mvSetNameFontCeiling above. */
+    window.mvSetHeroFeather = function(v) {
+      const n = parseFloat(v);
+      if (!n && n !== 0) return;
+      MV_HERO_FEATHER = n;
+      const el = document.getElementById('mv-hero-img');
+      if (el) mvFeatherHeroImg(el);
+    };
+    /* Same cross-frame-call pattern, for the "Intensity" field. */
+    window.mvSetHeroFeatherIntensity = function(v) {
+      const n = parseFloat(v);
+      if (isNaN(n)) return;
+      MV_HERO_FEATHER_INTENSITY = n;
+      const el = document.getElementById('mv-hero-img');
+      if (el) mvFeatherHeroImg(el);
+    };
+
     /* Centered, starts near the box height, shrinks to fit the box width
        if it ever overflows — same approach as mvFitName/hlFitName. */
     function mvFitStatValue(el, maxSize, minSize) {
@@ -6689,6 +6791,38 @@
           const v = styles && styles['#mv-name'] && styles['#mv-name'].fontSize;
           const n = v && parseFloat(v);
           if (n) MV_NAME_FONT_CEILING = n;
+        })
+        .catch(() => {});
+    })();
+
+    /* Dashboard Edit-tab "Feather" field for #mv-hero-img — how far (in px)
+       mvFeatherHeroImg fades the art in/out, see that function below. Not a
+       CSS property, so it's loaded/applied the same cross-frame way as
+       MV_NAME_FONT_CEILING above instead of through the normal style-inject
+       path. */
+    let MV_HERO_FEATHER = 130;
+    (function loadMvHeroFeather() {
+      fetch('/api/overlay-styles?file=mplfs')
+        .then(r => r.json())
+        .then(styles => {
+          const v = styles && styles['#mv-hero-img'] && styles['#mv-hero-img'].feather;
+          const n = v && parseFloat(v);
+          if (n) MV_HERO_FEATHER = n;
+        })
+        .catch(() => {});
+    })();
+
+    /* Dashboard Edit-tab "Intensity" field for #mv-hero-img — see the
+       comment above mvFeatherHeroImg's contentTop line for what this
+       actually corrects for (invisible padding baked into the hero PNG). */
+    let MV_HERO_FEATHER_INTENSITY = 0;
+    (function loadMvHeroFeatherIntensity() {
+      fetch('/api/overlay-styles?file=mplfs')
+        .then(r => r.json())
+        .then(styles => {
+          const v = styles && styles['#mv-hero-img'] && styles['#mv-hero-img'].featherIntensity;
+          const n = parseFloat(v);
+          if (!isNaN(n)) MV_HERO_FEATHER_INTENSITY = n;
         })
         .catch(() => {});
     })();
@@ -6777,6 +6911,9 @@
       heroImg.onerror = () => { heroImg.style.display = 'none'; };
       heroImg.style.display = '';
       heroImg.src = mvHeroImgUrl(player && player.heroid);
+      /* Feathering needs the box's real laid-out size, but #mvp-page is
+         still display:none here (see the mv-name comment above) — done
+         later in showMvpScene once .mv-on is applied, same as mvFitName. */
 
       const photoEl = document.getElementById('mv-photo');
       photoEl.onerror = () => { photoEl.style.display = 'none'; };
@@ -6848,6 +6985,7 @@
       showSceneVideo('mvp');
       mvPage.classList.add('mv-on');
       mvFitName(document.getElementById('mv-name')); /* now has real layout to measure against */
+      mvFeatherHeroImg(document.getElementById('mv-hero-img')); /* ditto — needs real box size */
       void mvPage.offsetWidth; /* force reflow so the opacity transition runs */
       mvPage.classList.add('mv-visible');
     }
