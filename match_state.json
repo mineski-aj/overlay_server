@@ -34,64 +34,64 @@
     "coach": "Lyrick"
   },
   "away": {
-    "teamId": "10973",
+    "teamId": "10845",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Flap",
-        "id": "1271650054"
+        "ign": "Nathzz",
+        "id": "2093991492"
       },
       {
         "role": "JUNGLER",
-        "ign": "Kyle",
-        "id": "1582754321"
+        "ign": "Koyl",
+        "id": "1478121246"
       },
       {
         "role": "MID LANER",
-        "ign": "Hadji",
-        "id": "1271650087"
+        "ign": "Yue",
+        "id": "1373200860"
       },
       {
         "role": "ROAMER",
-        "ign": "Owgwen",
-        "id": "1271650065"
+        "ign": "Light",
+        "id": "1478121262"
       },
       {
         "role": "GOLD LANER",
-        "ign": "SuperMarco",
-        "id": "1155835108"
+        "ign": "Domeng",
+        "id": "1373200918"
       }
     ],
-    "name": "Team Falcons",
-    "short": "FLCN",
+    "name": "Aurora Gaming PH",
+    "short": "RORA",
     "score": 0,
-    "coach": "Ducky"
+    "coach": "Master The Basics"
   },
   "series": "BO3",
   "game": 1,
   "swapped": false,
   "official": true,
-  "week": 2,
-  "day": 3,
+  "week": 3,
+  "day": 1,
   "patch": "Scarlet Embers 0826",
   "hosts": [
-    "Odin",
     "Denisse",
+    "Thea",
     "None"
   ],
   "casters": [
     "Renmar",
-    "Burrito",
-    "Midnight"
+    "Athena",
+    "Joshycakes"
   ],
   "todayMatches": [
     {
       "team1Id": "10975",
       "team1Name": "Twisted Minds PH",
       "team1Short": "TWIS",
-      "team2Id": "10973",
-      "team2Name": "Team Falcons",
-      "team2Short": "FLCN",
+      "team2Id": "10845",
+      "team2Name": "Aurora Gaming PH",
+      "team2Short": "RORA",
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
@@ -100,12 +100,12 @@
       "matchType": "regular"
     },
     {
-      "team1Id": "10764",
-      "team1Name": "ONIC PH",
-      "team1Short": "ONIC",
-      "team2Id": "11150",
-      "team2Name": "Smart Omega",
-      "team2Short": "OMG",
+      "team1Id": "10765",
+      "team1Name": "TNC Pro Team PH",
+      "team1Short": "TNC",
+      "team2Id": "10764",
+      "team2Name": "ONIC PH",
+      "team2Short": "ONIC",
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
@@ -130,26 +130,14 @@
   ],
   "tomorrowMatches": [
     {
-      "team1Id": "11149",
-      "team1Name": "AP.BREN",
-      "team1Short": "APBR",
-      "team2Id": "10765",
-      "team2Name": "TNC Pro Team PH",
-      "team2Short": "TNC",
+      "team1Id": "11150",
+      "team1Name": "Smart Omega",
+      "team1Short": "OMG",
+      "team2Id": "11149",
+      "team2Name": "AP.BREN",
+      "team2Short": "APBR",
       "vsDisplay": "VS",
       "time": "2:30 PM",
-      "star": false,
-      "matchType": "regular"
-    },
-    {
-      "team1Id": "10975",
-      "team1Name": "Twisted Minds PH",
-      "team1Short": "TWIS",
-      "team2Id": "10845",
-      "team2Name": "Aurora Gaming PH",
-      "team2Short": "RORA",
-      "vsDisplay": "VS",
-      "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
@@ -157,9 +145,21 @@
       "team1Id": "10765",
       "team1Name": "TNC Pro Team PH",
       "team1Short": "TNC",
-      "team2Id": "10764",
-      "team2Name": "ONIC PH",
-      "team2Short": "ONIC",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
+      "vsDisplay": "VS",
+      "time": "5:00 PM",
+      "star": false,
+      "matchType": "regular"
+    },
+    {
+      "team1Id": "10764",
+      "team1Name": "ONIC PH",
+      "team1Short": "ONIC",
+      "team2Id": "10973",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN",
       "vsDisplay": "VS",
       "time": "7:30 PM",
       "star": false,
@@ -167,18 +167,18 @@
     }
   ],
   "countdownLabel": "SHOW STARTS IN",
-  "goodbyeLabel": "SEE YOU NEXT WEEK",
+  "goodbyeLabel": "SEE YOU TOMORROW",
   "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": true,
-    "endAt": 1788079199867,
-    "remaining": 19140
+    "running": false,
+    "endAt": null,
+    "remaining": 0
   },
-  "map": "Expanding Rivers",
+  "map": "Dangerous Grass",
   "enCasters": [
-    "Naisou",
-    "Rockhart",
-    "Leo"
+    "Hans",
+    "Brigida",
+    "Wolf"
   ]
 }
