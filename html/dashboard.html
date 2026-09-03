@@ -774,6 +774,7 @@
   <button class="tab-btn" data-page="matchboard">Match Board</button>
   <button class="tab-btn" data-page="mapselection">Map Selection</button>
   <button class="tab-btn" data-page="standings">Standings</button>
+  <button class="tab-btn" data-page="arrangement">Arrangement</button>
   <button class="tab-btn active" data-page="control">Control</button>
   <button class="tab-btn" data-page="dynamic">Dynamic</button>
   <button class="tab-btn" data-page="roster">Roster</button>
@@ -797,6 +798,15 @@
 <!-- Page: Standings -->
 <div id="page-standings" class="page">
   <iframe id="standings-iframe" src="/html/standings-dashboard.html" allow="autoplay"
+    style="width:100%;flex:1;border:none;min-height:0;"></iframe>
+</div>
+
+<!-- Page: Arrangement — mploverlay_v7.html's Player UI/Item Pickup/Trinity/
+     Quick Swap/Level 15 seat display order, see html/arrangement-dashboard.html
+     and lib/seatArrangement.js. Deliberately scoped to only those features —
+     everything else keeps reading seats straight from the Game API. -->
+<div id="page-arrangement" class="page">
+  <iframe id="arrangement-iframe" src="/html/arrangement-dashboard.html" allow="autoplay"
     style="width:100%;flex:1;border:none;min-height:0;"></iframe>
 </div>
 
@@ -3528,6 +3538,52 @@
     { group: 'Kill Event', id: '#kill-event-sponsor-logo-clip', name: 'Sponsor Logo' },
   ];
 
+  /* ── Gold Graph Check (mploverlay_v7.html) ─────────────────────────
+     The 4 row markers are position-only references (top, no left/width/
+     height) — ggcRowY() in overlay-goldgraphcheck.js reads each one's
+     live computed `top` to decide where Lord/Turtle/Tower/Kill icons
+     land, same real-DOM-element-drives-the-JS pattern as everything
+     else in this file, just with an invisible element instead of a
+     visible one (see .ggc-row-marker in mploverlay_v7.css). Its own
+     EDIT_CONFIG (not folded into the main Scoreboard one above) because
+     the panel is hidden by default — showFn shows it with real/whatever
+     data is available so the rows/numbers are actually visible to drag/
+     resize, same pattern as Kill Event Sponsor above.
+     .ggc-diff-label and .ggc-diff-dot are class selectors (every mark's
+     number/dot shares one size/stroke, like .sidecheck-header's
+     fontSize-only entry above) — strokeWidth and r (circle radius) are
+     NOT among the standard left/top/width/height/fontSize properties,
+     so each needed a matching addition in PROPS, applyToEditIframe(),
+     the save handler, and mergeSaved() below (the same 4 spots Feather/
+     Intensity needed for the same reason). `r` needed no camelCase-to-
+     kebab-case mapping anywhere (unlike strokeWidth/font-size) since a
+     single lowercase letter is already valid CSS as-is. */
+  var GGC_DEFAULTS = {
+    '#ggc-row-lord-top':    { top: 30 },
+    '#ggc-row-kill-top':    { top: 75 },
+    '#ggc-row-kill-bottom': { top: 133 },
+    '#ggc-row-lord-bottom': { top: 178 },
+    '.ggc-diff-label':      { fontSize: 16.5, strokeWidth: 3 },
+    '.ggc-diff-dot':        { r: 5, strokeWidth: 2 },
+    /* Spike smoothing radius (seconds) for the plotted line — not a CSS
+       property at all (it feeds ggcSmoothSeries' moving-average window
+       in overlay-goldgraphcheck.js), so it's anchored on the chart's own
+       #ggc-chart SVG (an already-real, already-existing element, same
+       idiom as #mv-hero-img's Feather in mplfs.html) and goes through
+       the same direct-cross-frame-call path as Feather/Intensity below
+       instead of the generic CSS-injection one. */
+    '#ggc-chart':           { smoothRadius: 3 },
+  };
+  var GGC_ELEMENTS = [
+    { group: 'Event Rows', id: '#ggc-row-lord-top',    name: 'Lord/Tower/Turtle Row (Top, Team 1)' },
+    { group: 'Event Rows', id: '#ggc-row-kill-top',    name: 'Kills Row (Upper, Team 1)' },
+    { group: 'Event Rows', id: '#ggc-row-kill-bottom', name: 'Kills Row (Lower, Team 2)' },
+    { group: 'Event Rows', id: '#ggc-row-lord-bottom', name: 'Lord/Tower/Turtle Row (Bottom, Team 2)' },
+    { group: 'Gold Diff Numbers', id: '.ggc-diff-label', name: 'Gold Diff Numbers' },
+    { group: 'Gold Diff Numbers', id: '.ggc-diff-dot',   name: 'Gold Diff Point Marker' },
+    { group: 'Chart Settings', id: '#ggc-chart', name: 'Spike Smoothing' },
+  ];
+
   /* ── Side-check family (mploverlay_v7.html) ───────────────────────
      Exp/Taken/Damage/Gold checks share one factory (createSideCheck in
      overlay-sidecheck-core.js) and one set of .sidecheck-* CSS classes
@@ -4598,6 +4654,15 @@
       defaults:    KILLEVENT_DEFAULTS,
       showFn:      'previewKillEventSponsor',
     },
+    mploverlay_v7_goldgraphcheck: {
+      label:       'Gold Graph Check · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_goldgraphcheck',
+      elements:    GGC_ELEMENTS,
+      defaults:    GGC_DEFAULTS,
+      showFn:      'ggcAnimateIn',
+    },
     mploverlay_v7_itemcheck: {
       label:       'Item Check Layout · mploverlay_v7',
       file:        'mploverlay_v7.html',
@@ -5184,6 +5249,14 @@
     if (editValues['#mv-hero-img'] && editValues['#mv-hero-img'].featherIntensity !== undefined) {
       try { editIframe.contentWindow.mvSetHeroFeatherIntensity(editValues['#mv-hero-img'].featherIntensity); } catch (e) {}
     }
+    /* Gold Graph Check's spike-smoothing radius — same reasoning as
+       Feather/Intensity above (see ggcSmoothRadius in
+       overlay-goldgraphcheck.js): not a real CSS property, so it can
+       only ever go through a direct cross-frame call, never the generic
+       CSS-injection loop below. */
+    if (editValues['#ggc-chart'] && editValues['#ggc-chart'].smoothRadius !== undefined) {
+      try { editIframe.contentWindow.ggcSetSmoothRadius(editValues['#ggc-chart'].smoothRadius); } catch (e) {}
+    }
     /* Patch Box/Caster Box fontSize — same reasoning as .sidecheck-name
        above (see SB_MI_FIT_CONFIG in overlay-scoreboard.js): a blanket
        !important font-size on the container never reaches the child text
@@ -5220,6 +5293,8 @@
         if (p.height !== undefined) d.push('height:' + p.height + 'px !important');
       }
       if (p.fontSize !== undefined && !skipFontSize) d.push('font-size:' + p.fontSize + 'px !important');
+      if (p.strokeWidth !== undefined) d.push('stroke-width:' + p.strokeWidth + 'px !important');
+      if (p.r !== undefined) d.push('r:' + p.r + 'px !important');
       if (p.visible === false) d.push('display:none !important');
       return sel + '{' + d.join(';') + '}';
     }).join('\n');
@@ -5422,8 +5497,11 @@
     { key: 'width',    label: 'Width',     step: 1 },
     { key: 'height',   label: 'Height',    step: 1 },
     { key: 'fontSize', label: 'Font Size', step: 1 },
+    { key: 'strokeWidth', label: 'Stroke Width', step: 0.5 },
+    { key: 'r',        label: 'Circle Size', step: 0.5 },
     { key: 'feather',  label: 'Feather',   step: 5 },
     { key: 'featherIntensity', label: 'Intensity', step: 5 },
+    { key: 'smoothRadius', label: 'Spike Smoothing', step: 0.5, unit: 's' },
   ];
 
   function showEditControls(id) {
@@ -5471,7 +5549,7 @@
 
       var unit = document.createElement('div');
       unit.className = 'edit-ctrl-unit';
-      unit.textContent = 'px';
+      unit.textContent = prop.unit || 'px';
 
       function commit() {
         var v = parseFloat(inp.value);
@@ -5700,8 +5778,11 @@
       if (v.width    !== undefined) out[sel].width    = v.width    + 'px';
       if (v.height   !== undefined) out[sel].height   = v.height   + 'px';
       if (v.fontSize !== undefined) out[sel].fontSize = v.fontSize + 'px';
+      if (v.strokeWidth !== undefined) out[sel].strokeWidth = v.strokeWidth + 'px';
+      if (v.r        !== undefined) out[sel].r        = v.r        + 'px';
       if (v.feather  !== undefined) out[sel].feather  = v.feather;
       if (v.featherIntensity !== undefined) out[sel].featherIntensity = v.featherIntensity;
+      if (v.smoothRadius !== undefined) out[sel].smoothRadius = v.smoothRadius;
       if (v.visible === false) out[sel].display = 'none';
     });
     var styleFile = EDIT_CONFIGS[currentConfigKey].styleFile;
@@ -5748,8 +5829,11 @@
       if (s.width    !== undefined) editValues[sel].width    = parseNum(s.width);
       if (s.height   !== undefined) editValues[sel].height   = parseNum(s.height);
       if (s.fontSize !== undefined) editValues[sel].fontSize = parseNum(s.fontSize);
+      if (s.strokeWidth !== undefined) editValues[sel].strokeWidth = parseNum(s.strokeWidth);
+      if (s.r        !== undefined) editValues[sel].r        = parseNum(s.r);
       if (s.feather  !== undefined) editValues[sel].feather  = parseNum(s.feather);
       if (s.featherIntensity !== undefined) editValues[sel].featherIntensity = parseNum(s.featherIntensity);
+      if (s.smoothRadius !== undefined) editValues[sel].smoothRadius = parseNum(s.smoothRadius);
       if (s.display  !== undefined) editValues[sel].visible  = (s.display !== 'none');
     });
   }

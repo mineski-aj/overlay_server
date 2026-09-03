@@ -1755,11 +1755,21 @@
      spec: 857×253 at 15,15 — 14px bottom margin, 15px on the other three
      sides) the gold-diff chart draws into — same real intentional white
      backing as mplfs.html's #cpg-board, not placeholder design-tool
-     noise. */
+     noise.
+     60px header reserved above it (assets/ingame/graph_header.png, same
+     887px width) — same shape as Gold Diff Check's own #golddiff-check-
+     overlay/.gdc-bg (346px tall overlay, .gdc-bg itself only 286px
+     starting at top:60px): ONE clip/overlay slides in together as a
+     single unit, not a separately-timed header animation, so
+     ggc-header-* below are plain siblings of .ggc-bg/.ggc-rect inside
+     the same #gold-graph-check-overlay — .ggc-bg/.ggc-rect are pushed
+     down by exactly the header's 60px, clip/overlay both grow by 60px,
+     and clip's top moves up by 60px to keep the panel's bottom edge
+     flush with the 1080px scene exactly like before. */
   #gold-graph-check-clip {
     position: absolute;
-    left: 516px; top: 798px; /* horizontally centered (like item-check); bottom flush with the 1080px scene */
-    width: 887px; height: 282px;
+    left: 516px; top: 738px; /* horizontally centered (like item-check); bottom flush with the 1080px scene */
+    width: 887px; height: 342px;
     overflow: hidden;
     display: none;
     pointer-events: none;
@@ -1768,8 +1778,8 @@
   #gold-graph-check-overlay {
     position: absolute;
     left: 0; top: 0;
-    width: 887px; height: 282px;
-    transform: translateY(282px);
+    width: 887px; height: 342px;
+    transform: translateY(342px);
     transition: transform 350ms ease-in;
   }
   #gold-graph-check-overlay.ggc-in {
@@ -1777,19 +1787,169 @@
     transform: translateY(0);
   }
   .ggc-bg {
-    position: absolute; left: 0; top: 0;
+    position: absolute; left: 0; top: 60px;
     width: 887px; height: 282px;
   }
   .ggc-rect {
     position: absolute;
-    left: 15px; top: 15px;
+    left: 15px; top: 75px;
     width: 857px; height: 253px;
     background-color: rgb(255, 255, 255);
   }
   .ggc-chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* Header — pasted design-tool spec (left/top/width/height kept,
+     background-color/z-index were placeholder noise — see "Working from
+     pasted design-tool CSS" in CLAUDE.md). pt->px at 300dpi throughout
+     this project is px = pt × 300/72 (matches every existing "@ 300dpi"
+     comment in Draft.html/mploverlay_v7.css): 7.38pt → 30.75px,
+     10.64pt → 44.33px. */
+  .ggc-header-bg { position: absolute; left: 0; top: 0; width: 887px; height: 60px; }
+  .ggc-header-title {
+    position: absolute; left: 237px; top: 0; width: 414px; height: 60px;
+    overflow: hidden; /* clips the sheen sweep below to the box */
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 30.75px;
+    color: #0a0a0a; text-align: center;
+  }
+  /* Bounce+sheen flourish — same effect/timing as golddiff-check's
+     .gdc-smart chip (.gdc-smart-sheen/.gdc-smart.gdc-sheen-play/
+     .gdc-smart.gdc-bounce-play, GDC_REVEAL_DELAY), fired by
+     ggcPlayHeaderFlourish() once the panel's slide-in transition
+     finishes (GGC_REVEAL_DELAY in overlay-goldgraphcheck.js). */
+  .ggc-header-title-sheen {
+    position: absolute;
+    top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  @keyframes ggc-sheen-sweep {
+    from { left: -60%; }
+    to   { left: 120%; }
+  }
+  .ggc-header-title.ggc-sheen-play .ggc-header-title-sheen {
+    animation: ggc-sheen-sweep 650ms ease-out;
+  }
+  @keyframes ggc-header-title-bounce {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(0.90); }
+    65%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .ggc-header-title.ggc-bounce-play {
+    animation: ggc-header-title-bounce 350ms ease-out;
+  }
+  /* Event-icon left-to-right fade-in, synced with the header flourish
+     above — see the events block in ggcRenderChart/ggcEventsRevealArmed
+     (overlay-goldgraphcheck.js) for the per-icon animation-delay stagger
+     that makes this play left-to-right instead of all at once. */
+  @keyframes ggc-event-fadein {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .ggc-header-tri {
+    position: absolute; top: 0; width: 122px; height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif; font-weight: 400; font-size: 44.33px;
+    color: #fff; text-transform: uppercase; text-align: center; white-space: nowrap;
+  }
+  #ggc-header-tri-c1 { left: 95px; }
+  #ggc-header-tri-c2 { left: 669px; }
+  /* Same wrapper+fallback-circle+img shape as #sb-logo-c1/c2 in
+     overlay-scoreboard.js (fallback circle shown until the real logo
+     loads), just its own classes since the position/size here (50×50 at
+     21,5 / 817,5) don't match the scoreboard's own (69×69 at 424,1431). */
+  #ggc-header-logo-c1, #ggc-header-logo-c2 {
+    position: absolute; top: 5px; width: 50px; height: 50px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #ggc-header-logo-c1 { left: 21px; }
+  #ggc-header-logo-c2 { left: 817px; }
+  .ggc-header-logo-fallback { position: absolute; width: 38px; height: 38px; border-radius: 50%; }
+  #ggc-header-logo-c1 .ggc-header-logo-fallback { background: rgb(42, 0, 255); }
+  #ggc-header-logo-c2 .ggc-header-logo-fallback { background: rgb(210, 30, 30); }
+  .ggc-header-logo-img { position: absolute; width: 50px; height: 50px; object-fit: contain; }
+  /* Live-glide transitions — overlay-goldgraphcheck.js updates these
+     elements' attributes in place every 500ms poll instead of rebuilding
+     them from scratch (see the "Persistent skeleton" comment in
+     ggcBuildPanel), which is what lets a CSS transition have something
+     to animate FROM. 0.45s (a hair under the 500ms poll interval) so
+     each move mostly finishes before the next one starts, instead of a
+     visible queue of catch-up jumps; linear (not an ease-*) because
+     these get re-triggered every tick — an easing curve looks stuttery
+     when constantly interrupted mid-animation, linear doesn't.
+     #ggc-line/#ggc-area's `d` only reliably interpolates (vs. an
+     instant snap) when both the old and new `d` have the exact same
+     number of path commands — guaranteed here by ggcResample() always
+     producing GGC_LINE_POINTS points, never a variable count.
+     `<rect>`'s x and `<circle>`'s cx/cy are real CSS-animatable SVG
+     geometry properties (per SVG2), so #ggc-timebox/.ggc-diff-dot
+     transition those directly below and it just works. `<line>`'s
+     x1/x2/y1/y2 and `<text>`'s x/y are NOT in that same CSS-exposed set
+     — transitioning them is a silent no-op (the attribute still updates
+     correctly, it just snaps instead of gliding). #ggc-zeroline/
+     .ggc-mark-gridline/.ggc-diff-label/.ggc-time-label/#ggc-axis-zero
+     work around this by keeping their SVG x/y attributes at a fixed
+     local baseline (0, or whichever half never actually moves) and
+     letting JS move them via `transform: translate(...)` instead —
+     `transform` IS reliably CSS-animatable everywhere. The 857×253
+     viewBox maps 1:1 to this box's actual rendered pixels, so a plain
+     `Npx` translate lines up exactly with N SVG user units — no scale
+     conversion needed. */
+  #ggc-line, #ggc-area { transition: d 0.45s linear; }
+  #ggc-zeroline, .ggc-mark-gridline, #ggc-axis-zero { transition: transform 0.45s linear; }
+  .ggc-timebox { transition: x 0.45s linear; }
+  /* Every element above starts life at its untouched ggcBuildPanel()
+     baseline (d="", x/cx/transform effectively 0,0 — top-left of the
+     857×253 box) until the first real render sets its actual position.
+     Without this override, THAT first jump — from the build-time
+     baseline to wherever the data actually is — plays as a transition
+     too, since the transition rules are already active by the time it
+     happens: a visible "everything flies in from the top-left" sweep on
+     every fresh show/page load. ggcAnimateIn() adds this class for
+     exactly the first render after a show, then removes it once that
+     render has actually happened, so every render after that (the live
+     500ms polls) still glides normally. */
+  #ggc-chart.ggc-no-anim, #ggc-chart.ggc-no-anim * { transition: none !important; }
   .ggc-axis-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #555; } /* +50% over the original 10px */
-  .ggc-diff-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 16.5px; } /* +50% over the original 11px */
-  .ggc-time-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #fff; } /* +50% over the original 10px, matching .ggc-timebox's own +50% */
+  /* paint-order draws the stroke BEHIND the fill (default SVG order is
+     fill-then-stroke, i.e. stroke ON TOP, which would smear over/thicken
+     into the colored fill instead of forming a clean outline around it).
+     stroke/stroke-width are plain CSS here (not a fill/stroke swap) so
+     the dashboard Edit tab's generic left/top/width/height/fontSize
+     override machinery could be extended with a `strokeWidth` field the
+     same way — see GGC_DEFAULTS in dashboard.html. */
+  .ggc-diff-label {
+    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 16.5px; /* +50% over the original 11px */
+    stroke: #fff; stroke-width: 3px; stroke-linejoin: round; paint-order: stroke fill;
+    transition: transform 0.45s linear;
+  }
+  /* Marks the exact (t, diffAtT) point each .ggc-diff-label is labeling.
+     `r` (circle radius) is a real stylable SVG-CSS property here, same
+     as stroke-width — both editable via the dashboard Edit tab's generic
+     override machinery (GGC_DEFAULTS in dashboard.html), no special-case
+     JS mapping needed since neither property name has an uppercase
+     letter to convert. */
+  .ggc-diff-dot { r: 5px; stroke-width: 2px; transition: cx 0.45s linear, cy 0.45s linear; }
+  .ggc-time-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #fff; transition: transform 0.45s linear; } /* +50% over the original 10px, matching .ggc-timebox's own +50% */
+
+  /* Event rows — invisible position references only (the events
+     themselves are plain SVG shapes drawn at these Y's by
+     overlay-goldgraphcheck.js's ggcRowY, not these elements). Real DOM
+     children of .ggc-rect purely so the dashboard Edit tab's normal
+     drag-a-real-element machinery can move them — see GGC_DEFAULTS in
+     dashboard.html. Objectives (Lord/Turtle/Tower) sit in the outer
+     rows, Kills in the two inner rows, matching the request: top/bottom
+     for objectives, "between top-and-middle" / "between middle-and-
+     bottom" for kills. */
+  .ggc-row-marker { position: absolute; left: 0; width: 857px; height: 1px; background: transparent; pointer-events: none; }
+  #ggc-row-lord-top    { top: 30px;  }
+  #ggc-row-kill-top    { top: 75px;  }
+  #ggc-row-kill-bottom { top: 133px; }
+  #ggc-row-lord-bottom { top: 178px; }
 
   /* ── [FEATURE: side-check family] ──────────────────────────────────
      Shared layout for every "side *check" ranking panel (exp, damage

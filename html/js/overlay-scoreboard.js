@@ -307,10 +307,12 @@ registerPollHandler(function(data) {
   if (t1 && c1) {
     var name1 = c1.team_simple_name || '';
     if (name1) t1.textContent = name1.toUpperCase();
+    t1.style.color = sbIsEnduring ? '#0a0a0a' : '#fff';
   }
   if (t2 && c2) {
     var name2 = c2.team_simple_name || '';
     if (name2) t2.textContent = name2.toUpperCase();
+    t2.style.color = sbIsEnduring ? '#0a0a0a' : '#fff';
   }
 
   /* Team logos — only reload when team name changes */
@@ -518,6 +520,14 @@ function sbRenderBars(container, total, scored, fromRight) {
   }
 }
 
+/* Shared with registerPollHandler below — #scoreboard-tricode-c1/c2's
+   textContent is set from the live game-data poll (masterPoll), not from
+   /match/state, but the gold-vs-white color decision comes from
+   /match/state's matchType. Keeping it on a module-level flag (updated
+   here every 3s) lets the poll handler apply the right color whenever it
+   (re)writes the tricode text, without itself needing to know matchType. */
+var sbIsEnduring = false;
+
 function sbPollMatchState() {
   fetch('/match/state', { cache: 'no-store' })
     .then(function(r) { return r.json(); })
@@ -569,6 +579,17 @@ function sbPollMatchState() {
       var isEnduring = curMatch && curMatch.matchType === 'enduring';
       var sbBg = document.getElementById('scoreboard-bg');
       if (sbBg) sbBg.src = isEnduring ? 'assets/ingame/ingamepng2_ENDURING LEGACY.png' : 'assets/ingame/ingamepng2.png';
+
+      /* #scoreboard-tricode-c1/c2 sit directly on that background's gold
+         panel in the Enduring Legacy art (white elsewhere) — flip color
+         now for whatever text is already there, and record the flag for
+         registerPollHandler below (which is what actually keeps the
+         tricode text up to date). */
+      sbIsEnduring = isEnduring;
+      var triC1 = document.getElementById('scoreboard-tricode-c1');
+      var triC2 = document.getElementById('scoreboard-tricode-c2');
+      if (triC1) triC1.style.color = isEnduring ? '#0a0a0a' : '#fff';
+      if (triC2) triC2.style.color = isEnduring ? '#0a0a0a' : '#fff';
     })
     .catch(function() {});
 }
@@ -667,9 +688,22 @@ setInterval(sbPollMatchState, 3000);
            top of also feeding the fit budget. */
         var skipFontSize = (sel === '.sidecheck-name' || sel === '#sb-mi-patch' || sel === '#sb-mi-casters');
         var decls = Object.keys(props).filter(function(prop) {
+          /* smoothRadius (Gold Graph Check's spike-smoothing setting on
+             #ggc-chart) is never a real CSS property — see its own
+             dedicated loadGgcSmoothRadius() loader in
+             overlay-goldgraphcheck.js and the matching direct-cross-
+             frame-call comment in dashboard.html's applyToEditIframe.
+             Loading it here would just emit a dead, ignored
+             declaration. */
+          if (prop === 'smoothRadius') return false;
           return !(skipFontSize && prop === 'fontSize');
         }).map(function(prop) {
-          var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+          /* camelCase saved prop name -> kebab-case CSS property (fontSize
+             -> font-size, strokeWidth -> stroke-width, etc.) — generic so
+             a new tunable (e.g. Gold Graph Check's diff-label strokeWidth,
+             GGC_DEFAULTS in dashboard.html) never needs a matching special
+             case added here. */
+          var cssProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
           return cssProp + ':' + props[prop] + ' !important';
         }).join(';');
         return sel + '{' + decls + '}';

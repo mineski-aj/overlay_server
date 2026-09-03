@@ -10,7 +10,7 @@
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
 // below for why this exists. Current bump: added 'bpmmeter_tag'.
-const OVERLAY_WORKER_VERSION = 12;
+const OVERLAY_WORKER_VERSION = 13; // 13: added 'seat_arrangement' to KNOWN_EVENTS
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

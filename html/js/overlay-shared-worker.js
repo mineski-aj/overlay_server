@@ -39,7 +39,7 @@ const KNOWN_EVENTS = [
   'match', 'matchboard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerh2h', 'playerui',
   'post_emblems', 'post_hearts', 'post_itemline', 'post_itemline_itemin',
   'post4key', 'post_itemline_itemout', 'post_items', 'post_richguy', 'post_stats', 'reload',
-  'scoreboard', 'sidecheck', 'standings', 'stylepatch', 'team_hexagon', 'team_lineup_blue',
+  'scoreboard', 'seat_arrangement', 'sidecheck', 'standings', 'stylepatch', 'team_hexagon', 'team_lineup_blue',
   'team_lineup_red', 'today_schedule', 'tomorrow_schedule', 'waiting_lobby',
   'waiting_tvc',
 ];

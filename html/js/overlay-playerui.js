@@ -164,7 +164,7 @@ fetch('/overlay/check-overlays').then(r => r.json()).then(d => {
 function puiUpdate(data) {
   if (!puiShouldShow) return;
   for (let i = 1; i <= 10; i++) {
-    const r   = getPlayer(data, i);
+    const r   = getPlayerArranged(data, i);
     const ref = puiRefs[i];
     if (!r || !r.player || !ref) continue;
     const p = r.player;

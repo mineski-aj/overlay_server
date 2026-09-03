@@ -145,6 +145,64 @@ function getPlayer(data, idx) {
   const equipIds = (player.equip_list || []).slice(0, 6).map(e => normalizeId(e?.value));
   return { player, equipIds };
 }
+
+/* Dashboard "Arrangement" tab (routes/devapi.js's /api/seat-arrangement) —
+   a manual seat_1..seat_5 reorder per camp, deliberately scoped to ONLY the
+   features that call getPlayerArranged() below instead of getPlayer()
+   (Player UI, and Item Pickup/Trinity/Quick Swap/Level 15's live detection
+   in overlay-debug.js) — everything else on this page keeps calling plain
+   getPlayer()/getPlayerByRole() and is structurally unaffected by this.
+   Fetched once on load; kept live-synced via the 'seat_arrangement' SSE
+   listener in overlay-debug.js. */
+var currentArrangement = { camp1: [1, 2, 3, 4, 5], camp2: [1, 2, 3, 4, 5] };
+fetch('/api/seat-arrangement').then(r => r.json()).then(d => {
+  if (d && d.camp1 && d.camp2) currentArrangement = d;
+}).catch(() => {});
+
+// Same shape as getPlayer(), except idx is resolved through
+// currentArrangement first — arrangement.camp{N}[seatNum-1] names which
+// ORIGINAL seat_N actually feeds display slot seatNum. Identity order
+// (1,2,3,4,5) makes this behave exactly like getPlayer().
+function getPlayerArranged(data, idx) {
+  const campId  = idx <= 5 ? 1 : 2;
+  const seatNum = idx <= 5 ? idx : idx - 5;
+  const camp = data.camp_list?.find(c => c.campid === campId);
+  if (!camp) return null;
+  const perm = (campId === 1 ? currentArrangement.camp1 : currentArrangement.camp2);
+  const arrangedSeat = perm[seatNum - 1];
+  const player = camp[`seat_${arrangedSeat}`];
+  if (!player) return null;
+  const equipIds = (player.equip_list || []).slice(0, 6).map(e => normalizeId(e?.value));
+  return { player, equipIds };
+}
+
+/* Safety blocker for a LIVE mid-game rearrangement (called from
+   overlay-debug.js's 'seat_arrangement' SSE listener, right after
+   currentArrangement itself updates). Level 15 / Item Pickup / Trinity /
+   Quick Swap all compare THIS poll's getPlayerArranged(data, i) against
+   prevLevel[i]/prevEquipState[i]/prevTotalDamage[i] — a value cached for
+   whichever player USED to be at slot i, from the poll before the swap.
+   Left alone, the very next tick after a rearrangement would read as a
+   wrong player's stats suddenly appearing at slot i (e.g. a level jump, or
+   every item slot changing) and get treated as a genuine trigger that
+   never actually happened.
+   Clearing these lets the next poll re-baseline silently (same "first
+   poll — snapshot only, don't fire" cold-start guard every one of these
+   already has for a fresh game) instead of comparing across the swap.
+   trinityFired resets too — leaving the OLD player's flag set would
+   wrongly suppress the NEW player's own future trinity-complete event for
+   the rest of the game. Does NOT touch the isPlaying/Queue pairs — an
+   animation already mid-playback is left to finish naturally. */
+function resetReactiveBaselines() {
+  for (let i = 1; i <= 10; i++) {
+    delete prevLevel[i];
+    delete prevEquipState[i];
+    delete prevTotalDamage[i];
+    delete combatHistory[i];
+    trinityFired[i] = false;
+  }
+}
+
 /* seat_1..seat_5 are NOT guaranteed to be in lane order — confirmed
    against a live feed sample where seat_1 held the jungler and
    seat_2 held the exp laner. Slot 1-5 here is resolved by the seat's

@@ -7,7 +7,7 @@ for (let i = 1; i <= 10; i++) {
     btn.disabled = true;
     try {
       const data    = lastData || await fetchData();
-      const r       = getPlayer(data, i);
+      const r       = getPlayerArranged(data, i);
       const timeStr = r?.player?.level_eta || '--:--';
       const heroId  = r?.player?.heroid;
       triggerLvl15(i, timeStr, heroId);
@@ -92,7 +92,7 @@ for (let i = 1; i <= 10; i++) {
       let items = [...TRINITY_DEBUG_ITEMS];
       try {
         const data = lastData || await fetchData();
-        const r    = getPlayer(data, pi);
+        const r    = getPlayerArranged(data, pi);
         if (r) {
           const actualT3 = r.equipIds.filter(id => TIER3_IDS.has(id));
           if (actualT3.length > 0) items = [...actualT3, ...TRINITY_DEBUG_ITEMS].slice(0, 3);
@@ -148,7 +148,7 @@ for (let pi = 1; pi <= 10; pi++) {
       let soldId = '3001';
       try {
         const data = lastData || await fetchData();
-        const r    = getPlayer(data, idx);
+        const r    = getPlayerArranged(data, idx);
         if (r) {
           const t3s = r.equipIds.filter(id => TIER3_IDS.has(id));
           if (t3s.length > 0) soldId = t3s[0];
@@ -166,7 +166,7 @@ window.iframeTest = async function(playerIdx, feature) {
   try {
     const data = lastData || await fetchData();
     if (!data) return;
-    const r = getPlayer(data, playerIdx);
+    const r = getPlayerArranged(data, playerIdx);
     if (!r) return;
     const { player, equipIds } = r;
     const pName   = (player.name || '').toUpperCase();
@@ -196,7 +196,7 @@ window.iframeTest = async function(playerIdx, feature) {
 /* ── Unified poll handler ── */
 registerPollHandler(function(data) {
   for (let pidx = 1; pidx <= 10; pidx++) {
-    const result = getPlayer(data, pidx);
+    const result = getPlayerArranged(data, pidx);
     if (!result) continue;
     const { player, equipIds } = result;
     const prev    = prevEquipState[pidx];
@@ -258,7 +258,7 @@ registerPollHandler(function(data) {
   }
 
   for (let pidx = 1; pidx <= 10; pidx++) {
-    const result = getPlayer(data, pidx);
+    const result = getPlayerArranged(data, pidx);
     if (!result) continue;
     const { player } = result;
     const lvl  = parseInt(player.level) || 0;
@@ -363,6 +363,18 @@ masterPoll();
     try {
       var d = JSON.parse(e.data);
       if (d.feature in featureEnabled) featureEnabled[d.feature] = !!d.enabled;
+    } catch {}
+  });
+  // Dashboard "Arrangement" tab (routes/devapi.js's /api/seat-arrangement)
+  // — updates currentArrangement (overlay-core.js) live, then re-baselines
+  // Level 15/Item Pickup/Trinity/Quick Swap so the very next poll doesn't
+  // misread "a different player is now at slot i" as a real trigger. See
+  // resetReactiveBaselines()'s own comment in overlay-core.js.
+  sse.addEventListener('seat_arrangement', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d && d.camp1 && d.camp2) currentArrangement = d;
+      resetReactiveBaselines();
     } catch {}
   });
   sse.addEventListener('scoreboard', function(e) {
