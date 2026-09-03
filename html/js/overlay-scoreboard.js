@@ -561,6 +561,14 @@ function sbPollMatchState() {
         mapLogoImg.dataset.map = mapVal;
         mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
       }
+
+      /* scoreboard background — only Enduring Legacy has its own
+         ingamepng2 variant (the other rivalry types only have Waiting
+         TVC/Lobby art), so every other matchType keeps the normal art. */
+      var curMatch   = (s.todayMatches || [])[(s.match || 1) - 1];
+      var isEnduring = curMatch && curMatch.matchType === 'enduring';
+      var sbBg = document.getElementById('scoreboard-bg');
+      if (sbBg) sbBg.src = isEnduring ? 'assets/ingame/ingamepng2_ENDURING LEGACY.png' : 'assets/ingame/ingamepng2.png';
     })
     .catch(function() {});
 }

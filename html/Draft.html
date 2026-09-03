@@ -1971,6 +1971,21 @@
           mapLogoImg.dataset.map = mapVal;
           mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
         }
+
+        /* #scene background — only Enduring Legacy has its own draftbg
+           variant (the other rivalry types only have Waiting TVC/Lobby
+           art), so every other matchType keeps the normal art. */
+        var curMatch  = (s.todayMatches || [])[(s.match || 1) - 1];
+        var isEnduring = curMatch && curMatch.matchType === 'enduring';
+        scene.style.backgroundImage = "url('assets/draft/" + (isEnduring ? 'draftbg_ENDURING LEGACY.png' : 'draftbg.png') + "')";
+
+        /* #team-c1/#team-c2 sit directly on that background's gold panel
+           in the Enduring Legacy art (white elsewhere), so they need to
+           flip to black only for that matchType. */
+        var teamC1 = document.getElementById('team-c1');
+        var teamC2 = document.getElementById('team-c2');
+        if (teamC1) teamC1.style.color = isEnduring ? '#0a0a0a' : '#fff';
+        if (teamC2) teamC2.style.color = isEnduring ? '#0a0a0a' : '#fff';
       })
       .catch(function() {});
   }

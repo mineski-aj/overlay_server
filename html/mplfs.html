@@ -828,6 +828,9 @@
       font-weight: 400; font-size: 46px;
       color: #fff; text-transform: uppercase; white-space: nowrap;
     }
+    /* Same gold-side-panel contrast fix as .wsm-tri-gold/.tsm-tri-gold —
+       Enduring Legacy only. */
+    .wlm-tri.wlm-tri-gold { color: #0a0a0a; }
     .wlm-tri-l { left: 0;   width: 128px; }
     .wlm-tri-r { right: 0;  width: 128px; }
     .wlm-logo-l { left: 146px; width: 180px; }
@@ -2105,6 +2108,9 @@
       font-weight: 400; font-size: 46px;
       color: #fff; text-transform: uppercase; white-space: nowrap;
     }
+    /* Same gold-side-panel contrast fix as .wsm-tri-gold above — Enduring
+       Legacy only. */
+    .tsm-tri.tsm-tri-gold { color: #0a0a0a; }
     .tsm-tri-l  { left: 0;     width: 141px; }
     .tsm-tri-r  { right: 0;    width: 141px; }
     .tsm-logo-l { left: 141px; width: 196px; }
@@ -2377,6 +2383,11 @@
       font-weight: 400; font-size: 34px;
       color: #fff; text-transform: uppercase; white-space: nowrap;
     }
+    /* Enduring Legacy's box art has a gold (not dark) side panel under the
+       tricode — white text loses contrast there, so this matchType swaps
+       to black. Every other matchType's side panel is dark/saturated
+       enough that white still reads fine. */
+    .wsm-tri.wsm-tri-gold { color: #0a0a0a; }
     .wsm-tri-l { left: 0;    width: 94px; }
     .wsm-tri-r { right: 0;   width: 94px; }
     .wsm-logo-l { left: 94px;  width: 131px; }
@@ -5146,6 +5157,7 @@
       international: { box: 'MatchBox_INTERNATIONAL',     blinker: 'INTERNATIONAL RIVALRY BLINKER' },
       golden:        { box: 'MatchBox_GOLDEN RIVALRY',    blinker: 'GOLDEN RIVALRY BLINKER' },
       clash:         { box: 'MatchBox_CLASH OF TITANS',   blinker: 'CLASH OF TITANS BLINKER' },
+      enduring:      { box: 'MatchBox_ENDURING LEGACY',   blinker: 'ENDURING LEGACY BLINKER' },
     };
 
     /* Today's Schedule config — edit here (or feed from server later) */
@@ -5253,11 +5265,11 @@
               `<div class="wsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
             : `<span class="wsm-band-time">${m.time}</span>`) +
           `<span class="wsm-band-bo">${m.bo}</span>` +
-          `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
+          `<div class="wsm-slot wsm-tri wsm-tri-l${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.left.tri}</div>` +
           logo(m, 'l') +
           `<div class="wsm-slot wsm-center">${center}</div>` +
           logo(m, 'r') +
-          `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
+          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
       });
       root.innerHTML = html;
 
@@ -5493,11 +5505,11 @@
             `<div class="tsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="tsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
           : `<span class="tsm-time">${m.time}</span>`) +
         `<span class="tsm-bo">${m.bo}</span>` +
-        `<div class="tsm-slot tsm-tri tsm-tri-l">${m.left.tri}</div>` +
+        `<div class="tsm-slot tsm-tri tsm-tri-l${m.matchType === 'enduring' ? ' tsm-tri-gold' : ''}">${m.left.tri}</div>` +
         logo('l') +
         `<div class="tsm-slot tsm-center">${centerHtml}</div>` +
         logo('r') +
-        `<div class="tsm-slot tsm-tri tsm-tri-r">${m.right.tri}</div></div>`;
+        `<div class="tsm-slot tsm-tri tsm-tri-r${m.matchType === 'enduring' ? ' tsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
     }
 
     function buildTsMatches(state) {
@@ -5780,11 +5792,11 @@
             `<div class="wlm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wlm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
           : `<span class="wlm-time">${m.time}</span>`) +
         `<span class="wlm-bo">${m.bo}</span>` +
-        `<div class="wlm-slot wlm-tri wlm-tri-l">${m.left.tri}</div>` +
+        `<div class="wlm-slot wlm-tri wlm-tri-l${m.matchType === 'enduring' ? ' wlm-tri-gold' : ''}">${m.left.tri}</div>` +
         logo('l') +
         `<div class="wlm-slot wlm-center">${center}</div>` +
         logo('r') +
-        `<div class="wlm-slot wlm-tri wlm-tri-r">${m.right.tri}</div></div>`;
+        `<div class="wlm-slot wlm-tri wlm-tri-r${m.matchType === 'enduring' ? ' wlm-tri-gold' : ''}">${m.right.tri}</div></div>`;
     }
 
     /* Sponsor box — Draft/in-game style loop (see startWlSponsorLoop below):
@@ -10136,8 +10148,12 @@
     function buildMbCamp(container, campNum) {
       const L = campNum === 1; /* left side */
 
-      /* background */
+      /* background — swapped to the Enduring Legacy variant in
+         applyMatchBoardData when the current match's matchType is
+         'enduring'; every other match type just uses this normal art
+         (only Enduring Legacy has a complete postname_* asset pair). */
       const bg = document.createElement('img');
+      bg.id = `mb-bg${campNum}`;
       bg.style.cssText = `position:absolute;left:0;top:0;width:713px;height:86px;z-index:1;display:block`;
       bg.src = L ? 'assets/postgame/postname_blue.png' : 'assets/postgame/postname_red.png';
       container.appendChild(bg);
@@ -10588,6 +10604,24 @@
         const maxW = Math.ceil(parseInt((ms.series || 'BO3').replace('BO', '')) / 2);
         mbRenderScoreBars(1, maxW, c1.score);
         mbRenderScoreBars(2, maxW, c2.score);
+
+        /* postname_blue/red backgrounds — only Enduring Legacy has its own
+           complete asset pair (the other rivalry types only have Waiting
+           TVC/Lobby art), so every other matchType keeps the normal art. */
+        const curMatch  = (ms.todayMatches || [])[(ms.match || 1) - 1];
+        const isEnduring = curMatch && curMatch.matchType === 'enduring';
+        const bg1 = document.getElementById('mb-bg1');
+        const bg2 = document.getElementById('mb-bg2');
+        if (bg1) bg1.src = isEnduring ? 'assets/postgame/postname_blue_ENDURING LEGACY.png' : 'assets/postgame/postname_blue.png';
+        if (bg2) bg2.src = isEnduring ? 'assets/postgame/postname_red_ENDURING LEGACY.png'  : 'assets/postgame/postname_red.png';
+
+        /* The tricode text sits directly on that background's gold panel
+           in the Enduring Legacy art (white elsewhere), so it needs to
+           flip to black only for that matchType. */
+        const tri1 = document.getElementById('mb-tricode1');
+        const tri2 = document.getElementById('mb-tricode2');
+        if (tri1) tri1.style.color = isEnduring ? '#0a0a0a' : '#fff';
+        if (tri2) tri2.style.color = isEnduring ? '#0a0a0a' : '#fff';
       }
     }
 

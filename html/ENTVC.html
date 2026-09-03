@@ -335,6 +335,11 @@
       font-weight: 400; font-size: 34px;
       color: #fff; text-transform: uppercase; white-space: nowrap;
     }
+    /* Enduring Legacy's box art has a gold (not dark) side panel under the
+       tricode — white text loses contrast there, so this matchType swaps
+       to black. Every other matchType's side panel is dark/saturated
+       enough that white still reads fine. Mirrors mplfs.html. */
+    .wsm-tri.wsm-tri-gold { color: #0a0a0a; }
     .wsm-tri-l { left: 0;    width: 94px; }
     .wsm-tri-r { right: 0;   width: 94px; }
     .wsm-logo-l { left: 94px;  width: 131px; }
@@ -728,6 +733,7 @@
       international: { box: 'MatchBox_INTERNATIONAL',     blinker: 'INTERNATIONAL RIVALRY BLINKER' },
       golden:        { box: 'MatchBox_GOLDEN RIVALRY',    blinker: 'GOLDEN RIVALRY BLINKER' },
       clash:         { box: 'MatchBox_CLASH OF TITANS',   blinker: 'CLASH OF TITANS BLINKER' },
+      enduring:      { box: 'MatchBox_ENDURING LEGACY',   blinker: 'ENDURING LEGACY BLINKER' },
     };
 
     /* Today's Schedule config — edit here (or feed from server later) */
@@ -852,11 +858,11 @@
               `<div class="wsm-band-cot"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
             : `<span class="wsm-band-time">${wsFormatTimeGmt8(m.time)}</span>`) +
           `<span class="wsm-band-bo">${m.bo}</span>` +
-          `<div class="wsm-slot wsm-tri wsm-tri-l">${m.left.tri}</div>` +
+          `<div class="wsm-slot wsm-tri wsm-tri-l${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.left.tri}</div>` +
           logo(m, 'l') +
           `<div class="wsm-slot wsm-center">${center}</div>` +
           logo(m, 'r') +
-          `<div class="wsm-slot wsm-tri wsm-tri-r">${m.right.tri}</div></div>`;
+          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
       });
       root.innerHTML = html;
 
