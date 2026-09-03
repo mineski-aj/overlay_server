@@ -88,6 +88,9 @@
     .player-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .player-ign-input { flex: 1; }
     .player-role-select { width: 160px; }
+    .player-role-sep { font-size: 11px; color: #444; flex-shrink: 0; }
+    .player-secondary-role-select { width: 160px; }
+    .player-secondary-role-select.unset { color: #555; }
     .player-id-badge { font-size: 10px; color: #333; width: 70px; flex-shrink: 0; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
     #actions-row {
@@ -155,6 +158,7 @@
 <script>
 (function () {
   var ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER', 'MULTIROLE'];
+  var SECONDARY_ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER'];
   var token  = sessionStorage.getItem('match_token') || '';
   var roster = null; /* { talents, seatOrder, teams: {id:{name,tag,coach}}, players: {id:{ign,tag,teamId,role}} } */
   var dirty  = false;
@@ -315,6 +319,16 @@
     pLbl.className = 'field-label';
     pLbl.textContent = 'Players';
     playersHdr.appendChild(pLbl);
+    var roleHdrLbl = document.createElement('span');
+    roleHdrLbl.className = 'field-label';
+    roleHdrLbl.style.width = '160px';
+    roleHdrLbl.textContent = 'Main Role';
+    playersHdr.appendChild(roleHdrLbl);
+    var secRoleHdrLbl = document.createElement('span');
+    secRoleHdrLbl.className = 'field-label';
+    secRoleHdrLbl.style.width = '160px';
+    secRoleHdrLbl.textContent = 'Secondary Role';
+    playersHdr.appendChild(secRoleHdrLbl);
     card.appendChild(playersHdr);
 
     teamPlayers(teamId).forEach(function (pid) { card.appendChild(renderPlayerRow(teamId, pid)); });
@@ -324,7 +338,7 @@
     addPlayerBtn.textContent = '+ Add Player';
     addPlayerBtn.addEventListener('click', function () {
       var pid = newLocalId();
-      roster.players[pid] = { ign: '', tag: team.tag || '', teamId: teamId, role: ROLES[0] };
+      roster.players[pid] = { ign: '', tag: team.tag || '', teamId: teamId, role: ROLES[0], secondaryRole: '' };
       setDirty(true);
       renderTeams();
     });
@@ -355,6 +369,25 @@
     roleSelect.value = ROLES.indexOf(player.role) !== -1 ? player.role : ROLES[0];
     roleSelect.addEventListener('change', function () { player.role = roleSelect.value; setDirty(true); });
     row.appendChild(roleSelect);
+
+    var secRoleSelect = document.createElement('select');
+    secRoleSelect.className = 'player-secondary-role-select';
+    var tbuOpt = document.createElement('option');
+    tbuOpt.value = ''; tbuOpt.textContent = 'TBU';
+    secRoleSelect.appendChild(tbuOpt);
+    SECONDARY_ROLES.forEach(function (r) {
+      var opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      secRoleSelect.appendChild(opt);
+    });
+    secRoleSelect.value = SECONDARY_ROLES.indexOf(player.secondaryRole) !== -1 ? player.secondaryRole : '';
+    secRoleSelect.classList.toggle('unset', !secRoleSelect.value);
+    secRoleSelect.addEventListener('change', function () {
+      player.secondaryRole = secRoleSelect.value;
+      secRoleSelect.classList.toggle('unset', !secRoleSelect.value);
+      setDirty(true);
+    });
+    row.appendChild(secRoleSelect);
 
     var idBadge = document.createElement('span');
     idBadge.className = 'player-id-badge';

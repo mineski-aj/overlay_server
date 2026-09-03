@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="js/cache-bust.js"></script>
+<script src="js/overlay-sse-shim.js"></script>
 <title>Fight Recap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&display=swap" rel="stylesheet">
@@ -751,7 +752,15 @@ function heroImgUrl(id) {
 
 // ── SSE: listen for show/hide triggers ───────────────────────────────
 function connectSSE() {
-  const es = new EventSource(`${baseUrl}/overlay/events`);
+  // Was its own raw EventSource (optionally against a non-same-origin
+  // baseUrl via ?api=) — but that override is dead in practice (nothing
+  // in the app ever sets ?api=, and applyUrl(), the only code that would
+  // have reacted to it changing, is itself unwired to any control) and
+  // it was the one page still bypassing the shared connection every
+  // other overlay page uses (see CLAUDE.md's SharedWorker section).
+  // createOverlaySSE() is always same-origin, which matches actual
+  // real-world usage here exactly.
+  const es = createOverlaySSE();
   es.addEventListener('debugoff', () => {
     const p = document.getElementById('debug-panel');
     if (p) p.style.display = 'none';

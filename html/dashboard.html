@@ -4080,6 +4080,20 @@
     { group: 'Name Tags', id: '.lu-nametag-3',     name: 'Name Tag 3'         },
     { group: 'Name Tags', id: '.lu-nametag-4',     name: 'Name Tag 4'         },
     { group: 'Name Tags', id: '.lu-nametag-5',     name: 'Name Tag 5'         },
+    /* .lu-secrole-N is deliberately NOT an editable row here — it always
+       auto-follows its same-numbered .lu-nametag-N's live position/size
+       (see luSyncSecRolePosition in mplfs.html), by design, so dragging
+       Name Tag N alone repositions its secondary-role plate too. Giving
+       it its own row broke that: loadConfig() seeds editValues with
+       EVERY key in LU_DEFAULTS the moment this config opens (deepClone),
+       and Save writes out ALL of editValues, not just whatever the user
+       actually dragged — so saving ANY unrelated Name Tag edit was also
+       silently freezing .lu-secrole-N at its (untouched) default via an
+       explicit !important override, which permanently wins over the
+       plain-inline-style auto-sync and desyncs it from then on. This bit
+       us for real the first time it was tried. If independent secrole
+       positioning is ever genuinely needed, it has to go through a
+       different mechanism than this shared-save editor config. */
     { group: 'Team Bar', id: '.lu-teambar-logo',   name: 'Team Logo'          },
     { group: 'Team Bar', id: '.lu-teambar-season', name: 'Season Label'       },
     { group: 'Team Bar', id: '.lu-teambar-match',  name: 'Week/Day/Match Label' },

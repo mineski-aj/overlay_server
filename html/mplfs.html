@@ -1809,6 +1809,74 @@
       color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden;
     }
 
+    /* Shifted up by exactly its own height (== .lu-secrole's height below,
+       both 54px) once every player has settled into their final pose (see
+       luPlayAnimation's Phase 3 timeout) — the nametag's new bottom edge
+       lands exactly on its own old top edge, so it ends up stacked
+       directly on top of the now-revealed secondary-role plate with no
+       gap and no overlap. Extra specificity vs. .lu-nametag.lu-tag-in
+       (equal selector weight, so source order decides — this rule must
+       stay declared AFTER it). */
+    .lu-nametag.lu-tag-shift { transform: translateY(-54px); }
+
+    /* Secondary-role plate — sits at the EXACT same left/top as its
+       same-numbered nametag (see .lu-secrole-N below, copied 1:1 from
+       .lu-nametag-N) and the exact same 300×54 size, so before the reveal
+       it's simply hidden directly behind the nametag (z-index 19 vs the
+       nametag's 20) at the identical position — "underneath" is literal,
+       not an approximation. Once .lu-tag-shift moves the nametag up and
+       out (see above), this fades in to fill the space, needing no
+       position/size change of its own — hence no transform in the
+       opacity-only transition below, unlike .lu-nametag's shift.
+       /assets/lineup/secondaryrole.png is natively 217×39 (46px icon well
+       + 171px label well side by side) — stretched to 300×54 to match the
+       player-name container 1:1, which is a near-uniform ~1.38x scale on
+       both axes (217:39 and 300:54 are the same aspect ratio to within
+       0.2%), so nothing looks stretched. */
+    .lu-secrole {
+      position: absolute; width: 300px; height: 54px; z-index: 19;
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .lu-secrole.lu-secrole-in { opacity: 1; }
+    .lu-secrole-1 { left: 250px;  top: 770px; }
+    .lu-secrole-2 { left: 530px;  top: 770px; }
+    .lu-secrole-3 { left: 810px;  top: 770px; }
+    .lu-secrole-4 { left: 1090px; top: 770px; }
+    .lu-secrole-5 { left: 1370px; top: 770px; }
+    .lu-secrole-bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+    /* Icon well scales with the plate (46×39 -> ~63.6×54, the same ~1.38x
+       stretch as the plate background above), but the icon graphic itself
+       stays the original 42×42 ("the role icon in the player tag" size,
+       per spec) — just centered in the new, roomier well instead of
+       growing with it. brightness(0) invert(1) (not just brightness(0)
+       like the nametag's icon) forces it solid white instead of solid
+       black. */
+    .lu-secrole-icon {
+      position: absolute; left: 10.8px; top: 6px; width: 42px; height: 42px;
+      object-fit: contain; filter: brightness(0) invert(1);
+    }
+    /* Horizontally centered on the SAME box as .lu-nametag-name (left:84,
+       width:206 — copied 1:1, not just visually eyeballed) so the two
+       texts share one true center-x, using the player name as the
+       reference point — since .lu-secrole sits at the exact same
+       left/width as its nametag (see luSyncSecRolePosition), matching
+       box == matching center. Height stays the full 54px plate height
+       (vertical centering only, doesn't affect the horizontal alignment
+       this is about).
+       Font spec as given: 3.54pt at 300dpi = 3.54 * 300/72 = 14.75px,
+       140 tracking = 140/1000 em = 0.14em letter-spacing (Adobe's
+       tracking unit, 1000 = 1em). Static caption text (never varies), so
+       no runtime shrink-to-fit is needed — same as .lu-title-text
+       elsewhere in this file. */
+    .lu-secrole-label {
+      position: absolute; left: 84px; top: 0; width: 206px; height: 54px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 14.75px; color: rgb(255, 255, 255);
+      text-transform: uppercase; line-height: 0.597; letter-spacing: 0.14em;
+      white-space: nowrap;
+    }
+
     /* Bottom bar — team crest centered, season label left, week/day/match
        label right (all independently positioned/editable). */
     .lu-teambar-logo {
@@ -3477,6 +3545,11 @@
         <img class="lu-nametag-role" id="lub-nametag-role-1" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lub-nametag-name-1"></div>
       </div>
+      <div class="lu-secrole lu-secrole-1" id="lub-secrole-1">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lub-secrole-icon-1" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-2" id="lub-player-2">
         <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-2"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lub-photo-final-2" src="" alt="">
@@ -3485,6 +3558,11 @@
         <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
         <img class="lu-nametag-role" id="lub-nametag-role-2" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lub-nametag-name-2"></div>
+      </div>
+      <div class="lu-secrole lu-secrole-2" id="lub-secrole-2">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lub-secrole-icon-2" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <div class="lu-player lu-player-3" id="lub-player-3">
         <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-3"   src="" alt="">
@@ -3495,6 +3573,11 @@
         <img class="lu-nametag-role" id="lub-nametag-role-3" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lub-nametag-name-3"></div>
       </div>
+      <div class="lu-secrole lu-secrole-3" id="lub-secrole-3">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lub-secrole-icon-3" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-4" id="lub-player-4">
         <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-4"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lub-photo-final-4" src="" alt="">
@@ -3504,6 +3587,11 @@
         <img class="lu-nametag-role" id="lub-nametag-role-4" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lub-nametag-name-4"></div>
       </div>
+      <div class="lu-secrole lu-secrole-4" id="lub-secrole-4">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lub-secrole-icon-4" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-5" id="lub-player-5">
         <img class="lu-photo lu-photo-sig"   id="lub-photo-sig-5"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lub-photo-final-5" src="" alt="">
@@ -3512,6 +3600,11 @@
         <img class="lu-nametag-bg" src="/assets/ingame/killblueback.png" alt="">
         <img class="lu-nametag-role" id="lub-nametag-role-5" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lub-nametag-name-5"></div>
+      </div>
+      <div class="lu-secrole lu-secrole-5" id="lub-secrole-5">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lub-secrole-icon-5" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <img class="lu-teambar-logo" id="lub-teambar-logo" src="" alt="" onerror="this.style.display='none'">
       <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
@@ -3538,6 +3631,11 @@
         <img class="lu-nametag-role" id="lur-nametag-role-1" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lur-nametag-name-1"></div>
       </div>
+      <div class="lu-secrole lu-secrole-1" id="lur-secrole-1">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lur-secrole-icon-1" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-2" id="lur-player-2">
         <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-2"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lur-photo-final-2" src="" alt="">
@@ -3546,6 +3644,11 @@
         <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
         <img class="lu-nametag-role" id="lur-nametag-role-2" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lur-nametag-name-2"></div>
+      </div>
+      <div class="lu-secrole lu-secrole-2" id="lur-secrole-2">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lur-secrole-icon-2" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <div class="lu-player lu-player-3" id="lur-player-3">
         <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-3"   src="" alt="">
@@ -3556,6 +3659,11 @@
         <img class="lu-nametag-role" id="lur-nametag-role-3" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lur-nametag-name-3"></div>
       </div>
+      <div class="lu-secrole lu-secrole-3" id="lur-secrole-3">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lur-secrole-icon-3" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-4" id="lur-player-4">
         <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-4"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lur-photo-final-4" src="" alt="">
@@ -3565,6 +3673,11 @@
         <img class="lu-nametag-role" id="lur-nametag-role-4" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lur-nametag-name-4"></div>
       </div>
+      <div class="lu-secrole lu-secrole-4" id="lur-secrole-4">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lur-secrole-icon-4" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
+      </div>
       <div class="lu-player lu-player-5" id="lur-player-5">
         <img class="lu-photo lu-photo-sig"   id="lur-photo-sig-5"   src="" alt="">
         <img class="lu-photo lu-photo-final" id="lur-photo-final-5" src="" alt="">
@@ -3573,6 +3686,11 @@
         <img class="lu-nametag-bg" src="/assets/ingame/killredback.png" alt="">
         <img class="lu-nametag-role" id="lur-nametag-role-5" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-nametag-name" id="lur-nametag-name-5"></div>
+      </div>
+      <div class="lu-secrole lu-secrole-5" id="lur-secrole-5">
+        <img class="lu-secrole-bg" src="/assets/lineup/secondaryrole.png" alt="">
+        <img class="lu-secrole-icon" id="lur-secrole-icon-5" src="" alt="" onerror="this.style.display='none'">
+        <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <img class="lu-teambar-logo" id="lur-teambar-logo" src="" alt="" onerror="this.style.display='none'">
       <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
@@ -7528,8 +7646,49 @@
     const LU_SLOT_POSE = { 1: 'RIGHT', 2: 'LEFT', 3: 'LEFT', 4: 'RIGHT', 5: 'LEFT' };
     function luPoseForSlot(n) { return LU_SLOT_POSE[n] || 'LEFT'; }
 
-    function luApplyPlayers(side, lineup) {
+    /* Secondary role isn't on /match/state's lineup entries (those only
+       carry { role, ign, id } — see match-dashboard.html) — it lives on
+       mainroster.json, keyed by player id rather than ign, so look it up
+       by matching ign. */
+    function luSecondaryRoleForIgn(roster, ign) {
+      if (!roster || !roster.players || !ign) return '';
+      for (const pid in roster.players) {
+        if (roster.players[pid].ign === ign) return roster.players[pid].secondaryRole || '';
+      }
+      return '';
+    }
+
+    /* .lu-secrole-N has its own hardcoded default position (matching
+       .lu-nametag-N's OWN default) so it lines up out of the box — but a
+       dashboard Edit-tab drag on "Name Tag N" injects a per-selector
+       `!important` override straight onto .lu-nametag-N only (see
+       loadMplfsOverrides above), which .lu-secrole-N has no way to know
+       about on its own. Read the nametag's ACTUAL (possibly overridden)
+       rendered box and copy it onto the secrole element every apply, so
+       it always tracks wherever the nametag really is, not just its
+       shipped default.
+       Deliberately a plain (non-!important) inline style, not
+       setProperty(..., 'important') — if the user ALSO explicitly
+       repositions "Secondary Role N" itself via the Edit tab and saves,
+       THAT selector's own injected !important override still wins over
+       this, so the two composes correctly: auto-follow by default,
+       explicit override still possible. */
+    function luSyncSecRolePosition(side) {
       const s = LU_SIDES[side];
+      for (let n = 1; n <= 5; n++) {
+        const nametag = document.getElementById(s.prefix + '-nametag-' + n);
+        const secrole = document.getElementById(s.prefix + '-secrole-' + n);
+        const cs = getComputedStyle(nametag);
+        secrole.style.left   = cs.left;
+        secrole.style.top    = cs.top;
+        secrole.style.width  = cs.width;
+        secrole.style.height = cs.height;
+      }
+    }
+
+    function luApplyPlayers(side, lineup, roster) {
+      const s = LU_SIDES[side];
+      luSyncSecRolePosition(side);
       for (let n = 1; n <= 5; n++) {
         const player = lineup[n - 1] || null;
         const ign    = player && player.ign;
@@ -7538,6 +7697,7 @@
         const finalEl = document.getElementById(s.prefix + '-photo-final-' + n);
         const roleImg = document.getElementById(s.prefix + '-nametag-role-' + n);
         const nameEl  = document.getElementById(s.prefix + '-nametag-name-' + n);
+        const secRoleImg = document.getElementById(s.prefix + '-secrole-icon-' + n);
 
         sigEl.onerror = () => { sigEl.style.visibility = 'hidden'; };
         finalEl.onerror = () => { finalEl.style.visibility = 'hidden'; };
@@ -7549,6 +7709,10 @@
         roleImg.style.display = '';
         roleImg.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
         nameEl.textContent = ign || '';
+
+        const secondaryRole = luSecondaryRoleForIgn(roster, ign);
+        secRoleImg.style.display = '';
+        secRoleImg.src = secondaryRole ? '/role/' + encodeURIComponent(roleFile(secondaryRole)) + '.png' : '';
       }
     }
 
@@ -7588,8 +7752,11 @@
       for (let n = 1; n <= 5; n++) {
         document.getElementById(s.prefix + '-player-' + n).classList.remove('lu-in');
         document.getElementById(s.prefix + '-player-' + n).classList.remove('lu-posed');
-        document.getElementById(s.prefix + '-nametag-' + n).classList.remove('lu-tag-in');
+        const nametagEl = document.getElementById(s.prefix + '-nametag-' + n);
+        nametagEl.classList.remove('lu-tag-in', 'lu-tag-shift');
+        nametagEl.style.transform = ''; // clear luPlaySecondaryRoleReveal's inline shift so a replay starts clean
         document.getElementById(s.prefix + '-photo-final-' + n).classList.remove('lu-bounce');
+        document.getElementById(s.prefix + '-secrole-' + n).classList.remove('lu-secrole-in');
       }
       document.getElementById(s.prefix + '-group-photo').classList.remove('lu-group-in', 'lu-group-float', 'lu-group-out');
       s.page.classList.remove('lu-phase2');
@@ -7600,7 +7767,14 @@
        than a flat left-to-right wipe. Once they've settled, each slot
        "buttons" into its final left/right pose, left-to-right, like buttons
        closing down a row. */
-    function luPlayAnimation(side) {
+    /* Matches .lu-pose-bounce's own keyframe duration in CSS — the longer
+       of the two transitions that fire when a slot poses (its 380ms beats
+       .lu-posed's 300ms opacity/transform transition), so this is really
+       "how long until a just-posed slot has visually settled". Keep the
+       two in sync if either changes. */
+    const LU_POSE_BOUNCE_MS = 380;
+
+    function luPlayAnimation(side, feature) {
       const s = LU_SIDES[side];
       const REVEAL_ORDER = [3, 2, 4, 1, 5];
       const REVEAL_STAGGER_MS = 90;
@@ -7620,6 +7794,38 @@
           p.classList.add('lu-posed');
           finalEl.classList.add('lu-bounce');
         }, POSE_START_MS + (n - 1) * POSE_STAGGER_MS);
+      }
+
+      /* Phase 3 — secondary role reveal. Fires 1.5s after the LAST slot
+         (n=5, the latest of the staggered POSE_START_MS+(n-1)*POSE_STAGGER_MS
+         triggers above) has fully settled into its final pose, i.e. once
+         the whole lineup has visibly stopped moving. */
+      const lastPoseSettledAt = POSE_START_MS + 4 * POSE_STAGGER_MS + LU_POSE_BOUNCE_MS;
+      const SECROLE_HOLD_MS = 1500;
+      setTimeout(() => {
+        if (activeFeature !== feature) return; /* superseded before the reveal fired */
+        luPlaySecondaryRoleReveal(side);
+      }, lastPoseSettledAt + SECROLE_HOLD_MS);
+    }
+
+    /* Nametag shifts up toward the photo, uncovering the secondary-role
+       plate sitting just below its resting spot (see .lu-secrole-in CSS).
+       The shift amount is the nametag's OWN actual height (read live, not
+       .lu-tag-shift's hardcoded -54px CSS default) so it still lands
+       exactly on top of the secrole plate with zero gap even if "Name Tag
+       N" has been resized via the dashboard Edit tab — same reasoning as
+       luSyncSecRolePosition above. Plain inline style (no !important)
+       still composes correctly with luSyncSecRolePosition's own inline
+       left/top/width/height and with any saved !important override on
+       .lu-secrole-N itself. */
+    function luPlaySecondaryRoleReveal(side) {
+      const s = LU_SIDES[side];
+      for (let n = 1; n <= 5; n++) {
+        const nametag = document.getElementById(s.prefix + '-nametag-' + n);
+        const shiftPx = nametag.getBoundingClientRect().height;
+        nametag.classList.add('lu-tag-shift');
+        nametag.style.transform = 'translateY(-' + shiftPx + 'px)';
+        document.getElementById(s.prefix + '-secrole-' + n).classList.add('lu-secrole-in');
       }
     }
 
@@ -7652,7 +7858,7 @@
       setTimeout(() => {
         if (activeFeature !== feature) return; /* superseded mid-intro */
         s.page.classList.add('lu-phase2');
-        luPlayAnimation(side);
+        luPlayAnimation(side, feature);
       }, LU_GROUP_BUTTON_IN_MS + LU_GROUP_FLOAT_MS + LU_PHASE2_DELAY_MS);
     }
 
@@ -7668,6 +7874,15 @@
         .then(r => r.ok ? r.json() : null).catch(() => null);
     }
 
+    /* mainroster.json — fetched fresh every show() (not cached across
+       calls) since it's editable live from the Roster dashboard tab at
+       any time, same reasoning as luFetchMatchState above. Only field
+       needed here is secondaryRole (see luSecondaryRoleForIgn). */
+    function luFetchRoster() {
+      return fetch(buildUrl('/mainroster.json'), { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null).catch(() => null);
+    }
+
     /* msPromise is optional — pass one in to share a single /match/state
        fetch with a caller that also needs it (Phase 0 below needs the
        team's tricode before it can even pick which intro clip to play, so
@@ -7676,13 +7891,16 @@
     async function luPreloadLineup(side, feature, msPromise) {
       const s = LU_SIDES[side];
       msPromise = msPromise || luFetchMatchState();
+      const rosterPromise = luFetchRoster();
       await transitionTo(feature);
       const ms = await msPromise;
       if (activeFeature !== feature) return false; /* superseded while awaiting match state */
+      const roster = await rosterPromise;
+      if (activeFeature !== feature) return false; /* superseded while awaiting roster */
 
       const teamObj = ms ? ms[s.camp] : null;
       const lineup  = (teamObj && teamObj.lineup) || [];
-      luApplyPlayers(side, lineup);
+      luApplyPlayers(side, lineup, roster);
       luApplyTeamBar(side, teamObj, ms);
       luApplyGroupPhoto(side, teamObj);
       luApplyBgPhoto(side, teamObj);

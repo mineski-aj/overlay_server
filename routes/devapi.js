@@ -353,10 +353,41 @@ router.get('/api/dynamic-content/vmix', (req, res) => {
 // ?fresh=1 skips state.lastGameData and always does a live fetch to the
 // upstream game API right then — for boards that need the API's current
 // value at the exact moment they read it (Player Board, Post Emblems, Post
-// Items, Post Stats) rather than whatever the once-a-second poll last
-// caught. Still goes through this server, not the browser, so it works the
-// same everywhere the cached path already works (no new CORS/reachability
-// requirements on whatever machine renders mplfs.html).
+// Items, Post Stats, and now arrangement-dashboard.html's 2s poll) rather
+// than whatever the once-a-second poll last caught. Still goes through
+// this server, not the browser, so it works the same everywhere the
+// cached path already works (no new CORS/reachability requirements on
+// whatever machine renders mplfs.html).
+//
+// Two protections lib/pollers.js's httpGet() already has that this path
+// was missing until arrangement-dashboard.html started hitting it every
+// 2s from a static, always-mounted dashboard iframe (so it now runs
+// continuously for the life of any open dashboard tab, not just when a
+// Post board happens to show): a hard timeout, and in-flight coalescing.
+// Plain fetch() has no default timeout — a stalled upstream would hang
+// this request forever — and with no coalescing, a slow upstream plus a
+// setInterval-driven caller piles up one more overlapping live fetch to
+// the SAME upstream URL every 2s indefinitely, exactly the kind of thing
+// that reads as "everything got slow" (see HTTP_GET_TIMEOUT_MS's comment
+// in lib/pollers.js for the same lesson learned there).
+const GAMEDATA_FRESH_TIMEOUT_MS = 8000;
+let gamedataFreshInFlight = null;
+function fetchGamedataFresh(gameUrl) {
+  if (gamedataFreshInFlight) return gamedataFreshInFlight;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), GAMEDATA_FRESH_TIMEOUT_MS);
+  gamedataFreshInFlight = fetch(gameUrl, { signal: controller.signal })
+    .then(async (r) => {
+      if (!r.ok) throw new Error(`upstream ${r.status}`);
+      return r.json();
+    })
+    .finally(() => {
+      clearTimeout(timer);
+      gamedataFreshInFlight = null;
+    });
+  return gamedataFreshInFlight;
+}
+
 router.get('/api/gamedata-proxy', async (req, res) => {
   if (state.lastGameData && req.query.fresh !== '1') {
     return res.set('Cache-Control', 'no-store').json(state.lastGameData);
@@ -364,9 +395,7 @@ router.get('/api/gamedata-proxy', async (req, res) => {
   try {
     const gameUrl = readUrlForMode(GAME_URL_FILE, '').trim();
     if (!gameUrl) return res.status(404).json({ error: 'no game URL configured' });
-    const r = await fetch(gameUrl);
-    if (!r.ok) return res.status(502).json({ error: `upstream ${r.status}` });
-    const data = await r.json();
+    const data = await fetchGamedataFresh(gameUrl);
     res.set('Cache-Control', 'no-store').json(data);
   } catch (e) {
     res.status(502).json({ error: e.message });

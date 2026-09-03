@@ -168,8 +168,25 @@
       return refreshRawSeats();
     }).then(function () {
       renderAll();
-      pollTimer = setInterval(refreshRawSeats, 2000);
+      scheduleNextPoll();
     });
+  }
+
+  // Self-rescheduling instead of setInterval: this iframe is always
+  // mounted (dashboard.html never tears it down on tab switch, same as
+  // Match Board/Standings), so it polls for the entire life of any open
+  // dashboard tab. setInterval fires on a fixed clock regardless of
+  // whether the previous fetch has resolved — if the upstream game API
+  // ever stalls, requests pile up every 2s indefinitely, each an extra
+  // concurrent live round-trip server-side (see /api/gamedata-proxy's
+  // own comment in routes/devapi.js). Scheduling the next poll only
+  // after the current one settles means there is only ever one
+  // /api/gamedata-proxy?fresh=1 request in flight from this page.
+  function scheduleNextPoll() {
+    clearTimeout(pollTimer);
+    pollTimer = setTimeout(function () {
+      refreshRawSeats().then(scheduleNextPoll);
+    }, 2000);
   }
 
   /* ── LOAD ── */
