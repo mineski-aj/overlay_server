@@ -1379,6 +1379,9 @@
       line-height: 1.35;
       color: #161616;
     }
+    .dp-rationale-text strong {
+      font-weight: 1000;
+    }
   </style>
 </head>
 <body>
@@ -2788,6 +2791,54 @@
     return lower !== 'null' && lower !== 'undefined';
   }
 
+  /* ── Rationale bolding — specific keywords/phrases (fetched from
+     /rationale_keywords.json, see feedback_fetch_cache.md re: cache:
+     'no-store' for a JSON data file that may change) plus any bare
+     number or number-with-percent get wrapped in <strong>. Falls back
+     to DP_RATIONALE_KEYWORDS_DEFAULT if the fetch fails so bolding
+     still works before/without that file. */
+  var DP_RATIONALE_KEYWORDS_DEFAULT = [
+    'presence', 'meta', 'priority', 'contested', 'first phase',
+    'comfort pick', 'record', 'flex pick', 'roles', 'specialty',
+    'signature', 'counter', 'answer', 'banned away', 'off the board'
+  ];
+  var dpRationaleHighlightRegex = null;
+
+  function dpBuildRationaleHighlightRegex(keywords) {
+    var escaped = keywords
+      .slice()
+      .sort(function (a, b) { return b.length - a.length; }) /* longest first so a phrase wins over a shorter word it contains */
+      .map(function (k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    var wordsPart  = '\\b(?:' + escaped.join('|') + ')\\b';
+    var numberPart = '\\d+(?:\\.\\d+)?%?'; /* any number, optionally decimal, optionally with a trailing % */
+    return new RegExp(wordsPart + '|' + numberPart, 'gi');
+  }
+
+  dpRationaleHighlightRegex = dpBuildRationaleHighlightRegex(DP_RATIONALE_KEYWORDS_DEFAULT);
+
+  fetch('/rationale_keywords.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (list) {
+      if (Array.isArray(list) && list.length) {
+        dpRationaleHighlightRegex = dpBuildRationaleHighlightRegex(list);
+      }
+    })
+    .catch(function () {});
+
+  function dpEscapeHtml(text) {
+    return text.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function dpHighlightRationale(text) {
+    var escaped = dpEscapeHtml(text);
+    if (!dpRationaleHighlightRegex) return escaped;
+    return escaped.replace(dpRationaleHighlightRegex, function (m) {
+      return '<strong>' + m + '</strong>';
+    });
+  }
+
   function dpShowRationaleBubble(side, text) {
     var btnEl    = side === 'blue' ? dpBlueAiBtnEl : dpRedAiBtnEl;
     var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
@@ -2798,7 +2849,7 @@
     clearTimeout(dpRationaleTimers[side]);
     clearTimeout(dpRationaleSeqTimers[side]);
 
-    textEl.textContent = text;
+    textEl.innerHTML = dpHighlightRationale(text);
 
     /* innerEl is absolutely positioned (bottom:0, no top), so its own
        height is intrinsic to the text content regardless of the
@@ -3486,10 +3537,14 @@
     document.body.appendChild(dpLiveRouletteBtn);
   }
 
+  /* Each sample deliberately includes several of rationale_keywords.json's
+     bolded terms plus a few bare/percent numbers, so this button doubles
+     as a quick visual check that dpHighlightRationale is actually bolding
+     the right things at every bubble size. */
   var DP_TEST_RATIONALES = [
-    'Short and simple call.',
-    'This hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex picks and keeps the mid lane matchup favorable heading into the late game.',
-    'A long one to stress-test the maximum bubble height: this pick counters their core carry directly, denies a critical objective-control tool, and keeps the draft flexible enough for a follow-up ban if the enemy shows a different priority next rotation, which the data suggests is a live possibility given their last five games and their coach’s tendencies in similar series.'
+    'Top priority, 68% win rate.',
+    'This hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex pick options and keeps roles flexible. Current meta presence sits around 55%, and it’s a common comfort pick when contested in the first phase.',
+    'A long one to stress-test the maximum bubble height: this hero has been banned away or picked in 9 of their last 10 games, sitting at a 82% win rate and 71% presence in the current meta. It’s their signature comfort pick, filling multiple flex pick roles with a strong specialty in the first phase, and it directly serves as the counter and answer to the enemy’s top priority target — now officially off the board after a contested draft with a 3-game ban record this split.'
   ];
   var dpTestRationaleIdx    = 0;
   var dpDebugRationaleShown = false;
@@ -3517,13 +3572,17 @@
       }
       return arr;
     };
+    /* Both rationales include several of rationale_keywords.json's bolded
+       terms plus bare/percent numbers, so this button also exercises
+       dpHighlightRationale end-to-end (not just dpShowRationaleBubble's
+       own sizing/timing) during a real reveal. */
     var bluePred = {
       slot: 1, side: 'BLUE', type: 'BAN', candidates: fakeCands('blue'),
-      rationale: 'Sample rationale for the BLUE ban — this hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex picks.'
+      rationale: 'Sample rationale for the BLUE ban — this hero has 62% presence in the current meta and has been a contested comfort pick in each of their last 3 drafts, making it a top priority to deny before it becomes their signature counter pick.'
     };
     var redPred = {
       slot: 2, side: 'RED', type: 'BAN', candidates: fakeCands('red'),
-      rationale: 'Sample rationale for the RED ban — a second explanation, on the other side, to confirm the bubble reappears correctly opposite the first one.'
+      rationale: 'Sample rationale for the RED ban — banned away 4 times this split with an 81% ban record, it’s their answer to a flex pick that fills multiple roles, now off the board entirely once removed.'
     };
     /* A 3rd, permanently-undecided prediction — never added to
        draftState, so dpDeriveActivePrediction always finds it as the
@@ -3539,37 +3598,48 @@
       rationale: null
     };
     /* predictions[] must list every slot (not just the one being
-       revealed) and draftState must already reflect "blue decided, red
-       not yet" BEFORE the blue reveal starts — otherwise, the instant
-       blue's reveal finishes, dpDeriveActivePrediction sees nothing left
-       undecided, concludes the draft is over, and dpHideAll() wipes the
-       whole panel (and the pending rationale) before the red reveal ever
-       gets a chance to run. This exact mistake was why the rationale
-       bubble never appeared in the first version of this harness — a bug
-       in the fake test data, not in the real reveal logic it exercises. */
+       revealed) and draftState must already reflect BOTH bans as decided
+       — dpDeriveActivePrediction (see below) is only ever consulted once
+       dpPickQueue fully drains, which only happens after both reveals
+       below have actually played out, so there's no "premature done" risk
+       in setting both up front (unlike staggering it in mid-demo, see
+       below). */
     var fakeData = {
       blueTeam: { name: 'BLUE' }, redTeam: { name: 'RED' },
       predictions: [bluePred, redPred, thirdPred],
-      draftState: { blueBans: ['blue_2'], redBans: [], bluePicks: [], redPicks: [] }
+      draftState: { blueBans: ['blue_2'], redBans: ['red_3'], bluePicks: [], redPicks: [] }
     };
 
     dpDebugTestActive = true;
     dpHideRationaleBubbles();
     dpActiveData = fakeData;
     dpUserHidden = false;
-    dpPickQueue = [{ heroId: 'blue_2', side: 'blue', type: 'ban', pred: bluePred, occurrence: 0 }];
+
+    /* Queue BOTH reveals up front instead of staggering the red entry in
+       behind a fixed setTimeout. dpProcessPickQueue's own advance() logic
+       drains the queue the instant each entry's settle animation actually
+       finishes — and that animation's real duration varies (it's an
+       exponential-decay approach to the target card, not a fixed-length
+       tween), so a hardcoded delay for the second entry raced against the
+       first one's real (variable) finish time. Whichever side won that
+       race corrupted the other: if blue finished first, dpPickQueue had
+       already been emptied and re-assigned out from under the in-flight
+       chain; if the timeout fired first, TWO overlapping
+       dpProcessPickQueue chains ran concurrently against the same shared
+       dpPickQueue/dpActivePanel state. That's the "red flashes briefly,
+       then blue comes back and does nothing" bug — queuing both up front
+       makes blue -> red always happen in strict sequence, regardless of
+       how long either settle animation actually takes. */
+    dpPickQueue = [
+      { heroId: 'blue_2', side: 'blue', type: 'ban', pred: bluePred, occurrence: 0 },
+      { heroId: 'red_3',  side: 'red',  type: 'ban', pred: redPred,  occurrence: 0 }
+    ];
     dpProcessPickQueue(fakeData);
 
     /* Real polling resumes 10s in — comfortably past both reveals
        (~2.7s + ~2.7s) and the bubble's own 4s hold, so the real feed
        can take back over cleanly once the demo's done. */
     setTimeout(function () { dpDebugTestActive = false; }, 10000);
-
-    setTimeout(function () {
-      fakeData.draftState.redBans = ['red_3']; /* lets dpDeriveActivePrediction correctly conclude "done" after this reveal instead of re-showing red's roulette forever */
-      dpPickQueue = [{ heroId: 'red_3', side: 'red', type: 'ban', pred: redPred, occurrence: 0 }];
-      dpProcessPickQueue(fakeData);
-    }, 3000);
   };
 
   /* Returns the first side-matching predictions[] entry's real candidate
