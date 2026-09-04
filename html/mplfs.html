@@ -4466,6 +4466,8 @@
             // so every seat's photo is re-resolved under the new mode.
             if (pbVisible) { pbLastPoseKey = ''; fetchPlayerBoardData(); }
           }
+          if (d.feature === 'lineupsecrole_blue') luSecroleEnabled.blue = !!d.enabled;
+          if (d.feature === 'lineupsecrole_red')  luSecroleEnabled.red  = !!d.enabled;
         } catch {}
       });
 
@@ -7636,6 +7638,21 @@
       red:  { camp: 'away', prefix: 'lur', page: document.getElementById('team-lineup-red-page'),  onClass: 'lur-on', visClass: 'lur-visible' },
     };
 
+    // Whether to reveal the Secondary Role plate (dashboard: Team Line-Up
+    // → Show Secondary Role, per side) — off = the nametag just never
+    // shifts up, so the plate stays permanently hidden behind it, same as
+    // "we're not showing this today". Server default is true (existing
+    // behavior); see state.featureToggles.lineupsecrole_blue/red.
+    let luSecroleEnabled = { blue: true, red: true };
+    fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(d => {
+        if (!d) return;
+        if (d.lineupsecrole_blue !== undefined) luSecroleEnabled.blue = !!d.lineupsecrole_blue;
+        if (d.lineupsecrole_red  !== undefined) luSecroleEnabled.red  = !!d.lineupsecrole_red;
+      })
+      .catch(() => {});
+
     function luPoseUrl(ign, pose) {
       return '/hires/' + pose + '/' + encodeURIComponent(ign + '_' + pose) + '.png';
     }
@@ -7802,10 +7819,12 @@
          the whole lineup has visibly stopped moving. */
       const lastPoseSettledAt = POSE_START_MS + 4 * POSE_STAGGER_MS + LU_POSE_BOUNCE_MS;
       const SECROLE_HOLD_MS = 1500;
-      setTimeout(() => {
-        if (activeFeature !== feature) return; /* superseded before the reveal fired */
-        luPlaySecondaryRoleReveal(side);
-      }, lastPoseSettledAt + SECROLE_HOLD_MS);
+      if (luSecroleEnabled[side]) {
+        setTimeout(() => {
+          if (activeFeature !== feature) return; /* superseded before the reveal fired */
+          luPlaySecondaryRoleReveal(side);
+        }, lastPoseSettledAt + SECROLE_HOLD_MS);
+      }
     }
 
     /* Nametag shifts up toward the photo, uncovering the secondary-role

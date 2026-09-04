@@ -9,8 +9,8 @@
       },
       {
         "role": "JUNGLER",
-        "ign": "Kayn",
-        "id": "local1788419747582785"
+        "ign": "Sensu1",
+        "id": "1271650272"
       },
       {
         "role": "MID LANER",
@@ -96,8 +96,8 @@
       "score2": 0,
       "vsDisplay": "VS",
       "time": "5:00 PM",
-      "star": true,
-      "matchType": "enduring"
+      "star": false,
+      "matchType": "regular"
     },
     {
       "team1Id": "10765",
@@ -110,8 +110,8 @@
       "score2": 0,
       "vsDisplay": "VS",
       "time": "7:30 PM",
-      "star": true,
-      "matchType": "golden"
+      "star": false,
+      "matchType": "regular"
     },
     {
       "team1Id": "10763",
@@ -138,8 +138,8 @@
       "team2Short": "APBR",
       "vsDisplay": "VS",
       "time": "2:30 PM",
-      "star": true,
-      "matchType": "enduring"
+      "star": false,
+      "matchType": "regular"
     },
     {
       "team1Id": "10765",
@@ -162,8 +162,8 @@
       "team2Short": "FLCN",
       "vsDisplay": "VS",
       "time": "7:30 PM",
-      "star": false,
-      "matchType": "regular"
+      "star": true,
+      "matchType": "enduring"
     }
   ],
   "countdownLabel": "SHOW STARTS IN",
@@ -171,11 +171,11 @@
   "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 0
+    "running": true,
+    "endAt": 1788511199887,
+    "remaining": 18730
   },
-  "map": "Dangerous Grass",
+  "map": "Broken Walls",
   "enCasters": [
     "Hans",
     "Brigida",

@@ -2300,6 +2300,10 @@
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
         { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
       ],
+      featureToggles: [
+        { name: 'Secondary Role — Blue Line-Up', feature: 'lineupsecrole_blue' },
+        { name: 'Secondary Role — Red Line-Up',  feature: 'lineupsecrole_red'  },
+      ],
       debugPhotosToggle: true,
     },
     {
@@ -4065,6 +4069,23 @@
     '.lu-teambar-logo':   { left: 880,  top: 928, width: 160, height: 160 },
     '.lu-teambar-season': { left: 140,  top: 992, width: 480, height: 40 },
     '.lu-teambar-match':  { left: 1300, top: 992, width: 480, height: 40 },
+    /* Secondary Role plate — bare classes (not the per-index .lu-secrole-N
+       classes), so one override applies to all 5 plates on both sides at
+       once. Only .lu-secrole's SIZE is exposed here, deliberately not its
+       left/top — position stays auto-synced to the matching Name Tag's
+       live rendered box every apply (see luSyncSecRolePosition in
+       mplfs.html). Saving a width/height here bakes in a permanent
+       !important override that wins over that auto-sync's own inline
+       width/height from then on (by design, confirmed with the user) —
+       the plate's SIZE stops tracking Name Tag size changes, but its
+       POSITION still does, since left/top are simply never written here.
+       .lu-secrole-bg (black plate art)/.lu-secrole-icon (role icon)/
+       .lu-secrole-label (text, fontSize only) are separate child elements
+       with no auto-sync of their own, so they're safe to expose in full. */
+    '.lu-secrole':       { width: 300, height: 54 },
+    '.lu-secrole-bg':    { left: 0,    top: 0,   width: 300, height: 54 },
+    '.lu-secrole-icon':  { left: 10.8, top: 6,   width: 42,  height: 42 },
+    '.lu-secrole-label': { left: 84, top: 0, fontSize: 14.75 },
   };
 
   var LU_ELEMENTS = [
@@ -4080,23 +4101,33 @@
     { group: 'Name Tags', id: '.lu-nametag-3',     name: 'Name Tag 3'         },
     { group: 'Name Tags', id: '.lu-nametag-4',     name: 'Name Tag 4'         },
     { group: 'Name Tags', id: '.lu-nametag-5',     name: 'Name Tag 5'         },
-    /* .lu-secrole-N is deliberately NOT an editable row here — it always
-       auto-follows its same-numbered .lu-nametag-N's live position/size
-       (see luSyncSecRolePosition in mplfs.html), by design, so dragging
-       Name Tag N alone repositions its secondary-role plate too. Giving
-       it its own row broke that: loadConfig() seeds editValues with
-       EVERY key in LU_DEFAULTS the moment this config opens (deepClone),
-       and Save writes out ALL of editValues, not just whatever the user
-       actually dragged — so saving ANY unrelated Name Tag edit was also
-       silently freezing .lu-secrole-N at its (untouched) default via an
-       explicit !important override, which permanently wins over the
-       plain-inline-style auto-sync and desyncs it from then on. This bit
-       us for real the first time it was tried. If independent secrole
-       positioning is ever genuinely needed, it has to go through a
-       different mechanism than this shared-save editor config. */
+    /* .lu-secrole-N (the per-index selector, e.g. .lu-secrole-1) is
+       deliberately NOT an editable row here — it always auto-follows its
+       same-numbered .lu-nametag-N's live position/size (see
+       luSyncSecRolePosition in mplfs.html), by design, so dragging Name
+       Tag N alone repositions its secondary-role plate too. Giving THAT
+       selector its own row broke this once: loadConfig() seeds
+       editValues with EVERY key in LU_DEFAULTS the moment this config
+       opens (deepClone), and Save writes out ALL of editValues, not just
+       whatever the user actually dragged — so saving ANY unrelated Name
+       Tag edit was also silently freezing .lu-secrole-N at its
+       (untouched) default via an explicit !important override, which
+       permanently wins over the plain-inline-style auto-sync and
+       desyncs it from then on.
+       The bare `.lu-secrole` class (below, in Secondary Role group) is a
+       different, safe case — it only exposes width/height (never
+       left/top), so it never fights the position half of the auto-sync,
+       and the size half is INTENDED to become a permanent override once
+       saved (confirmed with the user), not an accidental one. Don't
+       reintroduce a `.lu-secrole-N` (or `.lu-secrole` left/top) row —
+       that's the actual footgun described above. */
     { group: 'Team Bar', id: '.lu-teambar-logo',   name: 'Team Logo'          },
     { group: 'Team Bar', id: '.lu-teambar-season', name: 'Season Label'       },
     { group: 'Team Bar', id: '.lu-teambar-match',  name: 'Week/Day/Match Label' },
+    { group: 'Secondary Role', id: '.lu-secrole',       name: 'Overall Size (all plates)' },
+    { group: 'Secondary Role', id: '.lu-secrole-bg',    name: 'Black Container' },
+    { group: 'Secondary Role', id: '.lu-secrole-icon',  name: 'Role Icon' },
+    { group: 'Secondary Role', id: '.lu-secrole-label', name: 'Text' },
   ];
 
   /* ── Casters (mplfs.html Waiting Screen TVC) element defaults ───

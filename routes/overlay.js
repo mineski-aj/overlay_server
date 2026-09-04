@@ -1037,7 +1037,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','debugphotos','draftstats'];
+const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {
