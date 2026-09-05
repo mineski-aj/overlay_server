@@ -904,6 +904,29 @@ router.get('/overlay/post_stats/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/post_heatmap/show
+router.get('/overlay/post_heatmap/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'heatmap';
+  // Post Heatmap is now an MVP-Highlights-style full-screen scene (its own
+  // plaque/photo layout, not a Post-family board scene) — no matchboard,
+  // same as highlights/show above. mplfs.html's own transitionTo() no
+  // longer has 'heatmap' in POST_FEATURES, so its transitionToImpl 'else'
+  // branch actively hides matchboard/middleboard/playerboard on the
+  // client side; this route must not fight that by forcing matchboard
+  // back on server-side.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post_heatmap\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_heatmap/hide
+router.get('/overlay/post_heatmap/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_heatmap\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/consolidated_post/show
 router.get('/overlay/consolidated_post/show', (req, res) => {
   state.mplfsScene.matchboard = true;

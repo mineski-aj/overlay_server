@@ -100,6 +100,15 @@ let ggcEventsRevealApplied = false;
 let ggcEventsRevealTimer   = null;
 let ggcDuration     = 1; // seconds — module-scope so ggcInterpolate/event placement can read it without threading it through
 
+/* Exact current gold diff (c1 total - c2 total), computed straight from
+   the live main-info poll — same seat_1..5 summation as the scoreboard's
+   own #sb-goldlead badge (overlay-scoreboard.js's sbUpdateGoldLead). Used
+   ONLY for the rightmost ("now") mark in ggcRenderChart so that number
+   always matches the live HUD exactly; the other GGC_MARK_COUNT-1 marks
+   keep reading the /positions-log-derived, smoothed, minute-snapped
+   series, which is fine for history but was never a "live" figure. */
+let ggcLiveDiff = null;
+
 function ggcFmtDiff(v) {
   // Always the magnitude, never a sign — which team is ahead is already
   // shown by the dot/number's own color (blue/red) and which side of the
@@ -322,6 +331,15 @@ registerPollHandler(function(data) {
   const c1 = camps.find(c => c.campid === 1);
   const c2 = camps.find(c => c.campid === 2);
 
+  if (c1 && c2) {
+    let total1 = 0, total2 = 0;
+    for (let s = 1; s <= 5; s++) {
+      const seat1 = c1['seat_' + s]; if (seat1) total1 += seat1.gold || 0;
+      const seat2 = c2['seat_' + s]; if (seat2) total2 += seat2.gold || 0;
+    }
+    ggcLiveDiff = total1 - total2;
+  }
+
   const t1 = document.getElementById('ggc-header-tri-c1');
   const t2 = document.getElementById('ggc-header-tri-c2');
   if (t1 && c1) { const n = c1.team_simple_name || ''; if (n) t1.textContent = n.toUpperCase(); }
@@ -369,6 +387,22 @@ function ggcRenderChart(fullSeries, fullEvents) {
   const events = fullEvents.filter(e => e.time_s >= windowStart && e.time_s <= now);
 
   ggcDuration = now || 1; /* right edge of the chart, in absolute game-time seconds */
+
+  /* Pin the series' own trailing data point to ggcLiveDiff — the exact
+     same value driving the "now" mark's dot/label below — so the drawn
+     line/area's right edge lands exactly ON that dot instead of ending
+     at whatever the last smoothed/history tick happened to be (which can
+     differ by however much gold moved across the last tick or two).
+     Only the one trailing point is replaced; ggcResample still linearly
+     interpolates from there back to the previous real (unreplaced,
+     still-smoothed) point, so the line visually "settles" back into the
+     normal historical curve within about one real tick of the tip
+     instead of the fix rippling backward across the whole graph. */
+  if (ggcLiveDiff != null) {
+    series = series.filter(s => s.t < ggcDuration - 0.001);
+    series.push({ t: ggcDuration, diff: ggcLiveDiff });
+  }
+
   const diffs  = series.map(s => s.diff);
   const rawMax = Math.max(...diffs, 0);
   const rawMin = Math.min(...diffs, 0);
@@ -434,12 +468,23 @@ function ggcRenderChart(fullSeries, fullEvents) {
   // between polls instead of snapping.
   const markEls = svg.querySelectorAll('.ggc-mark');
   for (let i = 0; i < GGC_MARK_COUNT; i++) {
+    const isNowMark  = i === GGC_MARK_COUNT - 1;
     const frac       = i / (GGC_MARK_COUNT - 1);
     const rawT       = windowStart + frac * (ggcDuration - windowStart);
     const minuteMark = Math.round(rawT / 60);
-    const t          = Math.max(windowStart, Math.min(ggcDuration, minuteMark * 60));
+    /* The "now" mark stays pinned to the exact live instant (ggcDuration)
+       instead of snapping to the nearest whole minute like the other 4 —
+       otherwise it can read up to ~30s stale, which is exactly the gap
+       that showed up as this mark's number disagreeing with the
+       scoreboard's live gold-lead badge. */
+    const t          = isNowMark ? ggcDuration : Math.max(windowStart, Math.min(ggcDuration, minuteMark * 60));
     const x          = xScale(t);
-    const diffAtT    = ggcInterpolate(series, t);
+    /* Likewise, the "now" mark reads ggcLiveDiff (the exact, unsmoothed
+       current diff straight from the live poll — see its declaration
+       above) instead of the smoothed/history series, so it always
+       matches the scoreboard badge exactly rather than an averaged
+       approximation of it. */
+    const diffAtT    = (isNowMark && ggcLiveDiff != null) ? ggcLiveDiff : ggcInterpolate(series, t);
     const y          = yScale(diffAtT);
     /* Diff-label color: blue side uses the same icon blue (#143ffc) as
        the event markers, not the line/area chart's own lighter blue

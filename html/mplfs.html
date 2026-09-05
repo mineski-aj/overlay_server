@@ -2766,6 +2766,199 @@
       text-align: center; line-height: 1; text-transform: uppercase;
     }
 
+    /* ── POST HEATMAP PAGE — MVP Highlights' exact layout (title top-left,
+       signature photo + team plaque bottom-right), with the thermal
+       player-movement map filling MVP Highlights' otherwise-empty left
+       two-thirds instead of a hero photo, and the plaque/stats fed by the
+       chosen focus player instead of the MVP. Migrated from the standalone
+       mlbb_heatmap.html debug tool: positions come from this server's own
+       /positions log (already polled by lib/pollers.js — see
+       fetchHeatmapPositions); player identity/stats now come from the
+       Post-Info API (/api/postinfo-proxy — see hmApplyPlayerCard) instead
+       of the live sub-info feed, same source Consolidated (Middle) Board
+       uses for buff counts. Time window/playback speed/camp+seat focus are
+       NOT on-page controls (this is a broadcast overlay, not a debug
+       tool) — they're tuned from the dashboard's Control tab (Post Heatmap
+       Controls box, see buildHeatmapControls in dashboard.html) via
+       /api/heatmap-config, fetched fresh every time this scene is shown,
+       same pattern as Credit Reel's credits_speed.json. */
+    #heatmap-page {
+      position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+      display: none; overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0; transition: opacity 400ms ease;
+    }
+    #heatmap-page.hm-on { display: block; }
+    #heatmap-page.hm-visible { opacity: 1; }
+
+    #hm-title {
+      position: absolute; left: 52px; top: 95px; width: 641px; height: 94px; z-index: 32;
+      display: flex; align-items: center; justify-content: flex-start;
+      font-family: 'Anton', sans-serif; font-size: 103px; line-height: 1;
+      color: #0a0a0a; text-transform: uppercase; text-align: left; white-space: nowrap;
+    }
+
+    /* Independently positioned/sized top-level pieces — each can be
+       dragged/resized on its own from the dashboard Edit tab (see
+       HM_DEFAULTS/HM_ELEMENTS in dashboard.html). The canvases/scanlines/
+       corners inside .hm-map-box are NOT separately editable — they must
+       move together with their parent (shared canvas coordinate system),
+       same exception already used for .postbacker's internal .psb-inner. */
+    .hm-map-box {
+      position: absolute; left: 60px; top: 200px; width: 740px; height: 740px;
+      z-index: 10; overflow: hidden; border-radius: 4px;
+      background: #000000; /* fallback fill if .hm-map-bg's image is ever missing */
+      border: 1px solid #1a2240;
+      box-shadow: 0 0 40px rgba(0,229,255,0.07), inset 0 0 60px rgba(0,0,0,0.5);
+    }
+    /* Terrain backdrop, sitting behind the heat/dot canvases (first in DOM
+       order among this box's un-z-indexed children) — same map art
+       Consolidated Post's own Kill Map uses (consomap.png), not a
+       calibrated real map texture, just a decorative backdrop so the
+       heat trail reads as "on the map" instead of floating on black.
+       brightness(0.25) is another flat 50% darken on top of the first
+       (0.5 × 0.5) so the (screen-blended) heat colors on top stay the
+       most visually prominent layer. */
+    .hm-map-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; filter: brightness(0.25);
+    }
+    #hm-heat-canvas, #hm-dot-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+    }
+    #hm-heat-canvas { mix-blend-mode: screen; }
+    #hm-dot-canvas  { pointer-events: none; }
+    .hm-scanlines {
+      position: absolute; inset: 0; pointer-events: none; z-index: 10;
+      background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+    }
+    .hm-corner { position: absolute; width: 18px; height: 18px; border-color: #00e5ff; border-style: solid; opacity: 0.5; }
+    .hm-corner.hm-tl { top:6px; left:6px;   border-width: 2px 0 0 2px; }
+    .hm-corner.hm-tr { top:6px; right:6px;  border-width: 2px 2px 0 0; }
+    .hm-corner.hm-bl { bottom:6px; left:6px; border-width: 0 0 2px 2px; }
+    .hm-corner.hm-br { bottom:6px; right:6px; border-width: 0 2px 2px 0; }
+    /* Kill/Death/Assist event icons — see hmTriggerEventIcon. Small,
+       persistent (no removal timeout — hmClearEventIcons() is what
+       takes these out, on loop wraparound/hide), pop in once and stay
+       put. Same shell (white circle + pop-in) for all three — only the
+       icon drawn inside (HM_EVENT_ICONS) differs per type. */
+    .hm-event-icon {
+      position: absolute; width: 30px; height: 30px; z-index: 15;
+      pointer-events: none;
+      animation: hm-event-pop-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+    }
+    .hm-event-icon svg { display: block; width: 100%; height: 100%; }
+    @keyframes hm-event-pop-in {
+      0%   { transform: scale(0);    opacity: 0; }
+      60%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    .hm-hud {
+      position: absolute; left: 60px; top: 950px; width: 740px; height: 40px;
+      z-index: 10; display: flex; align-items: center; gap: 14px;
+      padding: 0 14px; background: #0a0e1a; border: 1px solid #1a2240; border-radius: 3px;
+    }
+    #hm-timer { font-family: 'Courier New', monospace; font-size: 22px; color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.6); min-width: 54px; }
+    .hm-progress-outer { flex: 1; height: 6px; background: #111827; border-radius: 3px; overflow: hidden; border: 1px solid #1a2240; }
+    #hm-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0050ff, #00e5ff, #ff6b00); border-radius: 3px; transition: width 0.1s linear; }
+
+    /* ── Focus-player plaque — same mvphlblue/red.png plaque, hero art,
+       and stats-backer graphic as MVP Highlights (#hl-plaque etc.),
+       just its own hm-prefixed ids/classes so the two scenes' Edit-tab
+       overrides (selector-string based) never collide. Fed by
+       hmApplyPlayerCard from the Post-Info API's hero_list — see that
+       function for field sourcing (KDA/KP%/GPM computed from
+       kill_num/dead_num/assist_num/total_money/game_time, since Post-Info
+       has no ready-made kda-string/kp/gpm fields of its own). */
+    .hm-player-photo-wrap {
+      position: absolute; left: 720px; top: 0px; width: 1292px; height: 1292px;
+      overflow: hidden; z-index: 40;
+    }
+    .hm-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; }
+    #hm-plaque {
+      position: absolute; left: 901px; top: 744px; width: 462px; height: 174px;
+      z-index: 42; background: url('/assets/highlights/mvphlblue.png') no-repeat; background-size: 100% 100%;
+    }
+    /* ── Time Focus — new panel next to the plaque (flush against its
+       right edge: plaque spans x901–1363, this spans x1363–1825), showing
+       the configured from/to window as plain text. heatmap_timeback.png
+       is a dark-header/light-body banner (same "labeled backer" idea as
+       mvphlstats.png) — the header strip (top 56px) holds a static title,
+       the lighter body below (remaining 118px) holds the actual selected
+       range, filled by hmApplyPlayerCard/hmFormatTimeRange. */
+    #hm-timefocus {
+      position: absolute; left: 1363px; top: 744px; width: 462px; height: 174px;
+      z-index: 41; background: url('/assets/postgame/heatmap_timeback.png') no-repeat; background-size: 100% 100%;
+    }
+    #hm-timefocus-title {
+      position: absolute; left: 0; top: 0; width: 462px; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 28.3px;
+      color: #fff; text-transform: uppercase; text-align: center;
+    }
+    #hm-timefocus-range {
+      position: absolute; left: 0; top: 56px; width: 462px; height: 118px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 75px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    .hm-logo {
+      position: absolute; left: 11px; top: 3px; width: 49px; height: 49px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hm-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .hm-role {
+      position: absolute; left: 77px; top: 5px; width: 45px; height: 45px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hm-role img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); } /* role/*.png icons — forced solid black */
+    .hm-name {
+      position: absolute; left: 157px; top: 5px; width: 298px; height: 43px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; color: #fff;
+      text-transform: uppercase; white-space: nowrap; text-align: center;
+    }
+    .hm-hero {
+      position: absolute; left: 1px; top: 55px; width: 460px; height: 118px;
+      overflow: hidden;
+    }
+    .hm-hero-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
+    .hm-hero-name {
+      position: absolute; left: 10px; top: 83px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px;
+      color: #fff; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,0.85);
+    }
+    /* Stats backer — KDA / KP% / GPM (fixed labels, unlike MVP Highlights'
+       dynamic mvp_title 3rd slot — there's no single API-named "MVP stat"
+       for an arbitrary focus player). Same internal layout/positions as
+       MVP Highlights' #hl-stats-backer. */
+    #hm-stats-backer {
+      position: absolute; left: 902px; top: 917px; width: 463px; height: 48px;
+      z-index: 40;
+      background: url('/assets/highlights/mvphlstats.png') no-repeat;
+      background-size: 100% 100%;
+    }
+    .hmst-label {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 12.4px;
+      color: #0a0a0a; text-transform: uppercase; text-align: center;
+    }
+    .hmst-value {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 25.4px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    #hmst-kda-label { left: 2px;   width: 53px;  z-index: 9;  white-space: nowrap; }
+    #hmst-kda-value { left: 55px;  width: 118px; z-index: 10; }
+    #hmst-kp-label  { left: 187px; width: 40px;  z-index: 13; white-space: nowrap; }
+    #hmst-kp-value  { left: 227px; width: 90px;  z-index: 11; }
+    #hmst-gpm-label { left: 331px; width: 52px;  z-index: 14; white-space: nowrap; }
+    #hmst-gpm-value { left: 383px; width: 78px;  z-index: 12; }
+
     /* ── POST RICHGUY PAGE ── */
     #post-richguy-page {
       position: absolute;
@@ -3290,6 +3483,15 @@
     </div>
 
     <div class="feature-card">
+      <div class="feature-card-label">Post Heatmap</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostHeatmap()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostHeatmap()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-heatmap" onclick="toggleLocalPreview('heatmap', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <div class="feature-card">
       <div class="feature-card-label">Consolidated Post</div>
       <div class="feature-card-btns">
         <button class="dbg-btn show" onclick="showConsolidatedPost()">▶ SHOW</button>
@@ -3397,6 +3599,45 @@
           <div class="p4k-stat-label">TOTAL<br>ASSISTS</div>
         </div>
         <div class="p4k-value-box"><div class="p4k-stat-value" id="p4k-4-value"></div></div>
+      </div>
+    </div>
+    <div id="heatmap-page">
+      <div id="hm-title">PLAYER HEATMAP</div>
+      <div class="hm-map-box">
+        <img class="hm-map-bg" src="/assets/consolidated_post/consomap.png" alt="">
+        <canvas id="hm-heat-canvas"></canvas>
+        <canvas id="hm-dot-canvas"></canvas>
+        <div class="hm-scanlines"></div>
+        <div class="hm-corner hm-tl"></div>
+        <div class="hm-corner hm-tr"></div>
+        <div class="hm-corner hm-bl"></div>
+        <div class="hm-corner hm-br"></div>
+      </div>
+      <div class="hm-hud">
+        <div id="hm-timer">0:00</div>
+        <div class="hm-progress-outer"><div id="hm-progress-bar"></div></div>
+      </div>
+      <div class="hm-player-photo-wrap"><img class="hm-player-photo" id="hm-player-photo" src="" alt=""></div>
+      <div id="hm-plaque">
+        <div class="hm-logo"><img id="hm-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="hm-role"><img id="hm-role-icon" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="hm-name" id="hm-name"></div>
+        <div class="hm-hero">
+          <img class="hm-hero-img" id="hm-hero-img" src="" alt="" onerror="this.style.display='none'">
+          <div class="hm-hero-name" id="hm-hero-name"></div>
+        </div>
+      </div>
+      <div id="hm-timefocus">
+        <div id="hm-timefocus-title">HEAT MAP TIME FOCUS</div>
+        <div id="hm-timefocus-range"></div>
+      </div>
+      <div id="hm-stats-backer">
+        <div id="hmst-kda-label" class="hmst-label">KDA</div>
+        <div id="hmst-kda-value" class="hmst-value"></div>
+        <div id="hmst-kp-label" class="hmst-label">KP%</div>
+        <div id="hmst-kp-value" class="hmst-value"></div>
+        <div id="hmst-gpm-label" class="hmst-label">GPM</div>
+        <div id="hmst-gpm-value" class="hmst-value"></div>
       </div>
     </div>
     <div id="waiting-screen-page">
@@ -4376,6 +4617,18 @@
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
+      sseSource.addEventListener('post_heatmap', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostHeatmap, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      /* Dashboard's Post Heatmap Controls Apply button — see
+         hmLiveRefresh above. */
+      sseSource.addEventListener('heatmap_config', () => { hmLiveRefresh(); });
+
       sseSource.addEventListener('consolidated_post', (e) => {
         const msg = JSON.parse(e.data);
         if (msg.action === 'show') {
@@ -5185,6 +5438,7 @@
       emblems:    '/assets/bgloopwaves2.webm',
       items:      '/assets/bgloopwaves2.webm',
       stats:      '/assets/bgloopwaves2.webm',
+      heatmap:    '/assets/bgloopwaves2.webm',
     };
     /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
        needs to know which file to play once THEY start it) but must NOT
@@ -7546,7 +7800,23 @@
       updateFtTeamIdentity(blueCamp, redCamp);
       updateFtScoreBars(ms);
       buildFtCards(blueCamp, redCamp);
-      await preloadMedia(ftPage.querySelectorAll('img, video'), 900);
+      /* 'img' only — NOT 'video'. This is the stall: buildFtCards just
+         created up to 10 <video preload="auto"> hero-pick webms, and
+         awaiting preloadMedia's own 'video' branch here blocked the FIRST
+         reveal (team boxes + card wall, which need only the lightweight
+         fader/photo/spell/role IMAGES) on all 10 of those videos' own
+         'loadeddata' (or up to 900ms each) — 10 simultaneous webm fetches
+         competing for network/decode is exactly what produced the
+         "bg video shows, then ~800ms freeze, then everything pops in at
+         once" symptom, on top of the fact that .ft-card-hero/showFinalTeam
+         ALREADY defer each video's decode/.play() by 600-880ms past this
+         exact point for this exact performance reason (see that CSS
+         comment) — so this await was blocking on readiness nothing
+         downstream actually needed yet. Dropping 'video' here doesn't
+         skip preloading the videos themselves (preload="auto" already
+         started that the instant buildFtCards inserted them into the
+         DOM) — it just stops the CARD WALL's reveal from waiting on it. */
+      await preloadMedia(ftPage.querySelectorAll('img'), 900);
       if (activeFeature !== 'finalteam') return; /* superseded while preloading */
 
       showSceneVideo('finalteam');
@@ -8631,7 +8901,11 @@
     // hide, where Consolidated Post's matchboard should animate out too.
     let cpDuringPostTransition = false;
 
-    /* Add new Post scene names here — match board follows automatically */
+    /* Add new Post scene names here — match board follows automatically.
+       'heatmap' deliberately is NOT in this set — Post Heatmap is now an
+       MVP-Highlights-style full-screen scene (its own plaque/photo, no
+       Matchboard), same as 'highlights'/'mvp' below, not a Post-family
+       scene alongside Matchboard/Middleboard/Playerboard. */
     const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key']);
 
     /* Keeps server-side state.mplfsScene.<key> (and thus the dashboard's
@@ -8704,7 +8978,7 @@
         else if (newFeature === 'post4key') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);
-          hideMiddleBoard(); hidePlayerBoard(); /* own player photos already shown — and unlike Consolidated Post, must actively turn these off in case they're still on from a prior Post scene */
+          hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed map/card already shown — and must actively turn these off in case they're still on from a prior Post scene */
         }
         else {
           syncBoard('middleboard', true);
@@ -8768,6 +9042,7 @@
       if (prev === 'emblems')  return hidePostEmblems();
       if (prev === 'items')    return hidePostItems();
       if (prev === 'stats')    return hidePostStats();
+      if (prev === 'heatmap')  return hidePostHeatmap();
       if (prev === 'consolidated_post') return hideConsolidatedPost();
       if (prev === 'consolidated_post_2') return hideConsolidatedPost2();
       if (prev === 'post4key') return hidePost4Key();
@@ -10213,6 +10488,597 @@
     }
 
     /* ════════════════════════════════════════════════
+       POST HEATMAP — thermal player-movement map + a single focused
+       player's card. Migrated from the standalone mlbb_heatmap.html
+       debug tool (see /Users/ajsarmiento/Desktop/heatmap/). Position
+       data comes from this server's own /positions log (already polled
+       by lib/pollers.js — no separate polling needed); player identity
+       comes from the same /api/gamedata-proxy?fresh=1 endpoint
+       fetchStatsData above uses. Time window / playback speed / which
+       camp+seat to focus are NOT on-page controls here — this is a
+       broadcast overlay, not the original debug tool — they're tuned
+       from the dashboard's Control tab (see buildHeatmapControls in
+       dashboard.html) via /api/heatmap-config, fetched fresh every time
+       this scene is shown (same pattern as Credit Reel's
+       credits_speed.json).
+    ════════════════════════════════════════════════ */
+    const HM_CANVAS_SIZE   = 600;
+    const HM_HEAT_RADIUS   = 64;
+    const HM_HEAT_STRENGTH = 0.32;
+    const HM_STAMP_DIST_PX = 4;
+    /* Original debug tool used a 560px box with MSCALE=215/47 (not
+       280/47 — the map render is deliberately inset from the box edges,
+       ~65px margin at 560px). Preserve that same inset ratio (215/280)
+       when scaling up to this box's size, instead of scaling to
+       HM_CANVAS_SIZE/2 directly (which would zoom in further / lose the
+       margin). */
+    const HM_MSCALE        = (HM_CANVAS_SIZE / 2) * (215 / 280) / 47; // game units → canvas px
+
+    /* c.width/height below are the canvas's actual DRAWING BUFFER
+       resolution (a fixed HM_CANVAS_SIZE logical-pixel grid — every
+       hmGameToCanvas/hmStampHeat coordinate is in this same fixed 0..
+       HM_CANVAS_SIZE space) — NOT its on-screen display size. Display
+       size is left to the existing CSS rule (#hm-heat-canvas,
+       #hm-dot-canvas { width:100%; height:100% }), which stretches the
+       buffer to fill however big .hm-map-box actually is right now.
+       Bug this used to have: this function ALSO force-set
+       c.style.width/height to a literal HM_CANVAS_SIZE + 'px', an inline
+       style that wins over the CSS rule regardless of specificity — so
+       the canvas was hard-pinned to 600×600 no matter what size
+       .hm-map-box actually was. That happened to look correct only
+       because .hm-map-box's own size was ALSO 600×600 at the time
+       (coincidental match, not the CSS rule doing anything) — resizing
+       the box (e.g. the Player Heatmap relayout's bigger square, or any
+       future Edit-tab resize) left a dead unstretched strip along the
+       box's right/bottom edges where the canvas simply didn't reach.
+       Removing the inline size here lets the CSS rule do what it always
+       claimed to: the canvas now genuinely fills .hm-map-box at
+       whatever size it is. */
+    function hmSetupCanvas(c) {
+      const scale = window.devicePixelRatio || 1;
+      c.width  = HM_CANVAS_SIZE * scale;
+      c.height = HM_CANVAS_SIZE * scale;
+      const ctx = c.getContext('2d');
+      ctx.scale(scale, scale);
+      return ctx;
+    }
+    const hmHeatCtx = hmSetupCanvas(document.getElementById('hm-heat-canvas'));
+    const hmDotCtx  = hmSetupCanvas(document.getElementById('hm-dot-canvas'));
+
+    const hmHeatBuf = new Float32Array(HM_CANVAS_SIZE * HM_CANVAS_SIZE);
+    let   hmBufMax  = 0.001;
+
+    function hmStampHeat(cx, cy) {
+      const r = HM_HEAT_RADIUS, r2 = r * r;
+      const x0 = Math.max(0, (cx - r) | 0), x1 = Math.min(HM_CANVAS_SIZE - 1, (cx + r + 1) | 0);
+      const y0 = Math.max(0, (cy - r) | 0), y1 = Math.min(HM_CANVAS_SIZE - 1, (cy + r + 1) | 0);
+      for (let py = y0; py <= y1; py++) {
+        const dy = py - cy;
+        for (let px = x0; px <= x1; px++) {
+          const d2 = (px - cx) * (px - cx) + dy * dy;
+          if (d2 >= r2) continue;
+          const norm = 1 - d2 / r2;
+          const i = py * HM_CANVAS_SIZE + px;
+          hmHeatBuf[i] += HM_HEAT_STRENGTH * norm * norm;
+          if (hmHeatBuf[i] > hmBufMax) hmBufMax = hmHeatBuf[i];
+        }
+      }
+    }
+
+    const HM_COLOR_STOPS = [
+      [0.00, [0,0,0,0]],
+      [0.05, [20,90,235,190]],  /* saturated blue — was [140,200,255,180], too pale/near-white at the low end */
+      [0.18, [80,220,255,200]],
+      [0.32, [0,240,200,215]],
+      [0.48, [100,255,80,228]],
+      [0.62, [255,255,0,238]],
+      [0.74, [255,160,0,245]],
+      [0.85, [255,60,0,252]],
+      [0.93, [255,0,50,255]],
+      [1.00, [255,255,255,255]],
+    ];
+    const HM_CMAP = new Array(256);
+    for (let i = 0; i < 256; i++) {
+      const t = i / 255;
+      for (let s = 1; s < HM_COLOR_STOPS.length; s++) {
+        if (t <= HM_COLOR_STOPS[s][0]) {
+          const [t0,c0] = HM_COLOR_STOPS[s-1], [t1,c1] = HM_COLOR_STOPS[s];
+          const f = (t-t0)/(t1-t0);
+          HM_CMAP[i] = [(c0[0]+f*(c1[0]-c0[0]))|0,(c0[1]+f*(c1[1]-c0[1]))|0,
+                        (c0[2]+f*(c1[2]-c0[2]))|0,(c0[3]+f*(c1[3]-c0[3]))|0];
+          break;
+        }
+      }
+    }
+
+    const hmHeatOff    = document.createElement('canvas');
+    hmHeatOff.width    = HM_CANVAS_SIZE;
+    hmHeatOff.height   = HM_CANVAS_SIZE;
+    const hmHeatOffCtx = hmHeatOff.getContext('2d');
+    const hmImgData    = hmHeatOffCtx.createImageData(HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+    const hmPixels     = hmImgData.data;
+
+    function hmRenderHeat() {
+      for (let i = 0; i < hmHeatBuf.length; i++) {
+        const norm = hmHeatBuf[i] / hmBufMax;
+        if (norm < 0.012) { hmPixels[i*4+3] = 0; continue; }
+        const c = HM_CMAP[Math.min(255, (norm * 255) | 0)];
+        hmPixels[i*4]=c[0]; hmPixels[i*4+1]=c[1]; hmPixels[i*4+2]=c[2]; hmPixels[i*4+3]=c[3];
+      }
+      hmHeatOffCtx.putImageData(hmImgData, 0, 0);
+      hmHeatCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      hmHeatCtx.drawImage(hmHeatOff, 0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+    }
+
+    function hmGameToCanvas(gx, gy) {
+      const half = HM_CANVAS_SIZE / 2;
+      return {
+        x: Math.max(4, Math.min(HM_CANVAS_SIZE - 4, half + gx * HM_MSCALE + gy * HM_MSCALE)),
+        y: Math.max(4, Math.min(HM_CANVAS_SIZE - 4, half - gx * HM_MSCALE + gy * HM_MSCALE)),
+      };
+    }
+
+    function hmFmt(s) {
+      return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+    }
+
+    /* Zero-padded "00:00" form (hmFmt's minutes aren't padded — fine for
+       the HUD timer, but the Time Focus panel wants a fixed-width
+       "00:00 - 13:23" look either side of the dash). */
+    function hmFmtPadded(s) {
+      return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    }
+
+    /* finalGameTime is Post-Info's own game_time (seconds) — used ONLY
+       when cfg.to is the dashboard's 99999 "FULL" sentinel, so the label
+       reads the match's actual final recorded time instead of a
+       meaningless literal "1666:39". This is deliberately a DIFFERENT
+       source from hmLoadAndApply's own FULL-resolution (the latest
+       /positions timestamp, used for playback speed) — the label is
+       asked to reflect the Post-Info API's final time specifically. */
+    function hmFormatTimeRange(cfg, finalGameTime) {
+      const from = hmFmtPadded(cfg.from || 0);
+      const to = cfg.to >= 99999 ? hmFmtPadded(finalGameTime || 0) : hmFmtPadded(cfg.to);
+      return `${from} - ${to}`;
+    }
+
+    function hmInterpolate(waypoints, gameT) {
+      if (!waypoints.length) return null;
+      if (gameT <= waypoints[0].t) return waypoints[0];
+      const last = waypoints[waypoints.length - 1];
+      if (gameT >= last.t) return last;
+      let lo = 0, hi = waypoints.length - 1;
+      while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (waypoints[mid].t <= gameT) lo = mid; else hi = mid; }
+      const a = waypoints[lo], b = waypoints[hi];
+      const f = (gameT - a.t) / (b.t - a.t), ss = f * f * (3 - 2 * f);
+      return { x: a.x + (b.x - a.x) * ss, y: a.y + (b.y - a.y) * ss };
+    }
+
+    let hmVisible        = false;
+    let hmActiveTracks   = [];
+    let hmFromS          = 0;
+    let hmToS            = 600;
+    let hmPlaybackSecs   = 15;
+    let hmStartTime      = null;
+    let hmHeatDirty      = false;
+    let hmLastHeatRender = 0;
+    const HM_HEAT_FPS    = 1000 / 30;
+
+    function hmResetLoop() {
+      hmHeatBuf.fill(0);
+      hmBufMax = 0.001;
+      hmPixels.fill(0);
+      hmHeatOffCtx.putImageData(hmImgData, 0, 0);
+      hmHeatCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      hmDotCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      for (const tr of hmActiveTracks) {
+        tr.lastStampX = tr.lastStampY = -9999; tr._lastPos = null;
+        tr.nextKillIdx = tr.nextDeathIdx = tr.nextAssistIdx = 0;
+      }
+      hmClearEventIcons();
+      hmHeatDirty = false; hmLastHeatRender = 0; hmStartTime = null;
+    }
+
+    function hmDrawDots(now) {
+      hmDotCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      for (const tr of hmActiveTracks) {
+        if (!tr._lastPos) continue;
+        const { x, y } = tr._lastPos;
+        const blue = tr.camp === 1;
+        const fill = blue ? '#0050ff' : '#ff1a1a';
+        const r    = 9;
+
+        hmDotCtx.beginPath();
+        hmDotCtx.arc(x, y, r, 0, Math.PI * 2);
+        hmDotCtx.fillStyle = fill;
+        hmDotCtx.fill();
+        hmDotCtx.lineWidth = 2.5;
+        hmDotCtx.strokeStyle = '#ffffff';
+        hmDotCtx.stroke();
+
+        if (hmActiveTracks.length > 1) {
+          hmDotCtx.fillStyle = '#ffffff';
+          hmDotCtx.font = 'bold 8px "Courier New",monospace';
+          hmDotCtx.textAlign = 'center';
+          hmDotCtx.fillText(`${tr.camp}·${tr.seat}`, x, y + r + 12);
+        }
+      }
+    }
+
+    /* ── Kill/Death/Assist event icons — a small badge (white circle +
+       a per-type glyph) that pops in at the event's location and stays
+       there for the rest of this playback pass, fired from hmFrame's
+       per-track event-checkpoint walks above. No icon assets exist
+       anywhere in this repo (checked assets/, herohighlights/,
+       postgame/, hexagon/, etc.) — these are inline SVG so the effect
+       has zero asset dependency; swap an HM_EVENT_ICONS entry for an
+       <img> if a real asset is ever supplied for it. Persists (no
+       removal timeout) until hmClearEventIcons() clears every icon at
+       once — on loop wraparound (hmResetLoop, so a repeat pass starts
+       clean instead of stacking duplicate icons on the same events) and
+       on hide (hidePostHeatmap). */
+    const HM_EVENT_ICONS = {
+      kill: `
+        <line x1="28" y1="28" x2="72" y2="72" stroke="#0a0a0a" stroke-width="16" stroke-linecap="round"/>
+        <line x1="72" y1="28" x2="28" y2="72" stroke="#0a0a0a" stroke-width="16" stroke-linecap="round"/>
+      `,
+      death: `
+        <circle cx="50" cy="40" r="24" fill="#e02020"/>
+        <rect x="34" y="56" width="32" height="20" rx="7" fill="#e02020"/>
+        <circle cx="40" cy="40" r="6" fill="#0a0a0a"/>
+        <circle cx="60" cy="40" r="6" fill="#0a0a0a"/>
+        <circle cx="50" cy="50" r="3" fill="#0a0a0a"/>
+        <rect x="41" y="68" width="4" height="8" fill="#0a0a0a"/>
+        <rect x="55" y="68" width="4" height="8" fill="#0a0a0a"/>
+      `,
+      assist: `
+        <line x1="50" y1="15" x2="22" y2="85" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+        <line x1="50" y1="15" x2="78" y2="85" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+        <line x1="33" y1="62" x2="67" y2="62" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+      `,
+    };
+
+    function hmEventSvg(type) {
+      return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="47" fill="#ffffff"/>
+        ${HM_EVENT_ICONS[type] || ''}
+      </svg>`;
+    }
+
+    function hmClearEventIcons() {
+      document.querySelectorAll('.hm-event-icon').forEach(el => el.remove());
+    }
+
+    function hmTriggerEventIcon(cx, cy, type) {
+      const mapBox = document.querySelector('.hm-map-box');
+      if (!mapBox) return;
+      /* cx/cy (from hmGameToCanvas) are in the canvas's fixed 0..
+         HM_CANVAS_SIZE BUFFER space, not real CSS pixels — the canvas
+         itself is stretched to the box's actual rendered size by the CSS
+         width:100%/height:100% rule (see hmSetupCanvas's own comment on
+         this same buffer-vs-display-size split), but a plain positioned
+         DOM element like this icon gets no such automatic stretch, so it
+         has to redo that same scaling itself against however big
+         .hm-map-box actually is right now (clientWidth/Height — the
+         content-box size, matching what the canvases actually fill).
+         Read fresh per call rather than cached, since .hm-map-box is a
+         dashboard Edit-tab-resizable group. */
+      const scaleX = mapBox.clientWidth  / HM_CANVAS_SIZE;
+      const scaleY = mapBox.clientHeight / HM_CANVAS_SIZE;
+      const px = cx * scaleX, py = cy * scaleY;
+      const el = document.createElement('div');
+      el.className = 'hm-event-icon';
+      el.style.left = (px - 15) + 'px'; /* centers the 30×30 icon on the event point */
+      el.style.top  = (py - 15) + 'px';
+      el.innerHTML = hmEventSvg(type);
+      mapBox.appendChild(el);
+    }
+
+    /* Self-stopping RAF loop — only keeps ticking while hmVisible, unlike
+       the standalone debug tool's unconditional forever-loop (see
+       "Video-heavy overlays" in CLAUDE.md re: sustained cost of anything
+       left running while off-screen). */
+    function hmFrame(now) {
+      if (!hmVisible) return;
+      requestAnimationFrame(hmFrame);
+      if (!hmActiveTracks.length) return;
+
+      if (!hmStartTime) hmStartTime = now;
+      let elapsed = (now - hmStartTime) / 1000;
+
+      if (elapsed >= hmPlaybackSecs) {
+        hmResetLoop();
+        hmStartTime = now;
+        elapsed = 0;
+      }
+
+      const gameSpeed = (hmToS - hmFromS) / hmPlaybackSecs;
+      const gameT     = hmFromS + elapsed * gameSpeed;
+
+      for (const tr of hmActiveTracks) {
+        const pos = hmInterpolate(tr.waypoints, gameT);
+        if (!pos) continue;
+        const { x, y } = hmGameToCanvas(pos.x, pos.y);
+        tr._lastPos = { x, y };
+        const dx = x - tr.lastStampX, dy = y - tr.lastStampY;
+        if (dx*dx + dy*dy >= HM_STAMP_DIST_PX * HM_STAMP_DIST_PX) {
+          hmStampHeat(x, y);
+          tr.lastStampX = x; tr.lastStampY = y;
+          hmHeatDirty = true;
+        }
+
+        /* Kill/death/assist checkpoints — gameT only ever moves forward
+           within one loop pass (hmResetLoop resets these pointers at
+           wraparound), so a plain pointer walk here never re-fires or
+           skips one, even if several events fall inside the same
+           frame's advance (fast playback speed / a long from-to window
+           compressed into a short hmPlaybackSecs). */
+        while (tr.nextKillIdx < tr.killEvents.length && tr.killEvents[tr.nextKillIdx].t <= gameT) {
+          const ev = tr.killEvents[tr.nextKillIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'kill');
+          tr.nextKillIdx++;
+        }
+        while (tr.nextDeathIdx < tr.deathEvents.length && tr.deathEvents[tr.nextDeathIdx].t <= gameT) {
+          const ev = tr.deathEvents[tr.nextDeathIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'death');
+          tr.nextDeathIdx++;
+        }
+        while (tr.nextAssistIdx < tr.assistEvents.length && tr.assistEvents[tr.nextAssistIdx].t <= gameT) {
+          const ev = tr.assistEvents[tr.nextAssistIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'assist');
+          tr.nextAssistIdx++;
+        }
+      }
+
+      if (hmHeatDirty && (now - hmLastHeatRender) >= HM_HEAT_FPS) {
+        hmRenderHeat(); hmLastHeatRender = now; hmHeatDirty = false;
+      }
+
+      hmDrawDots(now);
+
+      document.getElementById('hm-progress-bar').style.width = ((elapsed / hmPlaybackSecs) * 100) + '%';
+      document.getElementById('hm-timer').textContent = hmFmt(gameT);
+    }
+
+    async function fetchHeatmapConfig() {
+      try {
+        const r = await fetch(buildUrl('/api/heatmap-config'), { cache: 'no-store' });
+        if (!r.ok) throw new Error('bad status');
+        return await r.json();
+      } catch {
+        return { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+      }
+    }
+
+    async function fetchHeatmapPositions(cfg) {
+      const params = new URLSearchParams({ from: cfg.from, to: cfg.to });
+      if (cfg.camp) params.set('camp', cfg.camp);
+      if (cfg.seat) params.set('seat', cfg.seat);
+      try {
+        const r = await fetch(buildUrl('/positions?' + params), { cache: 'no-store' });
+        if (!r.ok) return [];
+        const json = await r.json();
+        return json.positions || [];
+      } catch { return []; }
+    }
+
+    /* One per waypoint where THIS track's own counter (field) rose versus
+       the previous waypoint (positionLog snapshots each player's own
+       cumulative K/D/A alongside their position, see lib/pollers.js —
+       memory: reference_mlbb_postinfo_api.md's sibling note on
+       /positions). Starts at i=1 (never fires off the very first
+       waypoint) so a window that starts mid-game with a counter already
+       nonzero doesn't replay every earlier kill/death/assist as if it
+       just happened — only a rise WITHIN this fetched window counts,
+       same "snapshot only, don't fire" baseline rule lib/pollers.js's own
+       kill-event broadcaster uses. Shared by kill/death/assist below —
+       same shape, different source field. */
+    function hmBuildCheckpoints(waypoints, field) {
+      const events = [];
+      for (let i = 1; i < waypoints.length; i++) {
+        const prev = waypoints[i - 1][field], cur = waypoints[i][field];
+        if (cur != null && prev != null && cur > prev) {
+          events.push({ t: waypoints[i].t, x: waypoints[i].x, y: waypoints[i].y });
+        }
+      }
+      return events;
+    }
+
+    function hmBuildTracks(positions) {
+      const trackMap = {};
+      for (const p of positions) {
+        const key = `${p.camp}-${p.seat}`;
+        if (!trackMap[key]) trackMap[key] = { camp: p.camp, seat: p.seat, waypoints: [] };
+        trackMap[key].waypoints.push({ t: p.game_time_s, x: p.x, y: p.y, k: p.kill_num, d: p.dead_num, a: p.assist_num });
+      }
+      return Object.values(trackMap).map(tr => {
+        const waypoints = tr.waypoints.sort((a, b) => a.t - b.t);
+        return {
+          ...tr,
+          waypoints,
+          killEvents:   hmBuildCheckpoints(waypoints, 'k'),
+          deathEvents:  hmBuildCheckpoints(waypoints, 'd'),
+          assistEvents: hmBuildCheckpoints(waypoints, 'a'),
+          nextKillIdx: 0, nextDeathIdx: 0, nextAssistIdx: 0,
+          lastStampX: -9999,
+          lastStampY: -9999,
+          _lastPos:   null,
+        };
+      });
+    }
+
+    /* Player focus card — MVP Highlights' own plaque/hero/stats layout
+       (hm-prefixed twin of hlApply), fed by the Post-Info API instead of
+       the MVP endpoint. Post-Info's hero_list is FLAT (no seat_N slots
+       like the live sub-info feed) — filtering by campid and indexing by
+       cardSeat-1 reproduces the same "seat order" convention every other
+       Post scene uses, since hero_list's per-camp order is already
+       pick/draft order. KDA/KP%/GPM aren't ready-made fields here (this
+       feed's own `kda` is a single ratio number, not a kill/death/assist
+       string, and it has neither kp nor gpm at all) — all three are
+       derived from kill_num/dead_num/assist_num, the camp's summed kills,
+       and total_money/game_time. Role isn't on this feed at all either —
+       cross-checked against mainroster.json by roleid, same "look it up
+       in the roster" fallback Team Line-up's luSecondaryRoleForIgn uses,
+       just keyed by roleid (which Post-Info's hero_list carries directly)
+       instead of matching by ign. */
+    async function hmApplyPlayerCard(cfg) {
+      const cardCamp = Number(cfg.camp) || 1;
+      const cardSeat = Number(cfg.seat) || 1;
+      document.getElementById('hm-plaque').style.backgroundImage =
+        `url('/assets/highlights/${cardCamp === 2 ? 'mvphlred' : 'mvphlblue'}.png')`;
+
+      const logoEl   = document.getElementById('hm-team-logo');
+      const roleEl   = document.getElementById('hm-role-icon');
+      const nameEl   = document.getElementById('hm-name');
+      const heroImg  = document.getElementById('hm-hero-img');
+      const heroName = document.getElementById('hm-hero-name');
+      const photoEl  = document.getElementById('hm-player-photo');
+
+      try {
+        const [piRes, rosterRes] = await Promise.allSettled([
+          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+          fetch(buildUrl('/mainroster.json'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        ]);
+        const inner  = piRes.value && piRes.value.data && piRes.value.data.data;
+        const roster = rosterRes.value;
+        if (!inner) return;
+
+        document.getElementById('hm-timefocus-range').textContent = hmFormatTimeRange(cfg, inner.game_time);
+
+        const campPlayers = (inner.hero_list || []).filter(p => p.campid === cardCamp);
+        const player = campPlayers[cardSeat - 1] || campPlayers[0];
+        if (!player) return;
+
+        const tricode = (player.team_simple_name || '').toUpperCase();
+        logoEl.onerror = () => { logoEl.style.display = 'none'; };
+        logoEl.style.display = '';
+        logoEl.src = tricode ? '/logos/' + encodeURIComponent(tricode) + '.png' : '';
+
+        const rosterEntry = roster && roster.players && roster.players[String(player.roleid)];
+        const role = rosterEntry ? rosterEntry.role : '';
+        roleEl.onerror = () => { roleEl.style.display = 'none'; };
+        roleEl.style.display = '';
+        roleEl.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
+
+        nameEl.textContent = player.name || '';
+        /* Not fit here — see hlApply's identical comment: #heatmap-page is
+           still display:none at this point, fit again once shown instead
+           (see showPostHeatmap). */
+
+        heroImg.onerror = () => { heroImg.style.display = 'none'; };
+        heroImg.style.display = '';
+        heroImg.src = hlHeroImg(player.heroid);
+        heroName.textContent = ''; /* Post-Info's hero_list has no hero display-name field */
+
+        photoEl.onerror = () => { photoEl.style.display = 'none'; };
+        photoEl.style.display = '';
+        photoEl.src = hlPhotoUrl(player.name);
+
+        const teamKills = campPlayers.reduce((sum, p) => sum + (p.kill_num || 0), 0);
+        const kp = teamKills > 0 ? Math.round(((player.kill_num || 0) + (player.assist_num || 0)) / teamKills * 100) : 0;
+        const minutes = (inner.game_time || 0) / 60;
+        const gpm = minutes > 0 ? Math.round((player.total_money || 0) / minutes) : 0;
+
+        document.getElementById('hmst-kda-value').textContent = `${player.kill_num || 0}/${player.dead_num || 0}/${player.assist_num || 0}`;
+        document.getElementById('hmst-kp-value').textContent  = kp + '%';
+        document.getElementById('hmst-gpm-value').textContent = mvFormatStatValue(gpm);
+      } catch {}
+    }
+
+    /* Shared by the initial show AND the live 'heatmap_config' SSE
+       refresh below — fetches positions+player card for a given config
+       and applies them to the already-existing DOM/canvas state. Caller
+       is responsible for the activeFeature-still-current guard around
+       each await, since the two call sites need it at different points. */
+    async function hmLoadAndApply(cfg) {
+      const [positions] = await Promise.all([fetchHeatmapPositions(cfg), hmApplyPlayerCard(cfg)]);
+      hmFromS = cfg.from;
+      hmPlaybackSecs = cfg.playbackSec;
+      /* cfg.to === 99999 is the dashboard's "FULL" sentinel — routes/
+         positions.js takes it literally as the query's upper bound (no
+         clamping server-side), so using it as-is for playback made
+         hmFrame's gameSpeed = (hmToS-hmFromS)/hmPlaybackSecs enormous:
+         gameT blew past every real waypoint almost instantly and
+         hmInterpolate just held the last one for nearly the whole clip —
+         looked frozen instead of playing "the full game". Resolve FULL to
+         the actual latest game_time_s this fetch's own positions cover,
+         so playback still spans real recorded ground instead of racing
+         through 99999 seconds of nothing. */
+      if (cfg.to >= 99999) {
+        let maxT = hmFromS;
+        for (const p of positions) if (p.game_time_s > maxT) maxT = p.game_time_s;
+        hmToS = maxT;
+      } else {
+        hmToS = cfg.to;
+      }
+      hmActiveTracks = hmBuildTracks(positions);
+      hmResetLoop();
+    }
+
+    async function showPostHeatmap() {
+      if (hmVisible) return;
+      const page = document.getElementById('heatmap-page');
+      const cfgPromise = fetchHeatmapConfig();
+      await transitionTo('heatmap');
+      const cfg = await cfgPromise;
+      if (activeFeature !== 'heatmap') return; /* superseded while awaiting config */
+      await hmLoadAndApply(cfg);
+      if (activeFeature !== 'heatmap') return; /* superseded while awaiting data */
+      await preloadMedia(page.querySelectorAll('img'), 1500);
+      if (activeFeature !== 'heatmap') return; /* superseded while preloading */
+      hmVisible = true;
+      showSceneVideo('heatmap');
+      page.classList.add('hm-on');
+      void page.offsetWidth;
+      page.classList.add('hm-visible');
+      hmFitPlayerText();
+      requestAnimationFrame(hmFrame);
+    }
+
+    /* Shrink-to-fit pass for the plaque's text pieces (see
+       hmApplyPlayerCard's comment on why this can't happen at apply-time)
+       — needed after BOTH the initial show (page just became visible) and
+       a live focus-player change via hmLiveRefresh (a new name/value can
+       be a different length than whatever the font-size last shrank to). */
+    function hmFitPlayerText() {
+      hlFitName(document.getElementById('hm-name'));
+      mvFitStatValue(document.getElementById('hmst-kda-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hmst-kp-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hmst-gpm-value'), 25.4, 14);
+    }
+
+    /* Dashboard's Post Heatmap Controls box hits /api/heatmap-config,
+       which broadcasts 'heatmap_config' — if this tab is the one actually
+       showing the scene right now, pull the new window/focus in
+       immediately instead of waiting for the next Show. A no-op on every
+       other tab (not visible) and on this one too if a newer transition
+       has already superseded 'heatmap' by the time the fetch resolves. */
+    async function hmLiveRefresh() {
+      if (!hmVisible) return;
+      const cfg = await fetchHeatmapConfig();
+      if (!hmVisible || activeFeature !== 'heatmap') return;
+      await hmLoadAndApply(cfg);
+      hmFitPlayerText();
+    }
+
+    function hidePostHeatmap() {
+      if (!hmVisible) return Promise.resolve();
+      hmVisible = false;
+      hmClearEventIcons(); /* stop hmFrame's RAF loop from leaving one mid-flight */
+      const page = document.getElementById('heatmap-page');
+      page.classList.remove('hm-visible');
+      return new Promise(resolve => setTimeout(() => {
+        page.classList.remove('hm-on');
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
+    /* ════════════════════════════════════════════════
        POST_STATS
     ════════════════════════════════════════════════ */
 
@@ -10957,6 +11823,7 @@
           else if (scene.activeFeature === 'emblems')  showPostEmblems();
           else if (scene.activeFeature === 'items')    showPostItems();
           else if (scene.activeFeature === 'stats')    showPostStats();
+          else if (scene.activeFeature === 'heatmap')  showPostHeatmap();
           else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
           else if (scene.activeFeature === 'consolidated_post_2') showConsolidatedPost2();
           else if (scene.activeFeature === 'post4key') showPost4Key();
@@ -11025,13 +11892,14 @@
         if (feature === 'consolidated_post') showConsolidatedPost();
         if (feature === 'consolidated_post_2') showConsolidatedPost2();
         if (feature === 'post4key') showPost4Key();
+        if (feature === 'heatmap') showPostHeatmap();
       }
     }
 
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -11054,6 +11922,7 @@
         if (event === 'post_items')    showPostItems();
         if (event === 'post4key')      showPost4Key();
         if (event === 'post_stats')    showPostStats();
+        if (event === 'post_heatmap')  showPostHeatmap();
         if (event === 'credits')       showCreditsScene();
         if (event === 'consolidated_post')   showConsolidatedPost();
         if (event === 'consolidated_post_2') showConsolidatedPost2();

@@ -1695,6 +1695,7 @@
   var featureStates  = {};
   var toggleBtns     = {};
   var _hrmSwapTimer  = null;
+  var _hmStatusTimer = null;
 
   function applyToggleBtn(feature, enabled) {
     var b = toggleBtns[feature];
@@ -1777,6 +1778,7 @@
     consolidated_post: 'consolidated_post',
     consolidated_post_2: 'consolidated_post_2',
     post4key:       'post4key',
+    post_heatmap:   'heatmap',
   };
   /* Display names for the "is anything live" indicator below — same
      activeFeature values as MPLFS_ACTIVE_FEATURE_MAP, keyed the other
@@ -1790,7 +1792,7 @@
     mvp: 'MVP Scene', credits: 'Credit Reel', finalteam: 'Final Team',
     lineupblue: 'Team Line-Up — Blue', lineupred: 'Team Line-Up — Red',
     consolidated_post: 'Consolidated Post', consolidated_post_2: 'Consolidated Post 2',
-    post4key: 'Post 4 Key',
+    post4key: 'Post 4 Key', heatmap: 'Post Heatmap',
   };
 
   var mplfsLiveBadge = null;
@@ -2261,6 +2263,7 @@
       file: 'mplfs.html',
       globalHide: '/overlay/fs/hide',
       mplfsLiveIndicator: true,
+      heatmapControls: true,
       features: [
         { name: 'Matchboard',    show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
         { name: 'Middleboard',   show: '/overlay/middleboard/show',   hide: '/overlay/middleboard/hide'   },
@@ -2274,6 +2277,7 @@
         { name: 'Post Emblem',   show: '/overlay/post_emblems/show',  hide: '/overlay/post_emblems/hide'  },
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
+        { name: 'Post Heatmap',  show: '/overlay/post_heatmap/show',  hide: '/overlay/post_heatmap/hide'  },
         { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
         { name: 'Consolidated Post 2', show: '/overlay/consolidated_post_2/show', hide: '/overlay/consolidated_post_2/hide' },
         { name: 'Post 4 Key',    show: '/overlay/post4key/show',        hide: '/overlay/post4key/hide'        },
@@ -2906,6 +2910,163 @@
     _hrmSwapTimer = setInterval(updateSwap, 2000);
   }
 
+  /* ── Post Heatmap controls — time window / playback speed / which
+     camp+seat to focus. These replace the standalone mlbb_heatmap.html
+     debug tool's on-page sidebar (API URL fields dropped entirely —
+     mplfs.html's showPostHeatmap() reads this server's own /positions
+     log and /api/gamedata-proxy directly, no external URL needed).
+     Saved to heatmap_config.json via /api/heatmap-config, GET fresh by
+     mplfs.html every time the scene is shown (same pattern as Credit
+     Reel's credits_speed.json) — so Apply here takes effect on the next
+     Show, not instantly on an already-live scene. ──────────────── */
+  function hmParseMmSs(str) {
+    if (str === 'full') return 99999;
+    var parts = String(str).split(':').map(Number);
+    return parts.length === 2 ? parts[0] * 60 + (parts[1] || 0) : (parseInt(str) || 0);
+  }
+  function hmFmtMmSs(s) {
+    if (s >= 99999) return 'full';
+    return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  }
+  function buildHeatmapControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Post Heatmap Controls'));
+
+    var timeOpts = [];
+    for (var m = 0; m <= 20; m++) timeOpts.push(m + ':00');
+    timeOpts.push('full');
+
+    function buildTimeSelect() {
+      var sel = el('select', 'pdebug-select');
+      timeOpts.forEach(function (v) {
+        var o = document.createElement('option');
+        o.value = v; o.textContent = v === 'full' ? 'FULL' : v;
+        sel.appendChild(o);
+      });
+      return sel;
+    }
+
+    var row1 = el('div', 'pdebug-row');
+    row1.appendChild(el('label', '', 'From'));
+    var fromSel = buildTimeSelect();
+    row1.appendChild(fromSel);
+    row1.appendChild(el('label', '', 'To'));
+    var toSel = buildTimeSelect();
+    row1.appendChild(toSel);
+    body.appendChild(row1);
+
+    var row2 = el('div', 'pdebug-row');
+    row2.appendChild(el('label', '', 'Playback (sec)'));
+    var playbackInput = document.createElement('input');
+    playbackInput.type = 'number'; playbackInput.min = '1'; playbackInput.max = '300';
+    playbackInput.className = 'pdebug-select';
+    playbackInput.style.cssText = 'width:60px;flex:0 0 60px;';
+    row2.appendChild(playbackInput);
+    body.appendChild(row2);
+
+    var row3 = el('div', 'pdebug-row');
+    row3.appendChild(el('label', '', 'Focus Player'));
+    var focusSel = el('select', 'pdebug-select');
+    var focusOpts = [['', 'ALL (aggregate)']];
+    for (var fCamp = 1; fCamp <= 2; fCamp++) {
+      for (var fSeat = 1; fSeat <= 5; fSeat++) {
+        var pid = (fCamp - 1) * 5 + fSeat;
+        focusOpts.push([fCamp + '-' + fSeat, 'P' + pid + ' (' + (fCamp === 1 ? 'Blue' : 'Red') + ')']);
+      }
+    }
+    focusOpts.forEach(function (opt) {
+      var o = document.createElement('option'); o.value = opt[0]; o.textContent = opt[1]; focusSel.appendChild(o);
+    });
+    row3.appendChild(focusSel);
+    body.appendChild(row3);
+
+    // Fill in live player names where available (same spirit as the
+    // original debug tool's seat spinner) — falls back to the plain
+    // "P1 (Blue)" label above if this fetch fails or a seat is empty.
+    fetch('/api/gamedata-proxy?fresh=1', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (json) {
+        var gd = json.data; if (!gd) return;
+        (gd.camp_list || []).forEach(function (camp) {
+          ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].forEach(function (k, i) {
+            var s = camp[k];
+            if (!s || !s.name) return;
+            var opt = focusSel.querySelector('option[value="' + camp.campid + '-' + (i + 1) + '"]');
+            if (opt) opt.textContent = s.name.toUpperCase() + ' (' + (camp.campid === 1 ? 'Blue' : 'Red') + ')';
+          });
+        });
+      }).catch(function () {});
+
+    var row4 = el('div', 'pdebug-row');
+    var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
+    row4.appendChild(applyBtn);
+    body.appendChild(row4);
+
+    var statusEl = el('div', '', 'Loading…');
+    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
+    body.appendChild(statusEl);
+
+    var appliedCfg = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+
+    function applyFieldsFrom(cfg) {
+      fromSel.value = hmFmtMmSs(cfg.from);
+      toSel.value   = hmFmtMmSs(cfg.to);
+      playbackInput.value = cfg.playbackSec;
+      focusSel.value = cfg.camp ? (cfg.camp + '-' + (cfg.seat || 1)) : '';
+    }
+
+    function refreshStatus() {
+      var params = new URLSearchParams({ from: appliedCfg.from, to: appliedCfg.to });
+      if (appliedCfg.camp) params.set('camp', appliedCfg.camp);
+      if (appliedCfg.seat) params.set('seat', appliedCfg.seat);
+      fetch('/positions?' + params, { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          statusEl.textContent = (d.count || 0) + ' pts logged · ' +
+            hmFmtMmSs(appliedCfg.from) + ' → ' + hmFmtMmSs(appliedCfg.to) +
+            ' · playback ' + appliedCfg.playbackSec + 's';
+        }).catch(function () {});
+    }
+
+    // Read live server state on open instead of assuming defaults
+    // (memory: feedback_feature_toggle_state.md).
+    fetch('/api/heatmap-config', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        appliedCfg = d;
+        applyFieldsFrom(d);
+        refreshStatus();
+      }).catch(function () { applyFieldsFrom(appliedCfg); refreshStatus(); });
+
+    applyBtn.addEventListener('click', function () {
+      var focusParts = focusSel.value ? focusSel.value.split('-') : [null, null];
+      var body2 = {
+        camp: focusParts[0],
+        seat: focusParts[1],
+        from: hmParseMmSs(fromSel.value),
+        to:   hmParseMmSs(toSel.value),
+        playbackSec: playbackInput.value,
+      };
+      fetch('/api/heatmap-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body2),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          appliedCfg = d;
+          applyFieldsFrom(d);
+          refreshStatus();
+          body.classList.remove('flash-ok');
+          void body.offsetWidth;
+          body.classList.add('flash-ok');
+        }).catch(function () {
+          statusEl.textContent = 'Save failed';
+        });
+    });
+
+    _hmStatusTimer = setInterval(refreshStatus, 5000);
+  }
+
   /* ── Build sidebar + control body ────────────────────────── */
   /* ── Draft photo mode (live API match vs. random test) ────── */
   function buildDraftPhotoModeControl(body) {
@@ -2973,7 +3134,8 @@
   }
 
   function buildControlBody(ov) {
-    if (_hrmSwapTimer) { clearInterval(_hrmSwapTimer); _hrmSwapTimer = null; }
+    if (_hrmSwapTimer)  { clearInterval(_hrmSwapTimer);  _hrmSwapTimer  = null; }
+    if (_hmStatusTimer) { clearInterval(_hmStatusTimer); _hmStatusTimer = null; }
     var body = controlPanelBody;
     body.innerHTML = '';
     mapSelectTagBadge = null; // body.innerHTML just wiped any previous badge element
@@ -3400,6 +3562,15 @@
         fr.appendChild(fb);
         body.appendChild(fr);
       });
+    }
+
+    /* Post Heatmap Controls — time window / playback speed / which
+       camp+seat to focus, tuned here instead of on-page (this is a
+       broadcast overlay, not the old mlbb_heatmap.html debug tool). See
+       buildHeatmapControls below and /api/heatmap-config in
+       routes/devapi.js. */
+    if (ov.heatmapControls) {
+      buildHeatmapControls(body);
     }
 
     /* Feature toggles */
@@ -4671,6 +4842,48 @@
     { group: 'Post 4 Key · Stat Label', id: '.p4k-stat-box',  name: 'Stat Label' },
     { group: 'Post 4 Key · Stat Value', id: '.p4k-value-box', name: 'Stat Value' },
   ];
+  /* Post Heatmap — MVP Highlights' own layout (title top-left, signature
+     photo + team plaque bottom-right, see HL_DEFAULTS/HL_ELEMENTS above),
+     with the map/HUD filling MVP Highlights' otherwise-empty left
+     two-thirds instead of a hero photo. The map box is still one whole
+     group (canvases/scanlines/corners inside .hm-map-box move together
+     with their parent — shared canvas coordinate system, same exception
+     already used for .postbacker's internal .psb-inner); the plaque's
+     pieces are separately editable, same grouping as HL_ELEMENTS' Plaque
+     group, just hm-prefixed so its own Edit-tab overrides never collide
+     with MVP Highlights' identically-shaped elements. */
+  var HM_DEFAULTS = {
+    '#hm-title':             { left: 52,   top: 95,   width: 641, height: 94, fontSize: 103 },
+    '.hm-map-box':           { left: 60,   top: 200,  width: 740, height: 740 },
+    '.hm-hud':               { left: 60,   top: 950,  width: 740, height: 40  },
+    '.hm-player-photo-wrap': { left: 720,  top: 0,    width: 1292, height: 1292 },
+    '#hm-plaque':            { left: 901,  top: 744,  width: 462, height: 174  },
+    '.hm-logo':              { left: 11,   top: 3,    width: 49,  height: 49   },
+    '.hm-role':              { left: 77,   top: 5,    width: 45,  height: 45   },
+    '.hm-name':              { left: 157,  top: 5,    width: 298, height: 43   },
+    '.hm-hero':              { left: 1,    top: 55,   width: 460, height: 118  },
+    '.hm-hero-name':         { left: 10,   top: 83,   fontSize: 22 },
+    '#hm-timefocus':         { left: 1363, top: 744,  width: 462, height: 174  },
+    '#hm-timefocus-title':   { left: 0,    top: 0,    width: 462, height: 56,  fontSize: 28.3 },
+    '#hm-timefocus-range':   { left: 0,    top: 56,   width: 462, height: 118, fontSize: 75 },
+    '#hm-stats-backer':      { left: 902,  top: 917,  width: 463, height: 48 },
+  };
+  var HM_ELEMENTS = [
+    { group: 'Title',        id: '#hm-title',              name: 'Player Heatmap Title' },
+    { group: 'Post Heatmap · Map',    id: '.hm-map-box', name: 'Heatmap Box' },
+    { group: 'Post Heatmap · HUD',    id: '.hm-hud',      name: 'Timer / Progress' },
+    { group: 'Player Photo', id: '.hm-player-photo-wrap', name: 'Signature Photo' },
+    { group: 'Plaque',       id: '#hm-plaque',            name: 'Plaque Background' },
+    { group: 'Plaque',       id: '.hm-logo',              name: 'Team Logo' },
+    { group: 'Plaque',       id: '.hm-role',              name: 'Role Icon' },
+    { group: 'Plaque',       id: '.hm-name',               name: 'Player Name' },
+    { group: 'Plaque',       id: '.hm-hero',               name: 'Hero Image' },
+    { group: 'Plaque',       id: '.hm-hero-name',          name: 'Hero Name' },
+    { group: 'Time Focus',   id: '#hm-timefocus',          name: 'Time Focus Background' },
+    { group: 'Time Focus',   id: '#hm-timefocus-title',    name: 'Time Focus Title' },
+    { group: 'Time Focus',   id: '#hm-timefocus-range',    name: 'Time Focus Range' },
+    { group: 'Stats Backer', id: '#hm-stats-backer',      name: 'Stats Backer' },
+  ];
 
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
@@ -4843,6 +5056,15 @@
       elements:    P4K_ELEMENTS,
       defaults:    P4K_DEFAULTS,
       showFn:      'showPost4Key',
+    },
+    mplfs_heatmap: {
+      label:       'Post Heatmap · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_heatmap',
+      elements:    HM_ELEMENTS,
+      defaults:    HM_DEFAULTS,
+      showFn:      'showPostHeatmap',
     },
     mplfs_credits: {
       label:       'Credit Reel · mplfs',

@@ -173,6 +173,43 @@ router.post('/api/credits-speed', (req, res) => {
   res.json({ ok: true, speed });
 });
 
+// Post Heatmap tunables (time window / playback speed / player-focus
+// selection) — GET to read, POST partial-update. Both the dashboard's
+// Control-tab box and mplfs.html's showPostHeatmap() fetch this fresh (no
+// caching), so tuning it from the dashboard affects the next time the scene
+// is shown, same pattern as credits-speed above.
+const HEATMAP_CONFIG_FILE = path.join(__dirname, '..', 'heatmap_config.json');
+const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+
+router.get('/api/heatmap-config', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(HEATMAP_CONFIG_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json(HEATMAP_CONFIG_DEFAULT);
+  }
+});
+
+router.post('/api/heatmap-config', (req, res) => {
+  const b = req.body || {};
+  const clampCampSeat = (v, max) => (v === null || v === '' || v === undefined) ? null : Math.max(1, Math.min(max, parseInt(v) || 1));
+  const cfg = {
+    camp:        clampCampSeat(b.camp, 2),
+    seat:        clampCampSeat(b.seat, 5) || 1, // player-focus card always needs a concrete seat
+    from:        Math.max(0, parseInt(b.from) || 0),
+    to:          Math.max(1, parseInt(b.to) || 600),
+    playbackSec: Math.max(1, Math.min(300, parseInt(b.playbackSec) || 15)),
+  };
+  fs.writeFileSync(HEATMAP_CONFIG_FILE, JSON.stringify(cfg));
+  // Live nudge — if Post Heatmap is already showing on some connected
+  // client, it should pick up the new window/focus immediately rather
+  // than only on the next Show. Every mplfs.html tab listens for this and
+  // silently no-ops unless it's actually the heatmap scene right now.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: heatmap_config\ndata: {}\n\n'); } catch {}
+  });
+  res.json({ ok: true, ...cfg });
+});
+
 // Credit Reel font sizes, in px — GET to read, POST { headingSize, bodySize } to update
 const CREDITS_STYLE_FILE = path.join(__dirname, '..', 'credits_style.json');
 
