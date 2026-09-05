@@ -1450,6 +1450,16 @@
     .then(function(d){ if (d && d.draftstats !== undefined) draftStatsEnabled = d.draftstats; })
     .catch(function(){});
 
+  /* Draft Predict rationale bubble arm/disarm — same pattern as Draft
+     Stats above. Lets the dashboard turn OFF just the AI text bubble
+     (e.g. if it's bugged) while leaving the Draft Predict candidate
+     carousels themselves running. dpRationaleEnabled itself is declared
+     down with the rest of the Draft Predict state (defaults true). */
+  fetch('/overlay/features', { cache: 'no-store' })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ if (d && d.draftpredict_rationale !== undefined) dpRationaleEnabled = d.draftpredict_rationale; })
+    .catch(function(){});
+
   /* Draft Recap API URL (Settings → Draft Recap API) — previous-draft
      format, separate feed from the live draft-info-only apiUrl above. */
   var draftRecapApiUrl = 'https://theapi.dpdns.org/api/previous-draft/';
@@ -2580,6 +2590,7 @@
 
   var dpRationaleTimers    = { blue: null, red: null }; /* the 10s auto-hide-after-showing timer */
   var dpRationaleSeqTimers = { blue: null, red: null }; /* the button-pop -> bubble-grow handoff timer */
+  var dpRationaleEnabled   = true; /* arm/disarm toggle (Control tab -> Draft Overlay -> Feature Toggles) — off = candidate carousels keep running, just no AI text bubble */
 
   var DP_AI_BTN_POP_MS       = 350;  /* button pop-in duration */
   var DP_BUBBLE_GROW_MS      = 400;  /* bubble grow duration */
@@ -2832,11 +2843,26 @@
   }
 
   function dpHighlightRationale(text) {
-    var escaped = dpEscapeHtml(text);
-    if (!dpRationaleHighlightRegex) return escaped;
-    return escaped.replace(dpRationaleHighlightRegex, function (m) {
-      return '<strong>' + m + '</strong>';
-    });
+    if (!dpRationaleHighlightRegex) return dpEscapeHtml(text);
+    /* Highlight on the RAW text and escape each piece afterward — never
+       run the highlight regex on already-escaped HTML. Escaping first
+       turns `'` into `&#39;`, and the number-matching half of this regex
+       (`\d+`) then matches the "39" INSIDE that entity, wrapping it in
+       <strong> and splitting it into `&#<strong>39</strong>;` — no
+       longer a valid entity, so the browser prints the literal text
+       "&#39;" instead of decoding it. Matching first and escaping each
+       segment afterward can't straddle an entity like that. */
+    var re = new RegExp(dpRationaleHighlightRegex.source, dpRationaleHighlightRegex.flags);
+    var result = '';
+    var lastIndex = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      result += dpEscapeHtml(text.slice(lastIndex, m.index));
+      result += '<strong>' + dpEscapeHtml(m[0]) + '</strong>';
+      lastIndex = m.index + m[0].length;
+    }
+    result += dpEscapeHtml(text.slice(lastIndex));
+    return result;
   }
 
   function dpShowRationaleBubble(side, text) {
@@ -2844,7 +2870,7 @@
     var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
     var innerEl  = side === 'blue' ? dpBlueRationaleInnerEl : dpRedRationaleInnerEl;
     var textEl   = side === 'blue' ? dpBlueRationaleTextEl : dpRedRationaleTextEl;
-    if (!btnEl || !bubbleEl || !innerEl || !textEl || !dpIsValidRationale(text)) return;
+    if (!dpRationaleEnabled || !btnEl || !bubbleEl || !innerEl || !textEl || !dpIsValidRationale(text)) return;
 
     clearTimeout(dpRationaleTimers[side]);
     clearTimeout(dpRationaleSeqTimers[side]);
@@ -5149,6 +5175,10 @@
       try {
         var d = JSON.parse(ev.data);
         if (d.feature === 'draftstats') draftStatsEnabled = !!d.enabled;
+        else if (d.feature === 'draftpredict_rationale') {
+          dpRationaleEnabled = !!d.enabled;
+          if (!dpRationaleEnabled) dpHideRationaleBubbles();
+        }
       } catch (e) {}
     });
     /* Draft Stats — Control tab test trigger (fixed placeholder values,
