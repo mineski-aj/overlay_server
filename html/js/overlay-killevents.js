@@ -27,7 +27,7 @@ killPhotoEl.onerror = function() {
 var KILL_EVENT_SPONSOR_LOGO = {
   'doublekill.webm':  'assets/ingame/ingamesmart.png',
   'turtleslain.webm': 'assets/ingame/ingamesmart.png',
-  'savage.webm':      'assets/ingame/ingamevisawhite.png',
+  'triplekill.webm':  'assets/ingame/ingamevisawhite.png',
 };
 
 /* ── Timeline pause (all kill events) ──

@@ -179,7 +179,7 @@ router.post('/api/credits-speed', (req, res) => {
 // caching), so tuning it from the dashboard affects the next time the scene
 // is shown, same pattern as credits-speed above.
 const HEATMAP_CONFIG_FILE = path.join(__dirname, '..', 'heatmap_config.json');
-const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0 };
 
 router.get('/api/heatmap-config', (req, res) => {
   try {
@@ -198,6 +198,7 @@ router.post('/api/heatmap-config', (req, res) => {
     from:        Math.max(0, parseInt(b.from) || 0),
     to:          Math.max(1, parseInt(b.to) || 600),
     playbackSec: Math.max(1, Math.min(300, parseInt(b.playbackSec) || 15)),
+    photoOffsetX: Math.max(-400, Math.min(400, parseInt(b.photoOffsetX) || 0)),
   };
   fs.writeFileSync(HEATMAP_CONFIG_FILE, JSON.stringify(cfg));
   // Live nudge — if Post Heatmap is already showing on some connected

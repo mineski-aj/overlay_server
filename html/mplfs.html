@@ -2878,7 +2878,7 @@
       position: absolute; left: 720px; top: 0px; width: 1292px; height: 1292px;
       overflow: hidden; z-index: 40;
     }
-    .hm-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; }
+    .hm-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; transition: transform 200ms ease; }
     #hm-plaque {
       position: absolute; left: 901px; top: 744px; width: 462px; height: 174px;
       z-index: 42; background: url('/assets/highlights/mvphlblue.png') no-repeat; background-size: 100% 100%;
@@ -10977,6 +10977,13 @@
         photoEl.onerror = () => { photoEl.style.display = 'none'; };
         photoEl.style.display = '';
         photoEl.src = hlPhotoUrl(player.name);
+        /* Dashboard's "Player Photo Nudge" left/right buttons — some
+           source photos aren't centered on the player within their own
+           frame, so this shifts the image inside its overflow:hidden
+           wrap rather than moving the wrap itself (which the Edit tab
+           already handles). Tuned per-broadcast via /api/heatmap-config,
+           same live-refresh path as the rest of this cfg object. */
+        photoEl.style.transform = `translateX(${cfg.photoOffsetX || 0}px)`;
 
         document.getElementById('hmst-kda-value').textContent = `${player.kill_num || 0}/${player.dead_num || 0}/${player.assist_num || 0}`;
         document.getElementById('hmst-kp-value').textContent  = (player.kp != null ? Math.round(player.kp) : 0) + '%';

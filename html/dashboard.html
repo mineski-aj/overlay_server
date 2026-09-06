@@ -2997,6 +2997,19 @@
         });
       }).catch(function () {});
 
+    var rowNudge = el('div', 'pdebug-row');
+    rowNudge.appendChild(el('label', '', 'Photo Nudge'));
+    var nudgeLeftBtn = el('button', 'pdebug-trigger', '◀');
+    var nudgeReadout = el('span', '', '0px');
+    nudgeReadout.style.cssText = 'min-width:44px;text-align:center;display:inline-block;';
+    var nudgeRightBtn = el('button', 'pdebug-trigger', '▶');
+    var nudgeResetBtn = el('button', 'pdebug-trigger', 'Reset');
+    rowNudge.appendChild(nudgeLeftBtn);
+    rowNudge.appendChild(nudgeReadout);
+    rowNudge.appendChild(nudgeRightBtn);
+    rowNudge.appendChild(nudgeResetBtn);
+    body.appendChild(rowNudge);
+
     var row4 = el('div', 'pdebug-row');
     var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
     row4.appendChild(applyBtn);
@@ -3006,14 +3019,38 @@
     statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
     body.appendChild(statusEl);
 
-    var appliedCfg = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+    var appliedCfg = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0 };
 
     function applyFieldsFrom(cfg) {
       fromSel.value = hmFmtMmSs(cfg.from);
       toSel.value   = hmFmtMmSs(cfg.to);
       playbackInput.value = cfg.playbackSec;
       focusSel.value = cfg.camp ? (cfg.camp + '-' + (cfg.seat || 1)) : '';
+      nudgeReadout.textContent = (cfg.photoOffsetX || 0) + 'px';
     }
+
+    // Nudge buttons post immediately (their own partial update, distinct
+    // from the "✓ Apply" button below which only covers the time-window/
+    // playback/focus fields) — same live-refresh path (heatmap_config SSE
+    // event), so an already-showing heatmap scene reacts right away.
+    function postPhotoOffset(offsetX) {
+      var clamped = Math.max(-400, Math.min(400, offsetX));
+      fetch('/api/heatmap-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          camp: appliedCfg.camp, seat: appliedCfg.seat,
+          from: appliedCfg.from, to: appliedCfg.to,
+          playbackSec: appliedCfg.playbackSec,
+          photoOffsetX: clamped,
+        }),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) { appliedCfg = d; applyFieldsFrom(d); })
+        .catch(function () {});
+    }
+    nudgeLeftBtn.addEventListener('click', function () { postPhotoOffset((appliedCfg.photoOffsetX || 0) - 20); });
+    nudgeRightBtn.addEventListener('click', function () { postPhotoOffset((appliedCfg.photoOffsetX || 0) + 20); });
+    nudgeResetBtn.addEventListener('click', function () { postPhotoOffset(0); });
 
     function refreshStatus() {
       var params = new URLSearchParams({ from: appliedCfg.from, to: appliedCfg.to });
@@ -3046,6 +3083,7 @@
         from: hmParseMmSs(fromSel.value),
         to:   hmParseMmSs(toSel.value),
         playbackSec: playbackInput.value,
+        photoOffsetX: appliedCfg.photoOffsetX || 0,
       };
       fetch('/api/heatmap-config', {
         method: 'POST',
