@@ -2773,10 +2773,12 @@
        chosen focus player instead of the MVP. Migrated from the standalone
        mlbb_heatmap.html debug tool: positions come from this server's own
        /positions log (already polled by lib/pollers.js — see
-       fetchHeatmapPositions); player identity/stats now come from the
-       Post-Info API (/api/postinfo-proxy — see hmApplyPlayerCard) instead
-       of the live sub-info feed, same source Consolidated (Middle) Board
-       uses for buff counts. Time window/playback speed/camp+seat focus are
+       fetchHeatmapPositions); player identity/stats come from the live
+       sub-info feed (/api/gamedata-proxy — see hmApplyPlayerCard), the
+       same feed Post Stats/the dashboard's Focus Player dropdown already
+       use, not the Post-Info API (that one only feeds Consolidated/
+       Middle Board's buff counts here). Time window/playback speed/camp+
+       seat focus are
        NOT on-page controls (this is a broadcast overlay, not a debug
        tool) — they're tuned from the dashboard's Control tab (Post Heatmap
        Controls box, see buildHeatmapControls in dashboard.html) via
@@ -10910,33 +10912,17 @@
       });
     }
 
-    /* mainroster.json's players are keyed by an internal id, not name —
-       same "look it up by matching ign" fallback Team Line-up's
-       luSecondaryRoleForIgn uses (that one reads secondaryRole; this
-       reads the primary role instead). Post-Info's hero_list carries a
-       `roleid` field too, but it doesn't reliably match mainroster.json's
-       keys (e.g. real match-history player data vs. this roster's own
-       dashboard-managed ids) — matching by name/ign is the reliable path. */
-    function hmRoleForName(roster, name) {
-      if (!roster || !roster.players || !name) return '';
-      for (const pid in roster.players) {
-        if (roster.players[pid].ign === name) return roster.players[pid].role || '';
-      }
-      return '';
-    }
-
     /* Player focus card — MVP Highlights' own plaque/hero/stats layout
-       (hm-prefixed twin of hlApply), fed by the Post-Info API instead of
-       the MVP endpoint. Post-Info's hero_list is FLAT (no seat_N slots
-       like the live sub-info feed) — filtering by campid and indexing by
-       cardSeat-1 reproduces the same "seat order" convention every other
-       Post scene uses, since hero_list's per-camp order is already
-       pick/draft order. KDA/KP%/GPM aren't ready-made fields here (this
-       feed's own `kda` is a single ratio number, not a kill/death/assist
-       string, and it has neither kp nor gpm at all) — all three are
-       derived from kill_num/dead_num/assist_num, the camp's summed kills,
-       and total_money/game_time. Role isn't on this feed at all either —
-       cross-checked against mainroster.json by name (see hmRoleForName). */
+       (hm-prefixed twin of hlApply), fed by the live sub-info feed
+       (/api/gamedata-proxy — same feed Post Stats/Consolidated Post/the
+       dashboard's own Focus Player dropdown all already read), not the
+       Post-Info API — that avoided a whole seat/order-matching problem
+       Post-Info's flat hero_list had (its per-camp order is pick/draft
+       order, not seat order, so cardSeat-1 could silently grab the wrong
+       player) and gets role/hero-name for free: this feed's camp_list[].
+       seat_N objects already carry `role`, `kp` (kill participation %),
+       `hero_name`, and extra_param.gpm directly — no roster cross-check
+       or manual KP/GPM math needed, unlike Post-Info. */
     async function hmApplyPlayerCard(cfg) {
       const cardCamp = Number(cfg.camp) || 1;
       const cardSeat = Number(cfg.seat) || 1;
@@ -10951,41 +10937,18 @@
       const photoEl  = document.getElementById('hm-player-photo');
 
       try {
-        const [piRes, rosterRes, gdRes] = await Promise.allSettled([
-          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-          fetch(buildUrl('/mainroster.json'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-          fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
-        ]);
-        /* Post-Info's own response shape is { code, data: {...}, message }
-           — data directly holds hero_list/camp_list/game_time/etc, NOT a
-           further-nested data.data (that assumption was wrong; matches
-           how fetchCmbData/mdbApplyPostInfoData elsewhere in this file
-           already read the same endpoint via piR.value?.data). */
-        const inner  = piRes.value && piRes.value.data;
-        const roster = rosterRes.value;
-        if (!inner) return;
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
 
-        document.getElementById('hm-timefocus-range').textContent = hmFormatTimeRange(cfg, inner.game_time);
+        document.getElementById('hm-timefocus-range').textContent = hmFormatTimeRange(cfg, gd.game_time);
 
-        const campPlayers = (inner.hero_list || []).filter(p => p.campid === cardCamp);
-        /* Post-Info's hero_list has no seat number of its own — its
-           per-camp order is pick/draft order, NOT seat order, so
-           indexing it by cardSeat-1 used to grab whichever player
-           happened to sit at that array position (wrong player showed
-           up whenever draft order != seat order). The dashboard's
-           Focus Player dropdown picks a seat from the LIVE sub-info
-           feed (gamedata-proxy's camp_list[].seat_N, real seat slots),
-           so look up that seat's actual player NAME there first, then
-           match it into hero_list by name — same "match by ign, not by
-           id/index" fallback hmRoleForName already uses against
-           mainroster.json. Falls back to the old positional guess only
-           if gamedata-proxy is unreachable or the name isn't found. */
-        let player = null;
-        const gd = gdRes.value && gdRes.value.data;
-        const gdCamp = gd && (gd.camp_list || []).find(c => c.campid === cardCamp);
-        const seatName = gdCamp && gdCamp['seat_' + cardSeat] && gdCamp['seat_' + cardSeat].name;
-        if (seatName) player = campPlayers.find(p => p.name === seatName);
-        if (!player) player = campPlayers[cardSeat - 1] || campPlayers[0];
+        const camp = (gd.camp_list || []).find(c => c.campid === cardCamp);
+        if (!camp) return;
+        const seats  = ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].map(k => camp[k]).filter(Boolean);
+        const player = seats[cardSeat - 1] || seats[0];
         if (!player) return;
 
         const tricode = (player.team_simple_name || '').toUpperCase();
@@ -10993,10 +10956,9 @@
         logoEl.style.display = '';
         logoEl.src = tricode ? '/logos/' + encodeURIComponent(tricode) + '.png' : '';
 
-        const role = hmRoleForName(roster, player.name);
         roleEl.onerror = () => { roleEl.style.display = 'none'; };
         roleEl.style.display = '';
-        roleEl.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
+        roleEl.src = player.role ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
 
         nameEl.textContent = player.name || '';
         /* Not fit here — see hlApply's identical comment: #heatmap-page is
@@ -11006,20 +10968,19 @@
         heroImg.onerror = () => { heroImg.style.display = 'none'; };
         heroImg.style.display = '';
         heroImg.src = hlHeroImg(player.heroid);
-        heroName.textContent = ''; /* Post-Info's hero_list has no hero display-name field */
+        /* hero_name is a plain string on this feed (unlike the MVP
+           endpoint's hero_name[] array hlApply reads) — handle either
+           shape defensively rather than assume, since indexing a plain
+           string with [0] would silently truncate it to one character. */
+        heroName.textContent = (Array.isArray(player.hero_name) ? player.hero_name[0] : player.hero_name) || '';
 
         photoEl.onerror = () => { photoEl.style.display = 'none'; };
         photoEl.style.display = '';
         photoEl.src = hlPhotoUrl(player.name);
 
-        const teamKills = campPlayers.reduce((sum, p) => sum + (p.kill_num || 0), 0);
-        const kp = teamKills > 0 ? Math.round(((player.kill_num || 0) + (player.assist_num || 0)) / teamKills * 100) : 0;
-        const minutes = (inner.game_time || 0) / 60;
-        const gpm = minutes > 0 ? Math.round((player.total_money || 0) / minutes) : 0;
-
         document.getElementById('hmst-kda-value').textContent = `${player.kill_num || 0}/${player.dead_num || 0}/${player.assist_num || 0}`;
-        document.getElementById('hmst-kp-value').textContent  = kp + '%';
-        document.getElementById('hmst-gpm-value').textContent = mvFormatStatValue(gpm);
+        document.getElementById('hmst-kp-value').textContent  = (player.kp != null ? Math.round(player.kp) : 0) + '%';
+        document.getElementById('hmst-gpm-value').textContent = mvFormatStatValue((player.extra_param && player.extra_param.gpm) || 0);
       } catch {}
     }
 
