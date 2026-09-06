@@ -2,21 +2,21 @@
   "games": [
     {
       "game": 1,
-      "tossWinner": null,
-      "tossSide": null,
-      "homeSide": null,
-      "awaySide": null,
-      "map": null,
-      "winner": null,
-      "locked": false
+      "tossWinner": "home",
+      "tossSide": "blue",
+      "homeSide": "blue",
+      "awaySide": "red",
+      "map": "Dangerous Grass",
+      "winner": "away",
+      "locked": true
     },
     {
       "game": 2,
-      "tossWinner": null,
-      "tossSide": null,
-      "homeSide": null,
-      "awaySide": null,
-      "map": null,
+      "tossWinner": "away",
+      "tossSide": "blue",
+      "homeSide": "red",
+      "awaySide": "blue",
+      "map": "Broken Walls",
       "winner": null,
       "locked": false
     },

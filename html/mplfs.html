@@ -10951,9 +10951,10 @@
       const photoEl  = document.getElementById('hm-player-photo');
 
       try {
-        const [piRes, rosterRes] = await Promise.allSettled([
+        const [piRes, rosterRes, gdRes] = await Promise.allSettled([
           fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
           fetch(buildUrl('/mainroster.json'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+          fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
         ]);
         /* Post-Info's own response shape is { code, data: {...}, message }
            — data directly holds hero_list/camp_list/game_time/etc, NOT a
@@ -10967,7 +10968,24 @@
         document.getElementById('hm-timefocus-range').textContent = hmFormatTimeRange(cfg, inner.game_time);
 
         const campPlayers = (inner.hero_list || []).filter(p => p.campid === cardCamp);
-        const player = campPlayers[cardSeat - 1] || campPlayers[0];
+        /* Post-Info's hero_list has no seat number of its own — its
+           per-camp order is pick/draft order, NOT seat order, so
+           indexing it by cardSeat-1 used to grab whichever player
+           happened to sit at that array position (wrong player showed
+           up whenever draft order != seat order). The dashboard's
+           Focus Player dropdown picks a seat from the LIVE sub-info
+           feed (gamedata-proxy's camp_list[].seat_N, real seat slots),
+           so look up that seat's actual player NAME there first, then
+           match it into hero_list by name — same "match by ign, not by
+           id/index" fallback hmRoleForName already uses against
+           mainroster.json. Falls back to the old positional guess only
+           if gamedata-proxy is unreachable or the name isn't found. */
+        let player = null;
+        const gd = gdRes.value && gdRes.value.data;
+        const gdCamp = gd && (gd.camp_list || []).find(c => c.campid === cardCamp);
+        const seatName = gdCamp && gdCamp['seat_' + cardSeat] && gdCamp['seat_' + cardSeat].name;
+        if (seatName) player = campPlayers.find(p => p.name === seatName);
+        if (!player) player = campPlayers[cardSeat - 1] || campPlayers[0];
         if (!player) return;
 
         const tricode = (player.team_simple_name || '').toUpperCase();
