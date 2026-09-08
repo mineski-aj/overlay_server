@@ -927,6 +927,27 @@ router.get('/overlay/post_heatmap/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/post_h2h/show
+router.get('/overlay/post_h2h/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'post_h2h';
+  // Post H2H is its own full-bleed two-card scene (own header/sponsor
+  // loop, no shared middleboard/playerboard) — mplfs.html's transitionTo()
+  // special-cases 'post_h2h' the same way it does 'post4key', actively
+  // hiding matchboard/middleboard/playerboard client-side, so this route
+  // must not force any of them back on server-side.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post_h2h\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_h2h/hide
+router.get('/overlay/post_h2h/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_h2h\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/consolidated_post/show
 router.get('/overlay/consolidated_post/show', (req, res) => {
   state.mplfsScene.matchboard = true;

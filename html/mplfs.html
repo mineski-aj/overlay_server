@@ -2818,9 +2818,12 @@
        Consolidated Post's own Kill Map uses (consomap.png), not a
        calibrated real map texture, just a decorative backdrop so the
        heat trail reads as "on the map" instead of floating on black.
-       brightness(0.25) is another flat 50% darken on top of the first
-       (0.5 × 0.5) so the (screen-blended) heat colors on top stay the
-       most visually prominent layer. */
+       brightness(0.25) here is only the pre-JS fallback (so the map isn't
+       unfiltered for an instant before the first fetch resolves) — the
+       real value is tunable per-broadcast via the dashboard's Post
+       Heatmap Controls "Map Brightness" slider (heatmap_config.json's
+       mapBrightness, applied in hmLoadAndApply) so a too-dark map can be
+       brightened without a code change. */
     .hm-map-bg {
       position: absolute; inset: 0; width: 100%; height: 100%;
       object-fit: cover; filter: brightness(0.25);
@@ -2960,6 +2963,27 @@
     #hmst-kp-value  { left: 227px; width: 90px;  z-index: 11; }
     #hmst-gpm-label { left: 331px; width: 52px;  z-index: 14; white-space: nowrap; }
     #hmst-gpm-value { left: 383px; width: 78px;  z-index: 12; }
+
+    /* ── Event-icon legend — explains the Kill/Assist/Death badges
+       hmTriggerEventIcon stamps onto the map (see HM_EVENT_ICONS).
+       Populated at load time by hmInitLegendIcons(), which reuses the
+       exact same hmEventSvg(type) markup the live map badges use —
+       so the legend can never drift out of sync with what the map
+       actually draws (no hand-copied second icon set to maintain). */
+    #hm-legend {
+      position: absolute; left: 810px; top: 205px; width: 190px; height: 96px;
+      z-index: 40; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: center; gap: 6px;
+      background: #0a0e1a; border: 1px solid #1a2240; border-radius: 3px;
+      padding: 8px 12px;
+    }
+    .hm-legend-row { display: flex; align-items: center; gap: 10px; }
+    .hm-legend-icon { width: 24px; height: 24px; flex: 0 0 24px; }
+    .hm-legend-icon svg { display: block; width: 100%; height: 100%; }
+    .hm-legend-label {
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 16px;
+      color: #ffffff; text-transform: uppercase;
+    }
 
     /* ── POST RICHGUY PAGE ── */
     #post-richguy-page {
@@ -3287,6 +3311,173 @@
       text-align: center; margin: 0 0 10px 0;
     }
     .cr-space { width: 100%; }
+
+    /* ── POST H2H — role-based head-to-head stat comparison. Two mirrored
+       player-card panels (directly mirroring MVP Highlights' #hl-plaque
+       structure — see hlApply for the JS template) either side of a
+       column of 5 stat-comparison rows, whose label/values swap per the
+       role picked from the dashboard's Post H2H role selector (see
+       H2H_ROLE_STATS below). Prefix 'p2h-' for every selector — NOT
+       'ph2h-', which is already used by the unrelated mpltag.html H2H
+       tag (a small always-on lower-third, not a full-screen scene).
+       Exact pixel positions below are a reasonable first pass off
+       assets/PostH2H/PostH2HGuide.png, not pixel-perfect — nudge via the
+       dashboard Edit tab (mplfs_post_h2h). */
+    #p2h-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #p2h-page.p2h-on { display: block; }
+    #p2h-page.p2h-visible { opacity: 1; }
+
+    /* Redone against assets/PostH2H/PH2HGuide.png + the real
+       PhotoBG.png/PH2HBlue_Box.png/PH2HRed_Box.png assets, using pixel
+       coordinates measured directly off those files (canvas pixel
+       sampling in a browser tab — not eyeballed), everything still
+       inside the 1920x945 safe area agreed on earlier. Data-binding
+       (JS in p2hApplyCard/p2hApply) is UNCHANGED from before — this
+       pass is asset placement only, per the user's request to redo the
+       visuals before touching data again. */
+    .p2h-header {
+      position: absolute; left: 960px; top: 164px; width: 200px; height: 28px;
+      transform: translateX(-50%);
+      background: #0a0a0a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 14px;
+      color: #fff; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+    }
+    .p2h-gametime-label {
+      position: absolute; left: 960px; top: 196px; width: 309px; height: 54px;
+      transform: translateX(-50%);
+      background: #fff;
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 13px;
+      color: #0a0a0a; text-transform: uppercase;
+    }
+    .p2h-gametime-value {
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 24px;
+      color: #0a0a0a;
+    }
+    .p2h-title {
+      position: absolute; left: 660px; top: 280px; width: 600px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 44px; line-height: 1;
+      color: #0a0a0a; text-transform: uppercase; text-align: center; white-space: nowrap;
+    }
+    /* Stat block: left/width/row-pitch measured off the guide's actual
+       bar pixels (bars found at x=676-1243, center split at x=959 —
+       i.e. centered on the 1920 canvas; row pitch ~90px, bar height
+       34px, label height ~17px sitting 14px above its own bar). */
+    .p2h-stats {
+      position: absolute; left: 676px; top: 379px; width: 567px; height: 450px;
+    }
+    .p2h-row { position: absolute; left: 0; width: 567px; height: 90px; }
+    .p2h-row-0 { top: 0px; }
+    .p2h-row-1 { top: 90px; }
+    .p2h-row-2 { top: 180px; }
+    .p2h-row-3 { top: 270px; }
+    .p2h-row-4 { top: 360px; }
+    .p2h-row-label {
+      position: absolute; left: 0; top: 0; width: 100%; height: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 22px;
+      color: #0a0a0a; text-transform: uppercase; text-align: center;
+    }
+    .p2h-bar-track {
+      position: absolute; left: 0; top: 28px; width: 100%; height: 34px;
+      background: #FF3232; overflow: hidden;
+    }
+    .p2h-bar-fill {
+      position: absolute; left: 0; top: 0; width: 50%; height: 100%;
+      background: #1E64FF;
+      transition: width 500ms ease;
+    }
+    .p2h-value-home, .p2h-value-away {
+      position: absolute; top: 0; height: 34px; width: 45%;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px;
+      color: #fff; z-index: 2; white-space: nowrap;
+    }
+    .p2h-value-home { left: 16px; justify-content: flex-start; }
+    .p2h-value-away { right: 16px; left: auto; justify-content: flex-end; }
+
+    /* Player card: PhotoBG.png (485x672) -> Player photo (same size,
+       on top) -> PH2HBlue_Box.png/PH2HRed_Box.png (485x150, anchored to
+       the bottom of that same 672-tall rect: top = 672-150 = 522).
+       Card box itself measured off the guide at left=100/1335, top=273,
+       485x672 (mirrored: 1920 - 100 - 485 = 1335). */
+    .p2h-card { position: absolute; top: 273px; width: 485px; height: 672px; z-index: 40; }
+    .p2h-home { left: 100px; }
+    .p2h-away { left: 1335px; }
+    .p2h-photobg, .p2h-photo {
+      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
+      object-fit: cover; object-position: 50% 0%; display: block;
+    }
+    .p2h-photobg { z-index: 40; }
+    .p2h-photo   { z-index: 41; }
+    .p2h-box {
+      position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
+      z-index: 42; display: block;
+    }
+    /* Nameplate row lives inside the top ~50px of the box art (measured
+       off PH2HBlue_Box.png: logo slot x5-73, role slot x76-143, name
+       text starts ~x150 after the chevron point) — positioned relative
+       to .p2h-card, offset by the box's own 522px top. */
+    .p2h-logo {
+      position: absolute; left: 5px; top: 522px; width: 74px; height: 53px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+    }
+    .p2h-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .p2h-role-icon {
+      position: absolute; left: 76px; top: 525px; width: 67px; height: 44px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+    }
+    .p2h-role-icon img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); }
+    .p2h-name {
+      position: absolute; left: 150px; top: 525px; width: 325px; height: 44px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 26px; color: #fff;
+      text-transform: uppercase; white-space: nowrap; text-align: center;
+    }
+    /* KDA/KP/GOLD labels are baked into the box art itself now (no
+       separate label element needed) — only the value text is
+       overlaid, in the remaining space of each of the box's 3 columns
+       (measured: KDA col x5-190, KP col x205-337, GOLD col x347-477,
+       label strip y55-100 within the box -> +522 card offset). */
+    .p2h-footer-value {
+      position: absolute; top: 577px; height: 44px; z-index: 43;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 21px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    .p2h-kda-value  { left: 100px; width: 90px; }
+    .p2h-kp-value   { left: 270px; width: 65px; }
+    .p2h-gold-value { left: 400px; width: 75px; }
+
+    /* Emblem icon slots — the 4 dark squares under the KDA column in
+       the box art. Sized/positioned per-slot from pixel measurements
+       taken directly off PH2HBlue_Box.png (canvas pixel sampling):
+       slot 0 is a genuinely bigger square (37x36) than slots 1-3
+       (26x26 each) — not a measurement error, the box art itself draws
+       it larger. Mapped straight to seat.emblem_list[0..3] from the
+       live gamedata-proxy feed; slot 3 naturally stays empty (onerror
+       hide) since emblem_list is normally only 3 entries long. */
+    .p2h-emblem { position: absolute; top: 630px; z-index: 43; object-fit: contain; }
+    .p2h-emblem-0 { left: 17px;  width: 37px; height: 36px; top: 630px; }
+    .p2h-emblem-1 { left: 64px;  width: 26px; height: 26px; top: 635px; }
+    .p2h-emblem-2 { left: 96px;  width: 27px; height: 26px; top: 635px; }
+    .p2h-emblem-3 { left: 127px; width: 26px; height: 26px; top: 635px; }
+
+    #p2h-sponsor {
+      position: absolute; left: 790px; top: 860px; width: 340px; height: 60px;
+      z-index: 45;
+    }
   </style>
 </head>
 <body>
@@ -3520,6 +3711,15 @@
       </div>
     </div>
 
+    <div class="feature-card">
+      <div class="feature-card-label">Post H2H</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostH2H()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostH2H()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-post_h2h" onclick="toggleLocalPreview('post_h2h', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- ── BROADCAST CANVAS ── -->
@@ -3640,6 +3840,11 @@
         <div id="hmst-kp-value" class="hmst-value"></div>
         <div id="hmst-gpm-label" class="hmst-label">GPM</div>
         <div id="hmst-gpm-value" class="hmst-value"></div>
+      </div>
+      <div id="hm-legend">
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-kill"></span><span class="hm-legend-label">Kill</span></div>
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-assist"></span><span class="hm-legend-label">Assist</span></div>
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-death"></span><span class="hm-legend-label">Death</span></div>
       </div>
     </div>
     <div id="waiting-screen-page">
@@ -3996,6 +4201,90 @@
         <div id="hlst-mvp-label" class="hlst-label"></div>
         <div id="hlst-mvp-value" class="hlst-value"></div>
       </div>
+    </div>
+    <div id="p2h-page">
+      <div class="p2h-header" id="p2h-header"></div>
+      <div class="p2h-gametime-label">
+        <span>Game Time</span>
+        <span class="p2h-gametime-value" id="p2h-gametime-value">00:00</span>
+      </div>
+      <div class="p2h-title" id="p2h-title"></div>
+      <div class="p2h-stats">
+        <div class="p2h-row p2h-row-0" id="p2h-row-0">
+          <div class="p2h-row-label" id="p2h-row-0-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-0-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-0-home"></div>
+            <div class="p2h-value-away" id="p2h-row-0-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-1" id="p2h-row-1">
+          <div class="p2h-row-label" id="p2h-row-1-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-1-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-1-home"></div>
+            <div class="p2h-value-away" id="p2h-row-1-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-2" id="p2h-row-2">
+          <div class="p2h-row-label" id="p2h-row-2-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-2-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-2-home"></div>
+            <div class="p2h-value-away" id="p2h-row-2-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-3" id="p2h-row-3">
+          <div class="p2h-row-label" id="p2h-row-3-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-3-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-3-home"></div>
+            <div class="p2h-value-away" id="p2h-row-3-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-4" id="p2h-row-4">
+          <div class="p2h-row-label" id="p2h-row-4-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-4-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-4-home"></div>
+            <div class="p2h-value-away" id="p2h-row-4-away"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p2h-card p2h-home" id="p2h-card-home">
+        <img class="p2h-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
+        <img class="p2h-photo" id="p2h-photo-home" src="" alt="">
+        <img class="p2h-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
+        <div class="p2h-logo"><img id="p2h-logo-home" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="p2h-role-icon"><img id="p2h-role-home" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="p2h-name" id="p2h-name-home"></div>
+        <div class="p2h-footer-value p2h-kda-value" id="p2h-kda-home"></div>
+        <div class="p2h-footer-value p2h-kp-value" id="p2h-kp-home"></div>
+        <div class="p2h-footer-value p2h-gold-value" id="p2h-gold-home"></div>
+        <img class="p2h-emblem p2h-emblem-0" id="p2h-emblem-0-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-1" id="p2h-emblem-1-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-2" id="p2h-emblem-2-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-3" id="p2h-emblem-3-home" src="" alt="" onerror="this.style.display='none'">
+      </div>
+
+      <div class="p2h-card p2h-away" id="p2h-card-away">
+        <img class="p2h-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
+        <img class="p2h-photo" id="p2h-photo-away" src="" alt="">
+        <img class="p2h-box" src="/assets/PostH2H/PH2HRed_Box.png" alt="">
+        <div class="p2h-logo"><img id="p2h-logo-away" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="p2h-role-icon"><img id="p2h-role-away" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="p2h-name" id="p2h-name-away"></div>
+        <div class="p2h-footer-value p2h-kda-value" id="p2h-kda-away"></div>
+        <div class="p2h-footer-value p2h-kp-value" id="p2h-kp-away"></div>
+        <div class="p2h-footer-value p2h-gold-value" id="p2h-gold-away"></div>
+        <img class="p2h-emblem p2h-emblem-0" id="p2h-emblem-0-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-1" id="p2h-emblem-1-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-2" id="p2h-emblem-2-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-emblem p2h-emblem-3" id="p2h-emblem-3-away" src="" alt="" onerror="this.style.display='none'">
+      </div>
+
+      <div id="p2h-sponsor"></div>
     </div>
     <div id="mvp-page">
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
@@ -4630,6 +4919,18 @@
       /* Dashboard's Post Heatmap Controls Apply button — see
          hmLiveRefresh above. */
       sseSource.addEventListener('heatmap_config', () => { hmLiveRefresh(); });
+
+      sseSource.addEventListener('post_h2h', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostH2H, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      /* Dashboard's Post H2H Controls role selector — see p2hLiveRefresh
+         below. */
+      sseSource.addEventListener('h2h_config', () => { p2hLiveRefresh(); });
 
       sseSource.addEventListener('consolidated_post', (e) => {
         const msg = JSON.parse(e.data);
@@ -5435,6 +5736,7 @@
       consolidated_post: '/assets/bgloopwaves2.webm',
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
+      post_h2h:   '/assets/bgloopwaves2.webm',
       hearts:     '/assets/bgloopwaves2.webm',
       timeline:   '/assets/bgloopwaves2.webm',
       emblems:    '/assets/bgloopwaves2.webm',
@@ -8908,7 +9210,7 @@
        MVP-Highlights-style full-screen scene (its own plaque/photo, no
        Matchboard), same as 'highlights'/'mvp' below, not a Post-family
        scene alongside Matchboard/Middleboard/Playerboard. */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h']);
 
     /* Keeps server-side state.mplfsScene.<key> (and thus the dashboard's
        Control-tab board toggles/live indicator) in sync with board
@@ -8977,10 +9279,10 @@
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
         else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
-        else if (newFeature === 'post4key') {
+        else if (newFeature === 'post4key' || newFeature === 'post_h2h') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);
-          hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed map/card already shown — and must actively turn these off in case they're still on from a prior Post scene */
+          hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed two-card layout + own header/sponsor loop already shown — and must actively turn these off in case they're still on from a prior Post scene */
         }
         else {
           syncBoard('middleboard', true);
@@ -9048,6 +9350,7 @@
       if (prev === 'consolidated_post') return hideConsolidatedPost();
       if (prev === 'consolidated_post_2') return hideConsolidatedPost2();
       if (prev === 'post4key') return hidePost4Key();
+      if (prev === 'post_h2h') return hidePostH2H();
       return Promise.resolve();
     }
 
@@ -10720,9 +11023,17 @@
        clean instead of stacking duplicate icons on the same events) and
        on hide (hidePostHeatmap). */
     const HM_EVENT_ICONS = {
+      /* Crossed swords: two corner-to-corner blades (same diagonal
+         coordinates the old plain-X used) plus a perpendicular guard bar
+         and a pommel circle near each blade's lower end, so it reads as
+         swords hilt-down rather than a bare X. */
       kill: `
-        <line x1="28" y1="28" x2="72" y2="72" stroke="#0a0a0a" stroke-width="16" stroke-linecap="round"/>
-        <line x1="72" y1="28" x2="28" y2="72" stroke="#0a0a0a" stroke-width="16" stroke-linecap="round"/>
+        <line x1="22" y1="22" x2="78" y2="78" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+        <line x1="56.2" y1="77.4" x2="77.4" y2="56.2" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="78" cy="78" r="7" fill="#0a0a0a"/>
+        <line x1="78" y1="22" x2="22" y2="78" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+        <line x1="43.8" y1="77.4" x2="22.6" y2="56.2" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="22" cy="78" r="7" fill="#0a0a0a"/>
       `,
       death: `
         <circle cx="50" cy="40" r="24" fill="#e02020"/>
@@ -10733,10 +11044,55 @@
         <rect x="41" y="68" width="4" height="8" fill="#0a0a0a"/>
         <rect x="55" y="68" width="4" height="8" fill="#0a0a0a"/>
       `,
+      /* Shaking hands — the user's own reference handshake artwork
+         (svgrepo.com), a filled-silhouette icon rather than the earlier
+         hand-built attempts, so it doesn't need the same "thin lines
+         vanish at 30px" workaround those needed. Original is a 5-path
+         512x512 glyph (2 sleeves, 2 elbow-joint cutout circles, 1
+         clasped-fingers mass with the loose-thumb notch); reproduced
+         here verbatim and just re-centered/scaled into this icon
+         system's 100x100 viewBox via the wrapping <g> transform — scale
+         0.172 sizes its ~500px bulk to fill the ~86px-diameter safe
+         area inside the white circle backer (see hmEventSvg), and the
+         translate pair recenters its own (256,256) midpoint onto this
+         icon's (50,50) origin. Confirmed legible at the actual ~30px
+         on-screen size (see .hm-event-icon) — SVG paths stay crisp at
+         any raster size, unlike the stroke-width tricks the earlier
+         attempts needed. */
       assist: `
-        <line x1="50" y1="15" x2="22" y2="85" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
-        <line x1="50" y1="15" x2="78" y2="85" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
-        <line x1="33" y1="62" x2="67" y2="62" stroke="#0a0a0a" stroke-width="14" stroke-linecap="round"/>
+        <g transform="translate(50,50) scale(0.172) translate(-256,-256)" fill="#0a0a0a">
+          <path d="M255.366,141.046c-7.4,3.583-14.732,8.548-21.533,15.357c-34.091,34.098-65.081,65.088-65.081,65.088
+            l0.013,0.02c-0.185,0.186-0.371,0.338-0.557,0.53c-8.824,8.831-9.174,22.909-1.025,32.146c0.323,0.371,0.668,0.736,1.025,1.086
+            c9.161,9.174,24.036,9.196,33.232,0l35.797-35.797c6.176,2.263,12.248,3.583,18.074,4.243c7.937,0.88,15.392,0.55,22.022-0.385
+            c16.162-2.29,14.47-1.623,23.844-4.704c9.353-3.068,19.862-9.354,19.862-9.354l6.362,6.355
+            c0.701,0.681,16.919,16.925,25.192,25.185c1.465,1.471,2.709,2.682,3.542,3.549c0.956,0.997,2.022,1.719,2.682,2.682l41.278,41.279
+            c11.898-13.35,25.488-33.232,23.81-56.058L320.763,129.14C320.763,129.14,285.062,126.589,255.366,141.046z"/>
+          <path d="M261.115,394.362c-9.134-9.147-23.961-9.147-33.101,0l-6.794,6.794c9.119-9.132,9.112-23.926-0.021-33.066
+            c-9.14-9.126-23.947-9.126-33.087,0.007c9.14-9.133,9.14-23.94,0-33.087c-9.133-9.148-23.947-9.133-33.087,0
+            c9.14-9.133,9.14-23.947,0-33.095c-9.134-9.132-23.947-9.132-33.088,0.014l-20.46,20.453c-9.14,9.147-9.14,23.947,0,33.094
+            c9.133,9.134,23.941,9.134,33.08,0c-9.14,9.134-9.14,23.947,0,33.087c9.147,9.133,23.954,9.133,33.094,0
+            c-9.14,9.133-9.14,23.941,0,33.088c9.14,9.133,23.947,9.133,33.088,0l6.802-6.809c-9.119,9.147-9.113,23.94,0.02,33.081
+            c9.14,9.132,23.947,9.132,33.088,0l20.467-20.468C270.248,418.302,270.248,403.495,261.115,394.362z"/>
+          <path d="M507.987,178.28L387.543,57.822c-5.351-5.337-14.002-5.337-19.339,0l-38.631,38.63
+            c-5.337,5.337-5.337,13.989,0,19.333l120.458,120.451c5.33,5.35,13.996,5.35,19.326,0l38.63-38.638
+            C513.338,192.276,513.338,183.624,507.987,178.28z M473.655,204.992c-5.75,5.736-15.048,5.736-20.777,0
+            c-5.735-5.743-5.735-15.041,0-20.777c5.729-5.736,15.027-5.736,20.777,0C479.391,189.951,479.384,199.249,473.655,204.992z"/>
+          <path d="M182.417,99.864l-38.624-38.63c-5.336-5.337-13.995-5.337-19.332,0L4.003,181.691
+            c-5.337,5.323-5.337,13.989,0,19.319l38.631,38.644c5.33,5.331,14.002,5.331,19.325,0l120.458-120.458
+            C187.761,113.859,187.761,105.207,182.417,99.864z M59.118,208.403c-5.736,5.729-15.04,5.729-20.777,0
+            c-5.735-5.742-5.735-15.041,0-20.777c5.736-5.735,15.041-5.735,20.777,0C64.854,193.362,64.854,202.66,59.118,208.403z"/>
+          <path d="M397.528,312.809l-7.468-7.482l-72.509-72.509l-4.883,2.166l-5.316,1.919l-0.384,0.117
+            c-0.936,0.296-9.684,2.971-26.932,5.412c-9.12,1.273-18.156,1.431-26.904,0.434c-3.459-0.385-6.898-0.95-10.296-1.692
+            l-27.757,27.744c-16.678,16.678-43.836,16.678-60.514,0c-0.585-0.591-1.149-1.19-1.671-1.781l-0.179-0.2
+            c-10.529-11.939-13.204-28.28-8.252-42.461l10.673-16.609l-0.02-0.02l65.081-65.074c2.647-2.641,5.426-5.103,8.314-7.428
+            c-20.281-3.982-37.296-2.806-37.296-2.806L88.093,235.679c-1.389,18.988,11.651,39.799,20.928,51.952
+            c16.692-15.963,43.239-15.756,59.641,0.654c6.107,6.1,9.952,13.617,11.574,21.498c7.895,1.637,15.406,5.475,21.513,11.582
+            c6.107,6.114,9.952,13.631,11.575,21.519c7.888,1.623,15.412,5.46,21.513,11.568c4.078,4.078,7.152,8.783,9.222,13.817
+            c11.1-0.137,22.242,4.016,30.688,12.455c16.65,16.636,16.643,43.733,0,60.363l-6.809,6.822l3.411,3.412
+            c9.148,9.147,23.954,9.147,33.095,0c9.14-9.134,9.14-23.947,0-33.088l6.808,6.83c9.147,9.133,23.947,9.133,33.087,0
+            c9.14-9.147,9.147-23.954,0-33.101c9.147,9.147,23.947,9.147,33.087,0c9.134-9.126,9.154-23.94,0-33.088
+            c9.154,9.148,23.954,9.148,33.088,0c9.147-9.132,9.147-23.947,0-33.08L397.528,312.809z"/>
+        </g>
       `,
     };
 
@@ -10750,6 +11106,17 @@
     function hmClearEventIcons() {
       document.querySelectorAll('.hm-event-icon').forEach(el => el.remove());
     }
+
+    /* One-time legend fill — reuses hmEventSvg(type) verbatim so the
+       legend's icons are drawn from the exact same markup as the live
+       map badges (see HM_EVENT_ICONS) instead of a hand-copied second
+       set that could quietly drift out of sync. Static content, so this
+       just runs once at parse time like the itlPage/rgPage/hlPage-style
+       top-level DOM lookups elsewhere in this file — #heatmap-page is
+       already in the DOM by the time this inline <script> runs. */
+    document.getElementById('hm-legend-icon-kill').innerHTML   = hmEventSvg('kill');
+    document.getElementById('hm-legend-icon-assist').innerHTML = hmEventSvg('assist');
+    document.getElementById('hm-legend-icon-death').innerHTML  = hmEventSvg('death');
 
     function hmTriggerEventIcon(cx, cy, type) {
       const mapBox = document.querySelector('.hm-map-box');
@@ -10851,7 +11218,7 @@
         if (!r.ok) throw new Error('bad status');
         return await r.json();
       } catch {
-        return { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15 };
+        return { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, mapBrightness: 0.25 };
       }
     }
 
@@ -10998,6 +11365,13 @@
        each await, since the two call sites need it at different points. */
     async function hmLoadAndApply(cfg) {
       const [positions] = await Promise.all([fetchHeatmapPositions(cfg), hmApplyPlayerCard(cfg)]);
+      /* Map brightness — tuned from the dashboard's Post Heatmap Controls
+         box (Map Brightness slider), same live-refresh path as the rest
+         of this cfg object. Overrides the .hm-map-bg CSS rule's own
+         brightness(0.25) fallback, which only applies before this first
+         runs. */
+      document.querySelector('.hm-map-bg').style.filter =
+        `brightness(${cfg.mapBrightness != null ? cfg.mapBrightness : 0.25})`;
       hmFromS = cfg.from;
       hmPlaybackSecs = cfg.playbackSec;
       /* cfg.to === 99999 is the dashboard's "FULL" sentinel — routes/
@@ -11078,6 +11452,264 @@
         hideSceneVideo();
         resolve();
       }, 420));
+    }
+
+    /* ════════════════════════════════════════════════
+       POST H2H — role-based head-to-head stat comparison, fed by the same
+       gamedata-proxy payload as Post Stats/Post Heatmap. Caster picks a
+       role from the dashboard's Post H2H Controls (h2h_config.json /
+       /api/h2h-config); the scene shows both teams' player in that role
+       plus 5 role-specific stat rows (H2H_ROLE_STATS below). Player card
+       halves directly mirror MVP Highlights' #hl-plaque (see hlApply).
+    ════════════════════════════════════════════════ */
+    const p2hPage = document.getElementById('p2h-page');
+
+    const H2H_ROLE_LABELS = {
+      jungler:    'JUNGLER',
+      gold_laner: 'GOLD LANE',
+      exp_laner:  'EXP LANE',
+      mid_laner:  'MID LANE',
+      roamer:     'ROAMER',
+    };
+
+    function p2hFmtPct(v)  { return (v == null ? 0 : Number(v)).toFixed(1) + '%'; }
+    function p2hFmtSecs(ms) { return ((ms || 0) / 1000).toFixed(1) + 's'; }
+    function p2hFmtCount(v) { return String(v || 0); }
+    /* Level 15 Time isn't a plain number — level_eta IS the game-time
+       timestamp they hit level 15 ONLY once level_percent reads 100;
+       otherwise there's nothing to show yet. get() for this row returns
+       the whole seat (not a number) so this fmt can see both fields. */
+    function p2hFmtLevel15(seat) {
+      return (seat && seat.level_percent === 100 && seat.level_eta) ? seat.level_eta : '--';
+    }
+    /* Dmg Dealt % (mid_laner only) isn't a direct API field — this
+       player's share of their own team's 5-seat total_damage sum. */
+    function p2hDmgDealtPct(seat, teamSeats) {
+      const total = (teamSeats || []).reduce((sum, s) => sum + (s.total_damage || 0), 0);
+      if (!total || !seat) return 0;
+      return (seat.total_damage || 0) / total * 100;
+    }
+
+    /* Exactly 5 rows per role, in the order specced. get(seat, teamSeats)
+       reads the raw value (or, for Level 15 Time, the seat itself — see
+       p2hFmtLevel15 above); fmt(value) renders the display string. */
+    const H2H_ROLE_STATS = {
+      jungler: [
+        { label: 'Gold',                   get: (s) => (s && s.gold) || 0,     fmt: fmtGold },
+        { label: 'Damage Dealt',           get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
+        { label: 'Game Time at Level 15',  get: (s) => s,                      fmt: p2hFmtLevel15 },
+        { label: 'Turtle Kills',           get: (s) => (s && s.extra_param && s.extra_param.kill_tortoise) || 0, fmt: p2hFmtCount },
+        { label: 'Lord Kills',             get: (s) => (s && s.extra_param && s.extra_param.kill_lord) || 0,     fmt: p2hFmtCount },
+      ],
+      gold_laner: [
+        { label: 'Gold',           get: (s) => (s && s.gold) || 0,          fmt: fmtGold },
+        { label: 'GPM',            get: (s) => (s && s.extra_param && s.extra_param.gpm) || 0, fmt: p2hFmtCount },
+        { label: 'Damage Dealt',   get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+        { label: 'Turret Damage',  get: (s) => (s && s.total_damage_tower) || 0, fmt: fmtGold },
+      ],
+      exp_laner: [
+        { label: 'Gold',           get: (s) => (s && s.gold) || 0,          fmt: fmtGold },
+        { label: 'KP',             get: (s) => (s && s.kp) || 0,            fmt: p2hFmtPct },
+        { label: 'Damage Dealt',   get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+        { label: 'Avg CC Time',    get: (s) => (s && s.control_time_ms) || 0, fmt: p2hFmtSecs },
+      ],
+      mid_laner: [
+        { label: 'Gold',           get: (s) => (s && s.gold) || 0,          fmt: fmtGold },
+        { label: 'KP',             get: (s) => (s && s.kp) || 0,            fmt: p2hFmtPct },
+        { label: 'Damage Dealt',   get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
+        { label: 'Dmg Dealt %',    get: (s, team) => p2hDmgDealtPct(s, team), fmt: p2hFmtPct },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+      ],
+      roamer: [
+        { label: 'KP',             get: (s) => (s && s.kp) || 0,            fmt: p2hFmtPct },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+        { label: 'Heal',           get: (s) => (s && s.total_heal) || 0,    fmt: fmtGold },
+        { label: 'CC Time',        get: (s) => (s && s.control_time_ms) || 0, fmt: p2hFmtSecs },
+        { label: 'Heal to Allies', get: (s) => (s && s.total_heal_other) || 0, fmt: fmtGold },
+      ],
+    };
+
+    /* Live feed uses lowercase snake_case roles ('exp_laner'); static
+       fixtures use 'EXP LANER' — same tolerant normalization spirit as
+       roleFile() above, just comparing two normalized strings instead of
+       mapping to a display name. */
+    function p2hRoleMatches(seatRole, roleKey) {
+      const norm = (seatRole || '').toLowerCase().replace(/[\s_]/g, '');
+      const want = (roleKey  || '').toLowerCase().replace(/[\s_]/g, '');
+      return !!norm && norm === want;
+    }
+    function p2hFindSeat(camp, roleKey) {
+      if (!camp) return null;
+      for (let i = 1; i <= 5; i++) {
+        const seat = camp['seat_' + i];
+        if (seat && p2hRoleMatches(seat.role, roleKey)) return seat;
+      }
+      return null;
+    }
+
+    async function fetchH2HConfig() {
+      try {
+        const r = await fetch(buildUrl('/api/h2h-config'), { cache: 'no-store' });
+        if (!r.ok) return { role: 'gold_laner' };
+        return await r.json();
+      } catch (e) { return { role: 'gold_laner' }; }
+    }
+
+    async function fetchH2HGameData() {
+      try {
+        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
+        if (!r.ok) return null;
+        const json = await r.json();
+        return json.data || null;
+      } catch (e) { return null; }
+    }
+
+    async function fetchH2HMatchState() {
+      try {
+        const r = await fetch(buildUrl('/match/state'), { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (e) { return null; }
+    }
+
+    /* Mirrors hlApply's plaque/photo/footer resolution, addressed by
+       '-home'/'-away' suffixed ids since both cards exist simultaneously
+       (unlike Highlights, which shows one player at a time). The
+       .p2h-logo slot shows the player's HERO icon (not the team logo —
+       the box art's own chevron color already carries team identity),
+       via the same '/hero/HERO_<id>_KOTAK.png' path used elsewhere in
+       this file (see hlApply's sibling icon usages). `camp` is kept in
+       the signature for future use (e.g. if a team logo is added back
+       elsewhere in the card) even though this function no longer reads
+       it. */
+    function p2hApplyCard(side, seat, camp) {
+      const logoEl   = document.getElementById('p2h-logo-' + side);
+      const roleEl   = document.getElementById('p2h-role-' + side);
+      const nameEl   = document.getElementById('p2h-name-' + side);
+      const photoEl  = document.getElementById('p2h-photo-' + side);
+
+      logoEl.onerror = () => { logoEl.style.display = 'none'; };
+      logoEl.style.display = '';
+      logoEl.src = (seat && seat.heroid) ? '/hero/HERO_' + seat.heroid + '_KOTAK.png' : '';
+
+      roleEl.onerror = () => { roleEl.style.display = 'none'; };
+      roleEl.style.display = '';
+      roleEl.src = (seat && seat.role) ? '/role/' + encodeURIComponent(roleFile(seat.role)) + '.png' : '';
+
+      nameEl.textContent = (seat && seat.name) || '';
+
+      photoEl.onerror = () => { photoEl.style.display = 'none'; };
+      photoEl.style.display = '';
+      photoEl.src = hlPhotoUrl(seat && seat.name);
+
+      document.getElementById('p2h-kda-' + side).textContent = (seat && seat.kda) || '-/-/-';
+      document.getElementById('p2h-kp-' + side).textContent = (seat && seat.kp != null) ? seat.kp + '%' : '-';
+      document.getElementById('p2h-gold-' + side).textContent = fmtGold(seat && seat.gold);
+
+      /* Emblem slots — seat.emblem_list turned out to be flat placeholder
+         values ([1,2,3] on every seat, no matching /emblem files) rather
+         than real icon ids. The fields that DO resolve to real files —
+         confirmed against the same live gamedata-proxy shape already
+         consumed elsewhere in this file (Consolidated Post's rune icons,
+         ~line 9719) — are rune_id (main emblem set, 5-digit, e.g. 20008 ->
+         slot 0, the bigger one) and rune_map_1/2/3 (the 3 sub-picks,
+         3-digit, e.g. 811 -> slots 1-3). Same mvRuneUrl-style URL. */
+      const runeIds = [seat && seat.rune_id, seat && seat.rune_map_1, seat && seat.rune_map_2, seat && seat.rune_map_3];
+      for (let i = 0; i < 4; i++) {
+        const el = document.getElementById('p2h-emblem-' + i + '-' + side);
+        const id = runeIds[i];
+        el.onerror = () => { el.style.display = 'none'; };
+        el.style.display = '';
+        el.src = id ? '/emblem/square_' + id + '_RUNES.png' : '';
+      }
+    }
+
+    function p2hApply(cfg, gameData, matchState) {
+      const role = (cfg && cfg.role) || 'gold_laner';
+
+      document.getElementById('p2h-header').textContent =
+        'GAME ' + ((matchState && matchState.game) || 1) + ' - MATCH ' + ((matchState && matchState.match) || 1);
+      document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
+      document.getElementById('p2h-title').textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + ' HEAD TO HEAD';
+
+      const camps  = (gameData && gameData.camp_list) || [];
+      const camp1  = camps.find(c => c.campid === 1) || null; /* home/blue/left */
+      const camp2  = camps.find(c => c.campid === 2) || null; /* away/red/right */
+      const seatHome = p2hFindSeat(camp1, role);
+      const seatAway = p2hFindSeat(camp2, role);
+      const extractSeats = camp => camp ? ['seat_1','seat_2','seat_3','seat_4','seat_5'].map(k => camp[k]).filter(Boolean) : [];
+      const teamHomeSeats = extractSeats(camp1);
+      const teamAwaySeats = extractSeats(camp2);
+
+      p2hApplyCard('home', seatHome, camp1);
+      p2hApplyCard('away', seatAway, camp2);
+
+      const stats = H2H_ROLE_STATS[role] || H2H_ROLE_STATS.gold_laner;
+      stats.forEach((stat, i) => {
+        const homeRaw = seatHome ? stat.get(seatHome, teamHomeSeats) : null;
+        const awayRaw = seatAway ? stat.get(seatAway, teamAwaySeats) : null;
+        const homeNum = typeof homeRaw === 'number' ? homeRaw : 0;
+        const awayNum = typeof awayRaw === 'number' ? awayRaw : 0;
+        const totalNum = homeNum + awayNum;
+        const pct = totalNum > 0 ? (homeNum / totalNum) * 100 : 50; /* guard divide-by-zero */
+        document.getElementById('p2h-row-' + i + '-label').textContent = stat.label;
+        document.getElementById('p2h-row-' + i + '-fill').style.width = pct + '%';
+        document.getElementById('p2h-row-' + i + '-home').textContent = seatHome ? stat.fmt(homeRaw) : '-';
+        document.getElementById('p2h-row-' + i + '-away').textContent = seatAway ? stat.fmt(awayRaw) : '-';
+      });
+    }
+
+    document.getElementById('p2h-sponsor').innerHTML =
+      `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+      `<div class="sponsor-cat-label" id="p2h-sponsor-cat"></div>` +
+      `<div class="wl-sponsor-loop"><img id="p2h-sponsor-img" src="" alt=""></div>`;
+    const p2hSponsorLoop = makeSponsorLoop('p2h-sponsor-img', 'p2h-sponsor-cat');
+
+    let p2hVisible = false;
+
+    async function showPostH2H() {
+      const cfgPromise = fetchH2HConfig();
+      const gdPromise  = fetchH2HGameData();
+      const msPromise  = fetchH2HMatchState();
+      await transitionTo('post_h2h');
+      const [cfg, gameData, matchState] = await Promise.all([cfgPromise, gdPromise, msPromise]);
+      if (activeFeature !== 'post_h2h') return; /* superseded while awaiting data */
+      p2hApply(cfg, gameData, matchState);
+      await preloadMedia(p2hPage.querySelectorAll('img'), 1500);
+      if (activeFeature !== 'post_h2h') return; /* superseded while preloading */
+      showSceneVideo('post_h2h');
+      p2hSponsorLoop.start();
+      p2hVisible = true;
+      p2hPage.classList.add('p2h-on');
+      void p2hPage.offsetWidth; /* force reflow so the opacity transition runs */
+      p2hPage.classList.add('p2h-visible');
+    }
+
+    function hidePostH2H() {
+      if (!p2hVisible) return Promise.resolve();
+      p2hVisible = false;
+      p2hSponsorLoop.stop();
+      p2hPage.classList.remove('p2h-visible');
+      return new Promise(resolve => setTimeout(() => {
+        p2hPage.classList.remove('p2h-on');
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
+    /* Dashboard's Post H2H Controls role selector hits /api/h2h-config,
+       which broadcasts 'h2h_config' — if this tab is the one actually
+       showing the scene right now, pull the new role in immediately
+       instead of waiting for the next Show. Same pattern as
+       hmLiveRefresh above. */
+    async function p2hLiveRefresh() {
+      if (!p2hVisible) return;
+      const [cfg, gameData, matchState] = await Promise.all([fetchH2HConfig(), fetchH2HGameData(), fetchH2HMatchState()]);
+      if (!p2hVisible || activeFeature !== 'post_h2h') return;
+      p2hApply(cfg, gameData, matchState);
     }
 
     /* ════════════════════════════════════════════════
@@ -11395,22 +12027,24 @@
       const c2 = camps.find(c => c.campid === 2);
       mdbSet('mdb-gold-l',   fmtGold(c1 && c1.total_money));
       mdbSet('mdb-gold-r',   fmtGold(c2 && c2.total_money));
-      mdbSet('mdb-tower-l',  (c1 && c1.kill_tower)    || 0);
-      mdbSet('mdb-tower-r',  (c2 && c2.kill_tower)    || 0);
-      mdbSet('mdb-lord-l',   (c1 && c1.kill_lord)     || 0);
-      mdbSet('mdb-lord-r',   (c2 && c2.kill_lord)     || 0);
-      mdbSet('mdb-turtle-l', (c1 && c1.kill_tortoise) || 0);
-      mdbSet('mdb-turtle-r', (c2 && c2.kill_tortoise) || 0);
       mdbSet('mdb-game-time-value', fmtGameTime(gd && gd.game_time));
     }
 
-    // Buff counts come from the separate Post-Info API's own camp fields
-    // (red_buff_num / blue_buff_num), not the live sub-info feed
-    // (gamedata-proxy has neither field at all).
+    // Tower/Lord/Turtle + buff counts all come from the separate Post-Info
+    // API's own camp fields, not the live sub-info feed (gamedata-proxy).
+    // Note the Post-Info payload's turtle-count field is spelled
+    // `kill_totoise` (missing the 'r') — different from the Game API's
+    // `kill_tortoise` — verified against a live /api/postinfo-proxy response.
     function mdbApplyPostInfoData(pi) {
       const piCamps = (pi && pi.camp_list) || [];
       const pc1 = piCamps.find(c => c.campid === 1);
       const pc2 = piCamps.find(c => c.campid === 2);
+      mdbSet('mdb-tower-l',      (pc1 && pc1.kill_tower)    || 0);
+      mdbSet('mdb-tower-r',      (pc2 && pc2.kill_tower)    || 0);
+      mdbSet('mdb-lord-l',       (pc1 && pc1.kill_lord)     || 0);
+      mdbSet('mdb-lord-r',       (pc2 && pc2.kill_lord)     || 0);
+      mdbSet('mdb-turtle-l',     (pc1 && pc1.kill_totoise)  || 0);
+      mdbSet('mdb-turtle-r',     (pc2 && pc2.kill_totoise)  || 0);
       mdbSet('mdb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
       mdbSet('mdb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
       mdbSet('mdb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
@@ -11829,6 +12463,7 @@
           else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
           else if (scene.activeFeature === 'consolidated_post_2') showConsolidatedPost2();
           else if (scene.activeFeature === 'post4key') showPost4Key();
+          else if (scene.activeFeature === 'post_h2h') showPostH2H();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
           else if (scene.activeFeature === 'waiting')  showWaitingScreen();
           else if (scene.activeFeature === 'lobby')    showWaitingLobby();
@@ -11895,13 +12530,14 @@
         if (feature === 'consolidated_post_2') showConsolidatedPost2();
         if (feature === 'post4key') showPost4Key();
         if (feature === 'heatmap') showPostHeatmap();
+        if (feature === 'post_h2h') showPostH2H();
       }
     }
 
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -11925,6 +12561,7 @@
         if (event === 'post4key')      showPost4Key();
         if (event === 'post_stats')    showPostStats();
         if (event === 'post_heatmap')  showPostHeatmap();
+        if (event === 'post_h2h')      showPostH2H();
         if (event === 'credits')       showCreditsScene();
         if (event === 'consolidated_post')   showConsolidatedPost();
         if (event === 'consolidated_post_2') showConsolidatedPost2();

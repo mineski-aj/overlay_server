@@ -179,7 +179,7 @@ router.post('/api/credits-speed', (req, res) => {
 // caching), so tuning it from the dashboard affects the next time the scene
 // is shown, same pattern as credits-speed above.
 const HEATMAP_CONFIG_FILE = path.join(__dirname, '..', 'heatmap_config.json');
-const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0 };
+const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0, mapBrightness: 0.25 };
 
 router.get('/api/heatmap-config', (req, res) => {
   try {
@@ -199,6 +199,7 @@ router.post('/api/heatmap-config', (req, res) => {
     to:          Math.max(1, parseInt(b.to) || 600),
     playbackSec: Math.max(1, Math.min(300, parseInt(b.playbackSec) || 15)),
     photoOffsetX: Math.max(-400, Math.min(400, parseInt(b.photoOffsetX) || 0)),
+    mapBrightness: Math.max(0.1, Math.min(1.5, Number(b.mapBrightness) || 0.25)),
   };
   fs.writeFileSync(HEATMAP_CONFIG_FILE, JSON.stringify(cfg));
   // Live nudge — if Post Heatmap is already showing on some connected
@@ -207,6 +208,38 @@ router.post('/api/heatmap-config', (req, res) => {
   // silently no-ops unless it's actually the heatmap scene right now.
   state.overlayClients.forEach(c => {
     try { c.write('event: heatmap_config\ndata: {}\n\n'); } catch {}
+  });
+  res.json({ ok: true, ...cfg });
+});
+
+// Post H2H role selection (which role's head-to-head comparison is shown)
+// — GET to read, POST { role } to update. mplfs.html's showPostH2H() and
+// p2hLiveRefresh() fetch this fresh (no caching) each time, same pattern
+// as heatmap_config above; tuning it from the dashboard's role selector
+// affects an already-showing Post H2H scene immediately via the
+// 'h2h_config' SSE broadcast below, and the next Show either way.
+const H2H_CONFIG_FILE = path.join(__dirname, '..', 'h2h_config.json');
+const H2H_CONFIG_DEFAULT = { role: 'gold_laner' };
+const H2H_VALID_ROLES = ['jungler', 'gold_laner', 'exp_laner', 'mid_laner', 'roamer'];
+
+router.get('/api/h2h-config', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(H2H_CONFIG_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json(H2H_CONFIG_DEFAULT);
+  }
+});
+
+router.post('/api/h2h-config', (req, res) => {
+  const b = req.body || {};
+  const role = H2H_VALID_ROLES.includes(b.role) ? b.role : H2H_CONFIG_DEFAULT.role;
+  const cfg = { role };
+  fs.writeFileSync(H2H_CONFIG_FILE, JSON.stringify(cfg));
+  // Live nudge — same reasoning as heatmap_config above: if Post H2H is
+  // already showing on some connected client, it should pick up the new
+  // role immediately rather than only on the next Show.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: h2h_config\ndata: ' + JSON.stringify(cfg) + '\n\n'); } catch {}
   });
   res.json({ ok: true, ...cfg });
 });

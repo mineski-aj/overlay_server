@@ -1757,6 +1757,7 @@
   var mplfsFeatureBtns = {};
   var MPLFS_BOOL_KEYS = ['matchboard', 'middleboard', 'playerboard'];
   var MPLFS_ACTIVE_FEATURE_MAP = {
+    post_h2h:       'post_h2h',
     post_hearts:    'hearts',
     post_itemline:  'itemline',
     post_emblems:   'emblems',
@@ -1792,7 +1793,7 @@
     mvp: 'MVP Scene', credits: 'Credit Reel', finalteam: 'Final Team',
     lineupblue: 'Team Line-Up — Blue', lineupred: 'Team Line-Up — Red',
     consolidated_post: 'Consolidated Post', consolidated_post_2: 'Consolidated Post 2',
-    post4key: 'Post 4 Key', heatmap: 'Post Heatmap',
+    post4key: 'Post 4 Key', heatmap: 'Post Heatmap', post_h2h: 'Post H2H',
   };
 
   var mplfsLiveBadge = null;
@@ -2264,6 +2265,7 @@
       globalHide: '/overlay/fs/hide',
       mplfsLiveIndicator: true,
       heatmapControls: true,
+      h2hControls: true,
       features: [
         { name: 'Matchboard',    show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
         { name: 'Middleboard',   show: '/overlay/middleboard/show',   hide: '/overlay/middleboard/hide'   },
@@ -2278,6 +2280,7 @@
         { name: 'Post Items',    show: '/overlay/post_items/show',    hide: '/overlay/post_items/hide'    },
         { name: 'Post Stats',    show: '/overlay/post_stats/show',    hide: '/overlay/post_stats/hide'    },
         { name: 'Post Heatmap',  show: '/overlay/post_heatmap/show',  hide: '/overlay/post_heatmap/hide'  },
+        { name: 'Post H2H',      show: '/overlay/post_h2h/show',      hide: '/overlay/post_h2h/hide'      },
         { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
         { name: 'Consolidated Post 2', show: '/overlay/consolidated_post_2/show', hide: '/overlay/consolidated_post_2/hide' },
         { name: 'Post 4 Key',    show: '/overlay/post4key/show',        hide: '/overlay/post4key/hide'        },
@@ -3010,6 +3013,18 @@
     rowNudge.appendChild(nudgeResetBtn);
     body.appendChild(rowNudge);
 
+    var rowBright = el('div', 'pdebug-row');
+    rowBright.appendChild(el('label', '', 'Map Brightness'));
+    var brightInput = document.createElement('input');
+    brightInput.type = 'range'; brightInput.min = '0.1'; brightInput.max = '1.5'; brightInput.step = '0.05';
+    brightInput.className = 'pdebug-select';
+    brightInput.style.cssText = 'width:120px;flex:0 0 120px;';
+    var brightReadout = el('span', '', '0.25');
+    brightReadout.style.cssText = 'min-width:36px;text-align:center;display:inline-block;';
+    rowBright.appendChild(brightInput);
+    rowBright.appendChild(brightReadout);
+    body.appendChild(rowBright);
+
     var row4 = el('div', 'pdebug-row');
     var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
     row4.appendChild(applyBtn);
@@ -3019,7 +3034,7 @@
     statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
     body.appendChild(statusEl);
 
-    var appliedCfg = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0 };
+    var appliedCfg = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0, mapBrightness: 0.25 };
 
     function applyFieldsFrom(cfg) {
       fromSel.value = hmFmtMmSs(cfg.from);
@@ -3027,6 +3042,9 @@
       playbackInput.value = cfg.playbackSec;
       focusSel.value = cfg.camp ? (cfg.camp + '-' + (cfg.seat || 1)) : '';
       nudgeReadout.textContent = (cfg.photoOffsetX || 0) + 'px';
+      var brightVal = cfg.mapBrightness != null ? cfg.mapBrightness : 0.25;
+      brightInput.value = brightVal;
+      brightReadout.textContent = Number(brightVal).toFixed(2);
     }
 
     // Nudge buttons post immediately (their own partial update, distinct
@@ -3051,6 +3069,34 @@
     nudgeLeftBtn.addEventListener('click', function () { postPhotoOffset((appliedCfg.photoOffsetX || 0) - 20); });
     nudgeRightBtn.addEventListener('click', function () { postPhotoOffset((appliedCfg.photoOffsetX || 0) + 20); });
     nudgeResetBtn.addEventListener('click', function () { postPhotoOffset(0); });
+
+    // Map Brightness slider — posts on drag, debounced (same live-refresh
+    // path as the nudge buttons above: /api/heatmap-config broadcasts
+    // 'heatmap_config', which hmLiveRefresh() picks up on an already-
+    // showing heatmap scene), so a caster can drag toward the right look
+    // while it's live instead of guessing then re-Applying.
+    var brightPostTimer = null;
+    function postMapBrightness(val) {
+      var clamped = Math.max(0.1, Math.min(1.5, val));
+      brightReadout.textContent = clamped.toFixed(2);
+      clearTimeout(brightPostTimer);
+      brightPostTimer = setTimeout(function () {
+        fetch('/api/heatmap-config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            camp: appliedCfg.camp, seat: appliedCfg.seat,
+            from: appliedCfg.from, to: appliedCfg.to,
+            playbackSec: appliedCfg.playbackSec,
+            photoOffsetX: appliedCfg.photoOffsetX || 0,
+            mapBrightness: clamped,
+          }),
+        }).then(function (r) { return r.json(); })
+          .then(function (d) { appliedCfg = d; applyFieldsFrom(d); })
+          .catch(function () {});
+      }, 150);
+    }
+    brightInput.addEventListener('input', function () { postMapBrightness(parseFloat(brightInput.value)); });
 
     function refreshStatus() {
       var params = new URLSearchParams({ from: appliedCfg.from, to: appliedCfg.to });
@@ -3084,6 +3130,7 @@
         to:   hmParseMmSs(toSel.value),
         playbackSec: playbackInput.value,
         photoOffsetX: appliedCfg.photoOffsetX || 0,
+        mapBrightness: appliedCfg.mapBrightness != null ? appliedCfg.mapBrightness : 0.25,
       };
       fetch('/api/heatmap-config', {
         method: 'POST',
@@ -3103,6 +3150,68 @@
     });
 
     _hmStatusTimer = setInterval(refreshStatus, 5000);
+  }
+
+  /* ── Post H2H Controls — single role <select> + Apply, same GET-on-open/
+     live-refresh-via-SSE pattern as buildHeatmapControls above. Applying
+     writes h2h_config.json (routes/devapi.js's /api/h2h-config) and
+     broadcasts 'h2h_config', which mplfs.html's p2hLiveRefresh() picks up
+     on an already-showing Post H2H scene. ──────────────── */
+  var H2H_ROLE_OPTIONS = [
+    ['jungler',    'Jungler'],
+    ['gold_laner', 'Gold Laner'],
+    ['exp_laner',  'EXP Laner'],
+    ['mid_laner',  'Mid Laner'],
+    ['roamer',     'Roamer'],
+  ];
+  function buildH2HControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Post H2H Controls'));
+
+    var row = el('div', 'pdebug-row');
+    row.appendChild(el('label', '', 'Role'));
+    var roleSel = el('select', 'pdebug-select');
+    H2H_ROLE_OPTIONS.forEach(function (opt) {
+      var o = document.createElement('option');
+      o.value = opt[0]; o.textContent = opt[1];
+      roleSel.appendChild(o);
+    });
+    row.appendChild(roleSel);
+    body.appendChild(row);
+
+    var row2 = el('div', 'pdebug-row');
+    var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
+    row2.appendChild(applyBtn);
+    body.appendChild(row2);
+
+    var statusEl = el('div', '', 'Loading…');
+    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
+    body.appendChild(statusEl);
+
+    // Read live server state on open instead of assuming defaults
+    // (memory: feedback_feature_toggle_state.md).
+    fetch('/api/h2h-config', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        roleSel.value = (d && d.role) || 'gold_laner';
+        statusEl.textContent = 'Current: ' + roleSel.options[roleSel.selectedIndex].textContent;
+      }).catch(function () { statusEl.textContent = ''; });
+
+    applyBtn.addEventListener('click', function () {
+      fetch('/api/h2h-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: roleSel.value }),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          statusEl.textContent = 'Current: ' + roleSel.options[roleSel.selectedIndex].textContent;
+          body.classList.remove('flash-ok');
+          void body.offsetWidth;
+          body.classList.add('flash-ok');
+        }).catch(function () {
+          statusEl.textContent = 'Save failed';
+        });
+    });
   }
 
   /* ── Build sidebar + control body ────────────────────────── */
@@ -3609,6 +3718,14 @@
        routes/devapi.js. */
     if (ov.heatmapControls) {
       buildHeatmapControls(body);
+    }
+
+    /* Post H2H Controls — single role selector, tuned here instead of
+       on-page (see buildH2HControls below and /api/h2h-config in
+       routes/devapi.js). Same "GET on open, live-refresh via SSE"
+       pattern as buildHeatmapControls above. */
+    if (ov.h2hControls) {
+      buildH2HControls(body);
     }
 
     /* Feature toggles */
@@ -4474,6 +4591,68 @@
     { group: 'Stats Backer', id: '#hl-stats-backer',      name: 'Stats Backer' },
   ];
 
+  /* ── Post H2H (mplfs.html) element defaults ───────────────────────
+     Positions follow assets/PostH2H/PostH2HGuide.png (a reasonable first
+     pass, not pixel-perfect — nudge via this Edit tab). Player-card
+     halves mirror MVP Highlights' #hl-plaque structure with '-home'/
+     '-away' suffixed ids since both cards exist simultaneously. */
+  var P2H_DEFAULTS = {
+    /* Redone against the real assets/PostH2H/*.png files — see the
+       matching comment above the .p2h-header CSS rule in mplfs.html
+       for how these were measured (pixel-sampled off the guide image
+       and the box assets, not eyeballed). Still inside the 1920x945
+       safe area agreed on earlier. */
+    '.p2h-header':          { left: 860,  top: 164,  width: 200, height: 28,  fontSize: 14 },
+    '.p2h-gametime-label':  { left: 805,  top: 196,  width: 309, height: 54,  fontSize: 13 },
+    '.p2h-title':           { left: 660,  top: 280,  width: 600, height: 60,  fontSize: 44 },
+    '.p2h-stats':           { left: 676,  top: 379,  width: 567, height: 450 },
+    '.p2h-card.p2h-home':   { left: 100,  top: 273,  width: 485, height: 672 },
+    '.p2h-card.p2h-away':   { left: 1335, top: 273,  width: 485, height: 672 },
+    /* Sub-pieces inside each card are relatively positioned CHILDREN of
+       .p2h-card (same nesting hl-logo/.hl-role/.hl-name use relative to
+       #hl-plaque) — one shared class per piece, so nudging it here
+       moves BOTH the home and away copy together, symmetrically
+       relative to their own card (intentional: the two cards are meant
+       to mirror each other, not be tuned independently). */
+    '.p2h-photobg':         { left: 0,   top: 0,   width: 485, height: 672 },
+    '.p2h-photo':           { left: 0,   top: 0,   width: 485, height: 672 },
+    '.p2h-box':             { left: 0,   top: 522, width: 485, height: 150 },
+    '.p2h-logo':            { left: 5,   top: 522, width: 74,  height: 53  },
+    '.p2h-role-icon':       { left: 76,  top: 525, width: 67,  height: 44  },
+    '.p2h-name':            { left: 150, top: 525, width: 325, height: 44  },
+    '.p2h-kda-value':       { left: 100, top: 577, width: 90,  height: 44  },
+    '.p2h-kp-value':        { left: 270, top: 577, width: 65,  height: 44  },
+    '.p2h-gold-value':      { left: 400, top: 577, width: 75,  height: 44  },
+    '.p2h-emblem-0':        { left: 17,  top: 630, width: 37,  height: 36  },
+    '.p2h-emblem-1':        { left: 64,  top: 635, width: 26,  height: 26  },
+    '.p2h-emblem-2':        { left: 96,  top: 635, width: 27,  height: 26  },
+    '.p2h-emblem-3':        { left: 127, top: 635, width: 26,  height: 26  },
+    '#p2h-sponsor':         { left: 790, top: 860, width: 340, height: 60  },
+  };
+
+  var P2H_ELEMENTS = [
+    { group: 'Header',       id: '.p2h-header',         name: 'Game/Match Pill' },
+    { group: 'Header',       id: '.p2h-gametime-label', name: 'Game Time' },
+    { group: 'Title',        id: '.p2h-title',          name: 'Scene Title' },
+    { group: 'Stats',        id: '.p2h-stats',          name: 'Stat Rows Block' },
+    { group: 'Home Card',    id: '.p2h-card.p2h-home',  name: 'Home Player Card (whole)' },
+    { group: 'Away Card',    id: '.p2h-card.p2h-away',  name: 'Away Player Card (whole)' },
+    { group: 'Card Pieces',  id: '.p2h-photobg',        name: 'Photo Background' },
+    { group: 'Card Pieces',  id: '.p2h-photo',          name: 'Player Photo' },
+    { group: 'Card Pieces',  id: '.p2h-box',            name: 'Nameplate/Stats Box' },
+    { group: 'Card Pieces',  id: '.p2h-logo',           name: 'Hero Icon' },
+    { group: 'Card Pieces',  id: '.p2h-role-icon',      name: 'Role Icon' },
+    { group: 'Card Pieces',  id: '.p2h-name',           name: 'Player Name' },
+    { group: 'Card Pieces',  id: '.p2h-kda-value',      name: 'KDA Value' },
+    { group: 'Card Pieces',  id: '.p2h-kp-value',       name: 'KP% Value' },
+    { group: 'Card Pieces',  id: '.p2h-emblem-0',       name: 'Emblem Slot 1' },
+    { group: 'Card Pieces',  id: '.p2h-emblem-1',       name: 'Emblem Slot 2' },
+    { group: 'Card Pieces',  id: '.p2h-emblem-2',       name: 'Emblem Slot 3' },
+    { group: 'Card Pieces',  id: '.p2h-emblem-3',       name: 'Emblem Slot 4' },
+    { group: 'Card Pieces',  id: '.p2h-gold-value',     name: 'Gold Value' },
+    { group: 'Sponsor',      id: '#p2h-sponsor',        name: 'Sponsor Loop' },
+  ];
+
   /* ── MVP Scene (mplfs.html) element defaults ─────────────────────
      Positions follow assets/mvp/mvpfsguide.png; the plaque row (team
      logo / role icon / name / KDA / GPM / KP%) sits on top of
@@ -4905,6 +5084,8 @@
     '#hm-timefocus-title':   { left: 0,    top: 0,    width: 462, height: 56,  fontSize: 28.3 },
     '#hm-timefocus-range':   { left: 0,    top: 56,   width: 462, height: 118, fontSize: 75 },
     '#hm-stats-backer':      { left: 902,  top: 917,  width: 463, height: 48 },
+    '#hm-legend':            { left: 810,  top: 205,  width: 190, height: 96 },
+    '.hm-legend-label':      { fontSize: 16 },
   };
   var HM_ELEMENTS = [
     { group: 'Title',        id: '#hm-title',              name: 'Player Heatmap Title' },
@@ -4921,6 +5102,8 @@
     { group: 'Time Focus',   id: '#hm-timefocus-title',    name: 'Time Focus Title' },
     { group: 'Time Focus',   id: '#hm-timefocus-range',    name: 'Time Focus Range' },
     { group: 'Stats Backer', id: '#hm-stats-backer',      name: 'Stats Backer' },
+    { group: 'Legend',       id: '#hm-legend',            name: 'Event Icon Legend' },
+    { group: 'Legend',       id: '.hm-legend-label',      name: 'Legend Label Text' },
   ];
 
   /* ── Registry of editable overlays ───────────────────────────── */
@@ -5040,6 +5223,15 @@
       elements:    HL_ELEMENTS,
       defaults:    HL_DEFAULTS,
       showFn:      'showHighlights',
+    },
+    mplfs_post_h2h: {
+      label:       'Post H2H · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_post_h2h',
+      elements:    P2H_ELEMENTS,
+      defaults:    P2H_DEFAULTS,
+      showFn:      'showPostH2H',
     },
     mplfs_mvp: {
       label:       'MVP Scene · mplfs',
