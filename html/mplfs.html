@@ -3246,9 +3246,11 @@
     .mb-score-bar { width:14px; height:50px; background:#1a1a1a; flex-shrink:0; }
     #mb-camp1 .mb-score-bar.scored { background:#1E64FF; }
     #mb-camp2 .mb-score-bar.scored { background:#FF3232; }
-    /* Consolidated Post's matchboard variant only — other scenes (Post
+    /* Consolidated Post's matchboard variant — also used by Post H2H
+       (same compact layout, no relation otherwise). Other scenes (Post
        Items/Stats/Emblem) keep the regular Matchboard untouched. Toggled
-       by showConsolidatedPost()/hideConsolidatedPost() (see #cmb-board). */
+       by showConsolidatedPost()/hideConsolidatedPost() and
+       showPostH2H()/hidePostH2H() (see #cmb-board). */
     #mb-tournament-cp { display:none; }
     #match-board.cp-compact #mb-camp1,
     #match-board.cp-compact #mb-camp2 { top: 70px; } /* 106 - 36 */
@@ -11674,6 +11676,10 @@
       const cfgPromise = fetchH2HConfig();
       const gdPromise  = fetchH2HGameData();
       const msPromise  = fetchH2HMatchState();
+      // Same reasoning as Consolidated Post: apply before transitionTo so
+      // the compact top/logo CSS is already in effect the instant the
+      // mb-in animation starts.
+      document.getElementById('match-board').classList.add('cp-compact');
       await transitionTo('post_h2h');
       const [cfg, gameData, matchState] = await Promise.all([cfgPromise, gdPromise, msPromise]);
       if (activeFeature !== 'post_h2h') return; /* superseded while awaiting data */
@@ -11693,6 +11699,18 @@
       p2hVisible = false;
       p2hSponsorLoop.stop();
       p2hPage.classList.remove('p2h-visible');
+      if (cpDuringPostTransition) {
+        // Switching straight to another post feature — matchboard stays
+        // up, just snap it back out of compact mode.
+        document.getElementById('match-board').classList.remove('cp-compact');
+      } else {
+        // Genuine standalone hide — animate matchboard out with it, then
+        // drop compact mode once it's actually invisible (no visual snap).
+        syncBoard('matchboard', false);
+        hideMatchBoard().then(() => {
+          document.getElementById('match-board').classList.remove('cp-compact');
+        });
+      }
       return new Promise(resolve => setTimeout(() => {
         p2hPage.classList.remove('p2h-on');
         hideSceneVideo();
