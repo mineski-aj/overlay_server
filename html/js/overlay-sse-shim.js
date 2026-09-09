@@ -10,7 +10,7 @@
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
 // below for why this exists. Current bump: added 'post_h2h'/'h2h_config'.
-const OVERLAY_WORKER_VERSION = 16; // 16: added 'post_h2h'/'h2h_config' to KNOWN_EVENTS
+const OVERLAY_WORKER_VERSION = 18; // 18: added 'stolengoldtest' to KNOWN_EVENTS
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

@@ -323,6 +323,9 @@ OBJ_SPAWN_DEBUG_BTNS.forEach(({ label, kind }) => {
   objSpawnBtnRow.appendChild(btn);
 });
 
+/* ── Stolen gold debug button ── */
+document.getElementById('stolengold-trigger-btn').addEventListener('click', () => sgTestTrigger());
+
 /* ── Start polling ── */
 setInterval(masterPoll, 1000);
 masterPoll();
@@ -353,6 +356,7 @@ masterPoll();
       if (d.action === 'hide') fightAnimateOut();
     } catch {}
   });
+  sse.addEventListener('stolengoldtest', function() { sgTestTrigger(); });
   sse.addEventListener('killevent', function(e) {
     try {
       var d = JSON.parse(e.data);

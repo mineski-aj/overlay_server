@@ -404,10 +404,23 @@
 
     /* ── CONSOLIDATED POST 2 ROW — a resized/repositioned variant of the
        row above (backup-safe duplicate per the user's request), same
-       10-row/mirroring convention but a taller 730×154 background
-       (consoblue2.png/consored2.png) and no player-photo element — that
-       area is baked into the new background art instead. Mirroring rule
-       is identical: x' = 730 - x - width per child. */
+       10-row/mirroring convention but a taller 730×154 background.
+       Mirroring rule is identical: x' = 730 - x - width per child.
+
+       Two pages, same row, toggled scene-wide by .cp2-page2 (see
+       setCp2Page()/showConsolidatedPost2() below, driven by the
+       'cp2page' SSE event):
+       - Page 1 (default) — consoblue3.png/consored3.png. KDA/Gold
+         Earned + Runes + Items, no Damage Dealt/Taken.
+       - Page 2 — crossfades to consoblue4.png/consored4.png (a second
+         stacked background layer, .cp2-row::after, since a plain
+         background-image swap can't be transitioned). KDA/Gold/Runes/
+         Items fade out, Damage Dealt/Taken fade in and replay their
+         usual bar-fill/count-up animation (cpAnimateDmgBar) every time
+         page 2 becomes active — the Damage bars are 497px wide and span
+         that whole horizontal band, by design, so the two states read
+         as one
+         crossfade rather than two independently-positioned layouts. */
     .cp2-row {
       position: absolute;
       width: 730px; height: 154px;
@@ -420,8 +433,32 @@
     .cp2-row.ph-in  { animation: ph-flip-in 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; pointer-events: auto; }
     .cp2-row.ph-out { animation: ph-flip-out 700ms cubic-bezier(0.4, 0, 0.2, 1) forwards; }
     .cp2-row { background-repeat: no-repeat; background-size: 730px 154px; background-position: 0 0; }
-    .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/consoblue2.png'); }
-    .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/consored2.png'); }
+    .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/consoblue3.png'); }
+    .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/consored3.png'); }
+    /* Page 2's background, as its own stacked layer instead of swapping
+       the base background-image directly (which can't be transitioned).
+       z-index:-1 (not 0) is required to keep it under every real
+       element — most of this row's children (kda/gold/runes/items/
+       dmg-*) don't set their own z-index at all, and a ::after with
+       z-index:0 still paints ON TOP of same-level z-index:auto siblings
+       (it's generated content, ordered last) — z-index:0 here silently
+       covered the Damage Dealt/Taken text and bars once page 2's
+       opacity reached 1, despite their own opacity/computed style being
+       completely correct. Negative z-index still paints above .cp2-row's
+       OWN background-image (page 1's art) since that's the row's own
+       background, painted beneath ALL of its children regardless of
+       z-index. */
+    .cp2-row::after {
+      content: '';
+      position: absolute; inset: 0; z-index: -1;
+      background-repeat: no-repeat; background-size: 730px 154px; background-position: 0 0;
+      opacity: 0;
+      transition: opacity 400ms ease;
+      pointer-events: none;
+    }
+    .cp2-row:not(.cp2-mirrored)::after { background-image: url('/assets/consolidated_post/consoblue4.png'); }
+    .cp2-row.cp2-mirrored::after       { background-image: url('/assets/consolidated_post/consored4.png'); }
+    .cp2-row.cp2-page2::after { opacity: 1; }
 
     /* blue — left column, 11px gap: pitch = row height (154) + 11 */
     .cp2-row-1 { left: 59px; top: 193px; z-index: 3; }
@@ -436,15 +473,31 @@
     .cp2-row-9  { left: 1131px; top: 688px; z-index: 4; }
     .cp2-row-10 { left: 1131px; top: 853px; z-index: 4; }
 
-    .cp2-hero, .cp2-photo, .cp2-spell, .cp2-role,
+    .cp2-hero, .cp2-photo-frame, .cp2-spell, .cp2-role,
     .cp2-rune-main, .cp2-rune-1, .cp2-rune-2, .cp2-rune-3, .cp2-item {
       position: absolute; display: block;
     }
     .cp2-hero  { left: 0px;  top: 0px;   width: 69px; height: 132px; object-fit: cover; z-index: 1; }
     /* Fills the unused gap between the hero art and the rune column with
        the same live/random player-photo system Post 1's .cp-photo already
-       uses (pbDebugPhotos/cpSetPhoto/pbPhotoUrl) — no new toggle needed. */
-    .cp2-photo { left: 69px; top: 0px;   width: 138px; height: 132px; object-fit: cover; object-position: top center; z-index: 1; }
+       uses (pbDebugPhotos/cpSetPhoto/pbPhotoUrl) — no new toggle needed.
+       Two-layer setup, on purpose: .cp2-photo-frame is the fixed "bounds"
+       (never touched by the Edit tab — its left/top/width/height are the
+       crop window and must stay put), .cp2-photo is the actual <img>
+       inside it, which IS the thing "Player Photo" in the Edit tab
+       resizes/repositions. That split is what lets someone drag the
+       photo around (to pick which part of it shows) without the visible
+       crop window itself sliding around the row — before this, moving
+       "Player Photo" moved the box AND its own clip-path together, so
+       there was no way to pan the image without also relocating the
+       window. clip-path: inset(0) (not just overflow:hidden) is what
+       actually enforces the frame — overflow:hidden alone on .cp2-row
+       (a 3D-transformed element, perspective/rotateY for the flip
+       animation) isn't reliably enforced by every rendering engine on
+       ITS descendants either; clip-path on the frame itself sidesteps
+       that regardless of what .cp2-row is doing. */
+    .cp2-photo-frame { left: 69px; top: 0px; width: 127px; height: 133px; overflow: hidden; clip-path: inset(0); z-index: 1; }
+    .cp2-photo { position: absolute; left: 0px; top: 0px; width: 138px; height: 132px; object-fit: cover; object-position: top center; display: block; }
     .cp2-spell { left: 4px;  top: 97px;  width: 30px; height: 30px;  object-fit: contain; z-index: 2; }
     .cp2-role  { left: 71px; top: 134px; width: 19px; height: 19px;  object-fit: contain; filter: brightness(0); z-index: 2; }
 
@@ -457,52 +510,70 @@
     .cp2-level { left: 0px;  top: 132px; width: 69px; height: 22px; font-size: 15px; }
     .cp2-name  { left: 98px; top: 132px; width: 99px; height: 22px; font-size: 12.4px; transform-origin: center center; }
 
-    .cp2-rune-main { left: 207px; top: 11px; width: 39px; height: 39px; object-fit: contain; }
-    .cp2-rune-1    { left: 252px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
-    .cp2-rune-2    { left: 286px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
-    .cp2-rune-3    { left: 320px; top: 17px; width: 28px; height: 28px; object-fit: contain; }
+    /* Runes — same on both pages, only fade out on page 2 (see
+       .cp2-page2 rules below) to make room for the Damage Dealt/Taken
+       bars, which occupy the same horizontal band. */
+    .cp2-rune-main, .cp2-rune-1, .cp2-rune-2, .cp2-rune-3 { transition: opacity 300ms ease; }
+    .cp2-rune-main { left: 415px; top: 20px; width: 54px; height: 54px; object-fit: contain; }
+    .cp2-rune-1    { left: 374px; top: 84px; width: 40px; height: 40px; object-fit: contain; }
+    .cp2-rune-2    { left: 422px; top: 84px; width: 40px; height: 40px; object-fit: contain; }
+    .cp2-rune-3    { left: 469px; top: 84px; width: 40px; height: 40px; object-fit: contain; }
 
+    /* KDA/Gold fade out on page 2 too (like Runes/Items below) — the
+       Damage Dealt/Taken bars are 497px wide starting at the same
+       left:216 this column sits at, so both would otherwise overlap. */
     .cp2-kda-label, .cp2-gold-label {
-      position: absolute; left: 207px; width: 141px; height: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 12px; color: #111;
+      position: absolute; left: 211px; width: 129px; height: 19px;
+      display: flex; align-items: center; justify-content: flex-start;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 13.8px; color: #111;
       letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;
+      /* nowrap + visible (not hidden) — belt-and-suspenders against
+         wrapping to a second line the 19px-tall box can't contain, in
+         case a longer label ever gets swapped in here. */
+      white-space: nowrap; overflow: visible;
+      transition: opacity 300ms ease;
     }
-    .cp2-kda-label  { top: 52px; }
-    .cp2-gold-label { top: 96px; }
+    .cp2-kda-label  { top: 11px; }
+    .cp2-gold-label { top: 87px; }
     .cp2-kda-value, .cp2-gold-value {
-      position: absolute; left: 207px; width: 141px; height: 28px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 24.8px; color: #111;
+      position: absolute; left: 211px; width: 129px; height: 33px;
+      display: flex; align-items: center; justify-content: flex-start;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 36px; color: #111;
       line-height: 1; white-space: nowrap; overflow: hidden;
+      transition: opacity 300ms ease;
     }
-    .cp2-kda-value  { top: 68px; }
-    .cp2-gold-value { top: 112px; }
+    .cp2-kda-value  { top: 32px; }
+    .cp2-gold-value { top: 108px; }
 
-    /* Damage taken/dealt sit side by side (not stacked) in this layout —
-       same dual dark/light-number bar technique as .cp-dmg-* above, just
-       resized to 170×34 and placed next to each other at the same top. */
+    /* Damage Dealt/Taken — page 2 only. One full-width bar stacked above
+       the other, not the two half-width side-by-side bars this row used
+       to have; label sits 16px above its own bar, same rhythm as the
+       old layout, just both 497px wide instead of 170px. Same dual
+       dark/light-number bar technique as .cp-dmg- above (Post 1) and
+       this row's own old layout either way. */
     .cp2-dmg-label {
-      position: absolute; top: 10px; width: 170px; height: 14px;
+      position: absolute; left: 216px; width: 497px; height: 14px;
       display: flex; align-items: center;
       font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 12px; color: #111;
       letter-spacing: 0.06em; text-transform: uppercase; line-height: 14px;
+      opacity: 0; transition: opacity 300ms ease;
     }
-    .cp2-dmg-taken-label { left: 372px; }
-    .cp2-dmg-dealt-label { left: 549px; }
+    .cp2-dmg-dealt-label { top: 10px; }
+    .cp2-dmg-taken-label { top: 89px; }
 
     .cp2-dmg-taken, .cp2-dmg-dealt {
-      position: absolute; top: 26px; width: 170px; height: 34px;
-      background: rgba(0,0,0,0.15); overflow: hidden;
+      position: absolute; left: 216px; width: 497px; height: 34px;
+      background: rgba(0,0,0,0.9); overflow: hidden;
+      opacity: 0; transition: opacity 300ms ease;
     }
-    .cp2-dmg-taken { left: 372px; }
-    .cp2-dmg-dealt { left: 549px; }
+    .cp2-dmg-dealt { top: 26px; }
+    .cp2-dmg-taken { top: 105px; }
     .cp2-dmg-bar   { position: absolute; top: 0; left: 0; height: 100%; width: 0%; }
     /* Both bars (Taken and Dealt) match their row's team color — blue on
        the blue side, red on the red side — rather than differing by stat
-       type. consoblue2/consored2's art bakes the track in as solid black
-       (unlike consoblue/consored, where it's light gray), so these need
-       real contrast against a black backdrop, not the original #111. */
+       type. consoblue3/4's art bakes the track in as solid black (like
+       consoblue2 before it), so these need real contrast against a
+       black backdrop, not the original #111. */
     .cp2-row:not(.cp2-mirrored) .cp2-dmg-bar { background: linear-gradient(to right, #1540d0, #2d6ef5); }
     .cp2-mirrored .cp2-dmg-bar { background: linear-gradient(to left, #a30000, #ff3b3b); }
     .cp2-dmg-num-dark, .cp2-dmg-num-light {
@@ -515,45 +586,63 @@
     .cp2-dmg-num-dark  { color: #fff; z-index: 1; }
     .cp2-dmg-num-light { color: #fff; z-index: 2; clip-path: inset(0 100% 0 0); }
 
-    /* .cp2-items wraps all 6 slots (one row, not a 2x3 grid) so the whole
-       group drags as one unit; item positions below are relative to THIS
-       wrapper, not .cp2-row. */
-    .cp2-items { position: absolute; left: 372px; top: 81px; width: 348px; height: 53px; }
-    .cp2-item  { position: absolute; top: 0px; width: 53px; height: 53px; object-fit: cover; background: #1c1c1c; }
-    .cp2-item-0 { left: 0px; }
-    .cp2-item-1 { left: 59px; }
-    .cp2-item-2 { left: 118px; }
-    .cp2-item-3 { left: 177px; }
-    .cp2-item-4 { left: 236px; }
-    .cp2-item-5 { left: 295px; }
+    /* Items — 3x2 grid, independently positioned/editable per rule #1
+       (no shared wrapper, unlike this row's old single-drag "items"
+       group). Fade out on page 2 like the runes above. */
+    .cp2-item { transition: opacity 300ms ease; width: 54px; height: 54px; object-fit: cover; background: #1c1c1c; }
+    .cp2-item-0 { left: 538px; top: 20px; }
+    .cp2-item-1 { left: 601px; top: 20px; }
+    .cp2-item-2 { left: 664px; top: 20px; }
+    .cp2-item-3 { left: 538px; top: 79px; }
+    .cp2-item-4 { left: 601px; top: 79px; }
+    .cp2-item-5 { left: 664px; top: 79px; }
+
+    /* Page 2 — KDA/Gold/Runes/Items fade out, Damage Dealt/Taken fade in.
+       KDA/Gold have to go too, not just Runes/Items — the Damage bars
+       are 497px wide starting at the same left:216 the KDA/Gold column
+       sits at, so they'd otherwise overlap. */
+    .cp2-row.cp2-page2 .cp2-kda-label,
+    .cp2-row.cp2-page2 .cp2-kda-value,
+    .cp2-row.cp2-page2 .cp2-gold-label,
+    .cp2-row.cp2-page2 .cp2-gold-value,
+    .cp2-row.cp2-page2 .cp2-rune-main,
+    .cp2-row.cp2-page2 .cp2-rune-1,
+    .cp2-row.cp2-page2 .cp2-rune-2,
+    .cp2-row.cp2-page2 .cp2-rune-3,
+    .cp2-row.cp2-page2 .cp2-item { opacity: 0; }
+    .cp2-row.cp2-page2 .cp2-dmg-label,
+    .cp2-row.cp2-page2 .cp2-dmg-taken,
+    .cp2-row.cp2-page2 .cp2-dmg-dealt { opacity: 1; }
 
     /* mirrored (red side) — x' = 730 - x - width per element */
     .cp2-mirrored .cp2-hero  { left: 661px; }
-    .cp2-mirrored .cp2-photo { left: 523px; }
+    .cp2-mirrored .cp2-photo-frame { left: 534px; }
     .cp2-mirrored .cp2-spell { left: 696px; }
     .cp2-mirrored .cp2-level { left: 661px; }
     .cp2-mirrored .cp2-role  { left: 640px; }
     .cp2-mirrored .cp2-name  { left: 533px; }
-    .cp2-mirrored .cp2-rune-main { left: 484px; }
-    .cp2-mirrored .cp2-rune-1    { left: 450px; }
-    .cp2-mirrored .cp2-rune-2    { left: 416px; }
-    .cp2-mirrored .cp2-rune-3    { left: 382px; }
+    .cp2-mirrored .cp2-rune-main { left: 261px; }
+    .cp2-mirrored .cp2-rune-1    { left: 316px; }
+    .cp2-mirrored .cp2-rune-2    { left: 268px; }
+    .cp2-mirrored .cp2-rune-3    { left: 221px; }
     .cp2-mirrored .cp2-kda-label,  .cp2-mirrored .cp2-kda-value,
-    .cp2-mirrored .cp2-gold-label, .cp2-mirrored .cp2-gold-value { left: 382px; }
-    .cp2-mirrored .cp2-dmg-taken-label, .cp2-mirrored .cp2-dmg-taken { left: 188px; }
-    .cp2-mirrored .cp2-dmg-dealt-label, .cp2-mirrored .cp2-dmg-dealt { left: 11px; }
+    .cp2-mirrored .cp2-gold-label, .cp2-mirrored .cp2-gold-value {
+      left: 390px; justify-content: flex-end;
+    }
+    .cp2-mirrored .cp2-dmg-taken-label, .cp2-mirrored .cp2-dmg-taken,
+    .cp2-mirrored .cp2-dmg-dealt-label, .cp2-mirrored .cp2-dmg-dealt { left: 17px; }
     .cp2-mirrored .cp2-dmg-label { text-align: right; justify-content: flex-end; }
     .cp2-mirrored .cp2-dmg-bar        { left: auto; right: 0; }
     .cp2-mirrored .cp2-dmg-num-dark, .cp2-mirrored .cp2-dmg-num-light { padding-left: 0; padding-right: 8px; justify-content: flex-end; }
     .cp2-mirrored .cp2-dmg-num-light { clip-path: inset(0 0 0 100%); }
-    .cp2-mirrored .cp2-items { left: 10px; }
-    /* item order reverses left-to-right within the wrapper */
-    .cp2-mirrored .cp2-item-0 { left: 295px; }
-    .cp2-mirrored .cp2-item-1 { left: 236px; }
-    .cp2-mirrored .cp2-item-2 { left: 177px; }
-    .cp2-mirrored .cp2-item-3 { left: 118px; }
-    .cp2-mirrored .cp2-item-4 { left: 59px; }
-    .cp2-mirrored .cp2-item-5 { left: 0px; }
+    /* item order reverses left-to-right, same x' = 730 - x - width
+       formula as every other mirrored element above, applied per slot */
+    .cp2-mirrored .cp2-item-0 { left: 138px; }
+    .cp2-mirrored .cp2-item-1 { left: 75px; }
+    .cp2-mirrored .cp2-item-2 { left: 12px; }
+    .cp2-mirrored .cp2-item-3 { left: 138px; }
+    .cp2-mirrored .cp2-item-4 { left: 75px; }
+    .cp2-mirrored .cp2-item-5 { left: 12px; }
 
     /* ── CONSOLIDATED MIDDLE BOARD — Middleboard's objectives relocated
        into Consolidated Post, canvas-absolute (not nested in a row).
@@ -3355,7 +3444,7 @@
       color: #fff; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
     }
     .p2h-gametime-label {
-      position: absolute; left: 960px; top: 196px; width: 309px; height: 54px;
+      position: absolute; left: 960px; top: 192px; width: 309px; height: 54px;
       transform: translateX(-50%);
       background: #fff;
       display: flex; align-items: center; justify-content: center; gap: 12px;
@@ -3369,7 +3458,7 @@
     .p2h-title {
       position: absolute; left: 660px; top: 280px; width: 600px; height: 60px;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Anton', sans-serif; font-size: 44px; line-height: 1;
+      font-family: 'General Sans', sans-serif; font-weight: 900; font-size: 44px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; text-align: center; white-space: nowrap;
     }
     /* Stat block: left/width/row-pitch measured off the guide's actual
@@ -3388,16 +3477,21 @@
     .p2h-row-label {
       position: absolute; left: 0; top: 0; width: 100%; height: 24px;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Anton', sans-serif; font-size: 22px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px;
       color: #0a0a0a; text-transform: uppercase; text-align: center;
     }
     .p2h-bar-track {
       position: absolute; left: 0; top: 28px; width: 100%; height: 34px;
-      background: #FF3232; overflow: hidden;
+      /* Full-width, fixed — darkest red at the bar's own far-right edge,
+         lightening toward the left where it meets the blue fill. */
+      background: linear-gradient(to right, #FF3232, #7A1010); overflow: hidden;
     }
     .p2h-bar-fill {
       position: absolute; left: 0; top: 0; width: 50%; height: 100%;
-      background: #1E64FF;
+      /* Anchored at left:0 same as the track, so the darkest blue always
+         sits at the bar's own far-left edge regardless of this element's
+         own (animated) width. */
+      background: linear-gradient(to right, #0F2E70, #1E64FF);
       transition: width 500ms ease;
     }
     .p2h-value-home, .p2h-value-away {
@@ -3414,15 +3508,74 @@
        the bottom of that same 672-tall rect: top = 672-150 = 522).
        Card box itself measured off the guide at left=100/1335, top=273,
        485x672 (mirrored: 1920 - 100 - 485 = 1335). */
-    .p2h-card { position: absolute; top: 273px; width: 485px; height: 672px; z-index: 40; }
-    .p2h-home { left: 100px; }
-    .p2h-away { left: 1335px; }
-    .p2h-photobg, .p2h-photo {
+    /* Deal-in — adapted from Post 4 Key's .p4k-card (same technique: each
+       card starts off-position + rotated + scaled down + invisible, and
+       JS adds .p2h-dealt one card at a time so left/right land in
+       succession instead of together — see p2hPlayAnimation). Only 2
+       cards here (vs. p4k's 4 converging on one shared point), so each
+       side's --deal-dx/--deal-rot just pushes it outward from its own
+       final position instead of toward a shared dealer's-hand point. */
+    .p2h-card {
+      position: absolute; top: 273px; width: 485px; height: 672px; z-index: 40;
+      opacity: 0;
+      transform: translate(var(--deal-dx), 260px) rotate(var(--deal-rot)) scale(0.85);
+    }
+    .p2h-card.p2h-dealt {
+      transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+      transform: translate(0, 0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    .p2h-home { left: 100px;  --deal-dx: -220px; --deal-rot: -14deg; }
+    .p2h-away { left: 1335px; --deal-dx: 220px;  --deal-rot: 14deg; }
+
+    /* Middle details (header/gametime/title/stat rows) reveal as one group
+       once both cards have finished dealing in (see p2hPlayAnimation) — a
+       plain fade + small settle-down, not a shared positioning wrapper:
+       each of these 4 elements keeps its own fully independent absolute
+       position/id (rule: every element independently editable); they just
+       happen to share this one animation class. */
+    .p2h-mid { opacity: 0; transform: translateY(-14px); }
+    .p2h-mid.p2h-mid-in {
+      transition: opacity 320ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 1; transform: translateY(0);
+    }
+    .p2h-photobg {
       position: absolute; left: 0; top: 0; width: 485px; height: 672px;
       object-fit: cover; object-position: 50% 0%; display: block;
+      z-index: 40;
     }
-    .p2h-photobg { z-index: 40; }
-    .p2h-photo   { z-index: 41; }
+    /* Bounding box for the photo layer only — sized to the card's own
+       current 485x672 footprint, same as Post 4 Key's .p4k-photo-box.
+       overflow:hidden here is what actually keeps the pose bounce inside
+       those bounds: the shared p4k-pose-bounce keyframes scale the
+       SIGNATURE photo up to 1.06x at their peak, and without a clipping
+       box that bulge spilled ~20px of image past the card's own bottom
+       edge — outside the box art's coverage — for a brief flash below
+       the card during the button-in. This wrapper clips it to exactly
+       the card's real bounds instead of guessing a fixed crop amount.
+       Scoped to just the photo layer (not the whole .p2h-card) so it
+       doesn't touch the box art/logo/name/footer/items siblings, none of
+       which need clipping and all of which sit outside this box. */
+    .p2h-photo-box {
+      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
+      overflow: hidden; z-index: 41;
+    }
+    /* Two stacked photo layers, same crossfade+bounce technique as Post 4
+       Key's .p4k-photo-front/.p4k-photo-sig (see p4kPlayAnimation/that
+       section's CSS above): FRONT pose shows first, then once
+       .p2h-posed is added (synced with the middle-details reveal, not
+       per-card like p4k — see p2hPlayAnimation) it "buttons" over to the
+       SIGNATURE pose with a quick bounce. Reuses p4k's own
+       @keyframes p4k-pose-bounce directly rather than duplicating it —
+       identical motion, no need for a second copy. */
+    .p2h-photo-front, .p2h-photo-sig {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: 50% 0%; display: block;
+    }
+    .p2h-photo-front { opacity: 1; }
+    .p2h-photo-sig   { opacity: 0; }
+    .p2h-card.p2h-posed .p2h-photo-front { opacity: 0; transition: opacity 220ms ease; }
+    .p2h-card.p2h-posed .p2h-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
     .p2h-box {
       position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
       z-index: 42; display: block;
@@ -3435,9 +3588,9 @@
       position: absolute; left: 5px; top: 522px; width: 74px; height: 53px;
       display: flex; align-items: center; justify-content: center; z-index: 43;
     }
-    .p2h-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .p2h-logo img { width: 100%; height: 100%; object-fit: cover; }
     .p2h-role-icon {
-      position: absolute; left: 76px; top: 525px; width: 67px; height: 44px;
+      position: absolute; left: 72px; top: 527px; width: 67px; height: 44px;
       display: flex; align-items: center; justify-content: center; z-index: 43;
     }
     .p2h-role-icon img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); }
@@ -3458,9 +3611,23 @@
       font-family: 'Anton', sans-serif; font-size: 21px;
       color: #0a0a0a; text-align: center; white-space: nowrap;
     }
-    .p2h-kda-value  { left: 100px; width: 90px; }
-    .p2h-kp-value   { left: 270px; width: 65px; }
+    .p2h-kda-value  { left: 90px; width: 90px; }
+    .p2h-kp-value   { left: 254px; width: 65px; text-align: center; justify-content: center; }
     .p2h-gold-value { left: 400px; width: 75px; }
+
+    /* Item slots — 6 equip icons per card, measured off PH2HBlue_Box.png
+       (Rectangle_1 through Rectangle_1_copy_5: left 213/256/299/343/385/429,
+       38x38, top 107 relative to the box art). Positioned relative to
+       .p2h-card same as the nameplate/emblem rows above (box's own 522px
+       top + the guide's 107px = 629px). Same left values on BOTH cards —
+       deliberately not mirrored for the away side. */
+    .p2h-item { position: absolute; top: 629px; width: 38px; height: 38px; z-index: 43; object-fit: contain; }
+    .p2h-item-0 { left: 213px; }
+    .p2h-item-1 { left: 256px; }
+    .p2h-item-2 { left: 299px; }
+    .p2h-item-3 { left: 343px; }
+    .p2h-item-4 { left: 385px; }
+    .p2h-item-5 { left: 429px; }
 
     /* Emblem icon slots — the 4 dark squares under the KDA column in
        the box art. Sized/positioned per-slot from pixel measurements
@@ -3701,6 +3868,8 @@
         <button class="dbg-btn show" onclick="showConsolidatedPost2()">▶ SHOW</button>
         <button class="dbg-btn hide" onclick="hideConsolidatedPost2()">■ HIDE</button>
         <button class="dbg-btn preview" id="preview-consolidated_post_2" onclick="toggleLocalPreview('consolidated_post_2', this)">◈ PREVIEW</button>
+        <button class="dbg-btn" onclick="applyCp2Page(1, true)">PAGE 1</button>
+        <button class="dbg-btn" onclick="applyCp2Page(2, true)">PAGE 2</button>
       </div>
     </div>
 
@@ -4205,13 +4374,13 @@
       </div>
     </div>
     <div id="p2h-page">
-      <div class="p2h-header" id="p2h-header"></div>
-      <div class="p2h-gametime-label">
+      <div class="p2h-header p2h-mid" id="p2h-header"></div>
+      <div class="p2h-gametime-label p2h-mid">
         <span>Game Time</span>
         <span class="p2h-gametime-value" id="p2h-gametime-value">00:00</span>
       </div>
-      <div class="p2h-title" id="p2h-title"></div>
-      <div class="p2h-stats">
+      <div class="p2h-title p2h-mid" id="p2h-title"></div>
+      <div class="p2h-stats p2h-mid">
         <div class="p2h-row p2h-row-0" id="p2h-row-0">
           <div class="p2h-row-label" id="p2h-row-0-label"></div>
           <div class="p2h-bar-track">
@@ -4256,7 +4425,10 @@
 
       <div class="p2h-card p2h-home" id="p2h-card-home">
         <img class="p2h-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
-        <img class="p2h-photo" id="p2h-photo-home" src="" alt="">
+        <div class="p2h-photo-box">
+          <img class="p2h-photo-front" id="p2h-photo-front-home" src="" alt="">
+          <img class="p2h-photo-sig"   id="p2h-photo-sig-home"   src="" alt="">
+        </div>
         <img class="p2h-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
         <div class="p2h-logo"><img id="p2h-logo-home" src="" alt="" onerror="this.style.display='none'"></div>
         <div class="p2h-role-icon"><img id="p2h-role-home" src="" alt="" onerror="this.style.display='none'"></div>
@@ -4268,11 +4440,20 @@
         <img class="p2h-emblem p2h-emblem-1" id="p2h-emblem-1-home" src="" alt="" onerror="this.style.display='none'">
         <img class="p2h-emblem p2h-emblem-2" id="p2h-emblem-2-home" src="" alt="" onerror="this.style.display='none'">
         <img class="p2h-emblem p2h-emblem-3" id="p2h-emblem-3-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-0" id="p2h-item-0-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-1" id="p2h-item-1-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-2" id="p2h-item-2-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-3" id="p2h-item-3-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-4" id="p2h-item-4-home" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-5" id="p2h-item-5-home" src="" alt="" onerror="this.style.display='none'">
       </div>
 
       <div class="p2h-card p2h-away" id="p2h-card-away">
         <img class="p2h-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
-        <img class="p2h-photo" id="p2h-photo-away" src="" alt="">
+        <div class="p2h-photo-box">
+          <img class="p2h-photo-front" id="p2h-photo-front-away" src="" alt="">
+          <img class="p2h-photo-sig"   id="p2h-photo-sig-away"   src="" alt="">
+        </div>
         <img class="p2h-box" src="/assets/PostH2H/PH2HRed_Box.png" alt="">
         <div class="p2h-logo"><img id="p2h-logo-away" src="" alt="" onerror="this.style.display='none'"></div>
         <div class="p2h-role-icon"><img id="p2h-role-away" src="" alt="" onerror="this.style.display='none'"></div>
@@ -4284,6 +4465,12 @@
         <img class="p2h-emblem p2h-emblem-1" id="p2h-emblem-1-away" src="" alt="" onerror="this.style.display='none'">
         <img class="p2h-emblem p2h-emblem-2" id="p2h-emblem-2-away" src="" alt="" onerror="this.style.display='none'">
         <img class="p2h-emblem p2h-emblem-3" id="p2h-emblem-3-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-0" id="p2h-item-0-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-1" id="p2h-item-1-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-2" id="p2h-item-2-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-3" id="p2h-item-3-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-4" id="p2h-item-4-away" src="" alt="" onerror="this.style.display='none'">
+        <img class="p2h-item p2h-item-5" id="p2h-item-5-away" src="" alt="" onerror="this.style.display='none'">
       </div>
 
       <div id="p2h-sponsor"></div>
@@ -4948,6 +5135,16 @@
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showConsolidatedPost2, 100);
         } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      /* Consolidated Post 2's page 1 <-> page 2 flip — applies regardless
+         of whether cp2 is the currently active feature (harmless no-op
+         visually if it's not showing, matches every other server-
+         authoritative toggle in this file), animateBars=true since this
+         is always a genuine live flip, never the initial restore. */
+      sseSource.addEventListener('cp2page', (e) => {
+        const msg = JSON.parse(e.data);
+        applyCp2Page(msg.page, true);
       });
 
       sseSource.addEventListener('post4key', (e) => {
@@ -7019,9 +7216,12 @@
     }
 
     /* ── Bottom bars — split by value proportion; `reversed` puts the red
-       segment first (left column is blue-then-red, right column mirrors
-       it as red-then-blue — see hexagonguide.png). Segment width is set
-       immediately (only the number inside counts up). ── */
+       segment first if ever needed, but every bar (both columns) is
+       called with reversed=false — blue always renders first/left,
+       regardless of which column it's in (the right column's mirrored
+       red-then-blue, per hexagonguide.png, turned out not to be wanted —
+       blue stays left everywhere now). Segment width is set immediately
+       (only the number inside counts up). ── */
     function setThBar(elId, blueVal, redVal, blueFmt, redFmt, reversed, animate = true, invertBar = false) {
       /* invertBar: for stats where LOWER is better (AVG GAME TIME), the
          bigger bar segment should go to the lower value — weight each
@@ -7066,9 +7266,9 @@
       setThBar('th-bar-kda',  0, 0, thFmtDec2, thFmtDec2, false, false);
       setThBar('th-bar-gpm',  0, 0, thFmtInt,  thFmtInt,  false, false);
       setThBar('th-bar-dpm',  0, 0, thFmtInt,  thFmtInt,  false, false);
-      setThBar('th-bar-dmg',  0, 0, thFmtInt,  thFmtInt,  true,  false);
-      setThBar('th-bar-hero', 0, 0, thFmtInt,  thFmtInt,  true,  false);
-      setThBar('th-bar-time', 0, 0, thFmtTime, thFmtTime, true,  false, true);
+      setThBar('th-bar-dmg',  0, 0, thFmtInt,  thFmtInt,  false, false);
+      setThBar('th-bar-hero', 0, 0, thFmtInt,  thFmtInt,  false, false);
+      setThBar('th-bar-time', 0, 0, thFmtTime, thFmtTime, false, false, true);
     }
 
     function updateThRadarAndBars(ms, h2h) {
@@ -7077,9 +7277,9 @@
       setThBar('th-bar-kda',  blue.kda, red.kda, thFmtDec2, thFmtDec2, false);
       setThBar('th-bar-gpm',  blue.gpm, red.gpm, thFmtInt,  thFmtInt,  false);
       setThBar('th-bar-dpm',  blue.dpm, red.dpm, thFmtInt,  thFmtInt,  false);
-      setThBar('th-bar-dmg',  blue.dmg, red.dmg, thFmtInt,  thFmtInt,  true);
-      setThBar('th-bar-hero', blue.hero, red.hero, thFmtInt, thFmtInt, true);
-      setThBar('th-bar-time', blue.timeSec, red.timeSec, thFmtTime, thFmtTime, true, true, true);
+      setThBar('th-bar-dmg',  blue.dmg, red.dmg, thFmtInt,  thFmtInt,  false);
+      setThBar('th-bar-hero', blue.hero, red.hero, thFmtInt, thFmtInt, false);
+      setThBar('th-bar-time', blue.timeSec, red.timeSec, thFmtTime, thFmtTime, false, true, true);
     }
 
     /* Wait for <img>/<video> elements to finish loading (or fail) before
@@ -9214,6 +9414,37 @@
        scene alongside Matchboard/Middleboard/Playerboard. */
     const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h']);
 
+    /* Post scenes that use Matchboard's shorter "compact" layout (camp
+       boxes moved up 36px, tournament logo swapped for the smaller
+       #mb-tournament-cp — see the .cp-compact CSS rules). Everything
+       else in POST_FEATURES uses the regular, taller layout. */
+    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h']);
+
+    /* Flips #match-board's .cp-compact class — but fades #mb-camp1/
+       #mb-camp2/the tournament-logo pair out first when Matchboard is
+       ALREADY on screen (switching directly between a compact Post scene
+       and a normal-height one, e.g. Consolidated Post 2 -> Post Items;
+       Matchboard itself stays mounted across that switch, see
+       POST_FEATURES/hideActiveFeature), instead of just snapping them to
+       the new top instantly while fully visible. A FRESH entrance
+       (matchboard not visible yet) skips the fade and sets the class
+       immediately — mb-in's own opacity animation (showMatchBoard) is
+       already covering that case, so there's nothing to hide it from. */
+    function setMatchBoardCompact(compact, animate) {
+      const mb = document.getElementById('match-board');
+      if (mb.classList.contains('cp-compact') === compact) return Promise.resolve();
+      if (!animate) { mb.classList.toggle('cp-compact', compact); return Promise.resolve(); }
+      const els = ['mb-camp1', 'mb-camp2', 'mb-tournament', 'mb-tournament-cp'].map(id => document.getElementById(id));
+      els.forEach(el => { el.style.animation = ''; el.style.transition = 'opacity 180ms ease'; el.style.opacity = '0'; });
+      return new Promise(resolve => setTimeout(() => {
+        mb.classList.toggle('cp-compact', compact);
+        void mb.offsetWidth; /* force reflow so the newly-repositioned/swapped elements' fade-in actually transitions instead of snapping straight to opacity:1 */
+        els.forEach(el => { el.style.opacity = '1'; });
+        setTimeout(() => { els.forEach(el => { el.style.transition = ''; el.style.opacity = ''; }); }, 200);
+        resolve();
+      }, 180));
+    }
+
     /* Keeps server-side state.mplfsScene.<key> (and thus the dashboard's
        Control-tab board toggles/live indicator) in sync with board
        visibility decided HERE, internally, as a side effect of switching
@@ -9277,6 +9508,11 @@
 
     async function transitionToImpl(newFeature) {
       if (POST_FEATURES.has(newFeature)) {
+        /* Read BEFORE showMatchBoard() below — that's a no-op when
+           Matchboard is already up (switching directly between two Post
+           features), which is exactly the case setMatchBoardCompact needs
+           to know about to decide whether to fade or snap. */
+        const compactPromise = setMatchBoardCompact(COMPACT_MATCHBOARD_FEATURES.has(newFeature), mbVisible);
         syncBoard('matchboard', true);
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
@@ -9293,7 +9529,9 @@
         }
         if (newFeature !== 'timeline') {
           cpDuringPostTransition = true;
-          try { await hideActiveFeature(); } finally { cpDuringPostTransition = false; }
+          try { await Promise.all([hideActiveFeature(), compactPromise]); } finally { cpDuringPostTransition = false; }
+        } else {
+          await compactPromise;
         }
       } else {
         cpDuringPostTransition = false;
@@ -9837,11 +10075,11 @@
     }
 
     /* Middleboard's objectives, relocated into this scene's own compact
-       #cmb-board layout (consomiddle.png). Same field sourcing as
-       fetchMiddleBoardData — see routes/overlay's /api/gamedata-proxy and
-       /match/state — just written to cmb-* ids instead of mdb-*. A
-       one-time fetch on show, matching the rest of Consolidated Post
-       being a static end-of-match snapshot (no polling). */
+       #cmb-board layout (consomiddle.png) — unlike fetchMiddleBoardData
+       (mdb-* ids), which reads the live sub-info feed, every stat here
+       comes from the Post-Info API's camp_list (see fetchCmbData below)
+       since this is a static end-of-match snapshot, not a live poll. A
+       one-time fetch on show, matching the rest of Consolidated Post. */
     let cmbVisible = false;
 
     function ckmFitName(el, maxSize = 27.5, minSize = 14) {
@@ -9854,44 +10092,41 @@
 
     async function fetchCmbData(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false) {
       try {
-        const [gameR, msR, piR, mapSelR] = await Promise.allSettled([
-          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        const [msR, piR, mapSelR] = await Promise.allSettled([
           fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
           fetch(buildUrl('/mapselection/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
         ]);
-        const gd = gameR.value?.data ?? null;
         const ms = msR.value ?? null;
         const pi = piR.value?.data ?? null;
         const mapSel = mapSelR.value ?? null;
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
-        if (gd) {
-          const camps = gd.camp_list || [];
-          const c1 = camps.find(c => c.campid === 1);
-          const c2 = camps.find(c => c.campid === 2);
-          if (c1 && c2) {
-            set('cmb-gold-l',       fmtGold(c1.total_money));
-            set('cmb-gold-r',       fmtGold(c2.total_money));
-            set('cmb-tower-l',      c1.kill_tower || 0);
-            set('cmb-tower-r',      c2.kill_tower || 0);
-            set('cmb-lord-l',       c1.kill_lord || 0);
-            set('cmb-lord-r',       c2.kill_lord || 0);
-            set('cmb-turtle-l',     c1.kill_tortoise || 0);
-            set('cmb-turtle-r',     c2.kill_tortoise || 0);
-          }
-          set('cmb-game-time-value', fmtGameTime(gd.game_time));
-        }
-        // Buff counts come from the separate Post-Info API's own camp
-        // fields (red_buff_num / blue_buff_num), not the live sub-info
-        // feed (gamedata-proxy has neither field at all).
+        // Every #cmb-board stat (gold/tower/lord/turtle/buffs/game time)
+        // comes from the Post-Info API's camp_list — not gamedata-proxy
+        // (the live sub-info feed) — per the user's explicit request.
+        // Kill Map (fetchCkmKills, separate function/data entirely) and
+        // the Map Name below (still ms/mapSel) are deliberately untouched.
         if (pi) {
           const piCamps = pi.camp_list || [];
           const pc1 = piCamps.find(c => c.campid === 1);
           const pc2 = piCamps.find(c => c.campid === 2);
-          set('cmb-redbuff-l',    (pc1 && pc1.red_buff_num)  || 0);
-          set('cmb-redbuff-r',    (pc2 && pc2.red_buff_num)  || 0);
-          set('cmb-purplebuff-l', (pc1 && pc1.blue_buff_num) || 0);
-          set('cmb-purplebuff-r', (pc2 && pc2.blue_buff_num) || 0);
+          if (pc1 && pc2) {
+            set('cmb-gold-l',       fmtGold(pc1.total_money));
+            set('cmb-gold-r',       fmtGold(pc2.total_money));
+            set('cmb-tower-l',      pc1.kill_tower || 0);
+            set('cmb-tower-r',      pc2.kill_tower || 0);
+            set('cmb-lord-l',       pc1.kill_lord || 0);
+            set('cmb-lord-r',       pc2.kill_lord || 0);
+            // Post-Info API spells this field "kill_totoise" (sic), not
+            // "kill_tortoise" like gamedata-proxy did.
+            set('cmb-turtle-l',     pc1.kill_totoise || 0);
+            set('cmb-turtle-r',     pc2.kill_totoise || 0);
+            set('cmb-redbuff-l',    pc1.red_buff_num  || 0);
+            set('cmb-redbuff-r',    pc2.red_buff_num  || 0);
+            set('cmb-purplebuff-l', pc1.blue_buff_num || 0);
+            set('cmb-purplebuff-r', pc2.blue_buff_num || 0);
+          }
+          set('cmb-game-time-value', fmtGameTime(pi.game_time));
         }
         if (ms) {
           /* Consolidated Post's compact recap of Middle Board's objectives
@@ -10291,11 +10526,9 @@
 
     async function showConsolidatedPost() {
       if (cpVisible) return;
-      // Applied BEFORE transitionTo/showMatchBoard run, so the compact
-      // top/logo CSS is already in effect the instant the mb-in animation
-      // starts — adding this after would mean the entrance animation runs
-      // at the old position, then visibly snaps to the compact one.
-      document.getElementById('match-board').classList.add('cp-compact');
+      // cp-compact itself is handled by transitionToImpl's
+      // setMatchBoardCompact (fades if Matchboard's already up, sets it
+      // instantly before mb-in starts otherwise) — nothing to do here.
       await transitionTo('consolidated_post');
       /* Same fix as Consolidated Post 2 (see its comment) — start these
          boards' own data fetches now, in parallel with the row data
@@ -10342,18 +10575,12 @@
       hideCmbBoard();
       hideCkmBoard();
       hideCpgBoard();
-      if (cpDuringPostTransition) {
-        // Switching straight to another post feature — matchboard stays
-        // up (that feature's own showMatchBoard() is a no-op since it's
-        // already visible), just snap it back out of compact mode.
-        document.getElementById('match-board').classList.remove('cp-compact');
-      } else {
-        // Genuine standalone hide — animate matchboard out with it, then
-        // drop compact mode once it's actually invisible (no visual snap).
+      if (!cpDuringPostTransition) {
+        // Genuine standalone hide (not switching straight to another post
+        // feature) — animate matchboard out with it. cp-compact itself is
+        // handled by transitionToImpl's setMatchBoardCompact either way.
         syncBoard('matchboard', false);
-        hideMatchBoard().then(() => {
-          document.getElementById('match-board').classList.remove('cp-compact');
-        });
+        hideMatchBoard();
       }
       CP_ROW_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`cp-row-el-${i + 1}`);
@@ -10404,32 +10631,32 @@
         .map(i => `<img class="cp2-item cp2-item-${i}" id="${id}-item-${i}" src="" alt="">`).join('');
       return `
         <img class="cp2-hero" id="${id}-hero" src="" alt="">
-        <img class="cp2-photo" id="${id}-photo" src="" alt="">
+        <div class="cp2-photo-frame"><img class="cp2-photo" id="${id}-photo" src="" alt=""></div>
         <img class="cp2-spell" id="${id}-spell" src="" alt="" style="display:none">
         <div class="cp2-level" id="${id}-level"></div>
         <img class="cp2-role" id="${id}-role" src="" alt="" style="display:none">
         <div class="cp2-name" id="${id}-name"></div>
-        <img class="cp2-rune-main" id="${id}-rune-main" src="" alt="" style="display:none">
-        <img class="cp2-rune-1" id="${id}-rune-1" src="" alt="" style="display:none">
-        <img class="cp2-rune-2" id="${id}-rune-2" src="" alt="" style="display:none">
-        <img class="cp2-rune-3" id="${id}-rune-3" src="" alt="" style="display:none">
         <div class="cp2-kda-label">KDA</div>
         <div class="cp2-kda-value" id="${id}-kda">-/-/-</div>
         <div class="cp2-gold-label">GOLD EARNED</div>
         <div class="cp2-gold-value" id="${id}-gold">-</div>
-        <div class="cp2-dmg-label cp2-dmg-taken-label">DAMAGE TAKEN</div>
-        <div class="cp2-dmg-taken">
-          <div class="cp2-dmg-bar" id="${id}-taken-bar"></div>
-          <div class="cp2-dmg-num-dark"  id="${id}-taken-numD">0</div>
-          <div class="cp2-dmg-num-light" id="${id}-taken-numL">0</div>
-        </div>
+        <img class="cp2-rune-main" id="${id}-rune-main" src="" alt="" style="display:none">
+        <img class="cp2-rune-1" id="${id}-rune-1" src="" alt="" style="display:none">
+        <img class="cp2-rune-2" id="${id}-rune-2" src="" alt="" style="display:none">
+        <img class="cp2-rune-3" id="${id}-rune-3" src="" alt="" style="display:none">
         <div class="cp2-dmg-label cp2-dmg-dealt-label">DAMAGE DEALT</div>
         <div class="cp2-dmg-dealt">
           <div class="cp2-dmg-bar" id="${id}-dealt-bar"></div>
           <div class="cp2-dmg-num-dark"  id="${id}-dealt-numD">0</div>
           <div class="cp2-dmg-num-light" id="${id}-dealt-numL">0</div>
         </div>
-        <div class="cp2-items">${itemSlots}</div>
+        <div class="cp2-dmg-label cp2-dmg-taken-label">DAMAGE TAKEN</div>
+        <div class="cp2-dmg-taken">
+          <div class="cp2-dmg-bar" id="${id}-taken-bar"></div>
+          <div class="cp2-dmg-num-dark"  id="${id}-taken-numD">0</div>
+          <div class="cp2-dmg-num-light" id="${id}-taken-numL">0</div>
+        </div>
+        ${itemSlots}
       `;
     }
 
@@ -10445,6 +10672,39 @@
 
     let cp2Visible = false;
     let cp2Data    = [];
+    // Which of Consolidated Post 2's two pages is currently shown — scene-
+    // wide (all 10 rows flip together), driven by the 'cp2page' SSE event
+    // (see connectSSE() and routes/overlay.js's /overlay/cp2page/:page).
+    // Every showConsolidatedPost2() forces this back to 1 (see below) —
+    // this only tracks live in-broadcast flips while the scene is up.
+    let cp2Page = 1;
+
+    /* Flips every cp2 row's .cp2-page2 class (CSS handles the actual
+       Runes/Items <-> Damage Dealt/Taken crossfade — see the .cp2-page2
+       rules above). animateBars replays cpAnimateDmgBar's usual bar-fill/
+       count-up for every row that has data — pass true for a live page
+       flip (SSE), false when just restoring/setting the initial state on
+       scene show (that reveal already schedules its own first bar
+       animation only if page 2 turns out to be the current page). */
+    function applyCp2Page(page, animateBars) {
+      cp2Page = page === 2 ? 2 : 1;
+      const isPage2 = cp2Page === 2;
+      CP2_ROW_CLASSES.forEach((cls, i) => {
+        const el = document.getElementById(`cp2-row-el-${i + 1}`);
+        if (el) el.classList.toggle('cp2-page2', isPage2);
+      });
+      if (isPage2 && animateBars) {
+        cp2Data.forEach((d, i) => {
+          if (!d) return;
+          const id = `cp2-${i + 1}`;
+          const takenBar = document.getElementById(`${id}-taken-bar`);
+          const dealtBar = document.getElementById(`${id}-dealt-bar`);
+          if (takenBar) takenBar.style.width = '0%';
+          if (dealtBar) dealtBar.style.width = '0%';
+          cpAnimateDmgBar(id, i >= 5, d.s.total_hurt || 0, d.takenPct, d.s.total_damage || 0, d.dealtPct, () => cp2Visible);
+        });
+      }
+    }
 
     async function fetchConsolidatedPost2Data() {
       cp2Data = Array(10).fill(null);
@@ -10483,7 +10743,8 @@
 
     async function showConsolidatedPost2() {
       if (cp2Visible) return;
-      document.getElementById('match-board').classList.add('cp-compact');
+      // cp-compact is handled by transitionToImpl's setMatchBoardCompact
+      // (see showConsolidatedPost) — nothing to do here.
       await transitionTo('consolidated_post_2');
       /* Kick off the Middle Board / Kill Map's own data fetches now, in
          parallel with the row data below — they used to only start once
@@ -10499,6 +10760,8 @@
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while awaiting data */
       await preloadMedia(document.querySelectorAll('[id^="cp2-row-el-"] img'), 900);
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while preloading */
+      applyCp2Page(1, false); /* every show always starts on page 1 */
+      fetch(buildUrl('/overlay/cp2page/1')).catch(() => {}); /* keep server state in sync so a reconnect mid-broadcast also lands on page 1 */
       cp2Visible = true;
       showSceneVideo('consolidated_post_2');
       cmbVisible = true;
@@ -10521,7 +10784,7 @@
             el.classList.add('ph-visible');
             el.style.animationDelay = '';
             const d = cp2Data[i];
-            if (d) setTimeout(() => { if (cp2Visible) cpAnimateDmgBar(`cp2-${i + 1}`, i >= 5, d.s.total_hurt || 0, d.takenPct, d.s.total_damage || 0, d.dealtPct, () => cp2Visible); }, 50);
+            if (d && cp2Page === 2) setTimeout(() => { if (cp2Visible) cpAnimateDmgBar(`cp2-${i + 1}`, i >= 5, d.s.total_hurt || 0, d.takenPct, d.s.total_damage || 0, d.dealtPct, () => cp2Visible); }, 50);
           }
         }, 700 + delay);
       });
@@ -10534,15 +10797,11 @@
       hideCkm2Board();
       document.getElementById('cp2-sponsor').classList.remove('cp2-sponsor-visible');
       cp2SponsorLoop.stop();
-      if (cpDuringPostTransition) {
-        // Switching straight to another post feature — matchboard stays
-        // up, just snap it back out of compact mode (see hideConsolidatedPost).
-        document.getElementById('match-board').classList.remove('cp-compact');
-      } else {
+      if (!cpDuringPostTransition) {
+        // Genuine standalone hide (see hideConsolidatedPost) — cp-compact
+        // itself is handled by transitionToImpl's setMatchBoardCompact.
         syncBoard('matchboard', false);
-        hideMatchBoard().then(() => {
-          document.getElementById('match-board').classList.remove('cp-compact');
-        });
+        hideMatchBoard();
       }
       CP2_ROW_CLASSES.forEach((cls, i) => {
         const el    = document.getElementById(`cp2-row-el-${i + 1}`);
@@ -11476,7 +11735,12 @@
 
     function p2hFmtPct(v)  { return (v == null ? 0 : Number(v)).toFixed(1) + '%'; }
     function p2hFmtSecs(ms) { return ((ms || 0) / 1000).toFixed(1) + 's'; }
-    function p2hFmtCount(v) { return String(v || 0); }
+    /* Math.round matters here specifically because of the count-up
+       animation (p2hCountUp) — it calls fmt(to * eased) every frame, and
+       eased mid-flight values are fractional, so a naked String(v) was
+       rendering long float strings ("12.34782...") for most of the
+       animation instead of a clean integer ramp. */
+    function p2hFmtCount(v) { return String(Math.round(v || 0)); }
     /* Level 15 Time isn't a plain number — level_eta IS the game-time
        timestamp they hit level 15 ONLY once level_percent reads 100;
        otherwise there's nothing to show yet. get() for this row returns
@@ -11591,7 +11855,9 @@
       const logoEl   = document.getElementById('p2h-logo-' + side);
       const roleEl   = document.getElementById('p2h-role-' + side);
       const nameEl   = document.getElementById('p2h-name-' + side);
-      const photoEl  = document.getElementById('p2h-photo-' + side);
+      const frontEl  = document.getElementById('p2h-photo-front-' + side);
+      const sigEl    = document.getElementById('p2h-photo-sig-' + side);
+      const cardEl   = document.getElementById('p2h-card-' + side);
 
       logoEl.onerror = () => { logoEl.style.display = 'none'; };
       logoEl.style.display = '';
@@ -11603,11 +11869,27 @@
 
       nameEl.textContent = (seat && seat.name) || '';
 
-      photoEl.onerror = () => { photoEl.style.display = 'none'; };
-      photoEl.style.display = '';
-      photoEl.src = hlPhotoUrl(seat && seat.name);
+      /* FRONT pose shows first, buttons over to the SIGNATURE pose once
+         .p2h-posed is added (see p2hPlayAnimation) — same two-layer
+         technique as Post 4 Key's p4k-photo-front/p4k-photo-sig. Reset to
+         the pre-pose state here too, same reasoning as p4kApplyCard: a
+         re-fetch mid-scene (role switch) shouldn't leave an already-posed
+         card stuck showing a stale signature photo. */
+      if (cardEl) cardEl.classList.remove('p2h-posed');
+      frontEl.onerror = () => { frontEl.style.display = 'none'; };
+      frontEl.style.display = '';
+      frontEl.src = luPoseUrl(seat && seat.name, 'FRONT');
+      sigEl.onerror = () => { sigEl.style.display = 'none'; };
+      sigEl.style.display = '';
+      sigEl.src = hlPhotoUrl(seat && seat.name);
 
-      document.getElementById('p2h-kda-' + side).textContent = (seat && seat.kda) || '-/-/-';
+      /* This scene's seat objects come straight off gamedata-proxy's
+         camp_list (main-info API) — that shape has no .kda string field,
+         only raw kill_num/dead_num/assist_num (same as Heatmap's
+         hmst-kda-value and Post Items' pib-N-kda, both built the same
+         way from the same API). */
+      document.getElementById('p2h-kda-' + side).textContent =
+        seat ? `${seat.kill_num || 0}/${seat.dead_num || 0}/${seat.assist_num || 0}` : '-/-/-';
       document.getElementById('p2h-kp-' + side).textContent = (seat && seat.kp != null) ? seat.kp + '%' : '-';
       document.getElementById('p2h-gold-' + side).textContent = fmtGold(seat && seat.gold);
 
@@ -11627,6 +11909,88 @@
         el.style.display = '';
         el.src = id ? '/emblem/square_' + id + '_RUNES.png' : '';
       }
+
+      /* Item slots — same equip_list shape/convention as mv-item-N and
+         cp-item-N elsewhere in this file (empty slot = no value -> hide). */
+      const items = (seat && seat.equip_list) || [];
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById('p2h-item-' + i + '-' + side);
+        el.onerror = () => { el.style.display = 'none'; };
+        if (items[i] && items[i].value) {
+          el.style.display = '';
+          el.src = '/items/' + items[i].value + '.png';
+        } else {
+          el.style.display = 'none';
+          el.src = '';
+        }
+      }
+    }
+
+    /* Growing-bar + count-up entrance for the 5 stat rows — same idiom as
+       thCountUp/setThBar's zero-baseline for Team Hexagon: p2hApply resets
+       every row's fill to width:0 and its value text to a zero baseline
+       instantly (no transition), then returns the real target data so the
+       caller can trigger p2hAnimateBars once the scene is actually visible
+       — CSS's own `transition: width 500ms ease` on .p2h-bar-fill then
+       animates 0 -> pct% (growing from the left, "eating" into the
+       opposite color, whichever side is ahead) while p2hCountUp ticks the
+       numbers up in sync. Rows whose get() returns a non-number (Level 15
+       Time returns the whole seat) can't be counted up — those just get
+       their final formatted text set immediately, no bar/number motion. */
+    const P2H_ANIM_MS = 600;
+    function p2hCountUp(el, to, fmt) {
+      if (!el) return;
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min(1, (now - start) / P2H_ANIM_MS);
+        const eased = 1 - Math.pow(1 - t, 3);
+        el.textContent = fmt(to * eased);
+        if (t < 1) requestAnimationFrame(tick);
+        else el.textContent = fmt(to);
+      }
+      requestAnimationFrame(tick);
+    }
+    function p2hAnimateBars(rows) {
+      rows.forEach(row => {
+        const fillEl = document.getElementById('p2h-row-' + row.i + '-fill');
+        void fillEl.offsetWidth; /* force reflow so the width change transitions, not jumps */
+        fillEl.style.width = row.pct + '%';
+        if (row.hasHome && typeof row.homeRaw === 'number') {
+          p2hCountUp(document.getElementById('p2h-row-' + row.i + '-home'), row.homeRaw, row.stat.fmt);
+        }
+        if (row.hasAway && typeof row.awayRaw === 'number') {
+          p2hCountUp(document.getElementById('p2h-row-' + row.i + '-away'), row.awayRaw, row.stat.fmt);
+        }
+      });
+    }
+
+    /* Deal-in sequencing — adapted from Post 4 Key's p4kPlayAnimation:
+       left card, then right card, then everything else together — the
+       middle details (header/gametime/title/stat rows, see .p2h-mid),
+       the bar grow/count-up, AND both cards' photos buttoning from FRONT
+       to SIGNATURE pose (.p2h-posed) — all fire at the same moment,
+       per the user's request, unlike p4k where each card poses on its
+       own independent timer right after IT lands. Only called on a fresh
+       show (see showPostH2H) — p2hLiveRefresh (role switch while already
+       showing) just re-animates the bars in place, it doesn't re-deal
+       cards or re-pose photos that are already sitting on screen. */
+    const P2H_DEAL_STAGGER_MS  = 150; // gap between left-card and right-card landing
+    const P2H_DEAL_DURATION_MS = 480; // matches .p2h-card.p2h-dealt's own transition duration
+    const P2H_MID_HOLD_MS      = 120; // brief pause after the right card lands before mid content/pose/bars reveal
+    function p2hPlayAnimation(rows) {
+      const awayDelay = P2H_DEAL_STAGGER_MS;
+      const midDelay  = awayDelay + P2H_DEAL_DURATION_MS + P2H_MID_HOLD_MS;
+      if (p2hVisible) document.getElementById('p2h-card-home')?.classList.add('p2h-dealt');
+      setTimeout(() => {
+        if (p2hVisible) document.getElementById('p2h-card-away')?.classList.add('p2h-dealt');
+      }, awayDelay);
+      setTimeout(() => {
+        if (!p2hVisible) return;
+        document.getElementById('p2h-card-home')?.classList.add('p2h-posed');
+        document.getElementById('p2h-card-away')?.classList.add('p2h-posed');
+        p2hPage.querySelectorAll('.p2h-mid').forEach(el => el.classList.add('p2h-mid-in'));
+        p2hAnimateBars(rows);
+      }, midDelay);
     }
 
     function p2hApply(cfg, gameData, matchState) {
@@ -11650,18 +12014,33 @@
       p2hApplyCard('away', seatAway, camp2);
 
       const stats = H2H_ROLE_STATS[role] || H2H_ROLE_STATS.gold_laner;
+      const rows = [];
       stats.forEach((stat, i) => {
         const homeRaw = seatHome ? stat.get(seatHome, teamHomeSeats) : null;
         const awayRaw = seatAway ? stat.get(seatAway, teamAwaySeats) : null;
         const homeNum = typeof homeRaw === 'number' ? homeRaw : 0;
         const awayNum = typeof awayRaw === 'number' ? awayRaw : 0;
         const totalNum = homeNum + awayNum;
-        const pct = totalNum > 0 ? (homeNum / totalNum) * 100 : 50; /* guard divide-by-zero */
+        const pct = totalNum > 0 ? (homeNum / totalNum) * 100 : 50; /* guard divide-by-zero, also the "equal" case — starts from 0 same as every other row, just grows to the 50% midpoint */
         document.getElementById('p2h-row-' + i + '-label').textContent = stat.label;
-        document.getElementById('p2h-row-' + i + '-fill').style.width = pct + '%';
-        document.getElementById('p2h-row-' + i + '-home').textContent = seatHome ? stat.fmt(homeRaw) : '-';
-        document.getElementById('p2h-row-' + i + '-away').textContent = seatAway ? stat.fmt(awayRaw) : '-';
+
+        /* Zero baseline, instant (no transition) — the real width/count
+           animation is triggered later via p2hAnimateBars, once this row
+           is actually visible on screen (see showPostH2H/p2hLiveRefresh). */
+        const fillEl = document.getElementById('p2h-row-' + i + '-fill');
+        fillEl.style.transition = 'none';
+        fillEl.style.width = '0%';
+        void fillEl.offsetWidth;
+        fillEl.style.transition = '';
+
+        const homeEl = document.getElementById('p2h-row-' + i + '-home');
+        const awayEl = document.getElementById('p2h-row-' + i + '-away');
+        homeEl.textContent = !seatHome ? '-' : (typeof homeRaw === 'number' ? stat.fmt(0) : stat.fmt(homeRaw));
+        awayEl.textContent = !seatAway ? '-' : (typeof awayRaw === 'number' ? stat.fmt(0) : stat.fmt(awayRaw));
+
+        rows.push({ i, pct, homeRaw, awayRaw, stat, hasHome: !!seatHome, hasAway: !!seatAway });
       });
+      return rows;
     }
 
     document.getElementById('p2h-sponsor').innerHTML =
@@ -11676,22 +12055,45 @@
       const cfgPromise = fetchH2HConfig();
       const gdPromise  = fetchH2HGameData();
       const msPromise  = fetchH2HMatchState();
-      // Same reasoning as Consolidated Post: apply before transitionTo so
-      // the compact top/logo CSS is already in effect the instant the
-      // mb-in animation starts.
-      document.getElementById('match-board').classList.add('cp-compact');
+      // cp-compact is handled by transitionToImpl's setMatchBoardCompact
+      // (see showConsolidatedPost) — nothing to do here.
       await transitionTo('post_h2h');
       const [cfg, gameData, matchState] = await Promise.all([cfgPromise, gdPromise, msPromise]);
       if (activeFeature !== 'post_h2h') return; /* superseded while awaiting data */
-      p2hApply(cfg, gameData, matchState);
-      await preloadMedia(p2hPage.querySelectorAll('img'), 1500);
+      /* Fill the matchboard from data we already have, instead of leaving
+         it to its own separate fetchMatchBoardData() call (fired inside
+         transitionToImpl's showMatchBoard(), hitting the exact same two
+         endpoints — /api/gamedata-proxy + /match/state — completely
+         redundantly). That second fetch starts later (mid-transition) and
+         resolves after the matchboard's own mb-in reveal animation has
+         already played, so the tricode/logo/score visibly popped in a
+         beat after the board itself appeared. gameData/matchState here
+         were already in flight before transitionTo even started, so
+         applying them now beats that redundant fetch to the punch. */
+      applyMatchBoardData(gameData, matchState);
+      const rows = p2hApply(cfg, gameData, matchState);
+      /* 900ms, not 1500 — matches Consolidated Post/Post 2's own budget for
+         equivalent per-player photo/hero/item art, which is what makes
+         those feel snappy transitioning in; 1500 was pure MVP-Scene-style
+         copy/paste and made P2H visibly the slowest Post-family scene to
+         appear (preloadMedia resolves as soon as media's actually ready
+         either way — this is only the worst-case ceiling for stragglers). */
+      await preloadMedia(p2hPage.querySelectorAll('img'), 900);
       if (activeFeature !== 'post_h2h') return; /* superseded while preloading */
       showSceneVideo('post_h2h');
       p2hSponsorLoop.start();
       p2hVisible = true;
+      // Reset deal/pose/mid-reveal state in case a very fast hide+reshow
+      // left this mid-animation from a previous Show (p2h-posed is also
+      // reset per-card inside p2hApplyCard, but resetting it here too
+      // keeps every piece of this entrance sequence's reset in one place).
+      document.getElementById('p2h-card-home')?.classList.remove('p2h-dealt', 'p2h-posed');
+      document.getElementById('p2h-card-away')?.classList.remove('p2h-dealt', 'p2h-posed');
+      p2hPage.querySelectorAll('.p2h-mid').forEach(el => el.classList.remove('p2h-mid-in'));
       p2hPage.classList.add('p2h-on');
       void p2hPage.offsetWidth; /* force reflow so the opacity transition runs */
       p2hPage.classList.add('p2h-visible');
+      p2hPlayAnimation(rows); /* left card, then right card, then middle details + bars/count-up */
     }
 
     function hidePostH2H() {
@@ -11699,17 +12101,11 @@
       p2hVisible = false;
       p2hSponsorLoop.stop();
       p2hPage.classList.remove('p2h-visible');
-      if (cpDuringPostTransition) {
-        // Switching straight to another post feature — matchboard stays
-        // up, just snap it back out of compact mode.
-        document.getElementById('match-board').classList.remove('cp-compact');
-      } else {
-        // Genuine standalone hide — animate matchboard out with it, then
-        // drop compact mode once it's actually invisible (no visual snap).
+      if (!cpDuringPostTransition) {
+        // Genuine standalone hide (see hideConsolidatedPost) — cp-compact
+        // itself is handled by transitionToImpl's setMatchBoardCompact.
         syncBoard('matchboard', false);
-        hideMatchBoard().then(() => {
-          document.getElementById('match-board').classList.remove('cp-compact');
-        });
+        hideMatchBoard();
       }
       return new Promise(resolve => setTimeout(() => {
         p2hPage.classList.remove('p2h-on');
@@ -11727,7 +12123,8 @@
       if (!p2hVisible) return;
       const [cfg, gameData, matchState] = await Promise.all([fetchH2HConfig(), fetchH2HGameData(), fetchH2HMatchState()]);
       if (!p2hVisible || activeFeature !== 'post_h2h') return;
-      p2hApply(cfg, gameData, matchState);
+      const rows = p2hApply(cfg, gameData, matchState);
+      p2hAnimateBars(rows);
     }
 
     /* ════════════════════════════════════════════════

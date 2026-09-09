@@ -2308,6 +2308,14 @@
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
         { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
       ],
+      /* Consolidated Post 2's page flip — scene-wide across all 10 rows
+         (Runes/Items <-> Damage Dealt/Taken), not a per-element on/off
+         state, so this is fire-and-forget extraActions (same reasoning
+         as mpltag's Player H2H buttons below) rather than checkToggles. */
+      extraActions: [
+        { label: 'Consolidated Post 2: Page 1', action: '/overlay/cp2page/1' },
+        { label: 'Consolidated Post 2: Page 2', action: '/overlay/cp2page/2' },
+      ],
       featureToggles: [
         { name: 'Secondary Role — Blue Line-Up', feature: 'lineupsecrole_blue' },
         { name: 'Secondary Role — Red Line-Up',  feature: 'lineupsecrole_red'  },
@@ -2373,6 +2381,7 @@
       file: 'mploverlay_v7.html',
       previewDebugTester: true,
       killEventTrigger: true,
+      stolenGoldControls: true,
       extraActions: [
         { label: 'Recap Show', action: '/overlay/fights/show' },
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
@@ -2403,6 +2412,7 @@
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
         { name: 'Objective Spawn', feature: 'objectivespawn' },
+        { name: 'Stolen Gold', feature: 'stolengold' },
       ],
     },
     {
@@ -3214,6 +3224,65 @@
     });
   }
 
+  function buildStolenGoldControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Stolen Gold Banner'));
+
+    var row = el('div', 'pdebug-row');
+    row.appendChild(el('label', '', 'Duration'));
+    var durationInput = document.createElement('input');
+    durationInput.type = 'number'; durationInput.min = '1'; durationInput.max = '30'; durationInput.step = '0.5';
+    durationInput.className = 'pdebug-select';
+    durationInput.style.cssText = 'width:70px;flex:0 0 70px;';
+    row.appendChild(durationInput);
+    row.appendChild(el('span', '', 'sec'));
+    body.appendChild(row);
+
+    var row2 = el('div', 'pdebug-row');
+    var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
+    var testBtn  = el('button', 'pdebug-trigger', '▶ Test');
+    row2.appendChild(applyBtn);
+    row2.appendChild(testBtn);
+    body.appendChild(row2);
+
+    var statusEl = el('div', '', 'Loading…');
+    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
+    body.appendChild(statusEl);
+
+    // Read live server state on open instead of assuming a default
+    // (memory: feedback_feature_toggle_state.md).
+    fetch('/api/stolengold-duration', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        durationInput.value = (d && d.duration) || 8;
+        statusEl.textContent = 'Current: ' + durationInput.value + 's';
+      }).catch(function () { durationInput.value = 8; statusEl.textContent = ''; });
+
+    applyBtn.addEventListener('click', function () {
+      fetch('/api/stolengold-duration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: Number(durationInput.value) || 8 }),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          durationInput.value = d.duration;
+          statusEl.textContent = 'Current: ' + d.duration + 's';
+          body.classList.remove('flash-ok');
+          void body.offsetWidth;
+          body.classList.add('flash-ok');
+        }).catch(function () {
+          statusEl.textContent = 'Save failed';
+        });
+    });
+
+    testBtn.addEventListener('click', function () {
+      fetch('/overlay/stolengold/test').catch(function () {});
+      body.classList.remove('flash-ok');
+      void body.offsetWidth;
+      body.classList.add('flash-ok');
+    });
+  }
+
   /* ── Build sidebar + control body ────────────────────────── */
   /* ── Draft photo mode (live API match vs. random test) ────── */
   function buildDraftPhotoModeControl(body) {
@@ -3726,6 +3795,16 @@
        pattern as buildHeatmapControls above. */
     if (ov.h2hControls) {
       buildH2HControls(body);
+    }
+
+    /* Stolen Gold banner — display-duration tuning + a manual test
+       trigger, tuned here instead of on-page (see buildStolenGoldControls
+       below and /api/stolengold-duration + /overlay/stolengold/test in
+       routes/devapi.js and routes/overlay.js). The arm/disarm toggle
+       itself lives in the Feature Toggles list below, same as every
+       other Shape 2 auto-effect. */
+    if (ov.stolenGoldControls) {
+      buildStolenGoldControls(body);
     }
 
     /* Feature toggles */
@@ -4918,45 +4997,67 @@
      #ckm-board. */
   var CP2_FIELD_DEFAULTS_BLUE = {
     hero:      { left: 0,   top: 0,   width: 69,  height: 132 },
-    photo:     { left: 69,  top: 0,   width: 138, height: 132 },
+    /* left/top are relative to the fixed .cp2-photo-frame (itself at
+       left:69/523, not editable here — see the CSS comment in
+       mplfs.html), not to the row, so 0/0 lines the photo up with the
+       frame's own top-left corner by default same as before this split.
+       Dragging this away from 0/0 pans the photo inside that frame
+       instead of moving the frame itself. */
+    photo:     { left: 0,   top: 0,   width: 138, height: 132 },
     spell:     { left: 4,   top: 97,  width: 30,  height: 30 },
     level:     { left: 0,   top: 132, width: 69,  height: 22, fontSize: 15 },
     role:      { left: 71,  top: 134, width: 19,  height: 19 },
     name:      { left: 98,  top: 132, width: 99,  height: 22, fontSize: 12.4 },
-    'rune-main': { left: 207, top: 11, width: 39, height: 39 },
-    'rune-1':    { left: 252, top: 17, width: 28, height: 28 },
-    'rune-2':    { left: 286, top: 17, width: 28, height: 28 },
-    'rune-3':    { left: 320, top: 17, width: 28, height: 28 },
-    'kda-label':  { left: 207, top: 52,  width: 141, height: 14, fontSize: 12 },
-    'kda-value':  { left: 207, top: 68,  width: 141, height: 28, fontSize: 24.8 },
-    'gold-label': { left: 207, top: 96,  width: 141, height: 14, fontSize: 12 },
-    'gold-value': { left: 207, top: 112, width: 141, height: 28, fontSize: 24.8 },
-    'dmg-taken-label': { left: 372, top: 10, width: 170, height: 14, fontSize: 12 },
-    'dmg-taken': { left: 372, top: 26, width: 170, height: 34 },
-    'dmg-dealt-label': { left: 549, top: 10, width: 170, height: 14, fontSize: 12 },
-    'dmg-dealt': { left: 549, top: 26, width: 170, height: 34 },
-    items:     { left: 372, top: 81, width: 348, height: 53 },
+    /* Page 1 (Runes/Items) and page 2 (Damage Dealt/Taken) share these
+       same selectors/defaults — .cp2-page2 just toggles which set is
+       opacity:1 (see mplfs.html) — so there's one Edit-tab row per
+       element regardless of which page it belongs to. */
+    'rune-main': { left: 415, top: 20, width: 54, height: 54 },
+    'rune-1':    { left: 374, top: 84, width: 40, height: 40 },
+    'rune-2':    { left: 422, top: 84, width: 40, height: 40 },
+    'rune-3':    { left: 469, top: 84, width: 40, height: 40 },
+    'kda-label':  { left: 211, top: 11,  width: 129, height: 19, fontSize: 13.8 },
+    'kda-value':  { left: 211, top: 32,  width: 129, height: 33, fontSize: 36 },
+    'gold-label': { left: 211, top: 87,  width: 129, height: 19, fontSize: 13.8 },
+    'gold-value': { left: 211, top: 108, width: 129, height: 33, fontSize: 36 },
+    'item-0': { left: 538, top: 20, width: 54, height: 54 },
+    'item-1': { left: 601, top: 20, width: 54, height: 54 },
+    'item-2': { left: 664, top: 20, width: 54, height: 54 },
+    'item-3': { left: 538, top: 79, width: 54, height: 54 },
+    'item-4': { left: 601, top: 79, width: 54, height: 54 },
+    'item-5': { left: 664, top: 79, width: 54, height: 54 },
+    'dmg-dealt-label': { left: 216, top: 10,  width: 497, height: 14, fontSize: 12 },
+    'dmg-dealt':       { left: 216, top: 26,  width: 497, height: 34 },
+    'dmg-taken-label': { left: 216, top: 89,  width: 497, height: 14, fontSize: 12 },
+    'dmg-taken':       { left: 216, top: 105, width: 497, height: 34 },
   };
   var CP2_FIELD_DEFAULTS_RED = {
     hero:      { left: 661, top: 0,   width: 69,  height: 132 },
-    photo:     { left: 523, top: 0,   width: 138, height: 132 },
+    /* Same as the blue side — relative to .cp2-mirrored .cp2-photo-frame
+       (fixed at left:523), not the row. */
+    photo:     { left: 0,   top: 0,   width: 138, height: 132 },
     spell:     { left: 696, top: 97,  width: 30,  height: 30 },
     level:     { left: 661, top: 132, width: 69,  height: 22, fontSize: 15 },
     role:      { left: 640, top: 134, width: 19,  height: 19 },
     name:      { left: 533, top: 132, width: 99,  height: 22, fontSize: 12.4 },
-    'rune-main': { left: 484, top: 11, width: 39, height: 39 },
-    'rune-1':    { left: 450, top: 17, width: 28, height: 28 },
-    'rune-2':    { left: 416, top: 17, width: 28, height: 28 },
-    'rune-3':    { left: 382, top: 17, width: 28, height: 28 },
-    'kda-label':  { left: 382, top: 52,  width: 141, height: 14, fontSize: 12 },
-    'kda-value':  { left: 382, top: 68,  width: 141, height: 28, fontSize: 24.8 },
-    'gold-label': { left: 382, top: 96,  width: 141, height: 14, fontSize: 12 },
-    'gold-value': { left: 382, top: 112, width: 141, height: 28, fontSize: 24.8 },
-    'dmg-taken-label': { left: 188, top: 10, width: 170, height: 14, fontSize: 12 },
-    'dmg-taken': { left: 188, top: 26, width: 170, height: 34 },
-    'dmg-dealt-label': { left: 11,  top: 10, width: 170, height: 14, fontSize: 12 },
-    'dmg-dealt': { left: 11,  top: 26, width: 170, height: 34 },
-    items:     { left: 10,  top: 81, width: 348, height: 53 },
+    'rune-main': { left: 261, top: 20, width: 54, height: 54 },
+    'rune-1':    { left: 316, top: 84, width: 40, height: 40 },
+    'rune-2':    { left: 268, top: 84, width: 40, height: 40 },
+    'rune-3':    { left: 221, top: 84, width: 40, height: 40 },
+    'kda-label':  { left: 390, top: 11,  width: 129, height: 19, fontSize: 13.8 },
+    'kda-value':  { left: 390, top: 32,  width: 129, height: 33, fontSize: 36 },
+    'gold-label': { left: 390, top: 87,  width: 129, height: 19, fontSize: 13.8 },
+    'gold-value': { left: 390, top: 108, width: 129, height: 33, fontSize: 36 },
+    'item-0': { left: 138, top: 20, width: 54, height: 54 },
+    'item-1': { left: 75,  top: 20, width: 54, height: 54 },
+    'item-2': { left: 12,  top: 20, width: 54, height: 54 },
+    'item-3': { left: 138, top: 79, width: 54, height: 54 },
+    'item-4': { left: 75,  top: 79, width: 54, height: 54 },
+    'item-5': { left: 12,  top: 79, width: 54, height: 54 },
+    'dmg-dealt-label': { left: 17, top: 10,  width: 497, height: 14, fontSize: 12 },
+    'dmg-dealt':       { left: 17, top: 26,  width: 497, height: 34 },
+    'dmg-taken-label': { left: 17, top: 89,  width: 497, height: 14, fontSize: 12 },
+    'dmg-taken':       { left: 17, top: 105, width: 497, height: 34 },
   };
   var CP2_FIELD_NAMES = {
     hero: 'Hero Image', photo: 'Player Photo', spell: 'Battle Spell', level: 'Level',
@@ -4964,9 +5065,10 @@
     'rune-1': 'Sub Rune 1', 'rune-2': 'Sub Rune 2', 'rune-3': 'Sub Rune 3',
     'kda-label': 'KDA Label', 'kda-value': 'KDA Value',
     'gold-label': 'Gold Earned Label', 'gold-value': 'Gold Earned Value',
+    'item-0': 'Item 1', 'item-1': 'Item 2', 'item-2': 'Item 3',
+    'item-3': 'Item 4', 'item-4': 'Item 5', 'item-5': 'Item 6',
     'dmg-taken-label': 'Damage Taken Label', 'dmg-taken': 'Damage Taken Bar',
     'dmg-dealt-label': 'Damage Dealt Label', 'dmg-dealt': 'Damage Dealt Bar',
-    items: 'Item Grid',
   };
 
   var CP2_DEFAULTS = {};

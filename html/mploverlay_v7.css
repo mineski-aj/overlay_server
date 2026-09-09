@@ -2668,6 +2668,49 @@
     display: block;
   }
 
+  /* ── [FEATURE: stolen-gold] "Jungle Resource Stolen" banner — auto-fires
+     at 2/5/8/12min game time (see overlay-stolengold.js), shows how much
+     jungle gold/purple-buff/orange-buff each camp has stolen from the
+     other's side (camp_list[].jungle_stolen). Slides down from off-canvas
+     above its resting position, holds for an adjustable duration
+     (Dashboard Control → Stolen Gold), then slides back up. Attached as
+     #scoreboard-overlay's own first child (see overlay-scoreboard.js) —
+     no z-index needed here, DOM order alone keeps it behind
+     #scoreboard-bg and every other scoreboard element, and its own
+     transform composes with the scoreboard's sb-on transform so this
+     banner slides in/out together with the scoreboard as a whole. */
+  #stolengold-overlay {
+    position: absolute;
+    left: 658px; top: 81px;
+    width: 602px; height: 78px;
+    background-image: url('/assets/ingame/ingame_stolenpng.png');
+    background-size: 602px 78px;
+    transform: translateY(-100%);
+    transition: transform 500ms cubic-bezier(.22, 1, .36, 1);
+    pointer-events: none;
+  }
+  #stolengold-overlay.sg-in {
+    transform: translateY(0);
+  }
+  .sg-stat {
+    position: absolute;
+    top: 0;
+    height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 30px;
+    color: #0a0a0a;
+    white-space: nowrap;
+  }
+  #sg-c1-purple { left: 44px;  width: 38px; }
+  #sg-c1-orange { left: 111px; width: 38px; }
+  #sg-c1-gold   { left: 181px; width: 64px; }
+  #sg-c2-purple { left: 398px; width: 38px; }
+  #sg-c2-orange { left: 466px; width: 38px; }
+  #sg-c2-gold   { left: 535px; width: 63px; }
+
   /* ── [FEATURE: bpm-meter] "Heart-Stopping Moment" BPM meter — retired
      from its old standalone heart_stopping_moment_v14.html page, now a
      normal panel here (see overlay-bpmmeter.js). Docked to the right

@@ -135,6 +135,23 @@
     <video id="objective-spawn-video" preload="auto" muted></video>
   </div>
 
+  <!-- [FEATURE: stolen-gold] "Jungle Resource Stolen" banner, driven by
+       overlay-stolengold.js. Auto-fires at 2/5/8/12min game time — see
+       the #stolengold-* CSS block in mploverlay_v7.css. Declared here as
+       static markup, but overlay-scoreboard.js's buildScoreboard() moves
+       this whole div to be #scoreboard-overlay's first child at page
+       load, so it slides in/out attached to the scoreboard instead of
+       staying a separate top-level layer — don't be surprised to find it
+       nested under #scoreboard-overlay in the live DOM. -->
+  <div id="stolengold-overlay">
+    <div class="sg-stat" id="sg-c1-purple"></div>
+    <div class="sg-stat" id="sg-c1-orange"></div>
+    <div class="sg-stat" id="sg-c1-gold"></div>
+    <div class="sg-stat" id="sg-c2-purple"></div>
+    <div class="sg-stat" id="sg-c2-orange"></div>
+    <div class="sg-stat" id="sg-c2-gold"></div>
+  </div>
+
   <!-- [FEATURE: bpm-meter] "Heart-Stopping Moment" BPM meter, built
        dynamically via overlay-bpmmeter.js. See the #bpmmeter-* CSS block
        in mploverlay_v7.css for what each of the four nested layers here
@@ -171,6 +188,7 @@
       <button class="tab-btn"        data-tab="swap">SWAP</button>
       <button class="tab-btn"        data-tab="killevents">KILL EVENTS</button>
       <button class="tab-btn"        data-tab="objectivespawn">OBJECTIVE SPAWN</button>
+      <button class="tab-btn"        data-tab="stolengold">STOLEN GOLD</button>
     </div>
 
     <!-- Level 15 tab -->
@@ -216,6 +234,12 @@
       <div class="debug-team" id="objectivespawn-btns" style="flex-wrap:wrap;gap:5px;justify-content:center;"></div>
     </div>
 
+    <!-- Stolen gold tab [FEATURE: stolen-gold] -->
+    <div id="tab-stolengold" class="tab-content">
+      <span class="section-note">MANUALLY TRIGGER THE BANNER — LIVE TRIGGER IS GAME_TIME CROSSING 2:00/5:00/8:00/12:00</span>
+      <button class="debug-btn" id="stolengold-trigger-btn">▶ TEST</button>
+    </div>
+
     <!-- Conceal tab [FEATURE: conceal-overlay] -->
     <div id="tab-conceal" class="tab-content">
       <span class="section-note">CAMP 1 — LEFT</span>
@@ -240,6 +264,7 @@
 <script src="html/js/overlay-conceal.js"></script>
 <script src="html/js/overlay-killevents.js"></script>
 <script src="html/js/overlay-objectivespawn.js"></script>
+<script src="html/js/overlay-stolengold.js"></script>
 <script src="html/js/overlay-fights.js"></script>
 <script src="html/js/overlay-itemcheck.js"></script>
 <script src="html/js/overlay-emblemcheck.js"></script>
