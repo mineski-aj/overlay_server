@@ -3647,6 +3647,211 @@
       position: absolute; left: 790px; top: 860px; width: 340px; height: 60px;
       z-index: 45;
     }
+
+    /* ── POST CARRY — experimental. Left half is Post H2H's own
+       #p2h-card-home structure reused verbatim (all child coordinates
+       below are relative to .pc-card, exactly like .p2h-card's children —
+       see the JS section's comment for why that made a straight copy
+       possible), showing whichever of the 10 players on either team has
+       the single highest total_damage this game (not fixed to one role).
+       The vacated middle/right space (where P2H's stat rows + away card
+       sat) becomes a 10-slice damage-share donut, one slice per player,
+       teams occupying one contiguous half-arc each rather than
+       interleaved — see pcBuildSlices' comment for the angle math. First
+       pass on positions per the user's request ("let's make this work
+       first") — expect Edit-tab nudges once this is live. */
+    #pc-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent;
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #pc-page.pc-on { display: block; }
+    #pc-page.pc-visible { opacity: 1; }
+
+    /* Card shell — identical dimensions/child layout to .p2h-card
+       (PhotoBG.png -> photo layers -> box art -> nameplate/footer/items/
+       emblems), just a single instance parked where P2H's home card sat. */
+    .pc-card {
+      position: absolute; left: 100px; top: 273px; width: 485px; height: 672px; z-index: 40;
+      opacity: 0;
+      transform: translate(-220px, 260px) rotate(-14deg) scale(0.85);
+    }
+    .pc-card.pc-dealt {
+      transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
+      transform: translate(0, 0) rotate(0deg) scale(1);
+      opacity: 1;
+    }
+    .pc-mid { opacity: 0; transform: translateY(-14px); }
+    .pc-mid.pc-mid-in {
+      transition: opacity 320ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 1; transform: translateY(0);
+    }
+    .pc-photobg {
+      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
+      object-fit: cover; object-position: 50% 0%; display: block;
+      z-index: 40;
+    }
+    .pc-photo-box {
+      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
+      overflow: hidden; z-index: 41;
+    }
+    .pc-photo-front, .pc-photo-sig {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: 50% 0%; display: block;
+    }
+    .pc-photo-front { opacity: 1; }
+    .pc-photo-sig   { opacity: 0; }
+    .pc-card.pc-posed .pc-photo-front { opacity: 0; transition: opacity 220ms ease; }
+    .pc-card.pc-posed .pc-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    .pc-box {
+      position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
+      z-index: 42; display: block;
+    }
+    .pc-logo {
+      position: absolute; left: 5px; top: 522px; width: 74px; height: 53px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+    }
+    .pc-logo img { width: 100%; height: 100%; object-fit: cover; }
+    .pc-role-icon {
+      position: absolute; left: 72px; top: 527px; width: 67px; height: 44px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+    }
+    .pc-role-icon img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); }
+    .pc-name {
+      position: absolute; left: 150px; top: 525px; width: 325px; height: 44px;
+      display: flex; align-items: center; justify-content: center; z-index: 43;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 26px; color: #fff;
+      text-transform: uppercase; white-space: nowrap; text-align: center;
+    }
+    .pc-footer-value {
+      position: absolute; top: 577px; height: 44px; z-index: 43;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 21px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    .pc-kda-value  { left: 90px; width: 90px; }
+    .pc-kp-value   { left: 254px; width: 65px; text-align: center; justify-content: center; }
+    .pc-gold-value { left: 400px; width: 75px; }
+    .pc-item { position: absolute; top: 629px; width: 38px; height: 38px; z-index: 43; object-fit: contain; }
+    .pc-item-0 { left: 213px; }
+    .pc-item-1 { left: 256px; }
+    .pc-item-2 { left: 299px; }
+    .pc-item-3 { left: 343px; }
+    .pc-item-4 { left: 385px; }
+    .pc-item-5 { left: 429px; }
+    .pc-emblem { position: absolute; top: 630px; z-index: 43; object-fit: contain; }
+    .pc-emblem-0 { left: 17px;  width: 37px; height: 36px; top: 630px; }
+    .pc-emblem-1 { left: 64px;  width: 26px; height: 26px; top: 635px; }
+    .pc-emblem-2 { left: 96px;  width: 27px; height: 26px; top: 635px; }
+    .pc-emblem-3 { left: 127px; width: 26px; height: 26px; top: 635px; }
+
+    /* Donut — parks in the vacated middle+away-card space (P2H's stat
+       column ran x676-1243, away card ran x1335-1820; the donut is
+       centered across that whole span instead). 760x760 local box,
+       1 SVG unit == 1px (no viewBox scaling), so pcSetupDonut/pcUpdateDonutGeometry's JS
+       coordinates (PC_CX/PC_CY/PC_OUTER_R/etc) line up directly with
+       both the <svg> paths and the plain-HTML label divs on top of it.
+       Sized/centered (PC_CX=PC_CY=380, dead center) so Phase 1's flat
+       backdrop disc — radius PC_OUTER_R+PC_PANEL_PADDING=350, the single
+       largest shape ever drawn here — fits with margin on every side;
+       a smaller box (this used to be 700x700 with PC_CY=330, off-center)
+       clipped that disc's top edge against the SVG's own bounds, since
+       an <svg> clips to its own box by default. left/top are chosen so
+       the ring's on-screen CENTER stays exactly where it was before
+       (890+350, 259+330) = (860+380, 209+380) — Phase 2's settled look
+       is unaffected, only Phase 1 stopped clipping. */
+    #pc-donut-wrap {
+      position: absolute; left: 860px; top: 209px; width: 760px; height: 760px;
+      z-index: 40;
+    }
+    /* Dark backdrop card behind the whole donut, including under the
+       center hole — the scene's own ambient background is a light
+       marble texture, which washed out the white total/split text and
+       made the ring itself read as low-contrast; a solid dark card
+       fixes both at once, same idea as the black canvas in the
+       reference mock. Drawn INSIDE #pc-donut-svg (not a separate HTML
+       div) as its own top-ellipse + front-wall pair — the exact same
+       two-piece technique as the ring itself (see pcSetupDonut/
+       pcUpdateDonutGeometry's #pc-backdrop-wall/#pc-backdrop-top) at a
+       padded radius, sharing the identical squash/depth values every
+       frame — a plain CSS ellipse can't fake the ring's own drum
+       perspective, this can, because it's built the same way. */
+    #pc-donut-svg { position: absolute; left: 0; top: 0; width: 760px; height: 760px; }
+    #pc-donut-labels { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .pc-slice-label {
+      position: absolute; transform: translate(-50%, -50%);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      pointer-events: none;
+    }
+    .pc-slice-label img { width: 34px; height: 34px; object-fit: contain; filter: brightness(0) invert(1); }
+    .pc-slice-label span {
+      font-family: 'Anton', sans-serif; font-size: 19px; color: #fff;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    /* Featured (highest-damage) slice's own label — bumped up slightly
+       since it's now sitting further out on the exploded slice, plus a
+       warm glow behind the text to match the slice's own halo (see
+       .pc-featured-halo below) instead of just the plain drop shadow
+       every other label gets. */
+    .pc-slice-label-featured img { width: 40px; height: 40px; }
+    .pc-slice-label-featured span {
+      font-size: 23px;
+      text-shadow: 0 0 10px rgba(255, 214, 64, 0.85), 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Glow halo behind the featured slice's crisp top face (see
+       pcSetupDonut/#pc-glow-blur) — hidden until the Phase 2 morph
+       actually settles (pcMorphTo3D adds .pc-halo-active), then pulses
+       continuously so the exploded slice keeps drawing the eye instead
+       of just popping once and going static. */
+    .pc-featured-halo {
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .pc-featured-halo.pc-halo-active {
+      animation: pc-halo-pulse 1600ms ease-in-out infinite;
+    }
+    @keyframes pc-halo-pulse {
+      0%, 100% { opacity: 0.4; }
+      50%      { opacity: 1; }
+    }
+    /* Crisp neon outline stroke on the featured slice (see pcSetupDonut's
+       neonGlowEl/neonCoreEl) — this is just the sharp "core" line; the
+       soft colored glow around it reuses .pc-featured-halo above (same
+       fade+pulse, shared class) rather than a second set of keyframes. */
+    .pc-featured-neon-core {
+      opacity: 0;
+      transition: opacity 300ms ease;
+    }
+    .pc-featured-neon-core.pc-neon-core-active { opacity: 1; }
+    /* Vertically re-tuned for the tilted-ellipse hole (PC_SQUASH=0.52
+       shrinks the visible hole to ~156px tall around PC_CY=380, i.e.
+       roughly y302-458 — see the JS section's PC_* constants) — noticeably
+       shorter than a plain circular hole, so these three lines sit
+       tighter together than a flat donut's center text would. */
+    .pc-donut-total {
+      position: absolute; left: 50%; top: 355px; transform: translate(-50%, -50%);
+      font-family: 'Anton', sans-serif; font-size: 50px; color: #fff; white-space: nowrap;
+    }
+    .pc-donut-total-label {
+      position: absolute; left: 50%; top: 395px; transform: translate(-50%, -50%);
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 14px;
+      color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap;
+    }
+    .pc-donut-split {
+      position: absolute; left: 50%; top: 428px; transform: translate(-50%, -50%);
+      font-family: 'Anton', sans-serif; font-size: 24px; white-space: nowrap;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .pc-split-blue { color: #3B82F6; }
+    .pc-split-red  { color: #FF3232; }
+    .pc-split-dot  { color: #94a3b8; font-family: 'General Sans', sans-serif; font-weight: 700; }
+
   </style>
 </head>
 <body>
@@ -3888,6 +4093,16 @@
         <button class="dbg-btn show" onclick="showPostH2H()">▶ SHOW</button>
         <button class="dbg-btn hide" onclick="hidePostH2H()">■ HIDE</button>
         <button class="dbg-btn preview" id="preview-post_h2h" onclick="toggleLocalPreview('post_h2h', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
+    <!-- POST CARRY (experimental) -->
+    <div class="feature-card">
+      <div class="feature-card-label">Post Carry</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostCarry()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostCarry()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-post_carry" onclick="toggleLocalPreview('post_carry', this)">◈ PREVIEW</button>
       </div>
     </div>
 
@@ -4474,6 +4689,44 @@
       </div>
 
       <div id="p2h-sponsor"></div>
+    </div>
+    <div id="pc-page">
+      <div class="pc-card" id="pc-card">
+        <img class="pc-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
+        <div class="pc-photo-box">
+          <img class="pc-photo-front" id="pc-photo-front" src="" alt="">
+          <img class="pc-photo-sig"   id="pc-photo-sig"   src="" alt="">
+        </div>
+        <img class="pc-box" id="pc-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
+        <div class="pc-logo"><img id="pc-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="pc-role-icon"><img id="pc-role" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="pc-name" id="pc-name"></div>
+        <div class="pc-footer-value pc-kda-value" id="pc-kda"></div>
+        <div class="pc-footer-value pc-kp-value" id="pc-kp"></div>
+        <div class="pc-footer-value pc-gold-value" id="pc-gold"></div>
+        <img class="pc-emblem pc-emblem-0" id="pc-emblem-0" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-emblem pc-emblem-1" id="pc-emblem-1" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-emblem pc-emblem-2" id="pc-emblem-2" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-emblem pc-emblem-3" id="pc-emblem-3" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-0" id="pc-item-0" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-1" id="pc-item-1" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-2" id="pc-item-2" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-3" id="pc-item-3" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-4" id="pc-item-4" src="" alt="" onerror="this.style.display='none'">
+        <img class="pc-item pc-item-5" id="pc-item-5" src="" alt="" onerror="this.style.display='none'">
+      </div>
+
+      <div id="pc-donut-wrap" class="pc-mid">
+        <svg id="pc-donut-svg" width="760" height="760" viewBox="0 0 760 760"></svg>
+        <div id="pc-donut-labels"></div>
+        <div class="pc-donut-total" id="pc-donut-total"></div>
+        <div class="pc-donut-total-label">TOTAL</div>
+        <div class="pc-donut-split">
+          <span class="pc-split-blue" id="pc-split-blue"></span>
+          <span class="pc-split-dot">&middot;</span>
+          <span class="pc-split-red" id="pc-split-red"></span>
+        </div>
+      </div>
     </div>
     <div id="mvp-page">
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
@@ -5936,6 +6189,7 @@
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
       post_h2h:   '/assets/bgloopwaves2.webm',
+      post_carry: '/assets/bgloopwaves2.webm',
       hearts:     '/assets/bgloopwaves2.webm',
       timeline:   '/assets/bgloopwaves2.webm',
       emblems:    '/assets/bgloopwaves2.webm',
@@ -9412,13 +9666,13 @@
        MVP-Highlights-style full-screen scene (its own plaque/photo, no
        Matchboard), same as 'highlights'/'mvp' below, not a Post-family
        scene alongside Matchboard/Middleboard/Playerboard. */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h', 'post_carry']);
 
     /* Post scenes that use Matchboard's shorter "compact" layout (camp
        boxes moved up 36px, tournament logo swapped for the smaller
        #mb-tournament-cp — see the .cp-compact CSS rules). Everything
        else in POST_FEATURES uses the regular, taller layout. */
-    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h']);
+    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h', 'post_carry']);
 
     /* Flips #match-board's .cp-compact class — but fades #mb-camp1/
        #mb-camp2/the tournament-logo pair out first when Matchboard is
@@ -9517,7 +9771,7 @@
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
         else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
-        else if (newFeature === 'post4key' || newFeature === 'post_h2h') {
+        else if (newFeature === 'post4key' || newFeature === 'post_h2h' || newFeature === 'post_carry') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);
           hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed two-card layout + own header/sponsor loop already shown — and must actively turn these off in case they're still on from a prior Post scene */
@@ -9591,6 +9845,7 @@
       if (prev === 'consolidated_post_2') return hideConsolidatedPost2();
       if (prev === 'post4key') return hidePost4Key();
       if (prev === 'post_h2h') return hidePostH2H();
+      if (prev === 'post_carry') return hidePostCarry();
       return Promise.resolve();
     }
 
@@ -12128,6 +12383,565 @@
     }
 
     /* ════════════════════════════════════════════════
+       POST CARRY (experimental) — Post H2H's own #p2h-card-home markup
+       reused as a single card (see the CSS section's comment for why the
+       child coordinates carried over unchanged), showing whichever of
+       the 10 players on either team has the single highest total_damage
+       this game. The vacated stat-column + away-card space becomes a
+       10-slice donut: one slice per player, sized by that player's share
+       of the whole game's total damage, teams occupying one contiguous
+       half-arc each (not interleaved) so the split reads as "blue side /
+       red side" the way the reference mock did. Reuses
+       fetchH2HGameData/fetchH2HMatchState as-is — same gamedata-proxy/
+       match-state feed Post H2H already reads, no new endpoint needed.
+    ════════════════════════════════════════════════ */
+    const pcPage = document.getElementById('pc-page');
+
+    const PC_CX = 380, PC_CY = 380, PC_OUTER_R = 300, PC_INNER_R = 150, PC_LABEL_R = 228;
+    const PC_GAP_DEG = 1.4;          // thin dark seam between top-face slices (stroke-free — see pcUpdateDonutGeometry)
+    const PC_MIN_PCT_FOR_LABEL = 5;  // below this, the slice is too thin for its role icon/% (per the reference mock) — draw the color only
+    /* Real "drum" 3D, not just shading — the ring is drawn as a tilted
+       ellipse (squash compresses the vertical radius) with an extruded
+       outer wall of some depth hanging below the FRONT half only (angles
+       90-270 in pcPolar3D's convention, i.e. the near/bottom side facing
+       the viewer) — the far half's wall is behind the top surface itself
+       and would never be visible even on a real object, so it's simply
+       never drawn. See pcSetupDonut/pcUpdateDonutGeometry's walls-then-
+       tops paint order that makes the seam line up.
+
+       Two-phase reveal: pcSetupDonut builds the SVG once at squash=1/
+       depth=0 — a plain flat 2D donut (Phase 1) — then pcMorphTo3D
+       animates squash/depth up to these TARGET values (Phase 2),
+       calling pcUpdateDonutGeometry every frame to rewrite each path's
+       'd' (and each label's x/y) in place rather than rebuilding the
+       SVG, so the morph is cheap enough to run at 60fps. */
+    const PC_SQUASH_TARGET = 0.52;
+    const PC_DEPTH_TARGET = 72;
+    /* The featured (highest-damage) slice "explodes" outward from the
+       ring — same trick real pie/donut charts use to call out one wedge
+       — by rendering ONLY that slice's wall+top around a shifted center
+       (PC_CX/PC_CY + an offset along its own mid-angle) instead of the
+       ring's real center; every other slice keeps drawing from the true
+       center, so only the featured one visibly detaches. Animated
+       0->PC_EXPLODE_DIST alongside the Phase 2 morph — see pcMorphTo3D. */
+    const PC_EXPLODE_DIST = 36;
+
+    /* Offset vector for the explode, in the SAME flattened-ellipse space
+       as pcPolar3D (squash scales the y term identically) so the pulled-
+       out slice moves in a direction consistent with the current tilt
+       instead of popping out "flat" while the rest of the donut is
+       still mid-morph. */
+    function pcExplodeOffset(midAngle, squash, dist) {
+      const a = (midAngle - 90) * Math.PI / 180;
+      return { dx: dist * Math.cos(a), dy: dist * squash * Math.sin(a) };
+    }
+    /* Back-ease (small overshoot past 1 before settling) — used only for
+       the explode distance, so the featured slice "pops" out with a
+       little punch instead of just gliding to a stop like the squash/
+       depth morph does. */
+    function pcEaseOutBack(t) {
+      const c1 = 1.70158, c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    const PC_PANEL_PADDING = 50; // dark backdrop's margin beyond the ring's own outer edge
+
+    /* Draws the backdrop as the SAME two-piece drum the ring itself uses
+       (see pcOuterWallPath/pcFullEllipsePath) at a padded radius — NOT a
+       plain stretched ellipse — so at squash=1/depth=0 it's a flat disc
+       matching Phase 1's flat ring, and as squash/depth animate toward
+       the ring's own target values it grows the identical front wall,
+       staying in the same tilted perspective as the ring the whole way
+       through Phase 2 instead of just getting taller. The wall's own
+       depth is padded a bit past the ring's `depth` (see the
+       `padding*(1-squash)` term) purely so a consistent ~PC_PANEL_PADDING
+       margin of dark card shows past the ring's own bottom edge at every
+       point in the morph, not just at the final settled frame. */
+    function pcUpdateDonutBackdrop(squash, depth) {
+      const backdropWallEl = document.getElementById('pc-backdrop-wall');
+      const backdropTopEl = document.getElementById('pc-backdrop-top');
+      const r = PC_OUTER_R + PC_PANEL_PADDING;
+      const wallDepth = depth + PC_PANEL_PADDING * (1 - squash);
+      if (wallDepth > 0.01) {
+        backdropWallEl.setAttribute('d', pcOuterWallPath(PC_CX, PC_CY, r, 90, 270, squash, wallDepth));
+        backdropWallEl.style.display = '';
+      } else {
+        backdropWallEl.style.display = 'none'; // Phase 1 — flat disc, no wall yet
+      }
+      backdropTopEl.setAttribute('d', pcFullEllipsePath(PC_CX, PC_CY, r, squash));
+    }
+
+    function pcHexToRgb(hex) {
+      const v = hex.replace('#', '');
+      return [parseInt(v.slice(0, 2), 16), parseInt(v.slice(2, 4), 16), parseInt(v.slice(4, 6), 16)];
+    }
+    function pcMix(a, b, t) { return a.map((v, i) => Math.round(v + (b[i] - v) * t)); }
+    function pcRgbStr(c) { return `rgb(${c[0]},${c[1]},${c[2]})`; }
+    function pcLighten(c, amt) { return pcMix(c, [255, 255, 255], amt); }
+    /* 5 shades per team, light->dark across seats 0-4, anchored on the
+       exact same blue/red endpoints as Post H2H's own .p2h-bar-fill/
+       .p2h-bar-track gradients — same brand colors, just resampled per
+       player instead of per home/away side. */
+    function pcTeamColor(team, idx) {
+      const light = pcHexToRgb(team === 1 ? '#1E64FF' : '#FF3232');
+      const dark  = pcHexToRgb(team === 1 ? '#0F2E70' : '#7A1010');
+      return pcMix(light, dark, idx / 4);
+    }
+    /* Saturated "neon" accent per team — brighter/punchier than either of
+       pcTeamColor's own shades, used ONLY for the featured slice's glow
+       halo + outline stroke (see pcSetupDonut), so the highlight reads as
+       an electric version of that team's own color rather than an
+       unrelated accent color competing with it. */
+    function pcNeonColor(team) {
+      return team === 1 ? [0, 225, 255] : [255, 23, 68]; // neon cyan-blue / neon red
+    }
+
+    /* 0deg == 12 o'clock, increasing clockwise, same as before — just with
+       the y term scaled by `squash` (a per-call param now, not a fixed
+       constant, so the same function draws every frame of the Phase
+       1->2 morph — squash=1 is a plain circle, squash<1 tilts it into
+       an ellipse) so the circle reads as an ellipse tilted away from
+       the viewer. */
+    function pcPolar3D(cx, cy, r, angleDeg, squash) {
+      const a = (angleDeg - 90) * Math.PI / 180;
+      return { x: cx + r * Math.cos(a), y: cy + r * squash * Math.sin(a) };
+    }
+    function pcSliceTopPath(cx, cy, outerR, innerR, startAngle, endAngle, squash) {
+      const largeArc = (endAngle - startAngle) > 180 ? 1 : 0;
+      const p1 = pcPolar3D(cx, cy, outerR, startAngle, squash);
+      const p2 = pcPolar3D(cx, cy, outerR, endAngle, squash);
+      const p3 = pcPolar3D(cx, cy, innerR, endAngle, squash);
+      const p4 = pcPolar3D(cx, cy, innerR, startAngle, squash);
+      return [
+        `M ${p1.x} ${p1.y}`,
+        `A ${outerR} ${outerR * squash} 0 ${largeArc} 1 ${p2.x} ${p2.y}`,
+        `L ${p3.x} ${p3.y}`,
+        `A ${innerR} ${innerR * squash} 0 ${largeArc} 0 ${p4.x} ${p4.y}`,
+        'Z',
+      ].join(' ');
+    }
+    /* The extruded outer wall for the arc range [a0,a1] (already clamped
+       by the caller to the visible 90-270 front half) — top edge is the
+       outer ellipse arc, bottom edge is the exact same arc translated
+       straight down by `depth` (translating an ellipse by a constant
+       vector doesn't change its rx/ry, so the same "A outerR outerR*
+       squash" arc command is valid for both edges — only the sweep
+       direction flips to close the loop). depth=0 (Phase 1) collapses
+       top and bottom edges onto each other, i.e. a zero-height/invisible
+       wall — pcUpdateDonutGeometry skips calling this entirely in that
+       case rather than relying on a degenerate path, see below. */
+    function pcOuterWallPath(cx, cy, outerR, a0, a1, squash, depth) {
+      const largeArc = (a1 - a0) > 180 ? 1 : 0;
+      const pTop0 = pcPolar3D(cx, cy, outerR, a0, squash);
+      const pTop1 = pcPolar3D(cx, cy, outerR, a1, squash);
+      const pBot0 = { x: pTop0.x, y: pTop0.y + depth };
+      const pBot1 = { x: pTop1.x, y: pTop1.y + depth };
+      return [
+        `M ${pTop0.x} ${pTop0.y}`,
+        `A ${outerR} ${outerR * squash} 0 ${largeArc} 1 ${pTop1.x} ${pTop1.y}`,
+        `L ${pBot1.x} ${pBot1.y}`,
+        `A ${outerR} ${outerR * squash} 0 ${largeArc} 0 ${pBot0.x} ${pBot0.y}`,
+        'Z',
+      ].join(' ');
+    }
+    /* A complete (solid, no hole) tilted ellipse — the backdrop's own
+       "lid", drawn as two half-arcs (the standard trick for a full circle/
+       ellipse in one SVG path, since a single arc command can't close a
+       360deg loop on its own start/end point). */
+    function pcFullEllipsePath(cx, cy, r, squash) {
+      const rx = r, ry = r * squash;
+      return `M ${cx - rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx + rx} ${cy} A ${rx} ${ry} 0 1 0 ${cx - rx} ${cy} Z`;
+    }
+
+    /* teams: [{team:1, seats:[...]}, {team:2, seats:[...]}]. Single
+       continuous clockwise sweep starting at 12 o'clock — team[0]'s
+       slices first (so its whole share is one contiguous arc), then
+       team[1]'s fill the remainder back around to the start. Order
+       within a team follows seat_1..seat_5 as-is, same as every other
+       Post scene's extractSeats — no reordering by role. */
+    function pcBuildSlices(teams) {
+      const all = [];
+      teams.forEach(t => t.seats.forEach(s => all.push(s)));
+      const grand = all.reduce((sum, s) => sum + ((s && s.total_damage) || 0), 0) || 1;
+      let angle = 0;
+      const slices = [];
+      teams.forEach(t => {
+        t.seats.forEach((s, idx) => {
+          const dmg = (s && s.total_damage) || 0;
+          const pct = dmg / grand * 100;
+          const start = angle, end = angle + (pct / 100) * 360;
+          slices.push({ seat: s, team: t.team, idx, dmg, pct, start, end });
+          angle = end;
+        });
+      });
+      return { slices, grand };
+    }
+
+    /* Slice elements from the most recent pcSetupDonut call — kept around
+       so pcUpdateDonutGeometry (called every animation frame during the
+       Phase 1->2 morph, see pcMorphTo3D) can rewrite each path/label's
+       position in place instead of rebuilding the SVG from scratch each
+       frame. */
+    let pcSlicesState = [];
+
+    /* Builds the SVG structure ONCE per Show — defs/gradients/path
+       elements/label divs — then renders it at squash=1, depth=0: a
+       flat 2D donut (Phase 1). pcMorphTo3D (see pcPlayAnimation) later
+       animates it into the tilted "drum" (Phase 2) by calling
+       pcUpdateDonutGeometry every frame; that function only ever
+       touches attributes on the elements built here, never touches
+       innerHTML again, so the morph is just attribute writes — cheap
+       enough for 60fps. */
+    function pcSetupDonut(slices, grand) {
+      const svg = document.getElementById('pc-donut-svg');
+      const labelsWrap = document.getElementById('pc-donut-labels');
+      labelsWrap.innerHTML = '';
+      pcSlicesState = [];
+
+      let defs = `<defs>
+        <filter id="pc-drop-shadow" x="-40%" y="-40%" width="180%" height="220%">
+          <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000" flood-opacity="0.5"></feDropShadow>
+        </filter>
+        <filter id="pc-glow-blur" x="-140%" y="-140%" width="380%" height="380%">
+          <feGaussianBlur stdDeviation="22"></feGaussianBlur>
+        </filter>`;
+      slices.forEach(sl => {
+        if (sl.pct <= 0) return;
+        const base = pcTeamColor(sl.team, sl.idx);
+        const lite = pcLighten(base, 0.22);
+        const mid = (sl.start + sl.end) / 2;
+        // Gradient axis computed at the TARGET (tilted) angle even
+        // though Phase 1 starts flat — it only needs to point roughly
+        // "outward", so it doesn't need to re-animate per frame too.
+        const outerMid = pcPolar3D(PC_CX, PC_CY, PC_OUTER_R, mid, PC_SQUASH_TARGET);
+        defs += `<linearGradient id="pc-grad-${sl.team}-${sl.idx}" gradientUnits="userSpaceOnUse" x1="${PC_CX}" y1="${PC_CY}" x2="${outerMid.x.toFixed(1)}" y2="${outerMid.y.toFixed(1)}">
+          <stop offset="0%" stop-color="${pcRgbStr(base)}"></stop>
+          <stop offset="100%" stop-color="${pcRgbStr(lite)}"></stop>
+        </linearGradient>`;
+      });
+      defs += '</defs>';
+      // One filtered group wrapping BOTH walls and tops (nested sub-groups
+      // just for DOM z-order) so the drop-shadow reads as a single shadow
+      // under the whole flattened silhouette, not two separate shadows.
+      // The featured slice's own wall+top get pulled OUT of that shared
+      // group into #pc-featured, painted last (on top of every other
+      // slice) since exploding it outward means it now overlaps its
+      // neighbors' edges — #pc-featured-halo (a blurred duplicate of just
+      // its top face) sits just behind that, its own blur-only filter so
+      // it doesn't also pick up a second drop-shadow.
+      // Backdrop drawn FIRST (behind everything) as its own top-ellipse +
+      // front-wall pair — same technique/paint order as the ring itself
+      // (wall behind, top cap in front) at a padded radius, so it shares
+      // the ring's exact drum perspective instead of being a flat oval.
+      svg.innerHTML = defs +
+        '<g filter="url(#pc-drop-shadow)"><path id="pc-backdrop-wall" fill="#141416"></path><path id="pc-backdrop-top" fill="#26262a"></path></g>' +
+        '<g filter="url(#pc-drop-shadow)"><g id="pc-walls"></g><g id="pc-tops"></g></g>' +
+        '<g id="pc-featured-halo"></g>' +
+        '<g id="pc-featured" filter="url(#pc-drop-shadow)"></g>';
+      const wallsG = document.getElementById('pc-walls');
+      const topsG = document.getElementById('pc-tops');
+      const haloG = document.getElementById('pc-featured-halo');
+      const featG = document.getElementById('pc-featured');
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+
+      slices.forEach(sl => {
+        if (sl.pct <= 0) return;
+        const isFeatured = !!sl.isFeatured;
+
+        const wallEl = document.createElementNS(SVG_NS, 'path');
+        wallEl.setAttribute('fill', pcRgbStr(pcMix(pcTeamColor(sl.team, sl.idx), [0, 0, 0], 0.42)));
+        (isFeatured ? featG : wallsG).appendChild(wallEl);
+
+        const topEl = document.createElementNS(SVG_NS, 'path');
+        topEl.setAttribute('fill', `url(#pc-grad-${sl.team}-${sl.idx})`);
+        (isFeatured ? featG : topsG).appendChild(topEl);
+
+        let haloEl = null, neonGlowEl = null, neonCoreEl = null;
+        if (isFeatured) {
+          const neon = pcRgbStr(pcNeonColor(sl.team));
+
+          haloEl = document.createElementNS(SVG_NS, 'path');
+          // Neon-tinted, not the slice's own flat team hue — a same-color
+          // blur reads as a soft shadow when it's sitting next to more of
+          // the same team's slices; blending toward the neon accent below
+          // makes the halo itself read as "electric" rather than shadow.
+          haloEl.setAttribute('fill', pcRgbStr(pcMix(pcTeamColor(sl.team, sl.idx), pcNeonColor(sl.team), 0.65)));
+          haloEl.setAttribute('filter', 'url(#pc-glow-blur)');
+          haloEl.setAttribute('class', 'pc-featured-halo');
+          haloG.appendChild(haloEl);
+
+          // Neon outline — a soft blurred wide stroke (the glow) directly
+          // under a crisp thin stroke (the core), the same two-layer trick
+          // that makes a real neon sign/tube read as glowing rather than
+          // just colored. Both trace the SAME slice outline as topEl
+          // (pcUpdateDonutGeometry keeps their 'd' in sync with it), and
+          // both live in #pc-featured so they paint above the fill.
+          neonGlowEl = document.createElementNS(SVG_NS, 'path');
+          neonGlowEl.setAttribute('fill', 'none');
+          neonGlowEl.setAttribute('stroke', neon);
+          neonGlowEl.setAttribute('stroke-width', '14');
+          neonGlowEl.setAttribute('stroke-linejoin', 'round');
+          neonGlowEl.setAttribute('filter', 'url(#pc-glow-blur)');
+          neonGlowEl.setAttribute('class', 'pc-featured-halo'); // shares the halo's fade-in + pulse — see .pc-halo-active
+          featG.appendChild(neonGlowEl);
+
+          neonCoreEl = document.createElementNS(SVG_NS, 'path');
+          neonCoreEl.setAttribute('fill', 'none');
+          neonCoreEl.setAttribute('stroke', neon);
+          neonCoreEl.setAttribute('stroke-width', '4');
+          neonCoreEl.setAttribute('stroke-linejoin', 'round');
+          neonCoreEl.setAttribute('class', 'pc-featured-neon-core');
+          featG.appendChild(neonCoreEl);
+        }
+
+        let labelEl = null;
+        if (sl.pct >= PC_MIN_PCT_FOR_LABEL) {
+          labelEl = document.createElement('div');
+          labelEl.className = 'pc-slice-label' + (isFeatured ? ' pc-slice-label-featured' : '');
+          const roleImg = (sl.seat && sl.seat.role) ? '/role/' + encodeURIComponent(roleFile(sl.seat.role)) + '.png' : '';
+          labelEl.innerHTML = (roleImg ? `<img src="${roleImg}" alt="" onerror="this.style.display='none'">` : '') +
+            `<span>${sl.pct.toFixed(1)}%</span>`;
+          labelsWrap.appendChild(labelEl);
+        }
+
+        pcSlicesState.push({ sl, wallEl, topEl, haloEl, neonGlowEl, neonCoreEl, labelEl });
+      });
+
+      document.getElementById('pc-donut-total').textContent =
+        grand >= 1000 ? (grand / 1000).toFixed(1) + 'K' : String(Math.round(grand));
+      const team1Pct = Math.round(slices.filter(s => s.team === 1).reduce((sum, s) => sum + s.pct, 0));
+      document.getElementById('pc-split-blue').textContent = team1Pct + '%';
+      document.getElementById('pc-split-red').textContent = (100 - team1Pct) + '%';
+
+      pcUpdateDonutGeometry(1, 0, 0); // flat circle, zero-depth walls, not exploded — Phase 1's starting look
+    }
+
+    /* Rewrites every slice's wall/top/halo path 'd' and label x/y for the
+       given squash/depth/explode — called once directly (Phase 1's flat
+       state) and then every rAF frame during pcMorphTo3D (Phase 2).
+       `explode` (0-1) only ever moves the featured slice — see
+       pcExplodeOffset — every other slice always draws from the ring's
+       true center regardless of its value. */
+    function pcUpdateDonutGeometry(squash, depth, explode) {
+      pcUpdateDonutBackdrop(squash, depth);
+      pcSlicesState.forEach(({ sl, wallEl, topEl, haloEl, neonGlowEl, neonCoreEl, labelEl }) => {
+        const mid = (sl.start + sl.end) / 2;
+        let cx = PC_CX, cy = PC_CY;
+        if (sl.isFeatured && explode > 0) {
+          const off = pcExplodeOffset(mid, squash, PC_EXPLODE_DIST * explode);
+          cx = PC_CX + off.dx;
+          cy = PC_CY + off.dy;
+        }
+
+        const wallStart = Math.max(sl.start, 90);
+        const wallEnd = Math.min(sl.end, 270);
+        if (depth > 0.01 && wallEnd > wallStart) {
+          wallEl.setAttribute('d', pcOuterWallPath(cx, cy, PC_OUTER_R, wallStart, wallEnd, squash, depth));
+          wallEl.style.display = '';
+        } else {
+          wallEl.style.display = 'none'; // Phase 1 (depth=0) — no walls at all, a plain flat ring
+        }
+
+        const gapStart = sl.start + PC_GAP_DEG / 2;
+        const gapEnd = sl.end - PC_GAP_DEG / 2;
+        if (gapEnd > gapStart) {
+          const d = pcSliceTopPath(cx, cy, PC_OUTER_R, PC_INNER_R, gapStart, gapEnd, squash);
+          topEl.setAttribute('d', d);
+          topEl.style.display = '';
+          if (haloEl) { haloEl.setAttribute('d', d); haloEl.style.display = ''; }
+          if (neonGlowEl) { neonGlowEl.setAttribute('d', d); neonGlowEl.style.display = ''; }
+          if (neonCoreEl) { neonCoreEl.setAttribute('d', d); neonCoreEl.style.display = ''; }
+        } else {
+          topEl.style.display = 'none'; // slice thinner than the seam gap itself
+          if (haloEl) haloEl.style.display = 'none';
+          if (neonGlowEl) neonGlowEl.style.display = 'none';
+          if (neonCoreEl) neonCoreEl.style.display = 'none';
+        }
+
+        if (labelEl) {
+          const p = pcPolar3D(cx, cy, PC_LABEL_R, mid, squash);
+          labelEl.style.left = p.x + 'px';
+          labelEl.style.top = p.y + 'px';
+        }
+      });
+    }
+
+    /* Mirrors p2hApplyCard field-for-field (hero icon/role icon/name/
+       KDA-KP-Gold footer/emblems/items) — the only difference is there's
+       one instance instead of a home+away pair, and the box-art asset is
+       picked per the featured player's own team instead of being fixed
+       to a side. */
+    function pcApplyCard(seat, team) {
+      document.getElementById('pc-box').src = team === 2 ? '/assets/PostH2H/PH2HRed_Box.png' : '/assets/PostH2H/PH2HBlue_Box.png';
+
+      const logoEl = document.getElementById('pc-logo');
+      logoEl.onerror = () => { logoEl.style.display = 'none'; };
+      logoEl.style.display = '';
+      logoEl.src = (seat && seat.heroid) ? '/hero/HERO_' + seat.heroid + '_KOTAK.png' : '';
+
+      const roleEl = document.getElementById('pc-role');
+      roleEl.onerror = () => { roleEl.style.display = 'none'; };
+      roleEl.style.display = '';
+      roleEl.src = (seat && seat.role) ? '/role/' + encodeURIComponent(roleFile(seat.role)) + '.png' : '';
+
+      document.getElementById('pc-name').textContent = (seat && seat.name) || '';
+
+      const cardEl = document.getElementById('pc-card');
+      if (cardEl) cardEl.classList.remove('pc-posed');
+      const frontEl = document.getElementById('pc-photo-front');
+      frontEl.onerror = () => { frontEl.style.display = 'none'; };
+      frontEl.style.display = '';
+      frontEl.src = luPoseUrl(seat && seat.name, 'FRONT');
+      const sigEl = document.getElementById('pc-photo-sig');
+      sigEl.onerror = () => { sigEl.style.display = 'none'; };
+      sigEl.style.display = '';
+      sigEl.src = hlPhotoUrl(seat && seat.name);
+
+      document.getElementById('pc-kda').textContent =
+        seat ? `${seat.kill_num || 0}/${seat.dead_num || 0}/${seat.assist_num || 0}` : '-/-/-';
+      document.getElementById('pc-kp').textContent = (seat && seat.kp != null) ? seat.kp + '%' : '-';
+      document.getElementById('pc-gold').textContent = fmtGold(seat && seat.gold);
+
+      const runeIds = [seat && seat.rune_id, seat && seat.rune_map_1, seat && seat.rune_map_2, seat && seat.rune_map_3];
+      for (let i = 0; i < 4; i++) {
+        const el = document.getElementById('pc-emblem-' + i);
+        const id = runeIds[i];
+        el.onerror = () => { el.style.display = 'none'; };
+        el.style.display = '';
+        el.src = id ? '/emblem/square_' + id + '_RUNES.png' : '';
+      }
+
+      const items = (seat && seat.equip_list) || [];
+      for (let i = 0; i < 6; i++) {
+        const el = document.getElementById('pc-item-' + i);
+        el.onerror = () => { el.style.display = 'none'; };
+        if (items[i] && items[i].value) {
+          el.style.display = '';
+          el.src = '/items/' + items[i].value + '.png';
+        } else {
+          el.style.display = 'none';
+          el.src = '';
+        }
+      }
+    }
+
+    function pcApply(gameData) {
+      const camps = (gameData && gameData.camp_list) || [];
+      const camp1 = camps.find(c => c.campid === 1) || null; // blue/left
+      const camp2 = camps.find(c => c.campid === 2) || null; // red/right
+      const extractSeats = camp => camp ? ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].map(k => camp[k]).filter(Boolean) : [];
+
+      // Red goes first — pcBuildSlices starts its very first slice at 12
+      // o'clock and sweeps clockwise, so whichever team is listed first
+      // lands on the right (12 through 3 down to ~6) and the second team
+      // fills the rest, wrapping back up the left side to 12. Listing red
+      // first here is what puts blue's whole block on the LEFT.
+      const { slices, grand } = pcBuildSlices([
+        { team: 2, seats: extractSeats(camp2) },
+        { team: 1, seats: extractSeats(camp1) },
+      ]);
+
+      let featured = null;
+      slices.forEach(sl => { if (!featured || sl.dmg > featured.dmg) featured = sl; });
+      // Flags the SAME slice object pcSetupDonut/pcUpdateDonutGeometry
+      // iterate over — that's what makes it the one that explodes/glows
+      // in Phase 2 (see pcMorphTo3D), no separate id lookup needed.
+      if (featured) featured.isFeatured = true;
+
+      pcApplyCard(featured ? featured.seat : null, featured ? featured.team : 1);
+      pcSetupDonut(slices, grand); // builds flat (Phase 1) — pcPlayAnimation triggers the Phase 2 morph once the card/mid content has landed
+    }
+
+    let pcVisible = false;
+
+    const PC_DEAL_DURATION_MS = 480;  // matches .pc-card.pc-dealt's own transition duration
+    const PC_MID_HOLD_MS = 150;       // brief pause after the card lands before donut/header reveal
+    const PC_MORPH_DELAY_MS = 500;    // hold on the flat 2D donut (Phase 1) so it reads before it starts morphing
+    const PC_MORPH_DURATION_MS = 750; // Phase 2 — flat circle -> tilted 3D drum
+    function pcPlayAnimation() {
+      if (pcVisible) document.getElementById('pc-card')?.classList.add('pc-dealt');
+      setTimeout(() => {
+        if (!pcVisible) return;
+        document.getElementById('pc-card')?.classList.add('pc-posed');
+        pcPage.querySelectorAll('.pc-mid').forEach(el => el.classList.add('pc-mid-in'));
+        // Donut wrap just faded in showing the flat 2D state pcSetupDonut
+        // left it in (Phase 1) — hold a beat, then morph into the tilted
+        // 3D drum (Phase 2).
+        setTimeout(() => { if (pcVisible) pcMorphTo3D(); }, PC_MORPH_DELAY_MS);
+      }, PC_DEAL_DURATION_MS + PC_MID_HOLD_MS);
+    }
+
+    /* Phase 2 — animates squash 1->PC_SQUASH_TARGET and depth
+       0->PC_DEPTH_TARGET over PC_MORPH_DURATION_MS, calling
+       pcUpdateDonutGeometry every frame (cheap attribute writes, see
+       that function's comment — no innerHTML rebuild). Bails if the
+       scene gets hidden mid-morph rather than fighting the hide
+       transition. */
+    function pcMorphTo3D() {
+      const start = performance.now();
+      function tick(now) {
+        if (!pcVisible) return;
+        const t = Math.min(1, (now - start) / PC_MORPH_DURATION_MS);
+        const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic for squash/depth — settles instead of overshooting
+        pcUpdateDonutGeometry(
+          1 + (PC_SQUASH_TARGET - 1) * eased,
+          PC_DEPTH_TARGET * eased,
+          pcEaseOutBack(t) // explode distance — a little overshoot/pop, distinct from the smooth drum morph
+        );
+        if (t < 1) {
+          requestAnimationFrame(tick);
+        } else {
+          // Morph settled — arm the featured slice's continuous glow pulse
+          // (see .pc-halo-active/@keyframes pc-halo-pulse) and fades in the
+          // neon outline (.pc-neon-core-active). Not started any earlier
+          // so neither competes visually with the pop-out itself.
+          const featuredEntry = pcSlicesState.find(e => e.sl.isFeatured);
+          if (featuredEntry) {
+            if (featuredEntry.haloEl) featuredEntry.haloEl.classList.add('pc-halo-active');
+            if (featuredEntry.neonGlowEl) featuredEntry.neonGlowEl.classList.add('pc-halo-active'); // shares the halo's own fade+pulse class
+            if (featuredEntry.neonCoreEl) featuredEntry.neonCoreEl.classList.add('pc-neon-core-active');
+          }
+        }
+      }
+      requestAnimationFrame(tick);
+    }
+
+    async function showPostCarry() {
+      const gdPromise = fetchH2HGameData();
+      const msPromise = fetchH2HMatchState();
+      await transitionTo('post_carry');
+      const [gameData, matchState] = await Promise.all([gdPromise, msPromise]);
+      if (activeFeature !== 'post_carry') return;
+      applyMatchBoardData(gameData, matchState);
+      pcApply(gameData);
+      await preloadMedia(pcPage.querySelectorAll('img'), 900);
+      if (activeFeature !== 'post_carry') return;
+      showSceneVideo('post_carry');
+      pcVisible = true;
+      document.getElementById('pc-card')?.classList.remove('pc-dealt', 'pc-posed');
+      pcPage.querySelectorAll('.pc-mid').forEach(el => el.classList.remove('pc-mid-in'));
+      pcPage.classList.add('pc-on');
+      void pcPage.offsetWidth;
+      pcPage.classList.add('pc-visible');
+      pcPlayAnimation();
+    }
+
+    function hidePostCarry() {
+      if (!pcVisible) return Promise.resolve();
+      pcVisible = false;
+      pcPage.classList.remove('pc-visible');
+      if (!cpDuringPostTransition) {
+        syncBoard('matchboard', false);
+        hideMatchBoard();
+      }
+      return new Promise(resolve => setTimeout(() => {
+        pcPage.classList.remove('pc-on');
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
+    /* ════════════════════════════════════════════════
        POST_STATS
     ════════════════════════════════════════════════ */
 
@@ -12946,13 +13760,14 @@
         if (feature === 'post4key') showPost4Key();
         if (feature === 'heatmap') showPostHeatmap();
         if (feature === 'post_h2h') showPostH2H();
+        if (feature === 'post_carry') showPostCarry();
       }
     }
 
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h', post_carry: 'preview-post_carry' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -12977,6 +13792,7 @@
         if (event === 'post_stats')    showPostStats();
         if (event === 'post_heatmap')  showPostHeatmap();
         if (event === 'post_h2h')      showPostH2H();
+        if (event === 'post_carry')    showPostCarry();
         if (event === 'credits')       showCreditsScene();
         if (event === 'consolidated_post')   showConsolidatedPost();
         if (event === 'consolidated_post_2') showConsolidatedPost2();
