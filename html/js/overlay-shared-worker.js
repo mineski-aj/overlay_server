@@ -37,7 +37,7 @@ const KNOWN_EVENTS = [
   'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerh2h', 'playerui',
-  'h2h_config', 'post_emblems', 'post_h2h', 'post_heatmap', 'post_hearts', 'post_itemline', 'post_itemline_itemin',
+  'h2h_config', 'post_carry', 'post_emblems', 'post_h2h', 'post_heatmap', 'post_hearts', 'post_itemline', 'post_itemline_itemin',
   'post4key', 'post_itemline_itemout', 'post_items', 'post_richguy', 'post_stats', 'reload',
   'scoreboard', 'seat_arrangement', 'sidecheck', 'standings', 'stolengoldtest', 'stylepatch', 'team_hexagon', 'team_lineup_blue',
   'team_lineup_red', 'today_schedule', 'tomorrow_schedule', 'waiting_lobby',

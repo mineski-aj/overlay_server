@@ -3673,101 +3673,232 @@
     #pc-page.pc-on { display: block; }
     #pc-page.pc-visible { opacity: 1; }
 
-    /* Card shell — identical dimensions/child layout to .p2h-card
-       (PhotoBG.png -> photo layers -> box art -> nameplate/footer/items/
-       emblems), just a single instance parked where P2H's home card sat. */
-    .pc-card {
-      position: absolute; left: 100px; top: 273px; width: 485px; height: 672px; z-index: 40;
+    /* ── VISA CARRY intro — Phase 1/2 choreography, per the design-tool
+       coordinates the user gave verbatim (._02/.Layer_2/.Layer_634/
+       .H2H_BOX_1/.Rectangle_634/.Koyl_FRONT). Two big art cards:
+       #pc-visa-blue (visabg.png, 1243x771 — the "match card", ends up
+       hosting the donut) and #pc-visa-yellow (visa_playerbg.png, 762x771
+       — the "player card", ends up hosting the hero photo + H2H box).
+       Every child below is positioned in LOCAL coordinates relative to
+       whichever of those two it's nested under — that's what lets each
+       parent's own left/top transition carry its children along for
+       free (see "slides WITH the yellow card" in the JS section) instead
+       of having to track every child's absolute position by hand. */
+
+    /* Blue card — CSS left/top start at Phase 1's CENTERED position
+       ((1920-1243)/2, (1080-771)/2) rounded; Phase 2 retargets left/top
+       to the real resting coords the user gave (657,141) via
+       .pc-visa-blue-home's own transition — see pcPlayIntro. The
+       opacity/transform pair below is ONLY Phase 1's slide-in entrance
+       (a translateY+scale settle), independent of the left/top move so
+       both can run without fighting each other. overflow:hidden clips
+       the metal-sheen sweep (#pc-visa-sheen) to the card's own bounds
+       instead of it bleeding into the transparent space around it. */
+    #pc-visa-blue {
+      position: absolute; left: 339px; top: 155px; width: 1243px; height: 771px;
+      z-index: 20; overflow: hidden;
       opacity: 0;
-      transform: translate(-220px, 260px) rotate(-14deg) scale(0.85);
+      transform: translateY(90px) scale(0.94);
     }
-    .pc-card.pc-dealt {
-      transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 200ms ease;
-      transform: translate(0, 0) rotate(0deg) scale(1);
-      opacity: 1;
+    #pc-visa-blue.pc-visa-blue-in {
+      transition: transform 450ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease;
+      opacity: 1; transform: translateY(0) scale(1);
     }
-    .pc-mid { opacity: 0; transform: translateY(-14px); }
-    .pc-mid.pc-mid-in {
-      transition: opacity 320ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-      opacity: 1; transform: translateY(0);
+    #pc-visa-blue.pc-visa-blue-home {
+      transition: left 700ms cubic-bezier(0.65, 0, 0.35, 1), top 700ms cubic-bezier(0.65, 0, 0.35, 1);
+      left: 657px; top: 141px;
     }
-    .pc-photobg {
-      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
-      object-fit: cover; object-position: 50% 0%; display: block;
-      z-index: 40;
+    .pc-visa-blue-bg {
+      position: absolute; left: 0; top: 0; width: 1243px; height: 771px; z-index: 1;
     }
-    .pc-photo-box {
-      position: absolute; left: 0; top: 0; width: 485px; height: 672px;
-      overflow: hidden; z-index: 41;
+    /* Metal sheen — a narrow bright diagonal band swept across the whole
+       card via transform (not background-position, so it stays crisp at
+       any scale) once the slide-in settles — see pcPlayIntro's
+       PC_PHASE1_SLIDE_MS-then-sheen sequencing. screen blend so it reads
+       as a light reflection over the art instead of a flat white bar. */
+    #pc-visa-sheen {
+      position: absolute; left: 0; top: 0; width: 1243px; height: 771px; z-index: 6;
+      background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.85) 48%, rgba(255,255,255,0.15) 53%, transparent 65%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      transform: translateX(-140%);
     }
-    .pc-photo-front, .pc-photo-sig {
-      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-      object-fit: cover; object-position: 50% 0%; display: block;
+    #pc-visa-sheen.pc-sheen-play {
+      transition: transform 550ms cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateX(140%);
     }
-    .pc-photo-front { opacity: 1; }
-    .pc-photo-sig   { opacity: 0; }
-    .pc-card.pc-posed .pc-photo-front { opacity: 0; transition: opacity 220ms ease; }
-    .pc-card.pc-posed .pc-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    /* Visa logo — Phase 1 size/position (centered on the blue card) is
+       its resting CSS state; .pc-visa-logo-shrink retargets all four
+       box properties at once to the small top-left spot, timed with the
+       donut's own "button in" (see pcPlayIntro). */
+    #pc-visa-logo {
+      position: absolute; left: 137px; top: 231px; width: 968px; height: 308px; z-index: 10;
+    }
+    #pc-visa-logo.pc-visa-logo-shrink {
+      transition: left 550ms ease, top 550ms ease, width 550ms ease, height 550ms ease;
+      left: 59px; top: 71px; width: 231px; height: 73px;
+    }
+
+    /* Yellow card — starts tucked directly behind the blue card's own
+       resting spot (left:657, same as #pc-visa-blue.pc-visa-blue-home)
+       so it's fully hidden under blue (lower z-index, same footprint)
+       until .pc-visa-yellow-in slides it out to its real resting spot
+       at left:30 — triggered in lockstep with blue's own home-slide. */
+    /* opacity:0 by default — NOT just relying on being tucked behind
+       blue's own footprint, because #pc-visa-hero (its child) pokes 151px
+       above the yellow card's own top edge by design (it breaks out
+       above the card frame even in the FINAL resting layout — see that
+       rule's own comment), a region blue's top edge never reaches at any
+       point in the sequence. Without this, that poke-out was plainly
+       visible floating above Phase 1's centered blue card, since nothing
+       was actually covering it — see .pc-visa-yellow-in for the reveal. */
+    /* Starts at 90% scale (not 100%) — at full size, the very start of
+       the reveal (opacity fading in while blue is still mid-transition
+       back to its own resting spot, not yet fully covering this card's
+       hiding position) let a sliver of the yellow card's own edges show
+       past blue's still-animating edge. Shrinking it slightly at the
+       hidden position gives that margin back; it scales up to 1 together
+       with the slide, so by the time it's fully revealed on the left
+       it's back to its real size. */
+    #pc-visa-yellow {
+      position: absolute; left: 657px; top: 141px; width: 762px; height: 771px;
+      z-index: 15;
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    #pc-visa-yellow.pc-visa-yellow-in {
+      transition: left 700ms cubic-bezier(0.65, 0, 0.35, 1), opacity 200ms ease, transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
+      left: 30px; opacity: 1; transform: scale(1);
+    }
+    .pc-visa-yellow-bg {
+      position: absolute; left: 0; top: 0; width: 762px; height: 771px; z-index: 1;
+    }
+    /* Hero photo viewport (design tool's "Rectangle_634") — deliberately
+       taller than the yellow card itself and anchored to its BOTTOM,
+       poking out above its top edge by design (matches the user's exact
+       numbers: this container's own bottom edge lines up with the
+       yellow card's bottom edge to the pixel). overflow:hidden is what
+       crops the oversized #pc-photo-front down to just this window. No
+       animation of its own — it rides along purely as a child of
+       #pc-visa-yellow, "sliding WITH" it per the user's instruction. */
+    #pc-visa-hero {
+      position: absolute; left: 0; top: -151px; width: 683px; height: 922px;
+      overflow: hidden; z-index: 1;
+    }
+    /* Starts 90px below its resting top:41px — .pc-photo-slide-up (added
+       late in the yellow card's own slide, see pcPlayIntro's
+       PC_PHASE2_PHOTO_DELAY_MS) animates it up into place timed to land
+       right as the yellow card itself finishes arriving at its final
+       spot, rather than riding in already fully settled the whole time. */
+    #pc-photo-front, #pc-photo-sig {
+      position: absolute; left: -207px; width: 1097px; height: 1097px;
+      object-fit: cover; display: block;
+    }
+    #pc-photo-front { top: 131px; }
+    #pc-photo-front.pc-photo-slide-up {
+      transition: top 380ms cubic-bezier(0.16, 1, 0.3, 1);
+      top: 41px;
+    }
+    /* Sig sits permanently at the resting top:41 — unlike front, it's
+       never visible during Phase 2's slide-up (opacity:0 until Phase 3's
+       pose-swap), so it doesn't need its own entrance animation, just the
+       correct final crop from the moment it's revealed. Phase 3 "buttons"
+       the hero from FRONT to SIGNATURE, same crossfade+bounce technique
+       as Post 4 Key/Post H2H's own photo layers (reusing the shared
+       @keyframes p4k-pose-bounce rather than a third copy of the same
+       motion). Toggled on #pc-visa-hero itself (the crop viewport both
+       images share) via .pc-hero-posed — see pcPlayPhase3. */
+    #pc-photo-sig { top: 41px; opacity: 0; }
+    #pc-visa-hero.pc-hero-posed #pc-photo-front { opacity: 0; transition: opacity 220ms ease; }
+    #pc-visa-hero.pc-hero-posed #pc-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    /* H2H box (the KDA/KP/Gold nameplate) — same PH2HBlue_Box.png/
+       PH2HRed_Box.png art pcApplyCard already picks by team, just scaled
+       1.16x (485x150 -> 563x174, the user's H2H_BOX_1 size) with every
+       child offset below scaled by the same factor. Starts centered
+       within the yellow card's own local box, then slides down+left to
+       its resting local spot — see .pc-visa-box-in below. */
+    #pc-visa-box-wrap {
+      position: absolute; left: 99.5px; top: 298.5px; width: 563px; height: 174px; z-index: 3;
+      opacity: 0;
+    }
+    #pc-visa-box-wrap.pc-visa-box-in {
+      transition: left 650ms cubic-bezier(0.34, 1.2, 0.64, 1), top 650ms cubic-bezier(0.34, 1.2, 0.64, 1), opacity 200ms ease;
+      left: 30px; top: 676px; opacity: 1;
+    }
     .pc-box {
-      position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
-      z-index: 42; display: block;
+      position: absolute; left: 0; top: 0; width: 563px; height: 174px;
+      z-index: 1; display: block;
     }
     .pc-logo {
-      position: absolute; left: 5px; top: 522px; width: 74px; height: 53px;
-      display: flex; align-items: center; justify-content: center; z-index: 43;
+      position: absolute; left: 5.8px; top: 0; width: 85.8px; height: 61.5px;
+      display: flex; align-items: center; justify-content: center; z-index: 2;
     }
     .pc-logo img { width: 100%; height: 100%; object-fit: cover; }
     .pc-role-icon {
-      position: absolute; left: 72px; top: 527px; width: 67px; height: 44px;
-      display: flex; align-items: center; justify-content: center; z-index: 43;
+      position: absolute; left: 83.5px; top: 5.8px; width: 77.7px; height: 51px;
+      display: flex; align-items: center; justify-content: center; z-index: 2;
     }
     .pc-role-icon img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); }
     .pc-name {
-      position: absolute; left: 150px; top: 525px; width: 325px; height: 44px;
-      display: flex; align-items: center; justify-content: center; z-index: 43;
-      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 26px; color: #fff;
+      position: absolute; left: 174px; top: 3.5px; width: 377px; height: 51px;
+      display: flex; align-items: center; justify-content: center; z-index: 2;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 30px; color: #fff;
       text-transform: uppercase; white-space: nowrap; text-align: center;
     }
     .pc-footer-value {
-      position: absolute; top: 577px; height: 44px; z-index: 43;
+      position: absolute; top: 63.8px; height: 51px; z-index: 2;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Anton', sans-serif; font-size: 21px;
+      font-family: 'Anton', sans-serif; font-size: 24px;
       color: #0a0a0a; text-align: center; white-space: nowrap;
     }
-    .pc-kda-value  { left: 90px; width: 90px; }
-    .pc-kp-value   { left: 254px; width: 65px; text-align: center; justify-content: center; }
-    .pc-gold-value { left: 400px; width: 75px; }
-    .pc-item { position: absolute; top: 629px; width: 38px; height: 38px; z-index: 43; object-fit: contain; }
-    .pc-item-0 { left: 213px; }
-    .pc-item-1 { left: 256px; }
-    .pc-item-2 { left: 299px; }
-    .pc-item-3 { left: 343px; }
-    .pc-item-4 { left: 385px; }
-    .pc-item-5 { left: 429px; }
-    .pc-emblem { position: absolute; top: 630px; z-index: 43; object-fit: contain; }
-    .pc-emblem-0 { left: 17px;  width: 37px; height: 36px; top: 630px; }
-    .pc-emblem-1 { left: 64px;  width: 26px; height: 26px; top: 635px; }
-    .pc-emblem-2 { left: 96px;  width: 27px; height: 26px; top: 635px; }
-    .pc-emblem-3 { left: 127px; width: 26px; height: 26px; top: 635px; }
+    .pc-kda-value  { left: 104.4px; width: 104.4px; }
+    .pc-kp-value   { left: 294.6px; width: 75.4px; text-align: center; justify-content: center; }
+    .pc-gold-value { left: 464px; width: 87px; }
+    .pc-item { position: absolute; top: 124.1px; width: 44.1px; height: 44.1px; z-index: 2; object-fit: contain; }
+    .pc-item-0 { left: 247.1px; }
+    .pc-item-1 { left: 297px; }
+    .pc-item-2 { left: 346.8px; }
+    .pc-item-3 { left: 397.9px; }
+    .pc-item-4 { left: 446.6px; }
+    .pc-item-5 { left: 497.6px; }
+    .pc-emblem { position: absolute; z-index: 2; object-fit: contain; }
+    .pc-emblem-0 { left: 19.7px; width: 42.9px; height: 41.8px; top: 125.3px; }
+    .pc-emblem-1 { left: 74.2px; width: 30.2px; height: 30.2px; top: 131.1px; }
+    .pc-emblem-2 { left: 111.4px; width: 31.3px; height: 30.2px; top: 131.1px; }
+    .pc-emblem-3 { left: 147.3px; width: 30.2px; height: 30.2px; top: 131.1px; }
 
-    /* Donut — parks in the vacated middle+away-card space (P2H's stat
-       column ran x676-1243, away card ran x1335-1820; the donut is
-       centered across that whole span instead). 760x760 local box,
-       1 SVG unit == 1px (no viewBox scaling), so pcSetupDonut/pcUpdateDonutGeometry's JS
-       coordinates (PC_CX/PC_CY/PC_OUTER_R/etc) line up directly with
-       both the <svg> paths and the plain-HTML label divs on top of it.
-       Sized/centered (PC_CX=PC_CY=380, dead center) so Phase 1's flat
-       backdrop disc — radius PC_OUTER_R+PC_PANEL_PADDING=350, the single
-       largest shape ever drawn here — fits with margin on every side;
-       a smaller box (this used to be 700x700 with PC_CY=330, off-center)
-       clipped that disc's top edge against the SVG's own bounds, since
-       an <svg> clips to its own box by default. left/top are chosen so
-       the ring's on-screen CENTER stays exactly where it was before
-       (890+350, 259+330) = (860+380, 209+380) — Phase 2's settled look
-       is unaffected, only Phase 1 stopped clipping. */
+    /* Donut — nested INSIDE #pc-visa-blue now (local coordinates, not
+       page-absolute), centered in the blue card's own 1243x771 local box:
+       (1243-760)/2=241.5, (771-760)/2=5.5. Riding as blue's child means it
+       automatically travels with blue's own Phase 1/2 left/top moves for
+       free; its OWN visibility is separate — pc-donut-in is only added
+       once Phase 2's slide has settled, per "the pie chart buttons in as
+       the visa shrinks" (see pcPlayIntro). 760x760 local box, 1 SVG unit
+       == 1px (no viewBox scaling), so pcSetupDonut/pcUpdateDonutGeometry's
+       JS coordinates (PC_CX/PC_CY/PC_OUTER_R/etc) line up directly with
+       both the <svg> paths and the plain-HTML label divs on top of it. */
     #pc-donut-wrap {
-      position: absolute; left: 860px; top: 209px; width: 760px; height: 760px;
-      z-index: 40;
+      position: absolute; left: 242px; top: 6px; width: 760px; height: 760px;
+      z-index: 8;
+      opacity: 0;
+      transform: scale(0.7);
+    }
+    #pc-donut-wrap.pc-donut-in {
+      transition: opacity 400ms ease, transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1);
+      opacity: 1; transform: scale(1);
+    }
+    /* Phase 3 — as the ring morphs flat->3D (pcMorphTo3D, unchanged), it
+       also shifts 120px left to clear room for the stat rows on the
+       right (see .pc-stat-row below). Only `left` transitions here,
+       deliberately not touching opacity/transform — those already
+       settled from .pc-donut-in by the time Phase 3 starts, and
+       re-declaring them on this second class risks fighting that
+       transition instead of just adding to it. Duration matches
+       PC_MORPH_DURATION_MS so the shift and the drum forming read as one
+       single motion. */
+    #pc-donut-wrap.pc-donut-3d {
+      transition: left 750ms cubic-bezier(0.4, 0, 0.2, 1);
+      left: 96px;
     }
     /* Dark backdrop card behind the whole donut, including under the
        center hole — the scene's own ambient background is a light
@@ -3851,6 +3982,107 @@
     .pc-split-blue { color: #3B82F6; }
     .pc-split-red  { color: #FF3232; }
     .pc-split-dot  { color: #94a3b8; font-family: 'General Sans', sans-serif; font-weight: 700; }
+
+    /* Phase 3 stat callouts — DAMAGE DEALT / DMG per MIN / GOLD for the
+       featured player, local to #pc-visa-blue same as everything else on
+       that card. The user's design-tool numbers gave a label rect
+       directly followed by a value rect for each row (e.g. row 1:
+       label top50/height31, value top81/height145 — 50+31=81, no gap),
+       so each row is built as ONE wrapper (top = the label's own top,
+       height = label height + value height = 176) with the label/value
+       as its children at local top:0/top:31 — that single wrapper is
+       what actually slides+fades in, carrying both children with it in
+       one motion instead of animating them separately. The background-
+       color values in that pasted CSS (rgb(255,36,36)/rgb(95,8,8)) are
+       the usual design-tool placeholder-fill noise (see CLAUDE.md's
+       "Working from pasted design-tool CSS" section) — no real asset was
+       named for them, so left transparent: plain white text over the
+       blue card art, matching how the donut's own center text already
+       reads on this scene. */
+    .pc-stat-row {
+      position: absolute; left: 863px; width: 354px; height: 176px; z-index: 6;
+      opacity: 0;
+      transform: translateX(60px);
+    }
+    .pc-stat-row.pc-stat-in {
+      transition: opacity 400ms ease, transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
+      opacity: 1; transform: translateX(0);
+    }
+    #pc-stat-row-dmg  { top: 50px; }
+    #pc-stat-row-dpm  { top: 291px; }
+    /* Gold rises up into place instead of sliding in from the right like
+       its two siblings — reads as emerging from behind/within the blue
+       card itself, same "hidden behind blue, then revealed" language as
+       #pc-visa-header's own rise (see that rule's comment) rather than
+       just entering from off to the side. The ID selector's higher
+       specificity overrides .pc-stat-row's shared translateX in both its
+       hidden and .pc-stat-in states. */
+    #pc-stat-row-gold { top: 545px; transform: translateY(90px); }
+    #pc-stat-row-gold.pc-stat-in { transform: translateY(0); }
+    .pc-stat-label {
+      position: absolute; left: 0; top: 0; width: 354px; height: 31px;
+      display: flex; align-items: center; justify-content: flex-end;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 39px;
+      color: #fff; text-align: right; white-space: nowrap;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+    }
+    .pc-stat-value {
+      position: absolute; left: 0; top: 31px; width: 354px; height: 145px;
+      display: flex; align-items: center; justify-content: flex-end;
+      font-family: 'Anton', sans-serif; font-size: 144px; color: #fff;
+      text-align: right; white-space: nowrap;
+      text-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    }
+
+    /* "THE CARRY" header (visacarry_header.png, 639x74 native, matching
+       .Rectangle_610's text-region numbers exactly) — a page-level
+       sibling of blue/yellow, NOT nested inside either (its final
+       resting spot sits mostly ABOVE blue's own top edge, and blue has
+       overflow:hidden for its own sheen clip, which would cut off
+       anything poking past its box if this were a child of it). Starts
+       centered on the blue card's own on-screen center (page-absolute
+       (1278.5, 526.5), size-adjusted -> left:959/top:490 — same left as
+       its final resting spot, ONLY top moves), fully within blue's own
+       959-1598 x 141-912 footprint. GENUINELY behind the blue card —
+       z-index 15, below blue's 20 — rather than faked with opacity, so
+       for as long as it's still positioned inside that footprint, blue's
+       own opaque background paints over it for real; no fade needed at
+       all, it's simply invisible until .pc-visa-header-in's plain slide
+       carries it up past blue's own top edge (top:50), at which point
+       there's no more overlap to mask and it's just visible. Once
+       landed it gets its own metal-sheen sweep, the same idea as
+       #pc-visa-sheen on the blue card itself, just a second instance
+       sized to this smaller banner. */
+    #pc-visa-header {
+      position: absolute; left: 959px; top: 490px; width: 639px; height: 74px;
+      z-index: 16;
+      overflow: hidden;
+    }
+    #pc-visa-header.pc-visa-header-in {
+      transition: top 450ms cubic-bezier(0.16, 1, 0.3, 1);
+      top: 50px;
+    }
+    .pc-visa-header-bg {
+      position: absolute; left: 0; top: 0; width: 639px; height: 74px; z-index: 1;
+    }
+    #pc-visa-header-sheen {
+      position: absolute; left: 0; top: 0; width: 639px; height: 74px; z-index: 3;
+      background: linear-gradient(100deg, transparent 35%, rgba(255,255,255,0.85) 48%, rgba(255,255,255,0.15) 53%, transparent 65%);
+      mix-blend-mode: screen;
+      pointer-events: none;
+      transform: translateX(-160%);
+    }
+    #pc-visa-header-sheen.pc-sheen-play {
+      transition: transform 450ms cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateX(160%);
+    }
+    #pc-visa-header-text {
+      position: absolute; left: 124px; top: 0; width: 392px; height: 74px; z-index: 2;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 53.5px; color: #fff;
+      text-align: center; white-space: nowrap;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
 
   </style>
 </head>
@@ -4691,41 +4923,68 @@
       <div id="p2h-sponsor"></div>
     </div>
     <div id="pc-page">
-      <div class="pc-card" id="pc-card">
-        <img class="pc-photobg" src="/assets/PostH2H/PhotoBG.png" alt="">
-        <div class="pc-photo-box">
-          <img class="pc-photo-front" id="pc-photo-front" src="" alt="">
-          <img class="pc-photo-sig"   id="pc-photo-sig"   src="" alt="">
+      <div id="pc-visa-blue">
+        <img class="pc-visa-blue-bg" src="/assets/visacarry/visabg.png" alt="">
+        <div id="pc-visa-sheen"></div>
+        <img id="pc-visa-logo" src="/assets/visacarry/visaloger.png" alt="">
+
+        <div id="pc-donut-wrap">
+          <svg id="pc-donut-svg" width="760" height="760" viewBox="0 0 760 760"></svg>
+          <div id="pc-donut-labels"></div>
+          <div class="pc-donut-total" id="pc-donut-total"></div>
+          <div class="pc-donut-total-label">TOTAL</div>
+          <div class="pc-donut-split">
+            <span class="pc-split-blue" id="pc-split-blue"></span>
+            <span class="pc-split-dot">&middot;</span>
+            <span class="pc-split-red" id="pc-split-red"></span>
+          </div>
         </div>
-        <img class="pc-box" id="pc-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
-        <div class="pc-logo"><img id="pc-logo" src="" alt="" onerror="this.style.display='none'"></div>
-        <div class="pc-role-icon"><img id="pc-role" src="" alt="" onerror="this.style.display='none'"></div>
-        <div class="pc-name" id="pc-name"></div>
-        <div class="pc-footer-value pc-kda-value" id="pc-kda"></div>
-        <div class="pc-footer-value pc-kp-value" id="pc-kp"></div>
-        <div class="pc-footer-value pc-gold-value" id="pc-gold"></div>
-        <img class="pc-emblem pc-emblem-0" id="pc-emblem-0" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-emblem pc-emblem-1" id="pc-emblem-1" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-emblem pc-emblem-2" id="pc-emblem-2" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-emblem pc-emblem-3" id="pc-emblem-3" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-0" id="pc-item-0" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-1" id="pc-item-1" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-2" id="pc-item-2" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-3" id="pc-item-3" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-4" id="pc-item-4" src="" alt="" onerror="this.style.display='none'">
-        <img class="pc-item pc-item-5" id="pc-item-5" src="" alt="" onerror="this.style.display='none'">
+
+        <div class="pc-stat-row" id="pc-stat-row-dmg">
+          <div class="pc-stat-label">DAMAGE DEALT</div>
+          <div class="pc-stat-value" id="pc-stat-dmg-value"></div>
+        </div>
+        <div class="pc-stat-row" id="pc-stat-row-dpm">
+          <div class="pc-stat-label">DMG/MIN</div>
+          <div class="pc-stat-value" id="pc-stat-dpm-value"></div>
+        </div>
+        <div class="pc-stat-row" id="pc-stat-row-gold">
+          <div class="pc-stat-label">GOLD</div>
+          <div class="pc-stat-value" id="pc-stat-gold-value"></div>
+        </div>
       </div>
 
-      <div id="pc-donut-wrap" class="pc-mid">
-        <svg id="pc-donut-svg" width="760" height="760" viewBox="0 0 760 760"></svg>
-        <div id="pc-donut-labels"></div>
-        <div class="pc-donut-total" id="pc-donut-total"></div>
-        <div class="pc-donut-total-label">TOTAL</div>
-        <div class="pc-donut-split">
-          <span class="pc-split-blue" id="pc-split-blue"></span>
-          <span class="pc-split-dot">&middot;</span>
-          <span class="pc-split-red" id="pc-split-red"></span>
+      <div id="pc-visa-yellow">
+        <img class="pc-visa-yellow-bg" src="/assets/visacarry/visa_playerbg.png" alt="">
+        <div id="pc-visa-hero">
+          <img id="pc-photo-front" src="" alt="" onerror="this.style.display='none'">
+          <img id="pc-photo-sig" src="" alt="" onerror="this.style.display='none'">
         </div>
+        <div id="pc-visa-box-wrap">
+          <img class="pc-box" id="pc-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
+          <div class="pc-logo"><img id="pc-logo" src="" alt="" onerror="this.style.display='none'"></div>
+          <div class="pc-role-icon"><img id="pc-role" src="" alt="" onerror="this.style.display='none'"></div>
+          <div class="pc-name" id="pc-name"></div>
+          <div class="pc-footer-value pc-kda-value" id="pc-kda"></div>
+          <div class="pc-footer-value pc-kp-value" id="pc-kp"></div>
+          <div class="pc-footer-value pc-gold-value" id="pc-gold"></div>
+          <img class="pc-emblem pc-emblem-0" id="pc-emblem-0" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-emblem pc-emblem-1" id="pc-emblem-1" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-emblem pc-emblem-2" id="pc-emblem-2" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-emblem pc-emblem-3" id="pc-emblem-3" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-0" id="pc-item-0" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-1" id="pc-item-1" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-2" id="pc-item-2" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-3" id="pc-item-3" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-4" id="pc-item-4" src="" alt="" onerror="this.style.display='none'">
+          <img class="pc-item pc-item-5" id="pc-item-5" src="" alt="" onerror="this.style.display='none'">
+        </div>
+      </div>
+
+      <div id="pc-visa-header">
+        <img class="pc-visa-header-bg" src="/assets/visacarry/visacarry_header.png" alt="">
+        <div id="pc-visa-header-sheen"></div>
+        <div id="pc-visa-header-text">THE CARRY</div>
       </div>
     </div>
     <div id="mvp-page">
@@ -5373,6 +5632,14 @@
       /* Dashboard's Post H2H Controls role selector — see p2hLiveRefresh
          below. */
       sseSource.addEventListener('h2h_config', () => { p2hLiveRefresh(); });
+
+      sseSource.addEventListener('post_carry', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostCarry, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
 
       sseSource.addEventListener('consolidated_post', (e) => {
         const msg = JSON.parse(e.data);
@@ -9665,14 +9932,18 @@
        'heatmap' deliberately is NOT in this set — Post Heatmap is now an
        MVP-Highlights-style full-screen scene (its own plaque/photo, no
        Matchboard), same as 'highlights'/'mvp' below, not a Post-family
-       scene alongside Matchboard/Middleboard/Playerboard. */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h', 'post_carry']);
+       scene alongside Matchboard/Middleboard/Playerboard. 'post_carry' is
+       the same deal — its own full-bleed card+donut layout, no Matchboard
+       wanted at all (see showPostCarry/hidePostCarry, neither of which
+       touch it), so it goes through the plain else branch below like
+       heatmap/highlights/mvp do. */
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h']);
 
     /* Post scenes that use Matchboard's shorter "compact" layout (camp
        boxes moved up 36px, tournament logo swapped for the smaller
        #mb-tournament-cp — see the .cp-compact CSS rules). Everything
        else in POST_FEATURES uses the regular, taller layout. */
-    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h', 'post_carry']);
+    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h']);
 
     /* Flips #match-board's .cp-compact class — but fades #mb-camp1/
        #mb-camp2/the tournament-logo pair out first when Matchboard is
@@ -9771,7 +10042,7 @@
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
         else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
-        else if (newFeature === 'post4key' || newFeature === 'post_h2h' || newFeature === 'post_carry') {
+        else if (newFeature === 'post4key' || newFeature === 'post_h2h') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);
           hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed two-card layout + own header/sponsor loop already shown — and must actively turn these off in case they're still on from a prior Post scene */
@@ -12586,7 +12857,7 @@
 
     /* Builds the SVG structure ONCE per Show — defs/gradients/path
        elements/label divs — then renders it at squash=1, depth=0: a
-       flat 2D donut (Phase 1). pcMorphTo3D (see pcPlayAnimation) later
+       flat 2D donut (Phase 1). pcMorphTo3D (see pcPlayIntro) later
        animates it into the tilted "drum" (Phase 2) by calling
        pcUpdateDonutGeometry every frame; that function only ever
        touches attributes on the elements built here, never touches
@@ -12786,8 +13057,8 @@
 
       document.getElementById('pc-name').textContent = (seat && seat.name) || '';
 
-      const cardEl = document.getElementById('pc-card');
-      if (cardEl) cardEl.classList.remove('pc-posed');
+      const heroEl = document.getElementById('pc-visa-hero');
+      if (heroEl) heroEl.classList.remove('pc-hero-posed'); // reset in case a role/data refresh lands mid-Phase-3
       const frontEl = document.getElementById('pc-photo-front');
       frontEl.onerror = () => { frontEl.style.display = 'none'; };
       frontEl.style.display = '';
@@ -12849,26 +13120,104 @@
       if (featured) featured.isFeatured = true;
 
       pcApplyCard(featured ? featured.seat : null, featured ? featured.team : 1);
-      pcSetupDonut(slices, grand); // builds flat (Phase 1) — pcPlayAnimation triggers the Phase 2 morph once the card/mid content has landed
+      pcApplyStats(featured ? featured.seat : null, gameData); // Phase 3's DAMAGE DEALT/DMG-MIN/GOLD callouts — same featured seat + same gameData.game_time the donut/card already use, not a separate fetch
+      pcSetupDonut(slices, grand); // builds flat (Phase 1) — pcPlayIntro triggers the Phase 2 morph once the intro choreography has landed
+    }
+
+    /* "89.8K" style — uppercase K, one decimal, distinct from fmtGold's
+       lowercase "89.8k" used on the smaller H2H box footer. */
+    function pcFmtStatK(v) { return ((v || 0) / 1000).toFixed(1) + 'K'; }
+
+    /* Anton 144px starts near-filling the value box's own 145px height —
+       shrinks only if a wider value (e.g. a 4-digit DMG/MIN) would
+       overflow the fixed 354px-wide row, same scrollWidth/clientWidth
+       idiom as mdbFitMapName elsewhere in this file. */
+    function pcFitStatValue(el, maxSize = 144, minSize = 72) {
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
+        el.style.fontSize = (--size) + 'px';
+      }
+    }
+
+    /* Phase 3 stat callouts — pulled from the SAME featured seat object
+       (and the SAME gameData.game_time) the donut/H2H box already use,
+       per the user's request, not a second fetch or a different field.
+       DMG/MIN isn't a direct API field — computed here from
+       total_damage over the game clock, same as p2hDmgDealtPct-style
+       derived stats elsewhere in this file. */
+    function pcApplyStats(seat, gameData) {
+      const dmg = (seat && seat.total_damage) || 0;
+      const gold = (seat && seat.gold) || 0;
+      const minutes = Math.max(((gameData && gameData.game_time) || 0) / 60, 0.01);
+      const dpm = Math.round(dmg / minutes);
+
+      const dmgEl = document.getElementById('pc-stat-dmg-value');
+      const dpmEl = document.getElementById('pc-stat-dpm-value');
+      const goldEl = document.getElementById('pc-stat-gold-value');
+      dmgEl.textContent = pcFmtStatK(dmg);
+      dpmEl.textContent = String(dpm);
+      goldEl.textContent = pcFmtStatK(gold);
+      [dmgEl, dpmEl, goldEl].forEach(el => pcFitStatValue(el));
     }
 
     let pcVisible = false;
 
-    const PC_DEAL_DURATION_MS = 480;  // matches .pc-card.pc-dealt's own transition duration
-    const PC_MID_HOLD_MS = 150;       // brief pause after the card lands before donut/header reveal
-    const PC_MORPH_DELAY_MS = 500;    // hold on the flat 2D donut (Phase 1) so it reads before it starts morphing
-    const PC_MORPH_DURATION_MS = 750; // Phase 2 — flat circle -> tilted 3D drum
-    function pcPlayAnimation() {
-      if (pcVisible) document.getElementById('pc-card')?.classList.add('pc-dealt');
+    const PC_MORPH_DELAY_MS = 500;    // hold on the flat 2D donut before it starts morphing into the 3D drum
+    const PC_MORPH_DURATION_MS = 750; // flat circle -> tilted 3D drum
+
+    /* Outer intro choreography — Phase 1 then Phase 2, see the CSS
+       section's comment block above #pc-visa-blue for the coordinate
+       reasoning. This is SEPARATE from (and finishes by handing off to)
+       the donut's own internal flat->3D morph (pcMorphTo3D, unchanged) —
+       that still runs exactly as before, just triggered once the donut
+       container has "buttoned in" instead of off the old card-deal timer.
+       Every step is guarded by `if (!pcVisible) return`, same idiom as
+       the rest of this file, so a fast hide during the sequence doesn't
+       keep queuing further steps on a scene that's no longer showing. */
+    const PC_PHASE1_SLIDE_MS = 450;   // blue card slides in to the centered spot
+    const PC_PHASE1_SHEEN_MS = 550;   // metal sheen sweep — together with the slide, ~1s total for Phase 1
+    const PC_PHASE2_SLIDE_MS = 700;   // blue slides home + yellow slides in from behind it, concurrently
+    const PC_PHASE2_BOX_DELAY_MS = 120;   // H2H box's own slide-down starts a beat after the card slide begins
+    const PC_PHASE2_PHOTO_SLIDE_MS = 380; // hero photo's own slide-up duration
+    const PC_PHASE2_PHOTO_DELAY_MS = PC_PHASE2_SLIDE_MS - PC_PHASE2_PHOTO_SLIDE_MS; // starts late enough that it LANDS right as the yellow card itself finishes arriving, not before
+    function pcPlayIntro() {
+      if (!pcVisible) return;
+      const blueEl = document.getElementById('pc-visa-blue');
+      const yellowEl = document.getElementById('pc-visa-yellow');
+      const sheenEl = document.getElementById('pc-visa-sheen');
+      const logoEl = document.getElementById('pc-visa-logo');
+      const boxWrapEl = document.getElementById('pc-visa-box-wrap');
+      const photoEl = document.getElementById('pc-photo-front');
+      const donutWrapEl = document.getElementById('pc-donut-wrap');
+
+      // Phase 1 — blue card slides in to the middle of the canvas...
+      blueEl.classList.add('pc-visa-blue-in');
       setTimeout(() => {
         if (!pcVisible) return;
-        document.getElementById('pc-card')?.classList.add('pc-posed');
-        pcPage.querySelectorAll('.pc-mid').forEach(el => el.classList.add('pc-mid-in'));
-        // Donut wrap just faded in showing the flat 2D state pcSetupDonut
-        // left it in (Phase 1) — hold a beat, then morph into the tilted
-        // 3D drum (Phase 2).
-        setTimeout(() => { if (pcVisible) pcMorphTo3D(); }, PC_MORPH_DELAY_MS);
-      }, PC_DEAL_DURATION_MS + PC_MID_HOLD_MS);
+        // ...then a metal sheen sweeps across it.
+        sheenEl.classList.add('pc-sheen-play');
+        setTimeout(() => {
+          if (!pcVisible) return;
+          // Phase 2 — blue slides back to its resting coords while the
+          // yellow card slides out from behind it to its own resting spot.
+          blueEl.classList.add('pc-visa-blue-home');
+          yellowEl.classList.add('pc-visa-yellow-in');
+          setTimeout(() => { if (pcVisible) boxWrapEl.classList.add('pc-visa-box-in'); }, PC_PHASE2_BOX_DELAY_MS);
+          // Hero photo slides up into place, timed to land just as the
+          // yellow card itself approaches its final location.
+          setTimeout(() => { if (pcVisible) photoEl.classList.add('pc-photo-slide-up'); }, PC_PHASE2_PHOTO_DELAY_MS);
+          setTimeout(() => {
+            if (!pcVisible) return;
+            // Visa logo shrinks to the top-left as the donut buttons in —
+            // then, once the donut container itself has settled, hand off
+            // to its own unchanged internal flat->3D morph.
+            logoEl.classList.add('pc-visa-logo-shrink');
+            donutWrapEl.classList.add('pc-donut-in');
+            setTimeout(() => { if (pcVisible) pcPlayPhase3(); }, PC_MORPH_DELAY_MS);
+          }, PC_PHASE2_SLIDE_MS);
+        }, PC_PHASE1_SHEEN_MS);
+      }, PC_PHASE1_SLIDE_MS);
     }
 
     /* Phase 2 — animates squash 1->PC_SQUASH_TARGET and depth
@@ -12906,34 +13255,72 @@
       requestAnimationFrame(tick);
     }
 
+    /* Phase 3 — fires once Phase 2 has fully settled (see pcPlayIntro):
+       the ring starts its flat->3D morph (unchanged pcMorphTo3D) while
+       ALSO shifting 120px left (.pc-donut-3d, same duration so both read
+       as one motion) to clear room for the stat rows now sliding in from
+       the right on that side of the card; the hero photo buttons from
+       FRONT to SIGNATURE pose at the same moment. Stat rows cascade in
+       staggered (dmg, then dpm, then gold) rather than all at once. */
+    const PC_PHASE3_STAT_STAGGER_MS = 150;
+    const PC_PHASE3_HEADER_SLIDE_MS = 450; // matches #pc-visa-header.pc-visa-header-in's own transition duration
+    function pcPlayPhase3() {
+      if (!pcVisible) return;
+      pcMorphTo3D();
+      document.getElementById('pc-donut-wrap').classList.add('pc-donut-3d');
+      document.getElementById('pc-visa-hero').classList.add('pc-hero-posed');
+
+      ['pc-stat-row-dmg', 'pc-stat-row-dpm', 'pc-stat-row-gold'].forEach((id, i) => {
+        setTimeout(() => {
+          if (pcVisible) document.getElementById(id).classList.add('pc-stat-in');
+        }, i * PC_PHASE3_STAT_STAGGER_MS);
+      });
+
+      // "THE CARRY" header — slides up (from centered-inside-blue, see the
+      // CSS comment) then, once landed, gets its own sheen sweep, same
+      // "slide, then sheen" sequencing as Phase 1's blue card.
+      document.getElementById('pc-visa-header').classList.add('pc-visa-header-in');
+      setTimeout(() => {
+        if (pcVisible) document.getElementById('pc-visa-header-sheen').classList.add('pc-sheen-play');
+      }, PC_PHASE3_HEADER_SLIDE_MS);
+    }
+
     async function showPostCarry() {
       const gdPromise = fetchH2HGameData();
-      const msPromise = fetchH2HMatchState();
       await transitionTo('post_carry');
-      const [gameData, matchState] = await Promise.all([gdPromise, msPromise]);
+      const gameData = await gdPromise;
       if (activeFeature !== 'post_carry') return;
-      applyMatchBoardData(gameData, matchState);
       pcApply(gameData);
       await preloadMedia(pcPage.querySelectorAll('img'), 900);
       if (activeFeature !== 'post_carry') return;
       showSceneVideo('post_carry');
       pcVisible = true;
-      document.getElementById('pc-card')?.classList.remove('pc-dealt', 'pc-posed');
-      pcPage.querySelectorAll('.pc-mid').forEach(el => el.classList.remove('pc-mid-in'));
+      // Reset every intro-sequence class so a fast hide+reshow replays the
+      // whole Phase 1/2 choreography from scratch instead of resuming
+      // mid-transition or skipping straight to the settled end state.
+      document.getElementById('pc-visa-blue').classList.remove('pc-visa-blue-in', 'pc-visa-blue-home');
+      document.getElementById('pc-visa-yellow').classList.remove('pc-visa-yellow-in');
+      document.getElementById('pc-visa-sheen').classList.remove('pc-sheen-play');
+      document.getElementById('pc-visa-logo').classList.remove('pc-visa-logo-shrink');
+      document.getElementById('pc-visa-box-wrap').classList.remove('pc-visa-box-in');
+      document.getElementById('pc-photo-front').classList.remove('pc-photo-slide-up');
+      document.getElementById('pc-donut-wrap').classList.remove('pc-donut-in', 'pc-donut-3d');
+      document.getElementById('pc-visa-hero').classList.remove('pc-hero-posed');
+      document.getElementById('pc-stat-row-dmg').classList.remove('pc-stat-in');
+      document.getElementById('pc-stat-row-dpm').classList.remove('pc-stat-in');
+      document.getElementById('pc-stat-row-gold').classList.remove('pc-stat-in');
+      document.getElementById('pc-visa-header').classList.remove('pc-visa-header-in');
+      document.getElementById('pc-visa-header-sheen').classList.remove('pc-sheen-play');
       pcPage.classList.add('pc-on');
       void pcPage.offsetWidth;
       pcPage.classList.add('pc-visible');
-      pcPlayAnimation();
+      pcPlayIntro();
     }
 
     function hidePostCarry() {
       if (!pcVisible) return Promise.resolve();
       pcVisible = false;
       pcPage.classList.remove('pc-visible');
-      if (!cpDuringPostTransition) {
-        syncBoard('matchboard', false);
-        hideMatchBoard();
-      }
       return new Promise(resolve => setTimeout(() => {
         pcPage.classList.remove('pc-on');
         hideSceneVideo();
@@ -13693,6 +14080,7 @@
           else if (scene.activeFeature === 'consolidated_post_2') showConsolidatedPost2();
           else if (scene.activeFeature === 'post4key') showPost4Key();
           else if (scene.activeFeature === 'post_h2h') showPostH2H();
+          else if (scene.activeFeature === 'post_carry') showPostCarry();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
           else if (scene.activeFeature === 'waiting')  showWaitingScreen();
           else if (scene.activeFeature === 'lobby')    showWaitingLobby();

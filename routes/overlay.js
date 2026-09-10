@@ -948,6 +948,28 @@ router.get('/overlay/post_h2h/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/post_carry/show
+router.get('/overlay/post_carry/show', (req, res) => {
+  state.mplfsScene.activeFeature = 'post_carry';
+  // Post Carry is its own full-bleed Visa-branded card+donut scene (own
+  // player card, own header banner) — same deal as post_heatmap/highlights
+  // above, NOT a Post-family board scene. mplfs.html's transitionTo() does
+  // not have 'post_carry' in POST_FEATURES, so its transitionToImpl 'else'
+  // branch actively hides matchboard/middleboard/playerboard client-side;
+  // this route must not fight that by forcing any of them back on here.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post_carry\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_carry/hide
+router.get('/overlay/post_carry/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_carry\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/consolidated_post/show
 router.get('/overlay/consolidated_post/show', (req, res) => {
   state.mplfsScene.matchboard = true;
