@@ -10759,9 +10759,14 @@
       const marginY = Math.min(6, b.height * 0.1);
       const centerX = b.left + b.width  / 2;
       const centerY = b.top  + b.height / 2;
+      // Rotated 90° further from the top-left/bottom-right fix above
+      // (this is a transpose of that mapping, not another 180) so the
+      // bottom-left/top-right pair lines up with consomap.png too,
+      // without re-flipping the top-left/bottom-right pair that was
+      // already corrected.
       return {
-        x: Math.max(b.left + marginX, Math.min(b.left + b.width  - marginX, centerX + (gx + gy) * scaleX)),
-        y: Math.max(b.top  + marginY, Math.min(b.top  + b.height - marginY, centerY + (-gx + gy) * scaleY)),
+        x: Math.max(b.left + marginX, Math.min(b.left + b.width  - marginX, centerX + (gx - gy) * scaleX)),
+        y: Math.max(b.top  + marginY, Math.min(b.top  + b.height - marginY, centerY - (gx + gy) * scaleY)),
       };
     }
 
@@ -12537,8 +12542,13 @@
     function p2hApply(cfg, gameData, matchState) {
       const role = (cfg && cfg.role) || 'gold_laner';
 
+      /* Same "just-finished game" fix as Consolidated Post 2's #cmb-game-label
+         (see fetchMiddleBoardData / cmb-board above) — matchState.game is the
+         live/current game number, already advanced by the time this recap
+         is shown, so subtract 1. */
+      const p2hGameNum = Math.max(1, ((matchState && matchState.game) || 1) - 1);
       document.getElementById('p2h-header').textContent =
-        'GAME ' + ((matchState && matchState.game) || 1) + ' - MATCH ' + ((matchState && matchState.match) || 1);
+        'GAME ' + p2hGameNum + ' - MATCH ' + ((matchState && matchState.match) || 1);
       document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
       document.getElementById('p2h-title').textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + ' HEAD TO HEAD';
 
