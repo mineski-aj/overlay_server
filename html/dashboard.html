@@ -3881,6 +3881,31 @@
     { group: 'Kill Event', id: '#kill-event-sponsor-logo-clip', name: 'Sponsor Logo' },
   ];
 
+  /* ── Stolen Gold banner (mploverlay_v7.html) ───────────────────────
+     Six independent .sg-stat number boxes overlaid on the banner art
+     (ingame_stolenpng.png) — see the #stolengold-overlay CSS block in
+     mploverlay_v7.css. Own EDIT_CONFIG (not folded into the main
+     Scoreboard one above) because the banner is hidden by default —
+     showFn shows it with real/whatever data is available so the
+     numbers are actually visible to drag/resize, same pattern as Kill
+     Event Sponsor/Gold Graph Check above. */
+  var SG_DEFAULTS = {
+    '#sg-c1-purple': { left: 44,  top: 0, width: 38, height: 78, fontSize: 30 },
+    '#sg-c1-orange': { left: 111, top: 0, width: 38, height: 78, fontSize: 30 },
+    '#sg-c1-gold':   { left: 181, top: 0, width: 64, height: 78, fontSize: 30 },
+    '#sg-c2-purple': { left: 398, top: 0, width: 38, height: 78, fontSize: 30 },
+    '#sg-c2-orange': { left: 466, top: 0, width: 38, height: 78, fontSize: 30 },
+    '#sg-c2-gold':   { left: 535, top: 0, width: 63, height: 78, fontSize: 30 },
+  };
+  var SG_ELEMENTS = [
+    { group: 'Team 1', id: '#sg-c1-purple', name: 'Purple Buff Stolen (Team 1)' },
+    { group: 'Team 1', id: '#sg-c1-orange', name: 'Orange Buff Stolen (Team 1)' },
+    { group: 'Team 1', id: '#sg-c1-gold',   name: 'Jungle Gold Stolen (Team 1)' },
+    { group: 'Team 2', id: '#sg-c2-purple', name: 'Purple Buff Stolen (Team 2)' },
+    { group: 'Team 2', id: '#sg-c2-orange', name: 'Orange Buff Stolen (Team 2)' },
+    { group: 'Team 2', id: '#sg-c2-gold',   name: 'Jungle Gold Stolen (Team 2)' },
+  ];
+
   /* ── Gold Graph Check (mploverlay_v7.html) ─────────────────────────
      The 4 row markers are position-only references (top, no left/width/
      height) — ggcRowY() in overlay-goldgraphcheck.js reads each one's
@@ -5168,6 +5193,15 @@
       elements:    KILLEVENT_ELEMENTS,
       defaults:    KILLEVENT_DEFAULTS,
       showFn:      'previewKillEventSponsor',
+    },
+    mploverlay_v7_stolengold: {
+      label:       'Stolen Gold · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_stolengold',
+      elements:    SG_ELEMENTS,
+      defaults:    SG_DEFAULTS,
+      showFn:      'sgAnimateIn',
     },
     mploverlay_v7_goldgraphcheck: {
       label:       'Gold Graph Check · mploverlay_v7',
