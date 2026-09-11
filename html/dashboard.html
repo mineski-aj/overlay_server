@@ -2031,7 +2031,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag', 'stolengold'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2384,7 +2384,6 @@
       file: 'mploverlay_v7.html',
       previewDebugTester: true,
       killEventTrigger: true,
-      stolenGoldControls: true,
       extraActions: [
         { label: 'Recap Show', action: '/overlay/fights/show' },
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
@@ -2405,6 +2404,7 @@
         { name: 'Side Gold Distri',  key: 'sidegolddistricheck' },
         { name: 'Side KDA Distri',   key: 'sidekdadistricheck'  },
         { name: 'BPM Meter',         key: 'bpmmeter', extraButtons: BPM_METER_EXTRA_BUTTONS },
+        { name: 'Stolen Gold',       key: 'stolengold'          },
       ],
       featureToggles: [
         { name: 'Kill Events', feature: 'killevents' },
@@ -2415,7 +2415,6 @@
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
         { name: 'Objective Spawn', feature: 'objectivespawn' },
-        { name: 'Stolen Gold', feature: 'stolengold' },
       ],
     },
     {
@@ -3227,65 +3226,6 @@
     });
   }
 
-  function buildStolenGoldControls(body) {
-    if (body.children.length) body.appendChild(el('div', 'divider'));
-    body.appendChild(el('div', 'features-label', 'Stolen Gold Banner'));
-
-    var row = el('div', 'pdebug-row');
-    row.appendChild(el('label', '', 'Duration'));
-    var durationInput = document.createElement('input');
-    durationInput.type = 'number'; durationInput.min = '1'; durationInput.max = '30'; durationInput.step = '0.5';
-    durationInput.className = 'pdebug-select';
-    durationInput.style.cssText = 'width:70px;flex:0 0 70px;';
-    row.appendChild(durationInput);
-    row.appendChild(el('span', '', 'sec'));
-    body.appendChild(row);
-
-    var row2 = el('div', 'pdebug-row');
-    var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
-    var testBtn  = el('button', 'pdebug-trigger', '▶ Test');
-    row2.appendChild(applyBtn);
-    row2.appendChild(testBtn);
-    body.appendChild(row2);
-
-    var statusEl = el('div', '', 'Loading…');
-    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
-    body.appendChild(statusEl);
-
-    // Read live server state on open instead of assuming a default
-    // (memory: feedback_feature_toggle_state.md).
-    fetch('/api/stolengold-duration', { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        durationInput.value = (d && d.duration) || 8;
-        statusEl.textContent = 'Current: ' + durationInput.value + 's';
-      }).catch(function () { durationInput.value = 8; statusEl.textContent = ''; });
-
-    applyBtn.addEventListener('click', function () {
-      fetch('/api/stolengold-duration', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ duration: Number(durationInput.value) || 8 }),
-      }).then(function (r) { return r.json(); })
-        .then(function (d) {
-          durationInput.value = d.duration;
-          statusEl.textContent = 'Current: ' + d.duration + 's';
-          body.classList.remove('flash-ok');
-          void body.offsetWidth;
-          body.classList.add('flash-ok');
-        }).catch(function () {
-          statusEl.textContent = 'Save failed';
-        });
-    });
-
-    testBtn.addEventListener('click', function () {
-      fetch('/overlay/stolengold/test').catch(function () {});
-      body.classList.remove('flash-ok');
-      void body.offsetWidth;
-      body.classList.add('flash-ok');
-    });
-  }
-
   /* ── Build sidebar + control body ────────────────────────── */
   /* ── Draft photo mode (live API match vs. random test) ────── */
   function buildDraftPhotoModeControl(body) {
@@ -3798,16 +3738,6 @@
        pattern as buildHeatmapControls above. */
     if (ov.h2hControls) {
       buildH2HControls(body);
-    }
-
-    /* Stolen Gold banner — display-duration tuning + a manual test
-       trigger, tuned here instead of on-page (see buildStolenGoldControls
-       below and /api/stolengold-duration + /overlay/stolengold/test in
-       routes/devapi.js and routes/overlay.js). The arm/disarm toggle
-       itself lives in the Feature Toggles list below, same as every
-       other Shape 2 auto-effect. */
-    if (ov.stolenGoldControls) {
-      buildStolenGoldControls(body);
     }
 
     /* Feature toggles */

@@ -323,8 +323,9 @@ OBJ_SPAWN_DEBUG_BTNS.forEach(({ label, kind }) => {
   objSpawnBtnRow.appendChild(btn);
 });
 
-/* ── Stolen gold debug button ── */
-document.getElementById('stolengold-trigger-btn').addEventListener('click', () => sgTestTrigger());
+/* ── Stolen gold debug buttons ── */
+document.getElementById('stolengold-show-btn').addEventListener('click', () => sgAnimateIn());
+document.getElementById('stolengold-hide-btn').addEventListener('click', () => sgAnimateOut());
 
 /* ── Start polling ── */
 setInterval(masterPoll, 1000);
@@ -356,7 +357,6 @@ masterPoll();
       if (d.action === 'hide') fightAnimateOut();
     } catch {}
   });
-  sse.addEventListener('stolengoldtest', function() { sgTestTrigger(); });
   sse.addEventListener('killevent', function(e) {
     try {
       var d = JSON.parse(e.data);
@@ -402,6 +402,13 @@ masterPoll();
       var d = JSON.parse(e.data);
       if (d.action === 'show') icAnimateIn();
       if (d.action === 'hide') icAnimateOut();
+    } catch {}
+  });
+  sse.addEventListener('stolengold', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') sgAnimateIn();
+      if (d.action === 'hide') sgAnimateOut();
     } catch {}
   });
   sse.addEventListener('emblemcheck', function(e) {

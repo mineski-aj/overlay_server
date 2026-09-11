@@ -3767,7 +3767,15 @@
       transform: scale(0.9);
     }
     #pc-visa-yellow.pc-visa-yellow-in {
-      transition: left 700ms cubic-bezier(0.65, 0, 0.35, 1), opacity 200ms ease, transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
+      /* opacity now matches the 700ms slide duration (was 200ms) — a fast
+         fade let this card (and its hero-photo pokeout above the card's own
+         top edge, see #pc-visa-hero's comment) reach full opacity while
+         still positioned mostly behind the blue card, since that pokeout
+         region sits above blue's top edge and is never masked by it
+         regardless of horizontal overlap. Syncing the durations means
+         opacity only approaches 1 as the slide itself finishes emerging to
+         the left, instead of visibly popping in ~500ms early. */
+      transition: left 700ms cubic-bezier(0.65, 0, 0.35, 1), opacity 700ms cubic-bezier(0.65, 0, 0.35, 1), transform 700ms cubic-bezier(0.65, 0, 0.35, 1);
       left: 30px; opacity: 1; transform: scale(1);
     }
     .pc-visa-yellow-bg {
@@ -3934,6 +3942,11 @@
       font-size: 23px;
       text-shadow: 0 0 10px rgba(255, 214, 64, 0.85), 0 2px 4px rgba(0,0,0,0.5);
     }
+    /* Below PC_MIN_PCT_FOR_LABEL the slice is too thin for icon+%
+       together (see pcSetupDonut) — still show the role icon alone, just
+       smaller, so the lane is identifiable even when its damage share
+       doesn't earn a percentage readout. */
+    .pc-slice-label-icon-only img { width: 24px; height: 24px; }
 
     /* Glow halo behind the featured slice's crisp top face (see
        pcSetupDonut/#pc-glow-blur) — hidden until the Phase 2 morph
@@ -4057,10 +4070,13 @@
       position: absolute; left: 959px; top: 490px; width: 639px; height: 74px;
       z-index: 16;
       overflow: hidden;
+      transform: scale(.8); /* starts small while still hidden behind blue — grows to full size in step with the rise below, so it reads as arriving at full strength rather than just sliding up already full-sized */
+      transform-origin: center center;
     }
     #pc-visa-header.pc-visa-header-in {
-      transition: top 450ms cubic-bezier(0.16, 1, 0.3, 1);
+      transition: top 450ms cubic-bezier(0.16, 1, 0.3, 1), transform 450ms cubic-bezier(0.16, 1, 0.3, 1);
       top: 50px;
+      transform: scale(1);
     }
     .pc-visa-header-bg {
       position: absolute; left: 0; top: 0; width: 639px; height: 74px; z-index: 1;
@@ -9771,14 +9787,14 @@
        status: null | 'secured' | 'eliminated' (playoffs chip on the team box) */
     const ST_ASSET = '/assets/Standings/';
     const ST_TEAMS = [
-      { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'ONIC', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'RORA', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'APBR', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'TWIS', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
-      { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, gold: 0, silver: 0 },
+      { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'ONIC', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'RORA', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'APBR', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'TWIS', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'OMG',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
+      { tri: 'TNC',  move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
     ];
     const ST_ROW_TOP = 354, ST_ROW_PITCH = 77;
     let stTeams = ST_TEAMS;
@@ -9791,11 +9807,10 @@
       root.innerHTML = stTeams.map((t, i) => {
         const status = statusImg[t.status]
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
-        const goldCount   = Math.max(0, t.gold   || 0);
-        const silverCount = Math.max(0, t.silver || 0);
-        const medalIcons  =
-          ('<img class="str-medal-icon" src="' + ST_ASSET + 'mplgold.png" alt="">').repeat(goldCount) +
-          ('<img class="str-medal-icon" src="' + ST_ASSET + 'mplsilver.png" alt="">').repeat(silverCount);
+        const medalFile  = { gold: 'mplgold.png', silver: 'mplsilver.png' };
+        const medalIcons = (t.medals || []).map((m) =>
+          `<img class="str-medal-icon" src="${ST_ASSET}${medalFile[m] || medalFile.gold}" alt="">`
+        ).join('');
         const medal = medalIcons ? `<div class="str-medals">${medalIcons}</div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
           `<img class="str-bg" src="${ST_ASSET}Team_Box.png" alt="">` +
@@ -12670,7 +12685,7 @@
 
     const PC_CX = 380, PC_CY = 380, PC_OUTER_R = 300, PC_INNER_R = 150, PC_LABEL_R = 228;
     const PC_GAP_DEG = 1.4;          // thin dark seam between top-face slices (stroke-free — see pcUpdateDonutGeometry)
-    const PC_MIN_PCT_FOR_LABEL = 5;  // below this, the slice is too thin for its role icon/% (per the reference mock) — draw the color only
+    const PC_MIN_PCT_FOR_LABEL = 5;  // below this, the slice is too thin for the % text — show the role icon alone instead
     /* Real "drum" 3D, not just shading — the ring is drawn as a tilted
        ellipse (squash compresses the vertical radius) with an extruded
        outer wall of some depth hanging below the FRONT half only (angles
@@ -12965,15 +12980,20 @@
           featG.appendChild(neonCoreEl);
         }
 
-        let labelEl = null;
-        if (sl.pct >= PC_MIN_PCT_FOR_LABEL) {
-          labelEl = document.createElement('div');
-          labelEl.className = 'pc-slice-label' + (isFeatured ? ' pc-slice-label-featured' : '');
-          const roleImg = (sl.seat && sl.seat.role) ? '/role/' + encodeURIComponent(roleFile(sl.seat.role)) + '.png' : '';
-          labelEl.innerHTML = (roleImg ? `<img src="${roleImg}" alt="" onerror="this.style.display='none'">` : '') +
-            `<span>${sl.pct.toFixed(1)}%</span>`;
-          labelsWrap.appendChild(labelEl);
-        }
+        // Always show the role icon so every lane is identifiable at a
+        // glance; below PC_MIN_PCT_FOR_LABEL the slice is too thin for
+        // the percentage text too, so that gets dropped and the icon
+        // shrinks (.pc-slice-label-icon-only) instead of the whole label
+        // disappearing.
+        const showPct = sl.pct >= PC_MIN_PCT_FOR_LABEL;
+        const labelEl = document.createElement('div');
+        labelEl.className = 'pc-slice-label' +
+          (isFeatured ? ' pc-slice-label-featured' : '') +
+          (showPct ? '' : ' pc-slice-label-icon-only');
+        const roleImg = (sl.seat && sl.seat.role) ? '/role/' + encodeURIComponent(roleFile(sl.seat.role)) + '.png' : '';
+        labelEl.innerHTML = (roleImg ? `<img src="${roleImg}" alt="" onerror="this.style.display='none'">` : '') +
+          (showPct ? `<span>${sl.pct.toFixed(1)}%</span>` : '');
+        labelsWrap.appendChild(labelEl);
 
         pcSlicesState.push({ sl, wallEl, topEl, haloEl, neonGlowEl, neonCoreEl, labelEl });
       });
@@ -13181,6 +13201,14 @@
     const PC_PHASE2_BOX_DELAY_MS = 120;   // H2H box's own slide-down starts a beat after the card slide begins
     const PC_PHASE2_PHOTO_SLIDE_MS = 380; // hero photo's own slide-up duration
     const PC_PHASE2_PHOTO_DELAY_MS = PC_PHASE2_SLIDE_MS - PC_PHASE2_PHOTO_SLIDE_MS; // starts late enough that it LANDS right as the yellow card itself finishes arriving, not before
+    /* Yellow card stays fully hidden (opacity:0, its default/at-rest state)
+       for this long from the moment the intro starts — a hard floor kept
+       as its OWN timer rather than reusing PC_PHASE1_SLIDE_MS+PC_PHASE1_SHEEN_MS
+       (which today happens to add up to the same 1000ms), so a future tweak
+       to those Phase 1 durations can't silently shrink this window and let
+       the card (and its hero-photo pokeout above its own top edge) start
+       revealing early. */
+    const PC_YELLOW_HIDDEN_MS = 1000;
     function pcPlayIntro() {
       if (!pcVisible) return;
       const blueEl = document.getElementById('pc-visa-blue');
@@ -13199,10 +13227,10 @@
         sheenEl.classList.add('pc-sheen-play');
         setTimeout(() => {
           if (!pcVisible) return;
-          // Phase 2 — blue slides back to its resting coords while the
-          // yellow card slides out from behind it to its own resting spot.
+          // Phase 2 — blue slides back to its resting coords. The yellow
+          // card's own reveal is gated by PC_YELLOW_HIDDEN_MS below, not
+          // triggered here.
           blueEl.classList.add('pc-visa-blue-home');
-          yellowEl.classList.add('pc-visa-yellow-in');
           setTimeout(() => { if (pcVisible) boxWrapEl.classList.add('pc-visa-box-in'); }, PC_PHASE2_BOX_DELAY_MS);
           // Hero photo slides up into place, timed to land just as the
           // yellow card itself approaches its final location.
@@ -13218,6 +13246,12 @@
           }, PC_PHASE2_SLIDE_MS);
         }, PC_PHASE1_SHEEN_MS);
       }, PC_PHASE1_SLIDE_MS);
+
+      // Yellow card's own reveal — held back the full PC_YELLOW_HIDDEN_MS
+      // from intro start regardless of how the Phase 1/2 timers above land.
+      setTimeout(() => {
+        if (pcVisible) yellowEl.classList.add('pc-visa-yellow-in');
+      }, PC_YELLOW_HIDDEN_MS);
     }
 
     /* Phase 2 — animates squash 1->PC_SQUASH_TARGET and depth

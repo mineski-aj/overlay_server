@@ -1309,7 +1309,7 @@
        same as .dp-panel above (see "#1 rule" in CLAUDE.md). ── */
     .dp-ai-button {
       position: absolute;
-      top: 700px;
+      top: 608px; /* straddles the seam between the bubble (above) and .dp-panel's top edge (644px) — 36px up into the bubble, 36px down into the panel, same as a badge pinned to the boundary between the two boxes. Used whenever THIS side's panel is currently visible — see .dp-no-panel below for the alternative. */
       width: 153px;
       height: 72px;
       object-fit: contain;
@@ -1317,11 +1317,18 @@
       pointer-events: none;
       opacity: 0;
       transform: scale(.35);
-      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s ease;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, top .3s ease;
     }
     #dp-ai-button-blue { left: 546px; }
     #dp-ai-button-red  { left: 1221px; } /* mirror of left:546/width:153 across the 1920-wide canvas */
     .dp-ai-button.dp-visible { opacity: 1; transform: scale(1); }
+    /* Applied (via dpSyncBubblePosition, alongside .dp-rationale-bubble's
+       own .dp-no-panel below) whenever this side's panel is NOT currently
+       showing — e.g. the bubble outlived its own turn and the active side
+       switched away. Reverts to the button's original position (overlapping
+       the bubble's own bottom-right corner) instead of straddling a panel
+       seam that, without a panel there, would just be empty space below. */
+    .dp-ai-button.dp-no-panel { top: 700px; }
 
     /* The bubble's actual box (left/bottom/width/height) is ALWAYS its
        real final size for the current rationale — JS sets `height`
@@ -1341,7 +1348,7 @@
        the bubble back into the button, not into thin air. */
     .dp-rationale-bubble {
       position: absolute;
-      bottom: 343px; /* 1080 - (500 top + 237 max height) — keeps the bottom edge fixed at every size */
+      bottom: 436px; /* 1080 − 644 (.dp-panel's own top) — flush with the top of the draft-prediction panel below it, so the bubble box sits entirely ABOVE the panel (never covering its header/roulette) at every height; only the AI button is allowed to straddle that seam. Used whenever THIS side's panel is currently visible — see .dp-no-panel below for the alternative. */
       width: 725px;
       height: 110px;
       border-radius: 36px;
@@ -1352,24 +1359,36 @@
       pointer-events: none;
       opacity: 0;
       transform: scale(.06);
-      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease, bottom .3s ease;
     }
     /* X = (button center 622.5px − box left 16px) / box width 725px.
        Mirrored box for red uses the mirrored button center the same way. */
     #dp-rationale-bubble-blue { left: 16px;   transform-origin: 83.66% 100%; }
     #dp-rationale-bubble-red  { left: 1179px; transform-origin: 16.34% 100%; }
     .dp-rationale-bubble.dp-visible { opacity: 1; transform: scale(1); }
+    /* Applied (via dpSyncBubblePosition) whenever this side's panel is NOT
+       currently visible — e.g. the bubble is still within its 10s hold but
+       the active side has since switched away, so there's no panel left
+       underneath it. Falls back to the bubble's original lower position
+       instead of floating alone with a large empty gap below it (which is
+       what made a panel-less bubble look ugly/disconnected — see the "#1
+       rule" of every element being independently positioned; this is the
+       one exception, deliberately re-anchored to a sibling's visibility
+       instead of a fixed spot, because "does a panel exist below it right
+       now" is exactly the thing that determines whether it looks anchored
+       or looks like it's floating in empty space). */
+    .dp-rationale-bubble.dp-no-panel { bottom: 343px; }
     .dp-rationale-bubble-inner {
       position: absolute;
       left: 0; right: 0; bottom: 0;
       box-sizing: border-box;
       /* Extra bottom padding (vs. the sides/top) keeps text clear of the
          AI button, which overlaps this box's bottom-right corner at a
-         FIXED canvas position (top:700–772px) regardless of the bubble's
+         FIXED canvas position (top:608–680px) regardless of the bubble's
          current height, since the bubble's own bottom edge is anchored
          at a fixed canvas position too (see .dp-rationale-bubble's
          `bottom` above) — 50px of clearance keeps every line above
-         y:700 with a small margin to spare. */
+         y:608 with a small margin to spare. */
       padding: 20px 34px 50px 34px;
     }
     .dp-rationale-text {
@@ -1381,6 +1400,11 @@
     }
     .dp-rationale-text strong {
       font-weight: 1000;
+      background-color: rgba(255, 214, 0, 0.45);
+      border-radius: 4px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      padding: 0 2px;
     }
   </style>
 </head>
@@ -2719,6 +2743,24 @@
     return dpActivePanel === 'blue' ? dpBlueC : dpActivePanel === 'red' ? dpRedC : null;
   }
 
+  /* Repositions THIS side's rationale bubble/AI button to sit flush above
+     its own .dp-panel when that panel is currently showing, or to fall
+     back to their original lower spot when it isn't — see .dp-no-panel on
+     both .dp-rationale-bubble and .dp-ai-button. A bubble now legitimately
+     outlives its own turn (dpShowPanel no longer force-clears it), so it
+     can end up on screen with no panel underneath it once the active side
+     switches away — this keeps it from floating alone with a big empty
+     gap below instead of anchoring back down near where it started. */
+  function dpSyncBubblePosition(side) {
+    var panelEl  = side === 'blue' ? dpBluePanelEl : dpRedPanelEl;
+    var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
+    var btnEl    = side === 'blue' ? dpBlueAiBtnEl : dpRedAiBtnEl;
+    if (!panelEl || !bubbleEl || !btnEl) return;
+    var noPanel = !panelEl.classList.contains('dp-visible');
+    bubbleEl.classList.toggle('dp-no-panel', noPanel);
+    btnEl.classList.toggle('dp-no-panel', noPanel);
+  }
+
   /* ── Panel visibility ─────────────────────────────────────── */
   function dpSetPanelInstant(el) {
     el.classList.add('dp-no-anim');
@@ -2755,13 +2797,19 @@
     dpBluePanelEl.classList.toggle('dp-visible', side === 'blue');
     dpRedPanelEl.classList.toggle('dp-visible', side === 'red');
 
-    /* If this same side's AI button/bubble is still up (within its 10s
-       window) when this side's own panel comes back — e.g. a fast
-       back-to-back turn on the same side — clear it immediately rather
-       than waiting out its timer, so a follow-up dpShowRationaleBubble
-       call (if one comes) starts from a clean state. */
-    clearTimeout(dpRationaleTimers[side]);
-    dpHideRationaleSide(side);
+    /* Deliberately does NOT force-clear this side's rationale bubble here
+       anymore. It used to, specifically to reset state before a same-side
+       back-to-back turn's own bubble — but that meant a same-side run's
+       bubble got wiped by the very next turn's panel refresh, often
+       before it ever painted a visible frame (see dpProcessPickQueue's
+       decide(), which now attempts a bubble for every qualifying entry).
+       dpShowRationaleBubble already clears its own timers/animation state
+       every time it's called, so a genuine new bubble for this side still
+       replaces the old one cleanly — this just stops a same-side refresh
+       with NO new bubble from wiping one that's still legitimately
+       within its 10s hold window. */
+    dpSyncBubblePosition('blue');
+    dpSyncBubblePosition('red');
 
     dpActivePanel  = side;
     dpPanelVisible = true;
@@ -2802,57 +2850,35 @@
     return lower !== 'null' && lower !== 'undefined';
   }
 
-  /* ── Rationale bolding — specific keywords/phrases (fetched from
-     /rationale_keywords.json, see feedback_fetch_cache.md re: cache:
-     'no-store' for a JSON data file that may change) plus any bare
-     number or number-with-percent get wrapped in <strong>. Falls back
-     to DP_RATIONALE_KEYWORDS_DEFAULT if the fetch fails so bolding
-     still works before/without that file. */
-  var DP_RATIONALE_KEYWORDS_DEFAULT = [
-    'presence', 'meta', 'priority', 'contested', 'first phase',
-    'comfort pick', 'record', 'flex pick', 'roles', 'specialty',
-    'signature', 'counter', 'answer', 'banned away', 'off the board'
-  ];
-  var dpRationaleHighlightRegex = null;
-
-  function dpBuildRationaleHighlightRegex(keywords) {
-    var escaped = keywords
-      .slice()
-      .sort(function (a, b) { return b.length - a.length; }) /* longest first so a phrase wins over a shorter word it contains */
-      .map(function (k) { return k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
-    var wordsPart  = '\\b(?:' + escaped.join('|') + ')\\b';
-    var numberPart = '\\d+(?:\\.\\d+)?%?'; /* any number, optionally decimal, optionally with a trailing % */
-    return new RegExp(wordsPart + '|' + numberPart, 'gi');
-  }
-
-  dpRationaleHighlightRegex = dpBuildRationaleHighlightRegex(DP_RATIONALE_KEYWORDS_DEFAULT);
-
-  fetch('/rationale_keywords.json', { cache: 'no-store' })
-    .then(function (r) { return r.json(); })
-    .then(function (list) {
-      if (Array.isArray(list) && list.length) {
-        dpRationaleHighlightRegex = dpBuildRationaleHighlightRegex(list);
-      }
-    })
-    .catch(function () {});
-
+  /* ── Rationale bolding — the API sends back the exact substrings of
+     `rationale` it wants bolded per-prediction, in `rationaleEmphasis`
+     (an array of literal phrases, e.g. "Presence across this league
+     sits at 84%"). No more static keyword list/file — each rationale
+     carries its own emphasis list, so bolding is per-call, not global. */
   function dpEscapeHtml(text) {
     return text.replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 
-  function dpHighlightRationale(text) {
-    if (!dpRationaleHighlightRegex) return dpEscapeHtml(text);
+  function dpBuildEmphasisRegex(phrases) {
+    if (!Array.isArray(phrases) || !phrases.length) return null;
+    var escaped = phrases
+      .filter(function (p) { return p && typeof p === 'string' && p.trim(); })
+      .slice()
+      .sort(function (a, b) { return b.length - a.length; }) /* longest first so a phrase wins over a shorter one it contains */
+      .map(function (p) { return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!escaped.length) return null;
+    return new RegExp(escaped.join('|'), 'g');
+  }
+
+  function dpHighlightRationale(text, emphasis) {
+    var re = dpBuildEmphasisRegex(emphasis);
+    if (!re) return dpEscapeHtml(text);
     /* Highlight on the RAW text and escape each piece afterward — never
-       run the highlight regex on already-escaped HTML. Escaping first
-       turns `'` into `&#39;`, and the number-matching half of this regex
-       (`\d+`) then matches the "39" INSIDE that entity, wrapping it in
-       <strong> and splitting it into `&#<strong>39</strong>;` — no
-       longer a valid entity, so the browser prints the literal text
-       "&#39;" instead of decoding it. Matching first and escaping each
-       segment afterward can't straddle an entity like that. */
-    var re = new RegExp(dpRationaleHighlightRegex.source, dpRationaleHighlightRegex.flags);
+       run the highlight regex on already-escaped HTML, or an entity like
+       `&#39;` produced by escaping first could get split mid-entity by a
+       later match. */
     var result = '';
     var lastIndex = 0;
     var m;
@@ -2865,17 +2891,19 @@
     return result;
   }
 
-  function dpShowRationaleBubble(side, text) {
+  function dpShowRationaleBubble(side, text, emphasis) {
     var btnEl    = side === 'blue' ? dpBlueAiBtnEl : dpRedAiBtnEl;
     var bubbleEl = side === 'blue' ? dpBlueRationaleBubbleEl : dpRedRationaleBubbleEl;
     var innerEl  = side === 'blue' ? dpBlueRationaleInnerEl : dpRedRationaleInnerEl;
     var textEl   = side === 'blue' ? dpBlueRationaleTextEl : dpRedRationaleTextEl;
     if (!dpRationaleEnabled || !btnEl || !bubbleEl || !innerEl || !textEl || !dpIsValidRationale(text)) return;
 
+    dpSyncBubblePosition(side);
+
     clearTimeout(dpRationaleTimers[side]);
     clearTimeout(dpRationaleSeqTimers[side]);
 
-    textEl.innerHTML = dpHighlightRationale(text);
+    textEl.innerHTML = dpHighlightRationale(text, emphasis);
 
     /* innerEl is absolutely positioned (bottom:0, no top), so its own
        height is intrinsic to the text content regardless of the
@@ -3064,18 +3092,6 @@
     var consecutive = next && next.side === entry.side && next.type === entry.type;
     var clearMs = consecutive ? 1000 : 2250;
 
-    /* Broader than `consecutive` above (any type, not just same-type) —
-       gates whether THIS entry is even allowed to attempt a rationale
-       bubble. Whenever the same team is up again immediately next
-       (another pick, e.g. Red-Red; or a different type across a phase
-       boundary, e.g. Red's last pick then Red's first ban of Ban Phase
-       2), showing a bubble now would only flash for a fraction of a
-       second before that next turn's own dpShowPanel(side) call — same
-       side, so it DOES clear this side's bubble — wipes it. See the two
-       branches below for what happens in each case. */
-    var sameTeamNext = !!(next && next.side === entry.side);
-    var doubleType   = sameTeamNext && next.type === entry.type;
-
     var targetC = entry.side === 'blue' ? dpBlueC : dpRedC;
     if (!targetC) { dpPickQueue.shift(); dpProcessPickQueue(fallbackData); return; }
 
@@ -3098,22 +3114,6 @@
         }
       }
 
-      if (sameTeamNext) {
-        /* Never attempt a bubble for this entry — see sameTeamNext's own
-           comment above for why. For a genuine double-type pair (same
-           side AND same type — e.g. Red pick, Red pick), hand this entry
-           off to the second pick's own decide() below as a fallback
-           candidate: show the SECOND pick's rationale if it qualifies,
-           otherwise fall back to this (the first pick's) rationale.
-           For a type-mismatched same-side pair (e.g. Red pick, then
-           Red's own next ban) there's nothing to hand off — it just
-           quietly gets no rationale, and the next entry proceeds as a
-           completely ordinary turn, unaffected by this one. */
-        if (doubleType) next._dpFallbackEntry = entry;
-        advance();
-        return;
-      }
-
       function decide() {
         /* Rationale bubble fires immediately as THIS pick's own reveal
            finishes — in the same box that pick's panel is about to
@@ -3121,43 +3121,28 @@
            to go next (that could be a while away, or never, if this is
            the last slot). Only for a top-5 AI call — see
            dpShowRationaleBubble and its own comment for why
-           6th-10th/unranked isn't shown. */
+           6th-10th/unranked isn't shown.
+
+           This fires for EVERY qualifying entry, including a same-side
+           back-to-back run (Red pick, Red pick; or Red's last pick then
+           Red's first ban next phase) — dpShowPanel no longer force-clears
+           a same-side bubble on refresh (see its own comment), so each
+           new turn's bubble cleanly replaces the previous one instead of
+           one of them being silently skipped to avoid a flash-and-wipe. */
         var showedBubble = false;
         if (!dpUserHidden && entry.pred && dpIsValidRationale(entry.pred.rationale)) {
           var rankIdx = entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; });
           if (rankIdx > -1 && rankIdx < 5) {
-            dpShowRationaleBubble(entry.side, entry.pred.rationale);
+            dpShowRationaleBubble(entry.side, entry.pred.rationale, entry.pred.rationaleEmphasis);
             showedBubble = true;
           }
         }
 
-        /* This entry is the SECOND half of a double-type pair (see
-           doubleType above) and its own rationale didn't qualify (missing,
-           or outside the top 5) — fall back to the FIRST pick's rationale
-           instead of showing nothing, per "prefer the 2nd pick, fall back
-           to the 1st". */
-        if (!showedBubble && !dpUserHidden && entry._dpFallbackEntry && entry._dpFallbackEntry.pred &&
-            dpIsValidRationale(entry._dpFallbackEntry.pred.rationale)) {
-          var fb = entry._dpFallbackEntry;
-          var fbRank = fb.pred.candidates.findIndex(function (c) { return c.heroId === fb.heroId; });
-          if (fbRank > -1 && fbRank < 5) {
-            dpShowRationaleBubble(fb.side, fb.pred.rationale);
-            showedBubble = true;
-          }
-        }
-
-        /* A same-side back-to-back turn (MLBB's pick phase has these —
-           e.g. Red picks twice in a row) would otherwise advance to the
-           next entry in this SAME synchronous tick, whose own dpShowPanel
-           call clears this side's bubble as part of the normal "let a
-           same-side interrupt just happen" behavior — before the browser
-           ever paints a frame with the bubble visible at all. Net result:
-           the bubble gets added and removed with zero visible duration,
-           every single time, for the first half of any same-side pair —
-           this was the actual reason rationale "never showed" in
-           practice, not a wrong-slot lookup (verified separately that the
-           slot/occurrence matching itself is correct). A short deferral
-           guarantees at least one real paint before that can happen. */
+        /* A short deferral before advancing to the next entry guarantees
+           at least one real paint of this bubble before any further
+           synchronous processing (e.g. an immediate no-op turn) — not a
+           workaround for dpShowPanel wiping it anymore (it doesn't), just
+           insurance against a same-tick advance skipping the paint. */
         if (showedBubble) setTimeout(advance, 50);
         else advance();
       }
@@ -3226,6 +3211,7 @@
         var elSide = entry.side === 'blue' ? dpBluePanelEl : dpRedPanelEl;
         elSide.classList.remove('dp-visible');
         dpPanelVisible = false;
+        dpSyncBubblePosition(entry.side); /* this panel just went away outside dpShowPanel's own sync — reposition its bubble (if still lingering) down to the no-panel spot */
         setTimeout(onDone, 460);
       } else {
         onDone();
@@ -3563,14 +3549,24 @@
     document.body.appendChild(dpLiveRouletteBtn);
   }
 
-  /* Each sample deliberately includes several of rationale_keywords.json's
-     bolded terms plus a few bare/percent numbers, so this button doubles
-     as a quick visual check that dpHighlightRationale is actually bolding
-     the right things at every bubble size. */
+  /* Each sample pairs rationale text with its own `emphasis` array (the
+     exact substrings the API's rationaleEmphasis field would send back
+     for that text), so this button doubles as a quick visual check that
+     dpHighlightRationale is actually bolding the right things at every
+     bubble size. */
   var DP_TEST_RATIONALES = [
-    'Top priority, 68% win rate.',
-    'This hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex pick options and keeps roles flexible. Current meta presence sits around 55%, and it’s a common comfort pick when contested in the first phase.',
-    'A long one to stress-test the maximum bubble height: this hero has been banned away or picked in 9 of their last 10 games, sitting at a 82% win rate and 71% presence in the current meta. It’s their signature comfort pick, filling multiple flex pick roles with a strong specialty in the first phase, and it directly serves as the counter and answer to the enemy’s top priority target — now officially off the board after a contested draft with a 3-game ban record this split.'
+    {
+      text: 'Top priority, 68% win rate.',
+      emphasis: ['Top priority', '68% win rate']
+    },
+    {
+      text: 'This hero has shown up in every one of the opponent’s last three drafts, so denying it early limits their flex pick options and keeps roles flexible. Current meta presence sits around 55%, and it’s a common comfort pick when contested in the first phase.',
+      emphasis: ['flex pick options', 'Current meta presence sits around 55%', 'a common comfort pick when contested in the first phase']
+    },
+    {
+      text: 'A long one to stress-test the maximum bubble height: this hero has been banned away or picked in 9 of their last 10 games, sitting at a 82% win rate and 71% presence in the current meta. It’s their signature comfort pick, filling multiple flex pick roles with a strong specialty in the first phase, and it directly serves as the counter and answer to the enemy’s top priority target — now officially off the board after a contested draft with a 3-game ban record this split.',
+      emphasis: ['banned away or picked in 9 of their last 10 games', 'sitting at a 82% win rate and 71% presence in the current meta', 'their signature comfort pick', 'the counter and answer to the enemy’s top priority target', 'now officially off the board']
+    }
   ];
   var dpTestRationaleIdx    = 0;
   var dpDebugRationaleShown = false;
@@ -3581,12 +3577,12 @@
       dpDebugRationaleShown = false;
       return;
     }
-    var blueText = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
+    var blueSample = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
     dpTestRationaleIdx++;
-    var redText = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
+    var redSample = DP_TEST_RATIONALES[dpTestRationaleIdx % DP_TEST_RATIONALES.length];
     dpTestRationaleIdx++;
-    dpShowRationaleBubble('blue', blueText);
-    dpShowRationaleBubble('red', redText);
+    dpShowRationaleBubble('blue', blueSample.text, blueSample.emphasis);
+    dpShowRationaleBubble('red', redSample.text, redSample.emphasis);
     dpDebugRationaleShown = true;
   };
 
@@ -3598,17 +3594,19 @@
       }
       return arr;
     };
-    /* Both rationales include several of rationale_keywords.json's bolded
-       terms plus bare/percent numbers, so this button also exercises
+    /* Both rationales include a `rationaleEmphasis` array (the exact
+       substrings the API wants bolded), so this button also exercises
        dpHighlightRationale end-to-end (not just dpShowRationaleBubble's
        own sizing/timing) during a real reveal. */
     var bluePred = {
       slot: 1, side: 'BLUE', type: 'BAN', candidates: fakeCands('blue'),
-      rationale: 'Sample rationale for the BLUE ban — this hero has 62% presence in the current meta and has been a contested comfort pick in each of their last 3 drafts, making it a top priority to deny before it becomes their signature counter pick.'
+      rationale: 'Sample rationale for the BLUE ban — this hero has 62% presence in the current meta and has been a contested comfort pick in each of their last 3 drafts, making it a top priority to deny before it becomes their signature counter pick.',
+      rationaleEmphasis: ['62% presence in the current meta', 'a contested comfort pick', 'a top priority to deny', 'their signature counter pick']
     };
     var redPred = {
       slot: 2, side: 'RED', type: 'BAN', candidates: fakeCands('red'),
-      rationale: 'Sample rationale for the RED ban — banned away 4 times this split with an 81% ban record, it’s their answer to a flex pick that fills multiple roles, now off the board entirely once removed.'
+      rationale: 'Sample rationale for the RED ban — banned away 4 times this split with an 81% ban record, it’s their answer to a flex pick that fills multiple roles, now off the board entirely once removed.',
+      rationaleEmphasis: ['banned away 4 times this split with an 81% ban record', 'their answer to a flex pick', 'now off the board entirely']
     };
     /* A 3rd, permanently-undecided prediction — never added to
        draftState, so dpDeriveActivePrediction always finds it as the

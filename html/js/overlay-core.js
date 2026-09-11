@@ -270,7 +270,6 @@ const featureEnabled = {
   conceal:    true,
   fights:     true,
   objectivespawn: true,
-  stolengold: true,
 };
 fetch('/overlay/features').then(r => r.json()).then(d => {
   if (d && typeof d === 'object') Object.assign(featureEnabled, d);

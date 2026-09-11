@@ -1,39 +1,5 @@
 {
   "home": {
-    "teamId": "10845",
-    "lineup": [
-      {
-        "role": "EXP LANER",
-        "ign": "Nathzz",
-        "id": "2093991492"
-      },
-      {
-        "role": "JUNGLER",
-        "ign": "Koyl",
-        "id": "1478121246"
-      },
-      {
-        "role": "MID LANER",
-        "ign": "Yue",
-        "id": "1373200860"
-      },
-      {
-        "role": "ROAMER",
-        "ign": "Light",
-        "id": "1478121262"
-      },
-      {
-        "role": "GOLD LANER",
-        "ign": "Domeng",
-        "id": "1373200918"
-      }
-    ],
-    "name": "Aurora Gaming PH",
-    "short": "RORA",
-    "score": 0,
-    "coach": "Master The Basics"
-  },
-  "away": {
     "teamId": "11150",
     "lineup": [
       {
@@ -67,6 +33,40 @@
     "score": 0,
     "coach": "Wurah"
   },
+  "away": {
+    "teamId": "10975",
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Lansu",
+        "id": "1653526784"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "Kayn",
+        "id": "local1788419747582785"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Sionnn",
+        "id": "1653526988"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Tracyyy",
+        "id": "2093991517"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "Bennyqt",
+        "id": "1271650167"
+      }
+    ],
+    "name": "Twisted Minds PH",
+    "short": "TWIS",
+    "score": 0,
+    "coach": "Lyrick"
+  },
   "series": "BO3",
   "game": 1,
   "swapped": false,
@@ -75,20 +75,20 @@
   "day": 1,
   "patch": "Scarlet Embers 0826",
   "hosts": [
-    "Odin",
+    "Denisse",
     "Thea",
     "None"
   ],
   "casters": [
-    "Uomi",
-    "Burrito",
-    "Wolf"
+    "Renmar",
+    "Athena",
+    "Joshycakes"
   ],
   "todayMatches": [
     {
-      "team1Id": "10763",
-      "team1Name": "Team Liquid PH",
-      "team1Short": "TLPH",
+      "team1Id": "11150",
+      "team1Name": "Smart Omega",
+      "team1Short": "OMG",
       "team2Id": "10975",
       "team2Name": "Twisted Minds PH",
       "team2Short": "TWIS",
@@ -103,9 +103,9 @@
       "team1Id": "10845",
       "team1Name": "Aurora Gaming PH",
       "team1Short": "RORA",
-      "team2Id": "11150",
-      "team2Name": "Smart Omega",
-      "team2Short": "OMG",
+      "team2Id": "11149",
+      "team2Name": "AP.BREN",
+      "team2Short": "APBR",
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
@@ -130,40 +130,40 @@
   ],
   "tomorrowMatches": [
     {
-      "team1Id": "11150",
-      "team1Name": "Smart Omega",
-      "team1Short": "OMG",
-      "team2Id": "11149",
-      "team2Name": "AP.BREN",
-      "team2Short": "APBR",
+      "team1Id": "10975",
+      "team1Name": "Twisted Minds PH",
+      "team1Short": "TWIS",
+      "team2Id": "10765",
+      "team2Name": "TNC Pro Team PH",
+      "team2Short": "TNC",
       "vsDisplay": "VS",
       "time": "2:30 PM",
       "star": false,
       "matchType": "regular"
     },
     {
-      "team1Id": "11150",
-      "team1Name": "Smart Omega",
-      "team1Short": "OMG",
-      "team2Id": "10975",
-      "team2Name": "Twisted Minds PH",
-      "team2Short": "TWIS",
+      "team1Id": "10973",
+      "team1Name": "Team Falcons",
+      "team1Short": "FLCN",
+      "team2Id": "11149",
+      "team2Name": "AP.BREN",
+      "team2Short": "APBR",
       "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
     {
-      "team1Id": "10845",
-      "team1Name": "Aurora Gaming PH",
-      "team1Short": "RORA",
-      "team2Id": "11149",
-      "team2Name": "AP.BREN",
-      "team2Short": "APBR",
+      "team1Id": "10764",
+      "team1Name": "ONIC PH",
+      "team1Short": "ONIC",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
       "vsDisplay": "VS",
       "time": "7:30 PM",
-      "star": false,
-      "matchType": "regular"
+      "star": true,
+      "matchType": "golden"
     }
   ],
   "countdownLabel": "SHOW STARTS IN",
@@ -171,14 +171,14 @@
   "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 0
+    "running": true,
+    "endAt": 1789115999878,
+    "remaining": 12310
   },
   "map": "Expanding Rivers",
   "enCasters": [
-    "Naisou",
-    "Brigida",
-    "Midnight"
+    "Hans",
+    "Rockhart",
+    "Leo"
   ]
 }

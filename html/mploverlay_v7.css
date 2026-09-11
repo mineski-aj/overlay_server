@@ -2668,13 +2668,12 @@
     display: block;
   }
 
-  /* ── [FEATURE: stolen-gold] "Jungle Resource Stolen" banner — auto-fires
-     at 2/5/8/12min game time (see overlay-stolengold.js), shows how much
-     jungle gold/purple-buff/orange-buff each camp has stolen from the
-     other's side (camp_list[].jungle_stolen). Slides down from off-canvas
-     above its resting position, holds for an adjustable duration
-     (Dashboard Control → Stolen Gold), then slides back up. Attached as
-     #scoreboard-overlay's own first child (see overlay-scoreboard.js) —
+  /* ── [FEATURE: stolen-gold] "Jungle Resource Stolen" banner — manually
+     shown/hidden from the dashboard Control tab (see overlay-stolengold.js),
+     shows how much jungle gold/purple-buff/orange-buff each camp has stolen
+     from the other's side (camp_list[].jungle_stolen). Slides down from
+     off-canvas above its resting position and stays up until hidden.
+     Attached as #scoreboard-overlay's own first child (see overlay-scoreboard.js) —
      no z-index needed here, DOM order alone keeps it behind
      #scoreboard-bg and every other scoreboard element, and its own
      transform composes with the scoreboard's sb-on transform so this

@@ -136,8 +136,9 @@
   </div>
 
   <!-- [FEATURE: stolen-gold] "Jungle Resource Stolen" banner, driven by
-       overlay-stolengold.js. Auto-fires at 2/5/8/12min game time — see
-       the #stolengold-* CSS block in mploverlay_v7.css. Declared here as
+       overlay-stolengold.js. Manual show/hide from the dashboard Control
+       tab (checkOverlays pattern) — see the #stolengold-* CSS block in
+       mploverlay_v7.css. Declared here as
        static markup, but overlay-scoreboard.js's buildScoreboard() moves
        this whole div to be #scoreboard-overlay's first child at page
        load, so it slides in/out attached to the scoreboard instead of
@@ -236,8 +237,9 @@
 
     <!-- Stolen gold tab [FEATURE: stolen-gold] -->
     <div id="tab-stolengold" class="tab-content">
-      <span class="section-note">MANUALLY TRIGGER THE BANNER — LIVE TRIGGER IS GAME_TIME CROSSING 2:00/5:00/8:00/12:00</span>
-      <button class="debug-btn" id="stolengold-trigger-btn">▶ TEST</button>
+      <span class="section-note">MANUAL SHOW/HIDE — SAME AS THE DASHBOARD CONTROL-TAB TOGGLE</span>
+      <button class="debug-btn" id="stolengold-show-btn">▶ SHOW</button>
+      <button class="debug-btn" id="stolengold-hide-btn">■ HIDE</button>
     </div>
 
     <!-- Conceal tab [FEATURE: conceal-overlay] -->

@@ -1118,7 +1118,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale'];
+const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {
@@ -1131,13 +1131,18 @@ router.get('/overlay/feature/:feature/:action', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, feature, enabled });
 });
 
-// GET /overlay/stolengold/test — manually fire the Jungle Resource Stolen
-// banner for testing (bypasses featureToggles.stolengold and the game_time
-// threshold detection entirely — same "debug button proves nothing about
-// real detection logic" caveat as every other manual trigger in this file).
-router.get('/overlay/stolengold/test', (req, res) => {
-  state.overlayClients.forEach(c => { try { c.write('event: stolengoldtest\ndata: {}\n\n'); } catch {} });
-  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true });
+// GET /overlay/stolengold/show
+router.get('/overlay/stolengold/show', (req, res) => {
+  state.checkOverlays.stolengold = true;
+  state.overlayClients.forEach(c => { try { c.write('event: stolengold\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/stolengold/hide
+router.get('/overlay/stolengold/hide', (req, res) => {
+  state.checkOverlays.stolengold = false;
+  state.overlayClients.forEach(c => { try { c.write('event: stolengold\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
 // GET /overlay/killevent — broadcast a kill event video to all overlays
