@@ -10,7 +10,7 @@
       shape as Item Check/Emblem Check/Gold Diff Check). Stays up until
       explicitly hidden. Tracked here as sgManualOn.
    2. AUTO — fires on its own at four fixed game_time checkpoints
-      (2:00, 5:00, 8:00, 12:00), armable/disarmable from the dashboard
+      (2:05, 5:05, 8:05, 12:05), armable/disarmable from the dashboard
       like Level 15/Objective Spawn (featureEnabled.stolengold), and
       stays up for a tunable duration (/api/stolengold-duration) before
       auto-hiding. Detection is self-contained in this file
@@ -19,12 +19,15 @@
       overlay-debug.js's shared poll handler. Tracked here as
       sgAutoPlaying/sgAutoQueued.
 
-   The banner is visible whenever EITHER is true (sgShouldShow). Manual
-   hide always wins — it force-hides regardless of an in-progress auto
-   pop-up. An auto pop-up never fires while the banner is already up
-   manually, and its own auto-hide at the end of its duration is
-   skipped if the manual toggle was turned on sometime during its
-   on-screen window (manual keeps controlling visibility from then on).
+   Visibility is computed in sgSync() as sgManualOn || sgAutoPlaying —
+   never set the CSS class directly anywhere else. This is deliberate:
+   an in-progress auto pop-up must NEVER be cut short. If the dashboard's
+   manual hide is clicked while sgAutoPlaying is still true, sgSync()
+   sees sgAutoPlaying still true and keeps the banner up — the manual
+   hide "sticks" (sgManualOn is now false) but only actually takes
+   visible effect once the auto pop-up's own duration timer finishes
+   and flips sgAutoPlaying back to false. An auto pop-up also never
+   fires while the banner is already up manually.
 
    Cold-start guard: a threshold already in the past on this page's very
    first poll (e.g. the overlay was opened/refreshed mid-game) is marked
@@ -35,7 +38,7 @@
    bursting out the moment the feature is re-armed (same reasoning as
    overlay-objectivespawn.js's turtle/lord scheduling). */
 
-var STOLENGOLD_THRESHOLDS = [120, 300, 480, 720]; /* 2:00, 5:00, 8:00, 12:00 */
+var STOLENGOLD_THRESHOLDS = [125, 305, 485, 725]; /* 2:05, 5:05, 8:05, 12:05 */
 var sgFiredThresholds = {};
 var sgPrevGameTime = null;
 
@@ -49,7 +52,7 @@ var sgEls = {
   c2gold:   document.getElementById('sg-c2-gold'),
 };
 
-var sgShouldShow  = false; /* true whenever the banner is on screen, manual or auto */
+var sgShouldShow  = false; /* mirrors sgManualOn || sgAutoPlaying — set only by sgSync() */
 var sgManualOn    = false; /* mirrors the dashboard's persistent toggle */
 var sgAutoPlaying = false; /* an auto pop-up is currently in its on-screen window */
 var sgAutoQueued  = false; /* another threshold fired while one auto pop-up still playing */
@@ -88,21 +91,29 @@ function sgApplyData(data) {
 }
 registerPollHandler(sgApplyData);
 
+/* Single source of truth for on-screen visibility — see file header. */
+function sgSync() {
+  sgShouldShow = sgManualOn || sgAutoPlaying;
+  if (sgShouldShow) {
+    sgApplyData(lastData || {});
+    sgOverlayEl.classList.add('sg-in');
+  } else {
+    sgOverlayEl.classList.remove('sg-in');
+  }
+}
+
 /* ── Manual show/hide (dashboard Control tab / debug SHOW-HIDE) ── */
 function sgAnimateIn() {
   sgManualOn = true;
-  sgShouldShow = true;
-  sgApplyData(lastData || {});
-  sgOverlayEl.classList.add('sg-in');
+  sgSync();
 }
 
 function sgAnimateOut() {
   sgManualOn = false;
-  sgShouldShow = false;
-  sgOverlayEl.classList.remove('sg-in');
+  sgSync(); /* no-op visually if an auto pop-up is still mid-duration */
 }
 
-/* ── Auto pop-up (2/5/8/12min game_time) ── */
+/* ── Auto pop-up (2:05/5:05/8:05/12:05 game_time) ── */
 
 /* Duration fetched fresh every time the banner is about to auto-show,
    same pattern as Credit Reel's credits_speed.json (/api/credits-speed) —
@@ -116,16 +127,11 @@ function sgGetDuration() {
 
 function sgPlayAuto() {
   sgAutoPlaying = true;
-  sgShouldShow = true;
-  sgApplyData(lastData || {});
-  sgOverlayEl.classList.add('sg-in');
+  sgSync();
   sgGetDuration().then(function(durationSec) {
     setTimeout(function() {
       sgAutoPlaying = false;
-      if (!sgManualOn) {
-        sgShouldShow = false;
-        sgOverlayEl.classList.remove('sg-in');
-      }
+      sgSync(); /* stays visible here if sgManualOn was turned on meanwhile */
       if (sgAutoQueued) { sgAutoQueued = false; sgPlayAuto(); }
     }, durationSec * 1000);
   });
