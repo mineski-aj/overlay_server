@@ -173,6 +173,28 @@ router.post('/api/credits-speed', (req, res) => {
   res.json({ ok: true, speed });
 });
 
+// Jungle Resource Stolen banner — how long the AUTO pop-up (2/5/8/12min
+// game_time) stays on screen once shown, in seconds. GET to read, POST
+// { duration } to update. Fetched fresh (no caching) by
+// overlay-stolengold.js every time the banner is about to auto-show,
+// same pattern as credits-speed above. Does not affect the manual
+// show/hide toggle, which stays up until explicitly hidden.
+const STOLENGOLD_DURATION_FILE = path.join(__dirname, '..', 'stolengold_duration.json');
+
+router.get('/api/stolengold-duration', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').json(JSON.parse(fs.readFileSync(STOLENGOLD_DURATION_FILE, 'utf8')));
+  } catch (e) {
+    res.set('Cache-Control', 'no-store').json({ duration: 8 });
+  }
+});
+
+router.post('/api/stolengold-duration', (req, res) => {
+  const duration = Math.max(1, Math.min(30, Number((req.body || {}).duration) || 8));
+  fs.writeFileSync(STOLENGOLD_DURATION_FILE, JSON.stringify({ duration }));
+  res.json({ ok: true, duration });
+});
+
 // Post Heatmap tunables (time window / playback speed / player-focus
 // selection) — GET to read, POST partial-update. Both the dashboard's
 // Control-tab box and mplfs.html's showPostHeatmap() fetch this fresh (no

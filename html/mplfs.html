@@ -5075,7 +5075,7 @@
     </div>
 
     <div id="cmb-board">
-      <div class="cmb-header"><span id="cmb-game-label">GAME 1 - MATCH 1</span></div>
+      <div class="cmb-header"><span id="cmb-game-label">MATCH 1 - GAME 1</span></div>
       <div class="cmb-gametime-label">GAME TIME</div>
       <div class="cmb-gametime-value" id="cmb-game-time-value">00:00</div>
       <div class="cmb-row cmb-row-gold">
@@ -10676,7 +10676,7 @@
              number, already advanced by the time this recap is shown. */
           const gameNum  = Math.max(1, (ms.game || 1) - 1);
           const matchNum = ms.match || 1;
-          set('cmb-game-label', 'GAME ' + gameNum + ' - MATCH ' + matchNum);
+          set('cmb-game-label', 'MATCH ' + matchNum + ' - GAME ' + gameNum);
 
           /* ms.map is a single field last-overwritten by whichever game's
              map was most recently set on the Match Board's Map Selection
@@ -12287,6 +12287,10 @@
        rendering long float strings ("12.34782...") for most of the
        animation instead of a clean integer ramp. */
     function p2hFmtCount(v) { return String(Math.round(v || 0)); }
+    /* GPM (Gold H2H) — same whole-number rounding as p2hFmtCount, but
+       comma-grouped since GPM commonly crosses 1000 (renders "1,000" not
+       "1000"). */
+    function p2hFmtCountComma(v) { return Math.round(v || 0).toLocaleString('en-US'); }
     /* Level 15 Time isn't a plain number — level_eta IS the game-time
        timestamp they hit level 15 ONLY once level_percent reads 100;
        otherwise there's nothing to show yet. get() for this row returns
@@ -12315,9 +12319,9 @@
       ],
       gold_laner: [
         { label: 'Gold',           get: (s) => (s && s.gold) || 0,          fmt: fmtGold },
-        { label: 'GPM',            get: (s) => (s && s.extra_param && s.extra_param.gpm) || 0, fmt: p2hFmtCount },
+        { label: 'GPM',            get: (s) => (s && s.extra_param && s.extra_param.gpm) || 0, fmt: p2hFmtCountComma },
         { label: 'Damage Dealt',   get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
-        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold, invert: true },
         { label: 'Turret Damage',  get: (s) => (s && s.total_damage_tower) || 0, fmt: fmtGold },
       ],
       exp_laner: [
@@ -12332,7 +12336,7 @@
         { label: 'KP',             get: (s) => (s && s.kp) || 0,            fmt: p2hFmtPct },
         { label: 'Damage Dealt',   get: (s) => (s && s.total_damage) || 0, fmt: fmtGold },
         { label: 'Dmg Dealt %',    get: (s, team) => p2hDmgDealtPct(s, team), fmt: p2hFmtPct },
-        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold },
+        { label: 'Dmg Taken',      get: (s) => (s && s.dmg_tkn_death) || 0, fmt: fmtGold, invert: true },
       ],
       roamer: [
         { label: 'KP',             get: (s) => (s && s.kp) || 0,            fmt: p2hFmtPct },
@@ -12548,7 +12552,7 @@
          is shown, so subtract 1. */
       const p2hGameNum = Math.max(1, ((matchState && matchState.game) || 1) - 1);
       document.getElementById('p2h-header').textContent =
-        'GAME ' + p2hGameNum + ' - MATCH ' + ((matchState && matchState.match) || 1);
+        'MATCH ' + ((matchState && matchState.match) || 1) + ' - GAME ' + p2hGameNum;
       document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
       document.getElementById('p2h-title').textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + ' HEAD TO HEAD';
 
@@ -12572,7 +12576,14 @@
         const homeNum = typeof homeRaw === 'number' ? homeRaw : 0;
         const awayNum = typeof awayRaw === 'number' ? awayRaw : 0;
         const totalNum = homeNum + awayNum;
-        const pct = totalNum > 0 ? (homeNum / totalNum) * 100 : 50; /* guard divide-by-zero, also the "equal" case — starts from 0 same as every other row, just grows to the 50% midpoint */
+        /* invert: true (Dmg Taken on Gold/Mid H2H) — lower raw value should
+           get the longer bar, so give home's share of the pct to whichever
+           side took LESS damage: swap which side's raw value drives the
+           numerator instead of inverting each value individually (which
+           would misbehave at 0). */
+        const pct = totalNum > 0
+          ? ((stat.invert ? awayNum : homeNum) / totalNum) * 100
+          : 50; /* guard divide-by-zero, also the "equal" case — starts from 0 same as every other row, just grows to the 50% midpoint */
         document.getElementById('p2h-row-' + i + '-label').textContent = stat.label;
 
         /* Zero baseline, instant (no transition) — the real width/count

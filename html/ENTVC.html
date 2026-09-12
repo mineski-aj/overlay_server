@@ -489,6 +489,22 @@
       font-weight: 800; font-size: 27px; color: #0a0a0a;
       text-transform: uppercase; white-space: nowrap; overflow: hidden;
     }
+    /* EN Casters names get their own "ws-encasters-slot-<pos>-name" class
+       (same trick as the ws-encasters-slot-* photo slots above) so the
+       dashboard Edit panel can drag each caster's name independently.
+       Switches the name row from flex (evenly split thirds) to absolute
+       so left/top/width become real, overridable box dimensions instead
+       of flex-computed ones — mirrors mplfs.html's Caster Name Left/
+       Middle/Right, scoped to EN Casters only per this page's own
+       independent-from-mplfs convention. */
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-left-name,
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-middle-name,
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-right-name {
+      position: absolute; top: 0; height: 61px; flex: none;
+    }
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-left-name   { left: 0px;   width: 190px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-middle-name { left: 190px; width: 191px; }
+    .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-right-name  { left: 381px; width: 190px; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -985,12 +1001,12 @@
       const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
       const slotClass = i => `${prefix}-slot-${posOrder[i].toLowerCase()}`;
       const photosHtml = names.map((n, i) => talentPhotoTag(n, posOrder[i], slotClass(i))).join('');
-      const namesHtml = names.map(n => `<div class="ws-talent-name">${n.toUpperCase()}</div>`).join('');
+      const namesHtml = names.map((n, i) => `<div class="ws-talent-name ${slotClass(i)}-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
         `<img class="ws-talent-bg" src="${WS_TVC_ASSET}${bgAsset}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
-        `<div class="ws-talent-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
-        `<div class="ws-talent-names">${namesHtml}</div></div>`;
+        `<div class="ws-talent-namebar ${prefix}-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
+        `<div class="ws-talent-names ws-talent-namecount-${names.length}">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
     }

@@ -2384,6 +2384,7 @@
       file: 'mploverlay_v7.html',
       previewDebugTester: true,
       killEventTrigger: true,
+      stolenGoldControls: true,
       extraActions: [
         { label: 'Recap Show', action: '/overlay/fights/show' },
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
@@ -2415,6 +2416,7 @@
         { name: 'Conceal',     feature: 'conceal'    },
         { name: 'Fight Recap', feature: 'fights'     },
         { name: 'Objective Spawn', feature: 'objectivespawn' },
+        { name: 'Stolen Gold', feature: 'stolengold' },
       ],
     },
     {
@@ -3176,6 +3178,56 @@
     ['mid_laner',  'Mid Laner'],
     ['roamer',     'Roamer'],
   ];
+  function buildStolenGoldControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Stolen Gold Auto Pop-up Duration'));
+
+    var row = el('div', 'pdebug-row');
+    row.appendChild(el('label', '', 'Duration'));
+    var durationInput = document.createElement('input');
+    durationInput.type = 'number'; durationInput.min = '1'; durationInput.max = '30'; durationInput.step = '0.5';
+    durationInput.className = 'pdebug-select';
+    durationInput.style.cssText = 'width:70px;flex:0 0 70px;';
+    row.appendChild(durationInput);
+    row.appendChild(el('span', '', 'sec'));
+    body.appendChild(row);
+
+    var row2 = el('div', 'pdebug-row');
+    var applyBtn = el('button', 'pdebug-trigger', '✓ Apply');
+    row2.appendChild(applyBtn);
+    body.appendChild(row2);
+
+    var statusEl = el('div', '', 'Loading…');
+    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
+    body.appendChild(statusEl);
+
+    // Read live server state on open instead of assuming a default
+    // (memory: feedback_feature_toggle_state.md).
+    fetch('/api/stolengold-duration', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        durationInput.value = (d && d.duration) || 8;
+        statusEl.textContent = 'Current: ' + durationInput.value + 's';
+      }).catch(function () { durationInput.value = 8; statusEl.textContent = ''; });
+
+    applyBtn.addEventListener('click', function () {
+      fetch('/api/stolengold-duration', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ duration: Number(durationInput.value) || 8 }),
+      }).then(function (r) { return r.json(); })
+        .then(function (d) {
+          durationInput.value = d.duration;
+          statusEl.textContent = 'Current: ' + d.duration + 's';
+          body.classList.remove('flash-ok');
+          void body.offsetWidth;
+          body.classList.add('flash-ok');
+        }).catch(function () {
+          statusEl.textContent = 'Save failed';
+        });
+    });
+  }
+
   function buildH2HControls(body) {
     if (body.children.length) body.appendChild(el('div', 'divider'));
     body.appendChild(el('div', 'features-label', 'Post H2H Controls'));
@@ -3738,6 +3790,17 @@
        pattern as buildHeatmapControls above. */
     if (ov.h2hControls) {
       buildH2HControls(body);
+    }
+
+    /* Stolen Gold banner — display-duration tuning for the auto pop-up
+       (2:00/5:00/8:00/12:00 game_time), tuned here instead of on-page
+       (see buildStolenGoldControls below and /api/stolengold-duration in
+       routes/devapi.js). The manual show/hide toggle lives in the Check
+       Overlays list above; the arm/disarm toggle for the AUTO pop-up
+       lives in the Feature Toggles list below, same as every other
+       Shape 2 auto-effect. */
+    if (ov.stolenGoldControls) {
+      buildStolenGoldControls(body);
     }
 
     /* Feature toggles */
@@ -4586,12 +4649,27 @@
     '.ws-encasters-slot-left':   { left: 0,   top: 14, width: 354, height: 464 },
     '.ws-encasters-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
     '.ws-encasters-slot-right':  { left: 217, top: 14, width: 354, height: 464 },
+    /* ENTVC.html's EN Casters box keeps the same root id ('ws-casters') as
+       mplfs.html's real Casters box, so a scoped '#ws-casters .ws-talent-
+       namebar' selector (CASTER_DEFAULTS' trick) would collide with
+       mplfs.html's Casters Name Box in the shared 'mplfs' style bucket.
+       populateWsTalentBox instead stamps the namebar div with its own
+       '<slotPrefix>-namebar' class (ws-encasters-namebar here), same
+       independent-class trick as the ws-encasters-slot-* photo slots. */
+    '.ws-encasters-namebar': { left: 0, top: 539, width: 571, height: 61 },
+    '.ws-encasters-slot-left-name':   { left: 0,   top: 0, width: 190, height: 61 },
+    '.ws-encasters-slot-middle-name': { left: 190, top: 0, width: 191, height: 61 },
+    '.ws-encasters-slot-right-name':  { left: 381, top: 0, width: 190, height: 61 },
   };
 
   var EN_CASTER_ELEMENTS = [
     { group: 'EN Casters', id: '.ws-encasters-slot-left',   name: 'Photo (Left)'   },
     { group: 'EN Casters', id: '.ws-encasters-slot-middle', name: 'Photo (Middle)' },
     { group: 'EN Casters', id: '.ws-encasters-slot-right',  name: 'Photo (Right)'  },
+    { group: 'EN Casters Name', id: '.ws-encasters-namebar', name: 'Name Box' },
+    { group: 'EN Caster Name (Left)',   id: '.ws-encasters-slot-left-name',   name: 'Caster 1 Name' },
+    { group: 'EN Caster Name (Middle)', id: '.ws-encasters-slot-middle-name', name: 'Caster 2 Name' },
+    { group: 'EN Caster Name (Right)',  id: '.ws-encasters-slot-right-name',  name: 'Caster 3 Name' },
   ];
 
   /* ── MVP Highlights (mplfs.html) element defaults ───────────────
