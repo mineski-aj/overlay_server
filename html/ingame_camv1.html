@@ -837,7 +837,13 @@ function applyCompactLayout(p, newLayout) {
     imgEl.onerror = () => { imgEl.src = 'items/99999.png'; };
   });
 
-  /* FLIP: items that moved get an inverse transform that transitions to 0 */
+  /* FLIP: items that moved get an inverse transform that transitions to 0.
+     Duplicate ids are legal (two slots can hold the same item), so
+     oldIds.indexOf() alone would map every duplicate to the same first
+     match. Consume each old slot as it's claimed — prefer an exact
+     same-index match first — so two copies of one id resolve to their
+     own distinct old positions instead of both sliding from one. */
+  const oldIdsRemaining = oldIds.slice();
   newLayout.forEach((newId, j) => {
     if (newId === '9999') {
       const imgEl = p.itemSlots[j].querySelector('img');
@@ -845,7 +851,8 @@ function applyCompactLayout(p, newLayout) {
       imgEl.style.transform  = '';
       return;
     }
-    const oldJ = oldIds.indexOf(newId);
+    const oldJ = oldIdsRemaining[j] === newId ? j : oldIdsRemaining.indexOf(newId);
+    if (oldJ !== -1) oldIdsRemaining[oldJ] = null;
     const imgEl = p.itemSlots[j].querySelector('img');
     if (oldJ !== -1 && oldJ !== j) {
       /* item slid from oldJ → j */
@@ -935,12 +942,13 @@ function updateItems(slot, equipList) {
   const p = playerData[slot];
   if (!p.itemSlots || !p.itemSlots.length) return;
 
-  /* build new equipState from API (index 0 = equip1 … 5 = equip6) */
+  /* build new equipState from API (index 0 = equip1 … 5 = equip6). */
   const newEquipState = [];
   for (let i = 0; i < 6; i++) {
     const item = equipList && equipList[i];
     const val  = item ? item.value : 9999;
-    newEquipState.push((!val || val === 9999) ? '9999' : String(val));
+    const id = (!val || val === 9999) ? '9999' : String(val);
+    newEquipState.push(id);
   }
 
   if (newEquipState.join(',') === p.equipState.join(',')) return;
