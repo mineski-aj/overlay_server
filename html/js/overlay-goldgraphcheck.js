@@ -113,7 +113,12 @@ function ggcFmtDiff(v) {
   // Always the magnitude, never a sign — which team is ahead is already
   // shown by the dot/number's own color (blue/red) and which side of the
   // zero line it's on, so a "-" here would just be redundant/confusing.
-  return (Math.abs(v) / 1000).toFixed(1) + 'k';
+  const mag = Math.abs(v);
+  // Below 1k, ".9k"-style rounding reads worse than the plain whole gold
+  // count (e.g. "900" instead of "0.9k") — only switch to the "X.Xk"
+  // shorthand once the value actually reaches four digits.
+  if (mag < 1000) return String(Math.round(mag));
+  return (mag / 1000).toFixed(1) + 'k';
 }
 
 function ggcInterpolate(series, t) {
@@ -513,7 +518,9 @@ function ggcRenderChart(fullSeries, fullEvents) {
     // needs a transform.
     const timeLabel = g.querySelector('.ggc-time-label');
     timeLabel.style.transform = `translateX(${(boxX + GGC_TIME_BOX_W / 2).toFixed(1)}px)`;
-    timeLabel.textContent = minuteMark + 'Min.';
+    // "1Min." stays singular; every other value (0, 2, 3, 5, ...) gets the
+    // plural "Mins." suffix.
+    timeLabel.textContent = minuteMark + (minuteMark > 1 ? 'Mins.' : 'Min.');
 
     /* Dot marks the exact (t, diffAtT) point the number is labeling —
        size/stroke editable via .ggc-diff-dot in dashboard Edit
@@ -527,7 +534,9 @@ function ggcRenderChart(fullSeries, fullEvents) {
     const label = g.querySelector('.ggc-diff-label');
     label.style.transform = `translate(${labelX.toFixed(1)}px, ${labelY.toFixed(1)}px)`;
     label.setAttribute('fill', diffLabelColor);
-    label.textContent = ggcFmtDiff(diffAtT);
+    // The 0:00 mark's diff is always ~0 — showing "0.0k"/"0" there is just
+    // clutter at the chart's own baked-in zero line, so skip the label.
+    label.textContent = (i === 0) ? '' : ggcFmtDiff(diffAtT);
   }
 
   // Events sit in one of 4 fixed horizontal rows instead of directly on

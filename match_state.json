@@ -1,100 +1,100 @@
 {
   "home": {
-    "teamId": "10764",
+    "teamId": "10765",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Kirk",
-        "id": "1373201033"
+        "ign": "Ryota",
+        "id": "915241466"
       },
       {
         "role": "JUNGLER",
-        "ign": "K1NGKONG",
-        "id": "1373201049"
+        "ign": "Zaida",
+        "id": "1271650180"
       },
       {
         "role": "MID LANER",
-        "ign": "SuperFrince",
-        "id": "1271650280"
+        "ign": "Vinnn",
+        "id": "1475950692"
       },
       {
         "role": "ROAMER",
-        "ign": "SUPERYOSHI",
-        "id": "1373808369"
+        "ign": "Zehn",
+        "id": "1475950734"
       },
       {
         "role": "GOLD LANER",
-        "ign": "Savero",
-        "id": "1722728882"
+        "ign": "Jowm",
+        "id": "1155833611"
       }
     ],
-    "name": "ONIC PH",
-    "short": "ONIC",
+    "name": "TNC Pro Team PH",
+    "short": "TNC",
     "score": 0,
-    "coach": "PHEWW"
+    "coach": "E2max"
   },
   "away": {
-    "teamId": "10763",
+    "teamId": "11150",
     "lineup": [
       {
         "role": "EXP LANER",
-        "ign": "Sanford",
-        "id": "1025593308"
+        "ign": "Louis",
+        "id": "1373200964"
       },
       {
         "role": "JUNGLER",
-        "ign": "KarlTzy",
-        "id": "1271650163"
+        "ign": "Raizen",
+        "id": "1722728779"
       },
       {
         "role": "MID LANER",
-        "ign": "Sanji",
-        "id": "1271650190"
+        "ign": "Minguin",
+        "id": "1475950612"
       },
       {
         "role": "ROAMER",
-        "ign": "Jaypee",
-        "id": "1582754314"
+        "ign": "Perkziva",
+        "id": "1271650325"
       },
       {
         "role": "GOLD LANER",
-        "ign": "Teddy",
-        "id": "1810330654"
+        "ign": "Cull",
+        "id": "1810330657"
       }
     ],
-    "name": "Team Liquid PH",
-    "short": "TLPH",
-    "score": 2,
-    "coach": "Aeon"
+    "name": "Smart Omega",
+    "short": "OMG",
+    "score": 0,
+    "coach": "Wurah"
   },
   "series": "BO3",
-  "game": 3,
-  "swapped": true,
+  "game": 1,
+  "swapped": false,
   "official": true,
   "week": 4,
-  "day": 2,
+  "day": 3,
   "patch": "Scarlet Embers 0826",
   "hosts": [
     "Odin",
-    "Denisse",
+    "Thea",
     "None"
   ],
   "casters": [
     "Uomi",
-    "Joshycakes",
-    "Midnight"
+    "Burrito",
+    "Wolf"
   ],
   "todayMatches": [
     {
-      "team1Id": "10975",
-      "team1Name": "Twisted Minds PH",
-      "team1Short": "TWIS",
-      "team2Id": "10765",
-      "team2Name": "TNC Pro Team PH",
-      "team2Short": "TNC",
+      "team1Id": "10765",
+      "team1Name": "TNC Pro Team PH",
+      "team1Short": "TNC",
+      "team2Id": "11150",
+      "team2Name": "Smart Omega",
+      "team2Short": "OMG",
       "score1": 0,
-      "score2": 2,
-      "vsDisplay": "0 - 2",
+      "score2": 0,
+      "vsDisplay": "VS",
       "time": "2:30 PM",
       "star": false,
       "matchType": "regular"
@@ -103,12 +103,12 @@
       "team1Id": "10973",
       "team1Name": "Team Falcons",
       "team1Short": "FLCN",
-      "team2Id": "11149",
-      "team2Name": "AP.BREN",
-      "team2Short": "APBR",
-      "score1": 2,
+      "team2Id": "10845",
+      "team2Name": "Aurora Gaming PH",
+      "team2Short": "RORA",
+      "score1": 0,
       "score2": 0,
-      "vsDisplay": "2 - 0",
+      "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
@@ -142,21 +142,21 @@
       "matchType": "regular"
     },
     {
-      "team1Id": "10765",
-      "team1Name": "TNC Pro Team PH",
-      "team1Short": "TNC",
-      "team2Id": "11150",
-      "team2Name": "Smart Omega",
-      "team2Short": "OMG",
+      "team1Id": "10763",
+      "team1Name": "Team Liquid PH",
+      "team1Short": "TLPH",
+      "team2Id": "10765",
+      "team2Name": "TNC Pro Team PH",
+      "team2Short": "TNC",
       "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
     {
-      "team1Id": "10973",
-      "team1Name": "Team Falcons",
-      "team1Short": "FLCN",
+      "team1Id": "11150",
+      "team1Name": "Smart Omega",
+      "team1Short": "OMG",
       "team2Id": "10845",
       "team2Name": "Aurora Gaming PH",
       "team2Short": "RORA",
@@ -166,19 +166,19 @@
       "matchType": "regular"
     }
   ],
-  "countdownLabel": "SHOW RESUMES IN",
-  "goodbyeLabel": "SEE YOU TOMORROW",
-  "match": 3,
+  "countdownLabel": "SHOW STARTS IN",
+  "goodbyeLabel": "SEE YOU NEXT WEEK",
+  "match": 1,
   "countdownLabelAuto": true,
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 0
+    "running": true,
+    "endAt": 1789288800064,
+    "remaining": 17910
   },
-  "map": "Flying Cloud",
+  "map": "Dangerous Grass",
   "enCasters": [
+    "Leo",
     "Naisou",
-    "Brigida",
-    "Rockhart"
+    "Renmar"
   ]
 }

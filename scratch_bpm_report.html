@@ -1,0 +1,78 @@
+<title>BPM Report</title>
+<style>
+  :root{
+    --bg:#fafaf8; --card:#ffffff; --header-bg:#efefed; --border:#e6e6e3;
+    --text:#1a1a1a; --sub:#5a5a56;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1c1c1a; --card:#242422; --header-bg:#2e2e2b; --border:#3a3a37;
+      --text:#f0f0ee; --sub:#a8a8a3;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1c1c1a; --card:#242422; --header-bg:#2e2e2b; --border:#3a3a37;
+    --text:#f0f0ee; --sub:#a8a8a3;
+  }
+  body{ background:var(--bg); color:var(--text); font-family: Georgia, 'Times New Roman', serif; }
+  .wrap{ max-width:900px; margin:0 auto; padding:32px 24px 60px; }
+  h1{ font-size:22px; font-weight:700; margin:0 0 14px; }
+  .section{ margin-bottom:40px; }
+  table{ width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+  thead th{ background:var(--header-bg); text-align:left; font-weight:600; font-size:15px; padding:14px 20px; border-bottom:1px solid var(--border); }
+  tbody td{ padding:14px 20px; font-size:15px; border-bottom:1px solid var(--border); }
+  tbody tr:last-child td{ border-bottom:none; }
+  td.metric{ color:var(--text); }
+  th:first-child, td:first-child{ width:220px; }
+</style>
+<div class="wrap">
+
+  <div class="section">
+    <h1>Vinnn (MID LANER)</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Game 1 (16:07)</th>
+          <th>Game 2 (22:11)</th>
+          <th>Game 3 (14:08)</th>
+          <th>Game 4 (14:04)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="metric">Avg BPM</td><td>94</td><td>90</td><td>110</td><td>106</td></tr>
+        <tr><td class="metric">Peak BPM</td><td>112</td><td>110</td><td>127</td><td>122</td></tr>
+        <tr><td class="metric">% time above 120</td><td>0%</td><td>0%</td><td>4%</td><td>5%</td></tr>
+        <tr><td class="metric">Avg BPM at objectives</td><td>91</td><td>90</td><td>110</td><td>105</td></tr>
+        <tr><td class="metric">Peak BPM at objectives</td><td>109</td><td>103</td><td>122</td><td>113</td></tr>
+        <tr><td class="metric">Avg clash BPM</td><td>95</td><td>91</td><td>109</td><td>105</td></tr>
+        <tr><td class="metric">BPM on game end</td><td>82</td><td>101</td><td>106</td><td>101</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h1>Zehn (ROAMER)</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Game 1 (16:07)</th>
+          <th>Game 2 (22:11)</th>
+          <th>Game 3 (14:08)</th>
+          <th>Game 4 (14:04)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td class="metric">Avg BPM</td><td>100</td><td>94</td><td>80</td><td>94</td></tr>
+        <tr><td class="metric">Peak BPM</td><td>111</td><td>119</td><td>110</td><td>106</td></tr>
+        <tr><td class="metric">% time above 120</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td></tr>
+        <tr><td class="metric">Avg BPM at objectives</td><td>100</td><td>96</td><td>77</td><td>92</td></tr>
+        <tr><td class="metric">Peak BPM at objectives</td><td>107</td><td>112</td><td>109</td><td>101</td></tr>
+        <tr><td class="metric">Avg clash BPM</td><td>101</td><td>99</td><td>77</td><td>92</td></tr>
+        <tr><td class="metric">BPM on game end</td><td>107</td><td>107</td><td>73</td><td>97</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
