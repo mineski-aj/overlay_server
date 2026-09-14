@@ -1727,6 +1727,16 @@
     position: absolute; left: 0; top: 0;
     width: 396px; height: 61px;
   }
+  /* 10th Anniversary's golddiffsmart.png is narrower (293px vs 396px,
+     same 61px height) — re-centered over the same 858px-wide .gdc-bg
+     panel: 231+396/2 = 429 (panel center) => 429-293/2 = 282.5. */
+  [data-theme="10th_anniversary"] .gdc-smart {
+    left: 282.5px;
+    width: 293px;
+  }
+  [data-theme="10th_anniversary"] .gdc-smart-img {
+    width: 293px;
+  }
   .gdc-smart-sheen {
     position: absolute;
     top: 0; left: -60%;
@@ -1773,6 +1783,10 @@
      the portrait as the fill increases. */
   .gdc-bar-fill.gdc-fill-home { right: 0; background: #1E64FF; }
   .gdc-bar-fill.gdc-fill-away { left: 0;  background: #FF3232; }
+  /* 10th Anniversary — matches golddiffback.png's own baked-in blue/red
+     side panels. */
+  [data-theme="10th_anniversary"] .gdc-bar-fill.gdc-fill-home { background: #0095fd; }
+  [data-theme="10th_anniversary"] .gdc-bar-fill.gdc-fill-away { background: #ff243e; }
   .gdc-bar-text {
     position: absolute;
     top: 0; height: 100%;
@@ -1813,6 +1827,9 @@
   .gdc-tri.gdc-tri-home { color: #1E64FF; }
   .gdc-tri.gdc-tri-away { color: #FF3232; }
   .gdc-tri.gdc-tri-on   { opacity: 1; }
+  /* 10th Anniversary — same blue/red as the bar fills above. */
+  [data-theme="10th_anniversary"] .gdc-tri.gdc-tri-home { color: #0095fd; }
+  [data-theme="10th_anniversary"] .gdc-tri.gdc-tri-away { color: #ff243e; }
 
   /* ── [FEATURE: goldgraph-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check. Background is
@@ -2077,6 +2094,14 @@
     letter-spacing: 0.5px;
     color: #141414;
   }
+  /* 10th Anniversary — white instead of near-black, to read against the
+     anniversary sidestatback.png's busier gradient header strip. Only
+     panels using that shared background have a live .sidecheck-header
+     element at all (sidestatbackgold.png's own art already bakes its
+     title in, so there's nothing to recolor there). */
+  [data-theme="10th_anniversary"] .sidecheck-header {
+    color: #ffffff;
+  }
   .sidecheck-row {
     position: absolute;
     left: 0; width: 277px; height: 49px;
@@ -2129,6 +2154,9 @@
   }
   .sidecheck-bar-fill.sidecheck-bar-home { background: linear-gradient(to bottom, #0e3d99 0%, #1E64FF 100%); }
   .sidecheck-bar-fill.sidecheck-bar-away { background: linear-gradient(to bottom, #99201f 0%, #FF3232 100%); }
+  /* 10th Anniversary — flat color instead of the top-to-bottom gradient. */
+  [data-theme="10th_anniversary"] .sidecheck-bar-fill.sidecheck-bar-home { background: #0095fd; }
+  [data-theme="10th_anniversary"] .sidecheck-bar-fill.sidecheck-bar-away { background: #ff243e; }
   /* Left-side "NN%" text — only populated when a panel is configured
      with opts.pctField (e.g. Side Exp's level_percent); empty/unused
      for panels that keep the default max-relative fill. */
@@ -2190,6 +2218,9 @@
     background-image: url('/assets/ingame/sidedistriback.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
+  }
+  [data-theme="10th_anniversary"] .sgdc-distriback {
+    background-image: url('/assets/ingame/anniversary/sidedistriback.png');
   }
   /* Photo crop windows — Rectangle_2/Rectangle_2_copy, 128x128, flush
      against the distriback's top-left / top-right (3px gap between,

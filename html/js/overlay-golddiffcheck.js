@@ -138,9 +138,11 @@ function gdcBuildPanel() {
   const overlay = document.getElementById('golddiff-check-overlay');
   if (!overlay) return;
 
+  const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+
   const bg = document.createElement('img');
   bg.className = 'gdc-bg';
-  bg.src = 'assets/ingame/golddiffback.png';
+  bg.src = isAnniv ? 'assets/ingame/anniversary/golddiffback.png' : 'assets/ingame/golddiffback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -149,7 +151,7 @@ function gdcBuildPanel() {
   smart.id = 'gdc-smart';
   const smartImg = document.createElement('img');
   smartImg.className = 'gdc-smart-img';
-  smartImg.src = 'assets/ingame/golddiffsmart.png';
+  smartImg.src = isAnniv ? 'assets/ingame/anniversary/golddiffsmart.png' : 'assets/ingame/golddiffsmart.png';
   smartImg.alt = '';
   const smartSheen = document.createElement('div');
   smartSheen.className = 'gdc-smart-sheen';

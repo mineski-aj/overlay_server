@@ -189,7 +189,9 @@ function ggcBuildPanel() {
      own #scoreboard-tricode-c1/c2 and #sb-logo-c1/c2. */
   const headerBg = document.createElement('img');
   headerBg.className = 'ggc-header-bg';
-  headerBg.src = '/assets/ingame/graph_header.png';
+  headerBg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+    ? '/assets/ingame/anniversary/graph_header.png'
+    : '/assets/ingame/graph_header.png';
   headerBg.alt = '';
   overlay.appendChild(headerBg);
 

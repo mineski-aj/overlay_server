@@ -83,15 +83,17 @@ function eccBuildPanel() {
   const overlay = document.getElementById('emblem-check-overlay');
   if (!overlay) return;
 
+  const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+
   const bg = document.createElement('img');
   bg.className = 'ecc-bg';
-  bg.src = 'assets/ingame/emblemback.png';
+  bg.src = isAnniv ? 'assets/ingame/anniversary/emblemback.png' : 'assets/ingame/emblemback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
   const middle = document.createElement('img');
   middle.className = 'ecc-middle';
-  middle.src = 'assets/ingame/emblemmiddle.png';
+  middle.src = isAnniv ? 'assets/ingame/anniversary/emblemmiddle.png' : 'assets/ingame/emblemmiddle.png';
   middle.alt = '';
   overlay.appendChild(middle);
   eccRefs.middle = middle;

@@ -35,6 +35,19 @@ function sidecheckFormatK(v) {
   return ((v || 0) / 1000).toFixed(1) + 'K';
 }
 
+/* 10th Anniversary has its own sidestatback.png/sidestatbackgold.png —
+   shared by every panel that sets a sidecheck-bg src, whether through
+   createSideCheck's opts.bgSrc below or one of the bespoke panels
+   (overlay-sidekdadistricheck.js, overlay-sidegolddistricheck.js) that
+   set it directly. This file loads first (see mploverlay_v7.html), so
+   it's a plain global the others can call. */
+function sidecheckThemedBg(src) {
+  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+    return src.replace('assets/ingame/', 'assets/ingame/anniversary/');
+  }
+  return src;
+}
+
 /* User-editable ceiling for the name shrink-to-fit search below (dashboard
    Edit tab: Side Events · mploverlay_v7 → Player Name → Player Name Size).
    A blanket `!important` CSS override (the normal mechanism every other
@@ -144,7 +157,7 @@ function createSideCheck(opts) {
 
     const bg = document.createElement('img');
     bg.className = 'sidecheck-bg';
-    bg.src = opts.bgSrc || 'assets/ingame/sidestatback.png';
+    bg.src = sidecheckThemedBg(opts.bgSrc || 'assets/ingame/sidestatback.png');
     bg.alt = '';
     overlay.appendChild(bg);
 

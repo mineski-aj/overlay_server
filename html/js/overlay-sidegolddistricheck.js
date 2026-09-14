@@ -175,7 +175,7 @@ function sgdcBuildPanel() {
 
   const bg = document.createElement('img');
   bg.className = 'sidecheck-bg';
-  bg.src = 'assets/ingame/sidestatback.png';
+  bg.src = sidecheckThemedBg('assets/ingame/sidestatback.png');
   bg.alt = '';
   overlay.appendChild(bg);
 

@@ -56,6 +56,12 @@ html, body {
   pointer-events: none;
   display: block;
 }
+/* 10th Anniversary — swaps the <img src> via CSS instead of touching
+   the 6 repeated static tags (same content:url() technique used
+   elsewhere for static per-theme image swaps in this project). */
+[data-theme="10th_anniversary"] .pb-bg {
+  content: url('assets/ingame/anniversary/blue_box2.png');
+}
 
 /* ── Hero photo — fits the green box2 slot, cropped top/bottom ── */
 .pb-hero {

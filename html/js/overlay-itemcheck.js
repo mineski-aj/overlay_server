@@ -126,9 +126,11 @@ function icBuildPanel() {
   const overlay = document.getElementById('item-check-overlay');
   if (!overlay) return;
 
+  const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+
   const bg = document.createElement('img');
   bg.className = 'ic-bg';
-  bg.src = '/assets/ingame/ingameitemback2.png';
+  bg.src = isAnniv ? '/assets/ingame/anniversary/ingameitemback2.png' : '/assets/ingame/ingameitemback2.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -140,7 +142,7 @@ function icBuildPanel() {
 
   const labelImg = document.createElement('img');
   labelImg.className = 'ic-label-img';
-  labelImg.src = '/assets/ingame/ingameitemlabel.png';
+  labelImg.src = isAnniv ? '/assets/ingame/anniversary/ingameitemlabel.png' : '/assets/ingame/ingameitemlabel.png';
   labelImg.alt = '';
   label.appendChild(labelImg);
 
