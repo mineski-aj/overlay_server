@@ -57,7 +57,10 @@ function objSpawnPlayNext() {
   if (objSpawnPlaying || objSpawnQueue.length === 0) return;
   objSpawnPlaying = true;
   var entry = objSpawnQueue.shift();
-  objSpawnVideoEl.src = 'assets/ingame/' + entry.video;
+  /* 10th Anniversary has its own lordspawn/turtlespawn.webm. */
+  objSpawnVideoEl.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+    ? 'assets/ingame/anniversary/' + entry.video
+    : 'assets/ingame/' + entry.video;
   objSpawnOverlayEl.style.display = 'block';
   objSpawnVideoEl.play().catch(function() {
     objSpawnOverlayEl.style.display = 'none';

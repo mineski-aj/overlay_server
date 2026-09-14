@@ -5,6 +5,7 @@ const fs      = require('fs');
 const path    = require('path');
 const state   = require('../lib/state');
 const { getApiMode, setApiMode, readUrlForMode, writeUrlForMode } = require('../lib/apiMode');
+const { getTheme, setTheme } = require('../lib/theme');
 
 // LIVE/DEBUG API mode — Settings page's "dangerous debug button". Every
 // per-API URL setting below stores BOTH a live and a debug value; this
@@ -17,6 +18,30 @@ router.get('/api/api-mode', (req, res) => {
 router.post('/api/api-mode', (req, res) => {
   const mode = setApiMode((req.body || {}).mode);
   res.json({ ok: true, mode });
+});
+
+// Broadcast theme — Settings page picker. One global value, applied by
+// EVERY overlay page (html/js/theme-apply.js sets `data-theme` on
+// <html>), same GET/POST/SSE-broadcast shape as heatmap_config/h2h_config
+// below. A theme changes NOTHING by default — it only takes effect once a
+// page's own CSS adds an opt-in `[data-theme="..."] #selector { ... }`
+// override; see CLAUDE.md's "Theme system" section before adding one.
+// Actual read/write lives in lib/theme.js — routes/overlayStyles.js's
+// Edit-tab theme-scoping needs the same accessor.
+router.get('/api/theme', (req, res) => {
+  res.set('Cache-Control', 'no-store').json({ theme: getTheme() });
+});
+
+router.post('/api/theme', (req, res) => {
+  const theme = setTheme((req.body || {}).theme);
+  const cfg = { theme };
+  // Live nudge — every open overlay page (mplfs/ENTVC/mpltag/Draft/
+  // DraftIndex/mploverlay_v7/fights) applies the new theme immediately via
+  // this event instead of only picking it up on next reload.
+  state.overlayClients.forEach(c => {
+    try { c.write('event: theme\ndata: ' + JSON.stringify(cfg) + '\n\n'); } catch {}
+  });
+  res.json({ ok: true, ...cfg });
 });
 
 router.get('/api/sub-info', (req, res) => {

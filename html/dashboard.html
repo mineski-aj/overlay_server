@@ -541,6 +541,26 @@
       background: rgba(255,170,51,0.18); color: #ffaa33;
     }
 
+    /* Theme picker — a plain dropdown instead of a segmented switch. A
+       3-way segmented control doesn't fit this row at the dashboard's
+       normal width once a label is as long as "10TH ANNIVERSARY" (it
+       either overflows its container or forces the row wider than the
+       column), and a dropdown scales to any number of themes for free.
+       Same visual shape as #edit-config-select elsewhere on this page. */
+    #theme-select {
+      height: 30px;
+      max-width: 260px;
+      background: #1a1a2a;
+      border: 1px solid #333355;
+      border-radius: 5px;
+      color: #e8e8f0;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 0 8px;
+      cursor: pointer;
+    }
+    #theme-select:focus { border-color: #4455aa; outline: none; }
+
     /* ── Edit page ───────────────────────────────────────────── */
     #edit-layout {
       flex: 1;
@@ -972,6 +992,24 @@
     </div>
   </div>
 
+  <div class="settings-section">
+    <div class="settings-section-hdr">Broadcast Theme</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label>Active Theme</label>
+        <select id="theme-select">
+          <option value="regular">Regular</option>
+          <option value="10th_anniversary">10th Anniversary</option>
+          <option value="playoffs">Playoffs</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label></label>
+        <span class="settings-status">Applies live to every open overlay page — asks for confirmation before switching. For now every theme looks identical — this only picks which one is active.</span>
+      </div>
+    </div>
+  </div>
+
 </div>
 <div id="settings-col-right">
 
@@ -1260,6 +1298,51 @@
         location.reload();
       }).catch(function(){});
     });
+  });
+
+  /* ── Broadcast Theme (Regular / 10th Anniversary / Playoffs) ────
+     One global value, applied live by every open overlay page (see
+     html/js/theme-apply.js) via the 'theme' SSE event. A plain <select>
+     instead of a segmented switch (a 3-way segmented control doesn't fit
+     this row once a label is as long as "10TH ANNIVERSARY" — it either
+     overflows or forces the row wider than the column). Switching asks
+     for confirmation first, same spirit as API Mode's confirm above,
+     since it's a live, broadcast-wide change even though it doesn't
+     repoint any data source; the dropdown itself stays in sync via the
+     dashboardSSE 'theme' listener below, same as every other toggle on
+     this page. */
+  var THEME_VALUES = ['regular', '10th_anniversary', 'playoffs'];
+  var THEME_LABELS = { regular: 'Regular', '10th_anniversary': '10th Anniversary', playoffs: 'Playoffs' };
+  var themeSelect = document.getElementById('theme-select');
+  var currentTheme = 'regular';
+
+  function applyThemeSelect(theme) {
+    currentTheme = theme;
+    themeSelect.value = theme;
+  }
+
+  fetch('/api/theme').then(function(r){ return r.json(); }).then(function(d){
+    applyThemeSelect(THEME_VALUES.indexOf(d.theme) !== -1 ? d.theme : 'regular');
+  }).catch(function(){});
+
+  themeSelect.addEventListener('change', function () {
+    var t = themeSelect.value;
+    if (t === currentTheme) return;
+    var ok = window.confirm(
+      'Switch the broadcast theme to ' + THEME_LABELS[t] + '?\n\n' +
+      'This applies live to every open overlay page (OBS/vMix sources included), ' +
+      'right away.'
+    );
+    if (!ok) {
+      themeSelect.value = currentTheme; // revert the dropdown, nothing was sent
+      return;
+    }
+    applyThemeSelect(t); // optimistic — dashboardSSE's own 'theme' listener will confirm/correct it
+    fetch('/api/theme', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ theme: t })
+    }).catch(function(){});
   });
 
   /* ── Game API URL ─────────────────────────────────────────── */
@@ -2164,6 +2247,11 @@
   seedRelay('match', '/match/state');
   seedRelay('mapselection', '/mapselection/state');
   seedRelay('standings', '/standings/state');
+
+  dashboardSSE.addEventListener('theme', function (e) {
+    var d = JSON.parse(e.data);
+    if (THEME_VALUES.indexOf(d.theme) !== -1) applyThemeSelect(d.theme);
+  });
 
   dashboardSSE.addEventListener('match', function (e) {
     try { relayCache.match = JSON.parse(e.data); relaySend('match', relayCache.match, true); } catch (err) {}

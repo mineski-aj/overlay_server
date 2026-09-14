@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>Draft Overlay</title>
   <style>
@@ -43,6 +44,15 @@
       background: url('assets/draft/draftbg.png') no-repeat 0 0 / 1920px 1080px;
       transform: translateY(0);
       transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    /* JS (see the #scene background-image line further down) always
+       overrides this per match state (draftbg.png vs. the Enduring
+       Legacy variant) — this is just the pre-JS default so there's no
+       flash of the wrong art on first paint. Anniversary has no Enduring
+       Legacy variant of its own, so JS always picks this file for that
+       theme regardless of matchType. */
+    [data-theme="10th_anniversary"] #scene {
+      background-image: url('assets/draft/anniversary/draftbg.png');
     }
     /* Hidden state slides fully below the frame; base rule above carries
        the "in" transition (slides upward to show), this carries the
@@ -155,6 +165,37 @@
       50%      { transform: translateX(-50%) translateY(7px); }
     }
 
+    /* 10th Anniversary — new camp colors + a 2px stroke that reads as
+       INSIDE the triangle's silhouette (a real border can't follow a
+       clip-path shape's diagonal edges). Technique: .card-tri itself
+       becomes the stroke-colored FULL-size triangle (still the same
+       clip-path from .card-tri-top/-bottom above, so glow/positioning
+       stays untouched), and ::after is a second, smaller triangle
+       (vertices pulled ~2px inward toward the centroid) in the real camp
+       color, layered exactly on top — the ~2px sliver of the outer
+       triangle left visible around its edge IS the stroke. */
+    [data-theme="10th_anniversary"] .card-tri.camp1 {
+      background: #cdc3d4;
+      filter: drop-shadow(0 0 3px #0095fd) drop-shadow(0 0 8px #0095fd);
+    }
+    [data-theme="10th_anniversary"] .card-tri.camp2 {
+      background: #cdc3d4;
+      filter: drop-shadow(0 0 3px #fe243e) drop-shadow(0 0 8px #fe243e);
+    }
+    [data-theme="10th_anniversary"] .card-tri::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+    [data-theme="10th_anniversary"] .card-tri-top::after {
+      clip-path: polygon(3px 1px, 39px 1px, 21px 18px);
+    }
+    [data-theme="10th_anniversary"] .card-tri-bottom::after {
+      clip-path: polygon(21px 2px, 39px 19px, 3px 19px);
+    }
+    [data-theme="10th_anniversary"] .card-tri.camp1::after { background: #0095fd; }
+    [data-theme="10th_anniversary"] .card-tri.camp2::after { background: #fe243e; }
+
     /* ── Pick plate flex layout ────────────────────────────────── */
     .plates-camp {
       position: absolute;
@@ -192,6 +233,17 @@
       position: absolute;
       top: 0; left: 0; right: 0; height: 168px;
       background: url('assets/draft/plateback.png') no-repeat center center / cover;
+    }
+    /* 10th Anniversary — separate blue-side/red-side plate art (regular
+       theme uses the same plateback.png for both sides). .plates-camp-1
+       is blue (campid 1), .plates-camp-2 is red (campid 2) — see
+       buildPickPlates/showPickAnim below for the same split applied to
+       hero banners and the picking*.webm animations. */
+    [data-theme="10th_anniversary"] .plates-camp-1 .plate {
+      background-image: url('assets/draft/anniversary/plateback1.png');
+    }
+    [data-theme="10th_anniversary"] .plates-camp-2 .plate {
+      background-image: url('assets/draft/anniversary/plateback2.png');
     }
 
     /* Content wrapper — fills the plate width so cropping scales with it */
@@ -377,6 +429,10 @@
     }
     .dstats-rect-camp1 { background: #0055ff; }
     .dstats-rect-camp2 { background: #cd0000; }
+    /* 10th Anniversary — new multiply colors (mix-blend-mode: multiply
+       is set on .dstats-rect above, unchanged). */
+    [data-theme="10th_anniversary"] .dstats-rect-camp1 { background: #0195fc; }
+    [data-theme="10th_anniversary"] .dstats-rect-camp2 { background: #ff243e; }
     .dstats-text {
       z-index: 3;
     }
@@ -545,6 +601,12 @@
       z-index: 2;
       filter: brightness(0) invert(1) brightness(0.086);
     }
+    /* 10th Anniversary — pure white instead of the near-black Regular
+       tone (same brightness(0) invert(1) base, just without the final
+       brightness(0.086) dimming step). */
+    [data-theme="10th_anniversary"] .role-icon {
+      filter: brightness(0) invert(1);
+    }
 
     /* Press squishes from centre — translate calculated in JS at animationend */
     @keyframes role-press {
@@ -620,6 +682,12 @@
     }
     .pick-gradient.camp2 {
       background: linear-gradient(to top, rgba(255,50,50,0.85) 0%, transparent 70%);
+    }
+    /* 10th Anniversary — same orange glow for both sides instead of the
+       camp-colored blue/red split. */
+    [data-theme="10th_anniversary"] .pick-gradient.camp1,
+    [data-theme="10th_anniversary"] .pick-gradient.camp2 {
+      background: linear-gradient(to top, rgba(255,163,68,0.85) 0%, transparent 70%);
     }
     @keyframes grad-pulse {
       0%, 100% { opacity: 0.25; }
@@ -697,6 +765,21 @@
       pointer-events: none;
     }
     .plate-pick-anim.pick-anim-visible { opacity: 1; }
+    /* 10th Anniversary — pickingblue/red.webm's black background was never
+       transparent (no alpha channel in the source file, Regular included —
+       this isn't something the white recolor introduced), it just read as
+       fine against Regular's own bluepickbg1/redpickbg1 loop. Against the
+       brighter anniversary ambient loop it reads as a solid black box
+       covering it. mix-blend-mode: screen fixes this the same way it's
+       already used elsewhere in this file for a video-over-video overlay
+       (see the photo-glow comment above): black contributes nothing to
+       the blend (so the ambient loop shows straight through), only the
+       white "PICKING" text adds brightness on top of it. Regular is left
+       untouched — its own black-on-black look has been the standing
+       behavior and wasn't asked to change. */
+    [data-theme="10th_anniversary"] .plate-pick-anim {
+      mix-blend-mode: screen;
+    }
 
 
     /* ── Timer bar ─────────────────────────────────────────────── */
@@ -708,6 +791,13 @@
       transform-origin: center center;
       transform: scaleX(1);
       display: none;
+    }
+    /* 10th Anniversary — left-to-right gradient instead of flat blue.
+       Lives on the same box the countdown scaleX() shrinks, so it
+       compresses along with the bar as time runs out rather than
+       needing separate handling. */
+    [data-theme="10th_anniversary"] #timer-bar {
+      background: linear-gradient(to right, #0e94fb, #f93b52);
     }
 
     /* ── Score boxes ─────────────────────────────────────────────── */
@@ -995,6 +1085,12 @@
       left: 1522px; top: 562px;
       background-image: url('assets/draft/recapred.png');
       transform: translateX(450px);
+    }
+    [data-theme="10th_anniversary"] #dr-blue-bg {
+      background-image: url('assets/draft/anniversary/recapblue.png');
+    }
+    [data-theme="10th_anniversary"] #dr-red-bg {
+      background-image: url('assets/draft/anniversary/recapred.png');
     }
     #draftrecap-page.draftrecap-visible #dr-blue-bg,
     #draftrecap-page.draftrecap-visible #dr-red-bg {
@@ -1427,6 +1523,13 @@
      is heaviest (see CLAUDE.md-adjacent perf notes on this page). */
   var PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(window.location.search);
 
+  /* 10th Anniversary reskin — draftbg.png, bluehero/redhero.png, and the
+     picking*.webm animations (recolored white; plateback swap is CSS-only,
+     see .plates-camp-1/-2 .plate below) all have anniversary/ variants. */
+  function isAnniversaryTheme() {
+    return document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  }
+
   var DEFAULT_URL = window.location.protocol + '//' + window.location.hostname + ':5001/api/gamedata';
   var STORAGE_KEY = 'draft_overlay_api_url';
   var POLL_MS     = 1000;
@@ -1617,7 +1720,13 @@
       tmHasStart = false;
       return;
     }
-    timerEl.style.background = campid === 1 ? 'rgb(0,80,220)' : 'rgb(220,50,50)';
+    /* 10th Anniversary keeps its one gradient regardless of which camp is
+       picking (see [data-theme="10th_anniversary"] #timer-bar CSS) — clear
+       any inline override so that CSS rule can actually apply; Regular
+       keeps the existing camp-colored flat fill. */
+    timerEl.style.background = isAnniversaryTheme()
+      ? ''
+      : (campid === 1 ? 'rgb(0,80,220)' : 'rgb(220,50,50)');
     timerEl.style.display    = 'block';
 
     /* Decide if this is a genuinely new turn:
@@ -1698,9 +1807,9 @@
 
         var vid = document.createElement('video');
         vid.className   = 'plate-pick-video';
-        vid.src         = campid === 1
-          ? 'assets/draft/motion/bluepickbg1.webm'
-          : 'assets/draft/motion/redpickbg1.webm';
+        vid.src         = isAnniversaryTheme()
+          ? (campid === 1 ? 'assets/draft/anniversary/motion/bluepickbg1.webm' : 'assets/draft/anniversary/motion/redpickbg1.webm')
+          : (campid === 1 ? 'assets/draft/motion/bluepickbg1.webm' : 'assets/draft/motion/redpickbg1.webm');
         vid.loop = true; vid.muted = true;
         vid.playsInline = true; vid.preload = 'none';
         plate.appendChild(vid); /* direct child of plate so it scales with the full width */
@@ -1715,9 +1824,12 @@
            player photo, which has an explicit higher z-index. */
         var pickAnim = document.createElement('video');
         pickAnim.className = 'plate-pick-anim';
-        pickAnim.src = campid === 1
-          ? 'assets/motion/pickingblue.webm'
-          : 'assets/motion/pickingred.webm';
+        /* 10th Anniversary — same "PICKING" animation, recolored white
+           (both sides use the same white file; there's no separate
+           blue/red distinction once it's white). */
+        pickAnim.src = isAnniversaryTheme()
+          ? (campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
+          : (campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
         pickAnim.loop = true; pickAnim.muted = true;
         pickAnim.playsInline = true; pickAnim.preload = 'none';
         plate.appendChild(pickAnim);
@@ -1789,7 +1901,9 @@
 
         var bannerImg = document.createElement('img');
         bannerImg.className = 'hero-banner-img';
-        bannerImg.src = campid === 1 ? 'assets/draft/bluehero.png' : 'assets/draft/redhero.png';
+        bannerImg.src = isAnniversaryTheme()
+          ? (campid === 1 ? 'assets/draft/anniversary/bluehero.png' : 'assets/draft/anniversary/redhero.png')
+          : (campid === 1 ? 'assets/draft/bluehero.png' : 'assets/draft/redhero.png');
         bannerImg.alt = '';
         banner.appendChild(bannerImg);
 
@@ -2011,10 +2125,14 @@
 
         /* #scene background — only Enduring Legacy has its own draftbg
            variant (the other rivalry types only have Waiting TVC/Lobby
-           art), so every other matchType keeps the normal art. */
+           art), so every other matchType keeps the normal art. 10th
+           Anniversary has no Enduring Legacy variant of its own, so it
+           always uses its one draftbg.png regardless of matchType. */
         var curMatch  = (s.todayMatches || [])[(s.match || 1) - 1];
         var isEnduring = curMatch && curMatch.matchType === 'enduring';
-        scene.style.backgroundImage = "url('assets/draft/" + (isEnduring ? 'draftbg_ENDURING LEGACY.png' : 'draftbg.png') + "')";
+        scene.style.backgroundImage = isAnniversaryTheme()
+          ? "url('assets/draft/anniversary/draftbg.png')"
+          : "url('assets/draft/" + (isEnduring ? 'draftbg_ENDURING LEGACY.png' : 'draftbg.png') + "')";
 
         /* #team-c1/#team-c2 sit directly on that background's gold panel
            in the Enduring Legacy art (white elsewhere), so they need to
@@ -2260,9 +2378,18 @@
       .catch(function () { return 1; });
   }
 
+  // drPollTimer below fires every 3s regardless of whether the previous
+  // call finished — without this guard, an unreachable draftRecapApiUrl
+  // (silently dropped packets, no timeout on this fetch by design — see
+  // drAnimateIn's comment above) would pile up one more overlapping hung
+  // request every 3s, forever, same class of bug as poll()'s pollInFlight
+  // guard above.
+  var drFetchInFlight = false;
   function drFetchAndApply() {
+    if (drFetchInFlight) return Promise.resolve();
+    drFetchInFlight = true;
     return Promise.all([
-      fetch(draftRecapApiUrl, { cache: 'no-store' }).then(function (r) { return r.json(); }),
+      fetch(draftRecapApiUrl, { cache: 'no-store', signal: AbortSignal.timeout(8000) }).then(function (r) { return r.json(); }),
       drFetchGameNum(),
     ]).then(function (results) {
       var data    = results[0];
@@ -2270,7 +2397,7 @@
       var camps   = (data && data.camp_list) || [];
       drApplySide(drBlue, camps[0], gameNum, false);
       drApplySide(drRed,  camps[1], gameNum, true);
-    });
+    }).finally(function () { drFetchInFlight = false; });
   }
 
   function drAnimateIn() {
@@ -2280,12 +2407,13 @@
 
     /* Fire-and-forget — data populates whenever this resolves. The
        reveal below does NOT wait on it: draftRecapApiUrl is a
-       third-party scorekeeping feed with no timeout on this fetch, so
-       gating visibility behind it meant one slow/unreachable API call
-       could leave the panel silently stuck off-screen (display:block
-       but never getting draftrecap-visible) with no retry — hide
-       always "worked" since it has no fetch dependency, which is what
-       made this look like show/hide were asymmetrically broken. */
+       third-party scorekeeping feed, so gating visibility behind it
+       meant one slow/unreachable API call could leave the panel
+       silently stuck off-screen (display:block but never getting
+       draftrecap-visible) with no retry — hide always "worked" since
+       it has no fetch dependency, which is what made this look like
+       show/hide were asymmetrically broken. (drFetchAndApply() now
+       also has its own timeout + in-flight guard, see there.) */
     drFetchAndApply().catch(function () {});
 
     /* Double rAF so the browser commits display:block at the
@@ -3289,9 +3417,17 @@
     return r + '|' + b + '|' + rd;
   }
 
+  // setInterval(dpFetchLive, 3000) below doesn't know or care whether the
+  // previous tick finished. /proxy/predictions now fails fast on its own
+  // (see routes/proxy.js) if the upstream is unreachable, but this guard
+  // is cheap defense-in-depth against the same overlapping-poll pileup
+  // the other feeds on this page had to fix.
+  var dpFetchInFlight = false;
   function dpFetchLive() {
     if (dpDebugTestActive) return; /* real polling suspended during a __dpTestReveal() run — see there */
-    fetch('/proxy/predictions', { cache: 'no-store' }).then(function (res) {
+    if (dpFetchInFlight) return;
+    dpFetchInFlight = true;
+    fetch('/proxy/predictions', { cache: 'no-store', signal: AbortSignal.timeout(8000) }).then(function (res) {
       if (!res.ok) throw new Error('HTTP ' + res.status);
       return res.json();
     }).then(function (data) {
@@ -3357,7 +3493,8 @@
 
       dpPrevDraftKey = key || dpPrevDraftKey; /* don't overwrite with null between games */
       dpPrevData = data;
-    }).catch(function () {});
+    }).catch(function () {})
+      .finally(function () { dpFetchInFlight = false; });
   }
 
   function dpApplyData(data) {
@@ -4964,8 +5101,19 @@
     return { code: 0, data: { battleid: raw.BattleID || null, state_left_time: raw.state_time || 0, camp_list: campList } };
   }
 
+  // setInterval(poll, POLL_MS) below doesn't know or care whether the
+  // previous tick finished — without this guard, and without a timeout on
+  // the fetch itself, an unreachable draft API (silently dropped packets,
+  // not a fast connection-refused) would pile up one more overlapping
+  // hung request every second, forever, eventually exhausting the
+  // browser's ~6-connections-per-host cap for this host and freezing this
+  // whole page (see CLAUDE.md's Dashboard architecture section for the
+  // same class of bug with SSE connections).
+  var pollInFlight = false;
   function poll() {
-    fetch(apiUrl, { cache: 'no-store' })
+    if (pollInFlight) return;
+    pollInFlight = true;
+    fetch(apiUrl, { cache: 'no-store', signal: AbortSignal.timeout(8000) })
       .then(function (res) {
         if (!res.ok) throw new Error('HTTP ' + res.status);
         return res.json();
@@ -5080,7 +5228,8 @@
         dpRealDataReady = true;
         updateStatus(json.data, allSeats);
       })
-      .catch(function () {});
+      .catch(function () {})
+      .finally(function () { pollInFlight = false; });
   }
 
   /* ── Whole-scene show/hide — slides upward to show, downward to hide
@@ -5126,6 +5275,7 @@
     // several overlay browser sources/tabs open at once no longer eats
     // into the browser's shared connection pool per page.
     var sse = createOverlaySSE();
+    sse.addEventListener('theme', function(ev) { applyTheme(JSON.parse(ev.data).theme); });
     /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
        hard reload so new position/size overrides apply immediately
        (see mplfs.html's connectSSE() for the identical pattern). */

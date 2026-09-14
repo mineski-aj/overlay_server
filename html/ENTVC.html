@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>ENTVC — Waiting TVC (EN)</title>
   <style>
@@ -28,6 +29,13 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* 10th Anniversary brand accent — mirrored from mplfs.html, see there
+       for the full explanation of why this is a CSS custom property
+       instead of per-selector [data-theme] override rules. */
+    [data-theme="10th_anniversary"] {
+      --anniv-accent: #6c4614;
+      --anniv-header-text: #5e79fe;
+    }
 
     /* ── CONFIG BAR ── */
     #config-bar {
@@ -180,6 +188,23 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
+    /* 10th Anniversary — mirrored from mplfs.html, see there for details. */
+    [data-theme="10th_anniversary"] #ws-header {
+      left: 0px; top: 0px; width: 1432px; height: 397px;
+    }
+    [data-theme="10th_anniversary"] #ws-header img {
+      width: 1432px; height: 397px;
+      content: url('/assets/Waiting Screen TVC/anniversary/S18_Header.png');
+    }
+    [data-theme="10th_anniversary"] #ws-week-label {
+      left: 396px; top: 202px;
+      width: 516px; height: 41px;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+    }
+    [data-theme="10th_anniversary"] #ws-week-label .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
 
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
     /* width/height frozen at the box's old flex-computed size (160 label +
@@ -207,15 +232,6 @@
       position: relative;
       z-index: 0;
     }
-    /* Scoped to the ID, not "#ws-timer-label img" — a generic descendant
-       selector would also clamp #ws-timer-label-bg (also an <img> inside
-       this box) to the OLD 160x47 label size via max-width/max-height:
-       100%, silently overriding any width/height set from the dashboard
-       Edit tab. */
-    #ws-timer-label-img {
-      max-width: 100%; max-height: 100%;
-      object-fit: contain;
-    }
     /* Background plaque behind the label graphic — see mplfs.html's
        #ws-timer-label-bg for why this is a child of the label box rather
        than a canvas-absolute sibling. */
@@ -226,6 +242,26 @@
       width: 179px; height: 69px;
       object-fit: cover;
       pointer-events: none;
+    }
+    /* 10th Anniversary — mirrored from mplfs.html (see there for why this
+       is content: url() instead of wsTvcAsset()). */
+    [data-theme="10th_anniversary"] #ws-timer-label-bg {
+      content: url('/assets/Waiting Screen TVC/anniversary/timeback.png');
+    }
+    /* "SHOW STARTS IN"/"SHOW RESUMES IN" — mirrored from mplfs.html, see
+       there for details (left corrected to 1262px — see there for why). */
+    #ws-timer-countdown-label {
+      position: absolute;
+      left: 1262px; top: 121px;
+      width: 143px; height: 59px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 21px;
+      line-height: 1.15;
+      color: var(--anniv-accent, #0a0a0a);
+      text-transform: uppercase;
     }
     /* Pulled out of #ws-timer's flex flow so it can be dragged/resized and
        font-size-tuned independently from the dashboard Edit tab — left/top
@@ -245,6 +281,22 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;
+    }
+    /* 10th Anniversary — mirrored from mplfs.html, see there for details. */
+    [data-theme="10th_anniversary"] #ws-timer-value {
+      background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    /* 10th Anniversary — mirrored from mplfs.html, see there for details. */
+    #ws-anniv-logo { display: none; }
+    [data-theme="10th_anniversary"] #ws-anniv-logo {
+      display: block;
+      position: absolute;
+      left: 951px; top: 1001px;
+      width: 269px; height: 64px;
     }
 
     /* ── WAITING SCREEN — TODAY'S MATCHES PANEL ── */
@@ -271,7 +323,7 @@
     .wsm-box .wsm-band-bo {
       position: absolute; top: 0; height: 39px;
       display: flex; align-items: center;
-      font-weight: 800; font-size: 19px; color: #0a0a0a;
+      font-weight: 800; font-size: 19px; color: var(--anniv-accent, #0a0a0a);
       text-transform: uppercase; white-space: nowrap;
     }
     .wsm-box .wsm-band-label { left: 14px; }
@@ -363,6 +415,9 @@
       width: 340px; height: 94px;
     }
     .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    /* Mirrored from mplfs.html, see there for details. */
+    #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+    [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
        slide used, but a single image sliding in from the left (decelerating
        into place) then out to the right (accelerating away), matching
@@ -505,6 +560,28 @@
     .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-left-name   { left: 0px;   width: 190px; }
     .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-middle-name { left: 190px; width: 191px; }
     .ws-talent-names.ws-talent-namecount-3 .ws-encasters-slot-right-name  { left: 381px; width: 190px; }
+    /* 10th Anniversary — mirrored from mplfs.html (see there for details). */
+    [data-theme="10th_anniversary"] .ws-talent-namebox {
+      position: absolute;
+      left: 21px; top: 3px;
+      width: 530px; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .ws-talent-names-inner {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .ws-talent-name-anniv {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 800;
+      font-size: 27px;
+      color: var(--anniv-accent, #6c4614);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .ws-talent-star { width: 14px; height: 14px; pointer-events: none; flex-shrink: 0; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -569,9 +646,11 @@
       <div id="ws-casters" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
         <div id="ws-timer-value">30:30</div>
       </div>
+      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
+      <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
   </div>
 
@@ -610,6 +689,7 @@
       // several overlay browser sources/tabs open at once no longer eats
       // into the browser's shared connection pool per page.
       sseSource = createOverlaySSE();
+      sseSource.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';
@@ -693,12 +773,25 @@
     const SCENE_VIDEO_SRC = {
       waiting: '/assets/bgloopsun2.webm',
     };
+    // Per-theme background override, mirrored from mplfs.html's Waiting
+    // TVC per the ENTVC mirroring rule (CLAUDE.md) — Waiting Lobby is NOT
+    // mirrored here (it isn't even in this file's SCENE_VIDEO_SRC), so no
+    // 'lobby' entry belongs in this table.
+    const SCENE_VIDEO_SRC_BY_THEME = {
+      '10th_anniversary': {
+        waiting: '/assets/annivloopsun.webm',
+      },
+    };
+    function getSceneVideoSrc(feature) {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
+    }
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
     let sceneVideoVisible = false;
 
     function showSceneVideo(feature) {
-      const src = SCENE_VIDEO_SRC[feature];
+      const src = getSceneVideoSrc(feature);
 
       if (src === currentSceneVideoSrc) {
         if (!sceneVideoVisible) sceneVideoEls[sceneVideoLayer].classList.add('sv-visible'); // same file after a gap — just reveal it again
@@ -733,6 +826,29 @@
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
+    // Per-theme Waiting TVC asset overrides — mirrored from mplfs.html per
+    // the ENTVC mirroring rule (CLAUDE.md). Scoped to buildWsMatches below
+    // (this file's only Waiting-TVC-box-art call site) — see mplfs.html's
+    // copy of this table for why it isn't applied more broadly.
+    const WS_TVC_ASSET_BY_THEME = {
+      '10th_anniversary': {
+        'TodayMatches.png':          'anniversary/TodayMatches.png',
+        'MatchBox_REGULAR MATCH.png': 'anniversary/MatchBox_REGULAR MATCH.png',
+        'HOST_BOXv1.png':            'anniversary/HOST_BOXv1.png',
+        'CASTER_BOXv1.png':          'anniversary/CASTER_BOXv1.png',
+        'NAMEBOX.png':               'anniversary/NAMEBOX.png',
+        // No NAMEBOX2 anniversary art exists — Hosts' 2-name case reuses
+        // the same single anniversary namebox asset as the 3-name case,
+        // per the user's explicit "disregard that it's not the same name".
+        'NAMEBOX2.png':              'anniversary/NAMEBOX.png',
+        'Sponsor Box.png':           'anniversary/Sponsor Box.png',
+      },
+    };
+    function wsTvcAsset(filename) {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      const override = WS_TVC_ASSET_BY_THEME[theme];
+      return WS_TVC_ASSET + ((override && override[filename]) || filename);
+    }
     const WS_MATCHES = [
       { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', matchType: 'regular',
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' }, score: { l: 2, r: 0 } },
@@ -859,7 +975,7 @@
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_TVC_ASSET}TodayMatches.png" alt="Today's Matches">`;
+      let html = opts.title === false ? '' : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
       matches.forEach(m => {
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
@@ -867,7 +983,7 @@
             `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" ` +
             `alt="${m.score.l}-${m.score.r}">`
           : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
-        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
             ? `<span class="wsm-band-time star">${wsFormatTimeGmt8(m.time)}</span>` +
@@ -905,7 +1021,7 @@
        Waiting Lobby's sponsor box, instead of the old fixed 3s crossfade. */
     function buildWsSponsor() {
       document.getElementById('ws-sponsor').innerHTML =
-        `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor"><img class="wsm-sponsor-bg" src="${wsTvcAsset('Sponsor Box.png')}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="ws-sponsor-cat"></div>` +
         `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>`;
     }
@@ -981,6 +1097,39 @@
       return `<div class="${cls}"><img class="ws-talent-photo" ` +
         `src="${src}" onerror="this.style.display='none'" alt="${name}"></div>`;
     }
+    /* 10th Anniversary caster/host name row — see mplfs.html's
+       populateWsTalentBox for the full explanation (Canvas measureText()
+       instead of DOM scrollWidth/clientWidth, since this can run while
+       the scene is still display:none, before showWaitingScreen() ever
+       fires — DOM-layout measurement of a hidden element is meaningless
+       and was the actual root cause of names overflowing their box). */
+    let _annivMeasureCtx = null;
+    function annivTextWidth(text, font) {
+      if (!_annivMeasureCtx) _annivMeasureCtx = document.createElement('canvas').getContext('2d');
+      _annivMeasureCtx.font = font;
+      return _annivMeasureCtx.measureText(text).width;
+    }
+    const ANNIV_NAME_BOX  = { left: 21, top: 3, w: 530, h: 56 };
+    const ANNIV_REF_SIZE  = 27;
+    const ANNIV_GAP       = 16;
+    const ANNIV_STAR_SIZE = 14;
+    function buildAnnivNameBox(names) {
+      const font = `800 ${ANNIV_REF_SIZE}px 'General Sans'`;
+      const totalNameWidth = names.reduce((sum, n) => sum + annivTextWidth(n.toUpperCase(), font), 0);
+      const starCount = names.length - 1;
+      const naturalWidth = totalNameWidth + starCount * (ANNIV_STAR_SIZE + 2 * ANNIV_GAP);
+      const scale = Math.min(1, ANNIV_NAME_BOX.w / naturalWidth);
+      const itemsHtml = names.map((n, i) => {
+        const nameEl = `<span class="ws-talent-name-anniv">${n.toUpperCase()}</span>`;
+        const star = i < names.length - 1
+          ? `<img class="ws-talent-star" src="${WS_TVC_ASSET}anniversary/annivstar.png" alt="">`
+          : '';
+        return nameEl + star;
+      }).join('');
+      return `<div class="ws-talent-namebox">` +
+        `<div class="ws-talent-names-inner" style="gap:${ANNIV_GAP}px;transform:scale(${scale})">${itemsHtml}</div>` +
+        `</div>`;
+    }
     /* Builds one talent box's innerHTML (Hosts or Casters); returns how many
        names were actually shown so the carousel can skip empty panels. */
     function populateWsTalentBox(rootId, list, bgAsset, posOrder, slotPrefix) {
@@ -988,24 +1137,35 @@
       const root = document.getElementById(rootId);
       if (names.length < 1) { root.innerHTML = ''; return 0; }
       /* 3-up gets crowded with a dashed divider — the blank NAMEBOX frame
-         gives long names room to breathe (the auto-fit pass below still
-         shrinks them further if needed). Every slot gets a stable
+         gives long names room to breathe. Every slot gets a stable
          "<slotPrefix>-slot-<pos>" class (e.g. ws-hosts-slot-left,
          ws-casters-slot-middle) so the dashboard Edit panel can position/
          size each one independently regardless of how many are showing.
          slotPrefix defaults to rootId — ENTVC.html's EN Casters box passes
          a distinct prefix ('ws-encasters') so its slots can be positioned
          independently of mplfs.html's real Casters, which share this same
-         function but keep the plain 'ws-casters' prefix. */
+         function but keep the plain 'ws-casters' prefix. Regular theme
+         only — 10th Anniversary's name row (below) doesn't use slot
+         classes at all, so this distinction is moot for it. */
       const prefix = slotPrefix || rootId;
       const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
       const slotClass = i => `${prefix}-slot-${posOrder[i].toLowerCase()}`;
       const photosHtml = names.map((n, i) => talentPhotoTag(n, posOrder[i], slotClass(i))).join('');
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      if (isAnniversary) {
+        root.innerHTML =
+          `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
+          `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
+          `<div class="ws-talent-namebar ${prefix}-namebar"><img src="${wsTvcAsset(namebarImg)}" alt="">` +
+          buildAnnivNameBox(names) +
+          `</div>`;
+        return names.length;
+      }
       const namesHtml = names.map((n, i) => `<div class="ws-talent-name ${slotClass(i)}-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
-        `<img class="ws-talent-bg" src="${WS_TVC_ASSET}${bgAsset}" alt="">` +
+        `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
-        `<div class="ws-talent-namebar ${prefix}-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
+        `<div class="ws-talent-namebar ${prefix}-namebar"><img src="${wsTvcAsset(namebarImg)}" alt="">` +
         `<div class="ws-talent-names ws-talent-namecount-${names.length}">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
@@ -1118,17 +1278,25 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        // 10th Anniversary — mirrored from mplfs.html, see there for details.
+        const wsWeekLabel = document.getElementById('ws-week-label');
+        if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+          wsWeekLabel.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else {
+          wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        }
       }
       buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
       populateWsHosts(ms);
       populateWsCasters(ms);
-      const labelImg = document.getElementById('ws-timer-label-img');
+      const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
-      /* These only exist under the Waiting Lobby asset folder (there is no
-         "Waiting Screen" folder on disk) — same art, shared with that scene. */
-      const labelSrc = '/assets/Waiting Lobby/' + label + '.png';
-      if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
+      /* Real text now, every theme — mirrored from mplfs.html, see there
+         for details. */
+      if (countdownLabelEl.dataset.label !== label) {
+        countdownLabelEl.dataset.label = label;
+        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br>RESUMES IN:' : 'SHOW<br>STARTS IN:';
+      }
       wsTimerState = ms.timer || WS_TIMER_DEFAULT;
     }
 

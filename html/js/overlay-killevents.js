@@ -29,6 +29,16 @@ var KILL_EVENT_SPONSOR_LOGO = {
   'turtleslain.webm': 'assets/ingame/ingamesmart.png',
   'triplekill.webm':  'assets/ingame/ingamevisawhite.png',
 };
+/* 10th Anniversary — Turtle Slain runs unsponsored (Double Kill and
+   Triple Kill keep their logos). previewKillEventSponsor() below picks
+   its preview video based on this same theme check, so it always
+   previews an event that's actually sponsored under the current theme. */
+function killEventSponsorLogo(video) {
+  if (video === 'turtleslain.webm' && document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+    return null;
+  }
+  return KILL_EVENT_SPONSOR_LOGO[video] || null;
+}
 
 /* ── Timeline pause (all kill events) ──
    Replaces the earlier slow-motion-middle-third trial: instead of riding
@@ -64,6 +74,45 @@ var KILL_EVENT_PAUSE = {
   'turtleslain.webm': { atFrame: 75, pauseMs: 750 },
   'wipedout.webm':    { atFrame: 75, pauseMs: 750 },
 };
+/* 10th Anniversary — every kill event video is a re-timed (itsscale +
+   stream copy, not a full decode/re-encode — that path was tried first
+   and silently dropped these assets' WebM alpha side-channel, since
+   this ffmpeg build's VP9 decoder doesn't read it back out; itsscale
+   only rewrites container timestamps, so the original bitstream —
+   alpha included — passes through untouched) encode, stretched so each
+   one's native duration alone already equals what natural length +
+   750ms pause used to add up to. No freeze-and-hold needed for any of
+   them anymore — returning null here skips the video pause entirely,
+   letting the baked-in slower playback carry that same extra time
+   instead. Regular is untouched, still pauses at frame 75. */
+function killEventPauseCfg(video) {
+  var cfg = KILL_EVENT_PAUSE[video];
+  if (!cfg) return cfg;
+  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+    return null;
+  }
+  return cfg;
+}
+/* The photo/name/sponsor popup's extra hold time — kept separate from
+   killEventPauseCfg above, which governs the VIDEO's own freeze. For
+   firstblood.webm/10th Anniversary the video doesn't freeze (its extra
+   time is baked into the slowed asset instead), but the popup should
+   still hold for that same extra stretch so it doesn't retract before
+   the now-longer video actually ends. Always reads the base config's
+   pauseMs, regardless of whether killEventPauseCfg suppresses the
+   video-freeze for this video/theme. */
+function killEventHoldExtensionMs(video) {
+  var cfg = KILL_EVENT_PAUSE[video];
+  return cfg ? cfg.pauseMs : 0;
+}
+/* 10th Anniversary — assets/motion/anniversary/ has its own version of
+   every kill event video, same filenames as the regular assets/motion/. */
+function killEventVideoPath(video) {
+  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+    return 'assets/motion/anniversary/' + video;
+  }
+  return 'assets/motion/' + video;
+}
 var killPauseArmed  = false; /* true until the current video's pause point has fired once */
 var killPauseRvfcId = null;  /* pending requestVideoFrameCallback handle, if in use */
 var KILL_EVENT_HAS_RVFC = typeof HTMLVideoElement !== 'undefined' &&
@@ -93,7 +142,7 @@ function killArmFramePause() {
   killPauseRvfcId = killVideoEl.requestVideoFrameCallback(function(now, metadata) {
     killPauseRvfcId = null;
     if (!killPauseArmed) return;
-    var cfg = KILL_EVENT_PAUSE[killEventCurrent];
+    var cfg = killEventPauseCfg(killEventCurrent);
     if (!cfg) return;
     if (Math.round(metadata.mediaTime * KILL_EVENT_FPS) < cfg.atFrame) {
       killArmFramePause();
@@ -111,7 +160,7 @@ function killArmFramePause() {
 killVideoEl.addEventListener('timeupdate', function() {
   if (KILL_EVENT_HAS_RVFC) return; /* handled by killArmFramePause instead */
   if (!killPauseArmed) return;
-  var cfg = KILL_EVENT_PAUSE[killEventCurrent];
+  var cfg = killEventPauseCfg(killEventCurrent);
   if (!cfg || killVideoEl.currentTime < cfg.atFrame / KILL_EVENT_FPS) return;
   killPauseArmed = false;
   killResumeAfterPause(cfg);
@@ -140,11 +189,22 @@ var killPopCycleEndsAt = 0;    /* Date.now() timestamp when the pop-down transit
 var killEventToken      = 0;   /* bumped each time a new video starts, to void stale deferred hides */
 
 function killEventPhotoSrc(playerName) {
+  /* 10th Anniversary — the bigger 484x484 box (see #kill-event-photo-clip
+     CSS) uses the full-resolution /hires signature instead of the
+     regular-theme pre-resized one, so it doesn't look soft when scaled
+     up. Naming differs slightly: hires/SIGNATURE/<name>_SIGNATURE.png,
+     no "_resized" suffix. */
+  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+    return 'hires/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE.png';
+  }
   return 'photos/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.png';
 }
 
 function killNametagBgSrc(camp) {
-  return 'assets/ingame/kill' + (camp === 'red' ? 'red' : 'blue') + 'back.png';
+  var file = 'kill' + (camp === 'red' ? 'red' : 'blue') + 'back.png';
+  return document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+    ? 'assets/ingame/anniversary/' + file
+    : 'assets/ingame/' + file;
 }
 
 /* Shrink-to-fit text (binary search font-size) — same approach as
@@ -299,13 +359,13 @@ function playNextKillEvent() {
   var entry = killEventQueue.shift();
   killEventCurrent = entry.video;
   killClearPause();
-  killVideoEl.src = 'assets/motion/' + entry.video;
+  killVideoEl.src = killEventVideoPath(entry.video);
   killOverlayEl.style.display = 'block';
 
-  var pauseCfg = KILL_EVENT_PAUSE[entry.video];
+  var pauseCfg = killEventPauseCfg(entry.video);
   killPauseArmed = !!pauseCfg;
   if (killPauseArmed && KILL_EVENT_HAS_RVFC) killArmFramePause();
-  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, KILL_EVENT_SPONSOR_LOGO[entry.video] || null, pauseCfg ? pauseCfg.pauseMs : 0);
+  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, killEventSponsorLogo(entry.video), killEventHoldExtensionMs(entry.video));
   else hideKillEventPlayer();
 
   killVideoEl.play().catch(function() {
@@ -343,15 +403,20 @@ function enqueueKillEvent(video, priority, playerIdx, playerName, role, camp) {
    instead of resuming, and shows the player popup + sponsor logo with no
    auto-hide timer. */
 function previewKillEventSponsor() {
-  var video = 'turtleslain.webm';
+  /* Always previews a video that's actually sponsored under the current
+     theme — Turtle Slain for Regular, Double Kill for 10th Anniversary
+     (see killEventSponsorLogo above). */
+  var video = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+    ? 'doublekill.webm'
+    : 'turtleslain.webm';
   clearKillTimers();
   killEventToken++;
   killPauseArmed = false;
   killEventCurrent = video;
   killOverlayEl.style.display = 'block';
-  killVideoEl.src = 'assets/motion/' + video;
+  killVideoEl.src = killEventVideoPath(video);
 
-  var freezeAt = ((KILL_EVENT_PAUSE[video] || {}).atFrame || 75) / KILL_EVENT_FPS;
+  var freezeAt = ((killEventPauseCfg(video) || {}).atFrame || 75) / KILL_EVENT_FPS;
   function holdFrame() {
     if (killVideoEl.currentTime < freezeAt) return;
     killVideoEl.pause();

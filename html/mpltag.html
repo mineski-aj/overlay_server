@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPL Tags Overlay</title>
   <style>
@@ -696,6 +697,7 @@
   var _sseWasDisconnected = false;
   function connectSSE() {
     var es = createOverlaySSE();
+    es.addEventListener('theme', function (e) { applyTheme(JSON.parse(e.data).theme); });
     es.onopen = function () {
       if (_sseWasDisconnected && !editModeActive) restore();
       _sseWasDisconnected = false;

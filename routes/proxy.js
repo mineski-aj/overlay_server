@@ -33,7 +33,12 @@ router.get('/proxy/predictions', async (req, res) => {
     }
   }
   try {
-    const r    = await fetch(upstream);
+    // An unreachable upstream would otherwise hang this request
+    // indefinitely — Draft.html polls this every 3s (dpFetchLive) with no
+    // dedup of its own, so a hung upstream here piles up hung requests to
+    // OUR OWN server fast. Same fail-fast convention as every proxy route
+    // in routes/devapi.js (e.g. /api/postinfo-proxy, /api/hexagon-data).
+    const r    = await fetch(upstream, { signal: AbortSignal.timeout(5000) });
     const data = await r.json();
     res.set('Cache-Control', 'no-store').json(data);
   } catch (e) {
@@ -45,7 +50,8 @@ router.get('/proxy/predictions', async (req, res) => {
 router.get('/proxy/richguy', async (req, res) => {
   const host = req.query.host || "theapi.dpdns.org";
   try {
-    const upstream = await fetch(`http://${host}/api/gold_vs_gold_sector`);
+    // Same fail-fast reasoning as /proxy/predictions above.
+    const upstream = await fetch(`http://${host}/api/gold_vs_gold_sector`, { signal: AbortSignal.timeout(5000) });
     const data = await upstream.json();
     res.set("Access-Control-Allow-Origin", "*").json(data);
   } catch (e) {

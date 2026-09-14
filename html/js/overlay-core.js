@@ -130,8 +130,17 @@ function normalizeId(val) {
 }
 var currentApiUrl = localStorage.getItem('overlayApiUrl') || DEFAULT_URL;
 function getApiUrl() { return currentApiUrl; }
+// masterPoll() below guards against overlapping ticks with isFetching, but
+// that guard only resets in fetchData()'s own finally block — plain
+// fetch() has no default timeout, so an unreachable game API (silently
+// dropped packets, not a fast connection-refused) would hang this forever
+// and wedge isFetching permanently true, freezing every feature this page
+// drives (scoreboard, player UI, Level 15, Item Pickup, Trinity, etc.)
+// even after the API comes back, since no future tick would ever run
+// again. AbortSignal.timeout() bounds the hang so masterPoll's own
+// try/catch/finally can actually recover on the next tick.
 async function fetchData() {
-  const res  = await fetch(getApiUrl());
+  const res  = await fetch(getApiUrl(), { signal: AbortSignal.timeout(8000) });
   const json = await res.json();
   return json.data;
 }

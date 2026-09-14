@@ -922,6 +922,22 @@
     line-height: 1;
     pointer-events: none;
   }
+  /* 10th Anniversary — tower/lord/turtle/gold stat text white instead of
+     near-black (Regular's dark text sits fine on the light scoreboard
+     art; anniversary's background under this row is too dark for it),
+     plus the same subtle glow as .pui-name (see that rule's comment) so
+     it still reads clearly wherever the background gets busy. */
+  [data-theme="10th_anniversary"] #scoreboard-tower-c1,
+  [data-theme="10th_anniversary"] #scoreboard-lord-c1,
+  [data-theme="10th_anniversary"] #scoreboard-turtle-c1,
+  [data-theme="10th_anniversary"] #scoreboard-gold-c1,
+  [data-theme="10th_anniversary"] #scoreboard-tower-c2,
+  [data-theme="10th_anniversary"] #scoreboard-lord-c2,
+  [data-theme="10th_anniversary"] #scoreboard-turtle-c2,
+  [data-theme="10th_anniversary"] #scoreboard-gold-c2 {
+    color: #ffffff;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+  }
   #sb-goldlead-c1 {
     position: absolute;
     left: 645px;
@@ -1053,6 +1069,15 @@
     color: #6b6b6b;
     white-space: nowrap;
     line-height: 1;
+  }
+  /* 10th Anniversary — all three match info lines white instead of
+     gray/near-black, to read against the darker anniversary background
+     under this box, plus the same subtle glow as .pui-name. */
+  [data-theme="10th_anniversary"] #sb-mi-label,
+  [data-theme="10th_anniversary"] #sb-mi-week,
+  [data-theme="10th_anniversary"] #sb-mi-match {
+    color: #ffffff;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
   }
   /* Patch + casters — transparent, coordinates measured directly off
      the guide's .Rectangle_6 layers. */
@@ -1211,6 +1236,15 @@
     line-height: 1;
     pointer-events: none;
   }
+  /* 10th Anniversary — same subtle glow as .pui-name/the match info box.
+     registerPollHandler in overlay-scoreboard.js keeps this text white
+     for anniversary regardless of matchType (Regular still flips it
+     black for Enduring Legacy's gold panel, which this glow would look
+     wrong on, so it's not applied there). */
+  [data-theme="10th_anniversary"] #scoreboard-tricode-c1,
+  [data-theme="10th_anniversary"] #scoreboard-tricode-c2 {
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+  }
 
   /* ── Team logos ── */
   #sb-logo-c1 {
@@ -1299,14 +1333,40 @@
     opacity: 1;
     transition: transform 480ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease-out;
   }
+  /* 10th Anniversary — new box (732,729 484×484) and a bottom crop mask
+     (given as Rectangle_1: 571,1011 785×69 — full-width relative to the
+     photo, so it reduces to a flat horizontal cutoff at y=1011: anything
+     of the photo below that line is masked out because that's where the
+     kill-event name backer sits). 1011 - 729 = 282, so the clip
+     container's height is truncated to 282px instead of the full 484 —
+     overflow:hidden on the existing container does the "masking" without
+     needing a separate mask layer, and object-position:top (instead of
+     object-fit:cover's default center) makes sure it's specifically the
+     BOTTOM of the photo that's cropped away, not an even slice off both
+     edges. Fully opaque, same as Regular — a 0.549 translucent version
+     was tried first per the original spec, then reverted back to 100%. */
+  [data-theme="10th_anniversary"] #kill-event-photo-clip {
+    left: 732px; top: 729px;
+    width: 484px; height: 282px;
+  }
+  [data-theme="10th_anniversary"] #kill-event-photo {
+    object-position: top;
+  }
   /* Little settle bounce once the slide-up lands — same scale-bounce
      approach as .ic-label-bounce/.ecc-middle-bounce/.gdc-smart-bounce
      elsewhere. translateY(0) is baked into every step since the slide
      transition above has already finished by the time this plays. */
+  /* 70% used to undershoot to scale(0.98) — since the image is already
+     sized to exactly fill its clip box (object-fit:cover at 100%/100%),
+     shrinking it below 1 pulls its edges in from the clip box's own
+     edges, exposing a thin sliver of whatever sits behind the overlay
+     (the raw game footage) around the border for that instant. Floored
+     at 1 instead — the overshoot-then-settle "pop" still reads the same,
+     it just never goes smaller than the box it's clipped to. */
   @keyframes kill-photo-bounce {
     0%   { transform: translateY(0) scale(1); }
     40%  { transform: translateY(0) scale(1.06); }
-    70%  { transform: translateY(0) scale(0.98); }
+    70%  { transform: translateY(0) scale(1); }
     100% { transform: translateY(0) scale(1); }
   }
   #kill-event-photo.ke-bounce {
@@ -1325,6 +1385,13 @@
     width: 217px; height: 39px;
     overflow: hidden;
     z-index: 52;
+  }
+  /* 10th Anniversary — moved to 856,994 (given as Layer_20: same 217×39
+     size, only the position changes). Role icon/name box inside are
+     positioned relative to this container's own top-left, so they move
+     with it automatically. */
+  [data-theme="10th_anniversary"] #kill-event-nametag-clip {
+    left: 856px; top: 994px;
   }
   #kill-event-nametag-text {
     position: absolute;
@@ -2598,6 +2665,19 @@
   }
   .pui-card.pui-home .pui-name { left: 44px; justify-content: flex-start; padding-left: 4px; }
   .pui-card.pui-away .pui-name { left: 6px;  justify-content: flex-end;   padding-right: 4px; }
+  /* 10th Anniversary — white-on-yellow (the new uiblue/uired.png) has
+     poor contrast, same problem the countdown timer glow was solving,
+     just plain solid text here (no background-clip:text), so a normal
+     text-shadow works directly — no need for that fix's split-layer
+     workaround. Same two-layer soft-glow + crisp-shadow shape, scaled way
+     down for 15px text instead of a 130px countdown digit, and dialed
+     back further since this needs to read as a subtle lift, not a glow.
+     Also used as-is by the ingame match board's white text (scoreboard
+     tower/lord/turtle/gold + match info) — see that rule further down —
+     so any further toning down here should happen in both places. */
+  [data-theme="10th_anniversary"] .pui-name {
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+  }
   .pui-kda {
     position: absolute;
     top: 33px; width: 90px; height: 18px;

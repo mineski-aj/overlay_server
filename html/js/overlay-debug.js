@@ -340,6 +340,7 @@ masterPoll();
   // load html/js/overlay-sse-shim.js before this file for createOverlaySSE
   // to exist.
   var sse = createOverlaySSE();
+  sse.addEventListener('theme', function(ev) { applyTheme(JSON.parse(ev.data).theme); });
 
   /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
      hard reload so new position/size overrides apply immediately (see

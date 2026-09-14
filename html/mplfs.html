@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPLFS Overlay</title>
   <style>
@@ -28,6 +29,32 @@
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* 10th Anniversary brand colors — CSS custom properties instead of a
+       `[data-theme="10th_anniversary"] .selector { color: ... }` override
+       duplicated per element. Custom properties inherit down the whole
+       DOM tree from wherever they're defined (here, [data-theme] on
+       <html> — the page root), so every consumer just writes
+       `color: var(--anniv-accent, <its own Regular default>)` in its ONE
+       real, unconditional rule — no second rule to write, and critically,
+       no specificity/cascade-order race to win against the Regular rule
+       for the same property, which the old per-selector-override pattern
+       required getting right every time. Only defined for 10th
+       Anniversary — the var() fallback (2nd argument) supplies each
+       element's own correct Regular-theme color, so leaving this
+       undefined under any other theme is exactly correct, not an
+       oversight. Add MORE such variables here if a future theme needs a
+       genuinely different value than 10th Anniversary's.
+       --anniv-accent: the brown used for most recolored text (names,
+       match rows, sponsor label, countdown labels).
+       --anniv-header-text: the purple/blue used specifically for the
+       "SEASON 18 REGULAR SEASON W<n>D<n>" header overlay text, on BOTH
+       Waiting TVC's #ws-week-label and Waiting Lobby's #wl-week-label —
+       a deliberately different color from --anniv-accent, not a
+       duplicate/typo of it. */
+    [data-theme="10th_anniversary"] {
+      --anniv-accent: #6c4614;
+      --anniv-header-text: #5e79fe;
+    }
 
     /* ── CONFIG BAR ── */
     #config-bar {
@@ -865,6 +892,21 @@
       width: 967px; height: 150px;
     }
     #wl-header img { display: block; width: 967px; height: 150px; }
+    /* 10th Anniversary — new header art + position. Position/size does NOT
+       live here as a [data-theme] CSS rule — #wl-header already has a
+       Regular-theme Edit-tab override in overlay_styles.json
+       (`!important`, beats any plain non-!important CSS regardless of
+       specificity), so the new position is instead written directly into
+       the theme-scoped mplfs::10th_anniversary bucket (see CLAUDE.md's
+       "Edit tab is theme-scoped" section) — same fix as #ws-header
+       earlier. The <img>'s content swap has no such conflict (the
+       existing override never touched `content`), so that part is a
+       plain rule here as usual. Native asset size (935×221) matches the
+       spec exactly, no distortion. */
+    [data-theme="10th_anniversary"] #wl-header img {
+      width: 935px; height: 221px;
+      content: url('/assets/Waiting Lobby/anniversary/MPL Header.png');
+    }
     #wl-week-label {
       position: absolute;
       left: 714px; top: 106px;
@@ -876,6 +918,31 @@
       font-weight: 800; font-size: 26px;
       color: #fff; letter-spacing: 0.02em;
     }
+    /* 10th Anniversary — "SEASON 18 REGULAR SEASON W<n>D<n>", same
+       properties as Waiting TVC's #ws-week-label, repositioned per the
+       pasted .Rectangle_5 spec. No Edit-tab override exists for this
+       selector, so a plain rule is safe here (see #wl-header above for
+       when it isn't). */
+    [data-theme="10th_anniversary"] #wl-week-label {
+      /* #wl-week-label is nested INSIDE #wl-header (position:absolute
+         child), so left/top are LOCAL offsets against #wl-header's own
+         box, not canvas-absolute — the pasted .Rectangle_5 spec's
+         220,299 are canvas-absolute (same convention as every other
+         pasted spec this session), so this subtracts #wl-header's own
+         new anniversary position (26,133) to land at the right place:
+         220-26=194, 299-133=166. (Waiting TVC's #ws-week-label didn't
+         need this adjustment only because #ws-header's own anniversary
+         position happens to be 0,0 — local offset and canvas-absolute
+         are numerically identical there by coincidence, not because the
+         nesting doesn't apply.) */
+      left: 194px; top: 166px;
+      width: 508px; height: 40px;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+    }
+    [data-theme="10th_anniversary"] #wl-week-label .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
     #wl-match {
       position: absolute;
       left: 40px; top: 390px;
@@ -887,7 +954,7 @@
     .wlm-label, .wlm-time, .wlm-bo {
       position: absolute; top: 0; height: 55px;
       display: flex; align-items: center;
-      font-weight: 800; font-size: 22px; color: #0a0a0a;
+      font-weight: 800; font-size: 22px; color: var(--anniv-accent, #0a0a0a);
       text-transform: uppercase; white-space: nowrap;
     }
     .wlm-label { left: 24px; }
@@ -943,6 +1010,16 @@
        the logo but left this background at its original size, sticking
        out past the (now smaller) box. */
     .wl-sponsor-bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    /* 10th Anniversary — same properties as Waiting TVC's #ws-sponsor-cat:
+       color unconditional + variable-driven, box art stays visible (now
+       Waiting TVC's own anniversary Sponsor Box.png, reused — see
+       buildWlSponsor), only the label's own separate solid white
+       background is removed. Scoped to #wl-sponsor-cat specifically, not
+       the shared .sponsor-cat-label class — that's reused as-is by
+       Today's/Tomorrow's Schedule and Consolidated Post 2's own sponsor
+       boxes, which must stay Regular-look. */
+    #wl-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+    [data-theme="10th_anniversary"] #wl-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
        slide used, but a single image sliding in from the left (decelerating
        into place) then out to the right (accelerating away), matching
@@ -1025,10 +1102,12 @@
       font-size: 18px;
       text-transform: uppercase;
       white-space: nowrap;
-      color: #0a0a0a;
+      color: var(--anniv-accent, #0a0a0a);
     }
     #wl-timer-value {
+      position: relative;
       width: 355px;
+      height: 130px;
       font-family: 'Anton', sans-serif;
       font-weight: 400;
       font-size: 130px;
@@ -1037,6 +1116,71 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;
+    }
+    /* Regular theme: #wl-timer-value has no text of its own anymore (see
+       the two stacked spans below) — .wl-timer-fill carries the actual
+       digits for every theme, .wl-timer-glow is 10th Anniversary only. */
+    .wl-timer-glow, .wl-timer-fill {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+    }
+    .wl-timer-glow { visibility: hidden; }
+    /* 10th Anniversary — same gold gradient fill as Waiting TVC's
+       #ws-timer-value (background-image line below is byte-identical to
+       #ws-timer-value's), plus a black glow (Waiting TVC's is completely
+       flat, no glow/shadow at all — this is the one deliberate
+       difference between the two, per explicit request).
+       Three prior approaches all still washed the gradient out in the
+       real renderer that matters here (this session's headless test
+       browser never reproduced any of the three failures, so none of
+       them could be verified locally — every one was confirmed broken
+       only by an actual screenshot/description from the real render):
+       (1) a plain text-shadow directly on this background-clip:text
+       element, (2) a ::before glow layer with z-index:-1 relying on
+       stacking order to sit behind it, which actually renders correctly
+       only for the split second #waiting-lobby-page's opacity fade-in
+       transition has this subtree on its own promoted GPU layer — once
+       that transition ends and it repaints normally, a negative
+       z-index on a ::before of an element that doesn't itself establish
+       a stacking context escapes up to whatever ancestor stacking
+       context is nearest, racing against unrelated siblings (like the
+       scene background video) for paint order instead of staying
+       scoped to just this element, and (3) forcing a stacking context
+       with transform:translateZ(0) to fix that scoping instead flipped
+       the bug the other way — a plain background-image (used here for
+       the gradient clip) is defined by the paint-order spec to always
+       paint before ANY z-indexed descendant of the same box, negative
+       or not, so once #wl-timer-value became the stacking-context root,
+       the glow (still z-index:-1, but now correctly scoped to this
+       element specifically) painted after/over its own background
+       instead of behind it, showing solid black.
+       None of that is fixable by tuning z-index or forcing layers —
+       z-index/stacking-context interactions with an element's OWN
+       background are inherently the wrong tool here. The fix is to not
+       need them at all: .wl-timer-glow and .wl-timer-fill are true DOM
+       siblings, absolutely positioned exactly on top of each other, and
+       .wl-timer-fill simply comes second in the HTML — later siblings
+       always paint over earlier ones at equal stacking level, no
+       z-index or transform required, so this can't un-invert itself
+       when a transition's temporary layer promotion ends. */
+    [data-theme="10th_anniversary"] .wl-timer-glow {
+      visibility: visible;
+      color: #000;
+      -webkit-text-fill-color: #000;
+      /* Subtle — just enough separation from the busy background, not a
+         heavy black outline. Lower opacity + tighter blur than the
+         first pass. */
+      text-shadow:
+        0 0 6px rgba(0, 0, 0, 0.3),
+        0 0 14px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="10th_anniversary"] .wl-timer-fill {
+      background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
     /* Source cutouts are plain 300x300 square headshots shown whole (no
        crop/zoom) — stacked nameboxes > left/blue photo > right/red photo. */
@@ -1067,6 +1211,15 @@
     .wl-namebox-blue { left: 860px;  top: 830px; }
     .wl-namebox-red  { left: 1580px; top: 715px; }
     .wl-namebox img.wl-namebox-bg { position: absolute; left: 0; top: 0; width: 347px; height: 62px; }
+    /* 10th Anniversary — same-size asset (347×62), no distortion. Position
+       overrides on .wl-namebox-blue/-red above are left/top only, so no
+       conflict with this content swap. */
+    [data-theme="10th_anniversary"] .wl-namebox-blue img.wl-namebox-bg {
+      content: url('/assets/Waiting Lobby/anniversary/Blue_NameBox.png');
+    }
+    [data-theme="10th_anniversary"] .wl-namebox-red img.wl-namebox-bg {
+      content: url('/assets/Waiting Lobby/anniversary/Red_NameBox.png');
+    }
     .wl-namebox-logo {
       position: absolute; top: 0; width: 62px; height: 62px;
       display: flex; align-items: center; justify-content: center;
@@ -2384,6 +2537,31 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
+    /* 10th Anniversary — new header art + position (see CLAUDE.md's Theme
+       system section), and this label becomes "SEASON 18 REGULAR SEASON
+       W<n>D<n>" instead of "WEEK n - DAY n" (see updateWsFromState below
+       for the content swap — only the W<n>D<n> part is dynamic, the
+       "SEASON 18 REGULAR SEASON" prefix is fixed text for this
+       tournament, there's no separate season/phase field in match state
+       to source it from). Font size 24px = the pasted design spec's
+       "5.83pt @ 300dpi" (5.83 × 300/72 ≈ 24.3px). */
+    [data-theme="10th_anniversary"] #ws-header {
+      left: 0px; top: 0px; width: 1432px; height: 397px;
+    }
+    [data-theme="10th_anniversary"] #ws-header img {
+      width: 1432px; height: 397px;
+      content: url('/assets/Waiting Screen TVC/anniversary/S18_Header.png');
+    }
+    [data-theme="10th_anniversary"] #ws-week-label {
+      left: 396px; top: 202px;
+      width: 516px; height: 41px;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+    }
+    /* The W<n>D<n> portion only — General Sans Medium vs. the rest's Bold. */
+    [data-theme="10th_anniversary"] #ws-week-label .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
     /* ── WAITING SCREEN — COUNTDOWN TIMER ── */
     /* width/height frozen at the box's old flex-computed size (160 label +
        20 gap + 355 value, tallest child 130px) now that #ws-timer-value is
@@ -2410,12 +2588,6 @@
       position: relative;
       z-index: 0;
     }
-    /* Scoped to the ID, not "#ws-timer-label img" — see #wl-timer-label-img
-       above for why (this box also has the label-bg <img> sibling now). */
-    #ws-timer-label-img {
-      max-width: 100%; max-height: 100%;
-      object-fit: contain;
-    }
     /* Background plaque behind the label graphic — see #wl-timer-label-bg
        (Waiting Lobby twin) for why this is a child of the label box rather
        than a canvas-absolute sibling. */
@@ -2426,6 +2598,44 @@
       width: 179px; height: 69px;
       object-fit: cover;
       pointer-events: none;
+    }
+    /* "SHOW STARTS IN"/"SHOW RESUMES IN" — real text now, every theme (was
+       a PNG with the wording baked in, then a CSS-masked recolor of that
+       PNG for 10th Anniversary; both replaced per explicit instruction to
+       just use text everywhere instead of fighting a raster asset's
+       color). Canvas-absolute, from the pasted design spec (.Rectangle_5)
+       — NOT nested in the flex-based #ws-timer-label box like the old PNG
+       was; sits independently on top of it (visually inside timeback.png's
+       plaque, per the spec), same pattern as #ws-anniv-logo. Font size
+       21px = 5.15pt @ 300dpi (5.15 × 300/72 ≈ 21.46px).
+       left is 1262px, not the pasted spec's 1331px — measured live,
+       #ws-timer-label-bg (timeback.png, including its own persisted
+       Edit-tab override in overlay_styles.json) actually renders at
+       x:1235.5–1431.5, and 1331 + this box's own 143px width put its
+       right edge at 1474 — 42.5px past the real container's right edge,
+       genuinely outside the plaque, not just a rounding difference. 1262
+       centers this box's 143px width inside the container's real 196px
+       span (1235.5 + (196-143)/2). top/width/height/font are unchanged
+       from the spec — only the horizontal position needed correcting. */
+    #ws-timer-countdown-label {
+      position: absolute;
+      left: 1262px; top: 121px;
+      width: 143px; height: 59px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 21px;
+      line-height: 1.15;
+      color: var(--anniv-accent, #0a0a0a);
+      text-transform: uppercase;
+    }
+    /* 10th Anniversary — this is a static <img> (not JS-built like the
+       other Waiting TVC assets above), so there's no wsTvcAsset() call
+       site to route through; `content: url()` is the CSS-only equivalent
+       for swapping an <img>'s rendered source per theme. */
+    [data-theme="10th_anniversary"] #ws-timer-label-bg {
+      content: url('/assets/Waiting Screen TVC/anniversary/timeback.png');
     }
     /* Pulled out of #ws-timer's flex flow so it can be dragged/resized and
        font-size-tuned independently from the dashboard Edit tab — left/top
@@ -2445,6 +2655,30 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
       text-align: left;
+    }
+    /* 10th Anniversary — a gold gradient fill with a subtle embossed/lifted
+       edge, replacing the Regular theme's plain solid fill. Gradient text
+       via background-clip:text (glyph shape becomes the mask); the "lifted"
+       look is a light highlight riding the top edge plus a soft warm shadow
+       underneath — text-shadow still renders correctly here even though
+       the fill itself is transparent, since it follows the glyph outline,
+       not the final paint color. */
+    [data-theme="10th_anniversary"] #ws-timer-value {
+      background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+    }
+    /* 10th Anniversary — new decorative watermark, no Regular-theme
+       equivalent at all (unlike everything else above, which reskins an
+       existing element). Hidden under every other theme. */
+    #ws-anniv-logo { display: none; }
+    [data-theme="10th_anniversary"] #ws-anniv-logo {
+      display: block;
+      position: absolute;
+      left: 951px; top: 1001px;
+      width: 269px; height: 64px;
     }
 
     /* ── WAITING SCREEN — TODAY'S MATCHES PANEL ── */
@@ -2471,7 +2705,7 @@
     .wsm-box .wsm-band-bo {
       position: absolute; top: 0; height: 39px;
       display: flex; align-items: center;
-      font-weight: 800; font-size: 19px; color: #0a0a0a;
+      font-weight: 800; font-size: 19px; color: var(--anniv-accent, #0a0a0a);
       text-transform: uppercase; white-space: nowrap;
     }
     .wsm-box .wsm-band-label { left: 14px; }
@@ -2568,6 +2802,22 @@
       width: 340px; height: 94px;
     }
     .wsm-sponsor > img { position: absolute; left: 0; top: 0; width: 340px; height: 94px; }
+    /* Color is unconditional + variable-driven (var() falls back to the
+       shared .sponsor-cat-label class's own #0a0a0a under every theme but
+       10th Anniversary) rather than a second theme-scoped rule — an ID
+       selector already beats the shared class either way, but this keeps
+       every themed color on this page going through the one
+       --anniv-accent variable, consistently. Background is genuinely
+       theme-specific (a structural remove-the-white-plate, not a
+       competing value for the same property Regular also sets), so that
+       part stays scoped: the box art itself (wsTvcAsset('Sponsor Box.png')
+       already resolves to the anniversary version) stays visible under
+       10th Anniversary — only the category label's own separate solid
+       white background goes away, scoped to #ws-sponsor-cat only, not the
+       shared class, so Waiting Lobby/Today's/Tomorrow's Schedule keep
+       their normal white label. */
+    #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+    [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
        slide used, but a single image sliding in from the left (decelerating
        into place) then out to the right (accelerating away), matching
@@ -2676,6 +2926,40 @@
     .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-left-name   { left: 0px;   width: 190px; }
     .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-middle-name { left: 190px; width: 191px; }
     .ws-talent-names.ws-talent-namecount-3 .ws-hosts-slot-right-name  { left: 381px; width: 190px; }
+    /* 10th Anniversary — "NAME ★ NAME ★ JOSHYCAKES". Own structure
+       entirely (.ws-talent-namebox/.ws-talent-names-inner/
+       .ws-talent-name-anniv), NOT a reskin of Regular's
+       .ws-talent-names/.ws-talent-name fixed-column layout — that layout
+       exists specifically so the dashboard Edit tab can drag each name
+       column independently, which fundamentally conflicts with "auto-fit
+       one flowing row that never overflows a fixed box." Position/size
+       is the pasted design spec's .Rectangle_1 (21,3,530,56 inside the
+       571×61 namebar) — see buildAnnivNameBox() in populateWsTalentBox
+       for the actual layout/scale-to-fit math (Canvas-measured, not
+       scrollWidth-measured — see the comment there for why that matters). */
+    [data-theme="10th_anniversary"] .ws-talent-namebox {
+      position: absolute;
+      left: 21px; top: 3px;
+      width: 530px; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; /* safety net only — buildAnnivNameBox's own math
+        already guarantees the unscaled content fits before this would
+        ever need to clip anything */
+    }
+    .ws-talent-names-inner {
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+    }
+    .ws-talent-name-anniv {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 800;
+      font-size: 27px;
+      color: var(--anniv-accent, #6c4614);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .ws-talent-star { width: 14px; height: 14px; pointer-events: none; flex-shrink: 0; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -4491,9 +4775,11 @@
       <div id="ws-casters" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""><img id="ws-timer-label-img" src="/assets/Waiting Lobby/SHOW STARTS IN.png" alt="Show starts in"></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
         <div id="ws-timer-value">30:30</div>
       </div>
+      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
+      <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
     <div id="waiting-lobby-page">
       <div id="wl-header">
@@ -4504,7 +4790,7 @@
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
         <div id="wl-timer-label"><div id="wl-timer-label-img">SHOW STARTS IN</div></div>
-        <div id="wl-timer-value">30:30</div>
+        <div id="wl-timer-value"><span class="wl-timer-glow">30:30</span><span class="wl-timer-fill">30:30</span></div>
       </div>
       <div class="wl-player wl-player-blue">
         <img class="wl-player-photo" id="wl-blue-photo-0" src="" alt="">
@@ -5452,6 +5738,7 @@
       // several overlay browser sources/tabs open at once no longer eats
       // into the browser's shared connection pool per page.
       sseSource = createOverlaySSE();
+      sseSource.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';
@@ -6480,6 +6767,19 @@
       stats:      '/assets/bgloopwaves2.webm',
       heatmap:    '/assets/bgloopwaves2.webm',
     };
+    // Per-theme background overrides — opt-in only, see CLAUDE.md's Theme
+    // system section. A feature/theme pair not listed here just keeps
+    // SCENE_VIDEO_SRC's plain (Regular-theme) file, unchanged.
+    const SCENE_VIDEO_SRC_BY_THEME = {
+      '10th_anniversary': {
+        waiting: '/assets/annivloopsun.webm',
+        lobby:   '/assets/annivloopwaves.webm',
+      },
+    };
+    function getSceneVideoSrc(feature) {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
+    }
     /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
        needs to know which file to play once THEY start it) but must NOT
        get transitionToImpl's automatic immediate showSceneVideo call
@@ -6497,7 +6797,7 @@
     let sceneVideoVisible = false;
 
     function showSceneVideo(feature) {
-      const src = SCENE_VIDEO_SRC[feature];
+      const src = getSceneVideoSrc(feature);
 
       if (src === currentSceneVideoSrc) {
         if (!sceneVideoVisible) {
@@ -6555,6 +6855,33 @@
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
+    // Per-theme Waiting TVC asset overrides — opt-in only, same pattern as
+    // SCENE_VIDEO_SRC_BY_THEME (see CLAUDE.md's Theme system section).
+    // Deliberately scoped to Waiting-TVC-only call sites below — several
+    // of these filenames (esp. WS_MATCH_TYPE_ASSETS' box art) are ALSO
+    // reused as-is by Today's/Tomorrow's Schedule (tsmRowHtml) and Waiting
+    // Lobby (buildWlMatch), which must stay Regular-look under every theme
+    // unless separately asked for (same caution as the Waiting Lobby
+    // redcorner.webm precedent elsewhere in this file).
+    const WS_TVC_ASSET_BY_THEME = {
+      '10th_anniversary': {
+        'TodayMatches.png':          'anniversary/TodayMatches.png',
+        'MatchBox_REGULAR MATCH.png': 'anniversary/MatchBox_REGULAR MATCH.png',
+        'HOST_BOXv1.png':            'anniversary/HOST_BOXv1.png',
+        'CASTER_BOXv1.png':          'anniversary/CASTER_BOXv1.png',
+        'NAMEBOX.png':               'anniversary/NAMEBOX.png',
+        // No NAMEBOX2 anniversary art exists — Hosts' 2-name case reuses
+        // the same single anniversary namebox asset as the 3-name case,
+        // per the user's explicit "disregard that it's not the same name".
+        'NAMEBOX2.png':              'anniversary/NAMEBOX.png',
+        'Sponsor Box.png':           'anniversary/Sponsor Box.png',
+      },
+    };
+    function wsTvcAsset(filename) {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      const override = WS_TVC_ASSET_BY_THEME[theme];
+      return WS_TVC_ASSET + ((override && override[filename]) || filename);
+    }
     const WS_MATCHES = [
       { label: 'MATCH 1', time: '14:30 GMT +8', bo: 'B03', matchType: 'regular',
         left: { tri: 'ONIC' }, right: { tri: 'ONIC' }, score: { l: 2, r: 0 } },
@@ -6609,7 +6936,18 @@
         ? Math.max(0, Math.round((t.endAt - (Date.now() + clockOffset)) / 1000))
         : Math.max(0, (t && t.remaining) || 0);
       const m = Math.floor(remain / 60), s = remain % 60;
-      el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      const text = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      /* #wl-timer-value has two stacked child spans (glow + fill, see its
+         CSS) for the 10th Anniversary glow effect; #ws-timer-value is a
+         plain div with its own text. Handle both from one function. */
+      const fill = el.querySelector('.wl-timer-fill');
+      if (fill) {
+        fill.textContent = text;
+        const glow = el.querySelector('.wl-timer-glow');
+        if (glow) glow.textContent = text;
+      } else {
+        el.textContent = text;
+      }
     }
 
     function startWsTimer() {
@@ -6664,7 +7002,7 @@
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      let html = opts.title === false ? '' : `<img class="wsm-title" src="${WS_TVC_ASSET}TodayMatches.png" alt="Today's Matches">`;
+      let html = opts.title === false ? '' : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
       matches.forEach(m => {
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
@@ -6672,7 +7010,7 @@
             `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" ` +
             `alt="${m.score.l}-${m.score.r}">`
           : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
-        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+        html += `<div class="wsm-box"><img class="wsm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
             ? `<span class="wsm-band-time star">${m.time}</span>` +
@@ -6708,7 +7046,7 @@
        Waiting Lobby's sponsor box, instead of the old fixed 3s crossfade. */
     function buildWsSponsor() {
       document.getElementById('ws-sponsor').innerHTML =
-        `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+        `<div class="wsm-sponsor"><img class="wsm-sponsor-bg" src="${wsTvcAsset('Sponsor Box.png')}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="ws-sponsor-cat"></div>` +
         `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>`;
     }
@@ -6784,6 +7122,61 @@
       return `<div class="${cls}"><img class="ws-talent-photo" ` +
         `src="${src}" onerror="this.style.display='none'" alt="${name}"></div>`;
     }
+    /* 10th Anniversary caster/host name row — measured with Canvas
+       measureText() instead of DOM scrollWidth/clientWidth on purpose.
+       populateWsTalentBox() below can run (via updateWsFromState(), an
+       SSE match-state handler) BEFORE showWaitingScreen() ever shows the
+       scene — the box sits inside a `display:none` ancestor at that
+       point. scrollWidth/clientWidth on a display:none-hidden element
+       give meaningless numbers, so a shrink-to-fit pass driven by them
+       silently no-ops (it looks like it measured fine, no error) and
+       locks in the max font size — which THEN overflows once the scene
+       actually becomes visible. This exact bug shipped and was
+       genuinely confusing to diagnose live, since the code "looked"
+       correct and the bug only appeared depending on unrelated timing
+       (whether match-state happened to update before or after the scene
+       was first shown). Canvas text measurement has no dependency on any
+       element's layout/visibility at all, so it's correct no matter when
+       this runs relative to the scene's show/hide state — the same class
+       of "computed before the container was actually ready" bug that
+       also hit the theme system this session (see theme-apply.js). */
+    let _annivMeasureCtx = null;
+    function annivTextWidth(text, font) {
+      if (!_annivMeasureCtx) _annivMeasureCtx = document.createElement('canvas').getContext('2d');
+      _annivMeasureCtx.font = font;
+      return _annivMeasureCtx.measureText(text).width;
+    }
+    // Position/size straight from the pasted design spec (.Rectangle_1),
+    // relative to the 571×61 .ws-talent-namebar (= NAMEBOX.png's own
+    // canvas) — already edge-to-edge, no extra padding needed on top.
+    const ANNIV_NAME_BOX  = { left: 21, top: 3, w: 530, h: 56 };
+    const ANNIV_REF_SIZE  = 27;   // starting (unscaled) font-size, px
+    const ANNIV_GAP       = 16;   // equal gap on both sides of every star
+    const ANNIV_STAR_SIZE = 14;
+    function buildAnnivNameBox(names) {
+      const font = `800 ${ANNIV_REF_SIZE}px 'General Sans'`;
+      const totalNameWidth = names.reduce((sum, n) => sum + annivTextWidth(n.toUpperCase(), font), 0);
+      const starCount = names.length - 1;
+      // 2 gaps per star (one on each side) + the star's own width.
+      const naturalWidth = totalNameWidth + starCount * (ANNIV_STAR_SIZE + 2 * ANNIV_GAP);
+      // Scale the WHOLE row (text and stars together, same ratio) down
+      // only as much as needed to fit — never up past natural size, and
+      // never overflows ANNIV_NAME_BOX.w regardless of how long/many
+      // names are. This is "auto scale everything to ensure it doesn't
+      // overflow" applied literally: one transform, nothing individually
+      // resized, so relative proportions never look mismatched.
+      const scale = Math.min(1, ANNIV_NAME_BOX.w / naturalWidth);
+      const itemsHtml = names.map((n, i) => {
+        const nameEl = `<span class="ws-talent-name-anniv">${n.toUpperCase()}</span>`;
+        const star = i < names.length - 1
+          ? `<img class="ws-talent-star" src="${WS_TVC_ASSET}anniversary/annivstar.png" alt="">`
+          : '';
+        return nameEl + star;
+      }).join('');
+      return `<div class="ws-talent-namebox">` +
+        `<div class="ws-talent-names-inner" style="gap:${ANNIV_GAP}px;transform:scale(${scale})">${itemsHtml}</div>` +
+        `</div>`;
+    }
     /* Builds one talent box's innerHTML (Hosts or Casters); returns how many
        names were actually shown so the carousel can skip empty panels. */
     function populateWsTalentBox(rootId, list, bgAsset, posOrder) {
@@ -6791,19 +7184,32 @@
       const root = document.getElementById(rootId);
       if (names.length < 1) { root.innerHTML = ''; return 0; }
       /* 3-up gets crowded with a dashed divider — the blank NAMEBOX frame
-         gives long names room to breathe (the auto-fit pass below still
-         shrinks them further if needed). Every slot gets a stable
+         gives long names room to breathe. Every slot gets a stable
          "<rootId>-slot-<pos>" class (e.g. ws-hosts-slot-left,
          ws-casters-slot-middle) so the dashboard Edit panel can position/
          size each one independently regardless of how many are showing. */
       const namebarImg = names.length === 2 ? 'NAMEBOX2.png' : 'NAMEBOX.png';
       const slotClass = i => `${rootId}-slot-${posOrder[i].toLowerCase()}`;
       const photosHtml = names.map((n, i) => talentPhotoTag(n, posOrder[i], slotClass(i))).join('');
+      // 10th Anniversary uses a completely separate name-row structure
+      // (built above, buildAnnivNameBox) — not Regular's fixed
+      // independently-draggable columns — so there's no shared markup to
+      // branch on here, just two different innerHTML bodies.
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      if (isAnniversary) {
+        root.innerHTML =
+          `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
+          `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
+          `<div class="ws-talent-namebar"><img src="${wsTvcAsset(namebarImg)}" alt="">` +
+          buildAnnivNameBox(names) +
+          `</div>`;
+        return names.length;
+      }
       const namesHtml = names.map((n, i) => `<div class="ws-talent-name ${slotClass(i)}-name">${n.toUpperCase()}</div>`).join('');
       root.innerHTML =
-        `<img class="ws-talent-bg" src="${WS_TVC_ASSET}${bgAsset}" alt="">` +
+        `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
-        `<div class="ws-talent-namebar"><img src="${WS_TVC_ASSET}${namebarImg}" alt="">` +
+        `<div class="ws-talent-namebar"><img src="${wsTvcAsset(namebarImg)}" alt="">` +
         `<div class="ws-talent-names ws-talent-namecount-${names.length}">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
@@ -7058,17 +7464,29 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('ws-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        // 10th Anniversary — "SEASON 18 REGULAR SEASON W<n>D<n>" (see the
+        // [data-theme="10th_anniversary"] #ws-week-label CSS above). Only
+        // the W<n>D<n> part is real match-state data; "SEASON 18 REGULAR
+        // SEASON" is fixed text for this tournament run.
+        const wsWeekLabel = document.getElementById('ws-week-label');
+        if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+          wsWeekLabel.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else {
+          wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        }
       }
       buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
       populateWsHosts(ms);
       populateWsCasters(ms);
-      const labelImg = document.getElementById('ws-timer-label-img');
+      const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
-      /* These only exist under the Waiting Lobby asset folder (there is no
-         "Waiting Screen" folder on disk) — same art, shared with that scene. */
-      const labelSrc = '/assets/Waiting Lobby/' + label + '.png';
-      if (labelImg.getAttribute('src') !== labelSrc) labelImg.src = labelSrc;
+      /* Real text now, every theme (was a PNG, see git history/CLAUDE.md if
+         curious) — "SHOW" on its own line, "STARTS IN:"/"RESUMES IN:" with
+         a trailing colon on the next, per the exact wording specified. */
+      if (countdownLabelEl.dataset.label !== label) {
+        countdownLabelEl.dataset.label = label;
+        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br>RESUMES IN:' : 'SHOW<br>STARTS IN:';
+      }
       wsTimerState = ms.timer || WS_TIMER_DEFAULT;
     }
 
@@ -7198,12 +7616,19 @@
         ? `<div class="wlm-score"><span class="wlm-score-l">${m.score.l}</span><span class="wlm-score-div"></span><span class="wlm-score-r">${m.score.r}</span></div>`
         : `<img class="wlm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
       const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
+      // wsTvcAsset() (not raw WS_TVC_ASSET) — "the match backer, get it
+      // from waiting tvc": this box art is a SHARED asset with Waiting
+      // TVC's own buildWsMatches, so it already resolves to the
+      // anniversary version there; routing Waiting Lobby through the same
+      // helper picks that up for free. Blinker assets have no anniversary
+      // variant yet, so they harmlessly fall through to the Regular file
+      // via wsTvcAsset()'s own fallback — safe either way.
       root.innerHTML =
-        `<div class="wlm-box"><img class="wlm-box-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+        `<div class="wlm-box"><img class="wlm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
         `<span class="wlm-label">${m.label}</span>` +
         (typeAssets.blinker
           ? `<span class="wlm-time star">${m.time}</span>` +
-            `<div class="wlm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wlm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+            `<div class="wlm-band-cot" style="--cot-mask:url('${wsTvcAsset(typeAssets.blinker + '.png')}')"><img class="wlm-band-cot-img" src="${wsTvcAsset(typeAssets.blinker + '.png')}" alt="${typeAssets.blinker}"></div>`
           : `<span class="wlm-time">${m.time}</span>`) +
         `<span class="wlm-bo">${m.bo}</span>` +
         `<div class="wlm-slot wlm-tri wlm-tri-l${m.matchType === 'enduring' ? ' wlm-tri-gold' : ''}">${m.left.tri}</div>` +
@@ -7218,8 +7643,21 @@
        Draft.html's #sponsor-loop, instead of the Waiting Screen TVC's fixed
        3s crossfade. */
     function buildWlSponsor() {
+      // 10th Anniversary reuses Waiting TVC's own anniversary Sponsor Box
+      // art (WS_TVC_ASSET + 'anniversary/Sponsor Box.png') — there's no
+      // anniversary version of Waiting Lobby's OWN "Sponsor_Box.png" (note
+      // the different filename — underscore here, space in Waiting TVC's —
+      // these were never the same asset to begin with, so this can't go
+      // through wsTvcAsset('Sponsor_Box.png'), which would look for a
+      // Waiting-TVC-folder file that doesn't exist; the theme branch has
+      // to pick the right BASE folder, not just the filename). Regular
+      // theme is completely unaffected — still Waiting Lobby's own asset.
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('wl-sponsor').innerHTML =
-        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="wl-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="wl-sponsor-img" src="" alt=""></div>`;
     }
@@ -7406,7 +7844,14 @@
       if (!ms) return;
       syncClockOffset(ms);
       if (ms.week != null && ms.day != null) {
-        document.getElementById('wl-week-label').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        // 10th Anniversary — same "SEASON 18 REGULAR SEASON W<n>D<n>"
+        // pattern as Waiting TVC's #ws-week-label, see there for details.
+        const wlWeekLabel = document.getElementById('wl-week-label');
+        if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+          wlWeekLabel.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else {
+          wlWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        }
       }
       buildWlMatch(ms);
       const labelImg = document.getElementById('wl-timer-label-img');

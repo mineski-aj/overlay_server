@@ -16,7 +16,9 @@
 
   var bg = document.createElement('img');
   bg.id  = 'scoreboard-bg';
-  bg.src = 'assets/ingame/ingamepng2.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+    ? 'assets/ingame/anniversary/ingamepng2.png'
+    : 'assets/ingame/ingamepng2.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -584,22 +586,33 @@ function sbPollMatchState() {
 
       /* scoreboard background — only Enduring Legacy has its own
          ingamepng2 variant (the other rivalry types only have Waiting
-         TVC/Lobby art), so every other matchType keeps the normal art. */
+         TVC/Lobby art), so every other matchType keeps the normal art.
+         10th Anniversary has no Enduring Legacy variant of its own, so it
+         always uses its one ingamepng2.png regardless of matchType (same
+         precedence as Draft.html's #scene background). */
       var curMatch   = (s.todayMatches || [])[(s.match || 1) - 1];
       var isEnduring = curMatch && curMatch.matchType === 'enduring';
       var sbBg = document.getElementById('scoreboard-bg');
-      if (sbBg) sbBg.src = isEnduring ? 'assets/ingame/ingamepng2_ENDURING LEGACY.png' : 'assets/ingame/ingamepng2.png';
+      if (sbBg) {
+        sbBg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+          ? 'assets/ingame/anniversary/ingamepng2.png'
+          : (isEnduring ? 'assets/ingame/ingamepng2_ENDURING LEGACY.png' : 'assets/ingame/ingamepng2.png');
+      }
 
       /* #scoreboard-tricode-c1/c2 sit directly on that background's gold
          panel in the Enduring Legacy art (white elsewhere) — flip color
          now for whatever text is already there, and record the flag for
          registerPollHandler below (which is what actually keeps the
-         tricode text up to date). */
-      sbIsEnduring = isEnduring;
+         tricode text up to date). 10th Anniversary never shows that gold
+         panel (see the sbBg.src branch above), so it stays white here
+         regardless of matchType — flipping it black would leave black
+         text with no gold panel under it. */
+      var isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      sbIsEnduring = isEnduring && !isAnniv;
       var triC1 = document.getElementById('scoreboard-tricode-c1');
       var triC2 = document.getElementById('scoreboard-tricode-c2');
-      if (triC1) triC1.style.color = isEnduring ? '#0a0a0a' : '#fff';
-      if (triC2) triC2.style.color = isEnduring ? '#0a0a0a' : '#fff';
+      if (triC1) triC1.style.color = sbIsEnduring ? '#0a0a0a' : '#fff';
+      if (triC2) triC2.style.color = sbIsEnduring ? '#0a0a0a' : '#fff';
     })
     .catch(function() {});
 }

@@ -61,12 +61,17 @@ caller expected, until the restart actually happened.
   `Draft.html`, `DraftIndex.html`, `mploverlay_v7.html`) goes through
   this — use `createOverlaySSE()` for any new page, never
   `new EventSource(...)` directly.
+- `html/js/theme-apply.js` — applies the global broadcast theme
+  (Regular/10th Anniversary/Playoffs, Settings page picker) as
+  `data-theme` on `<html>` for every broadcast-source page (see "Theme
+  system" below). Independent of the SharedWorker above — included on
+  every overlay page, even the ones with no live SSE connection at all.
 - `heromvp/`, `herohighlights/`, `hero/`, `items/`, `role/`, `logos/`,
   `emblem/`, `photos/`, `hires/` — image asset folders, one per asset type
   (see naming conventions below).
 - `*.json` at repo root (`match_state.json`, `positions_live.json`,
-  `overlay_styles.json`, `mainroster.json`, etc) — live state files the
-  routes read/write; not meant to be hand-edited.
+  `overlay_styles.json`, `mainroster.json`, `theme.json`, etc) — live
+  state files the routes read/write; not meant to be hand-edited.
 - `/Users/ajsarmiento/.claude/projects/-Users-ajsarmiento/memory/` — my
   cross-project memory. Check `reference_mlbb_api.md` for the live
   main-info API shape, and the `feedback_*` files for standing UI rules
@@ -822,6 +827,305 @@ are two independent, unenforced copies of the same list, matching the
 existing `MPLFS_ACTIVE_FEATURE_MAP` precedent of "this codebase manually
 mirrors small config tables between server and client rather than
 sharing them."
+
+## Theme system — Regular / 10th Anniversary / Playoffs
+
+The Settings page has a **Broadcast Theme** picker — a plain `<select>`
+(`#theme-select`, same visual shape as `#edit-config-select` elsewhere on
+this page), not a segmented switch like API Mode: a 3-way segmented
+control doesn't fit this row once a label is as long as "10TH
+ANNIVERSARY" (it overflows its container rather than wrapping — this
+shipped once and had to be replaced). Changing it shows a
+`window.confirm()` first ("Switch the broadcast theme to X? This applies
+live to every open overlay page...") since it's still a live,
+broadcast-wide change even though — unlike API Mode — it doesn't repoint
+any data source; canceling reverts the `<select>` to `currentTheme`
+without sending anything. It's one global value —
+`regular` / `10th_anniversary` / `playoffs` — stored in `theme.json`
+(`{ "theme": "regular" }`) and read/written through `GET`/`POST
+/api/theme` in `routes/devapi.js`, the exact same shape as
+`heatmap_config`/`h2h_config` just above it in that file: GET returns the
+file (or the default if missing/corrupt), POST validates against a
+whitelist and re-broadcasts.
+
+**How it reaches every overlay page.** `POST /api/theme` writes
+`theme.json` then fans the new value out over the *existing* shared SSE
+connection (`state.overlayClients`, the same `/overlay/events` stream
+every other live feature uses — no new SSE endpoint):
+```js
+state.overlayClients.forEach(c => {
+  try { c.write('event: theme\ndata: ' + JSON.stringify(cfg) + '\n\n'); } catch {}
+});
+```
+`'theme'` is registered in `KNOWN_EVENTS` in
+`html/js/overlay-shared-worker.js` (with `OVERLAY_WORKER_VERSION` bumped
+alongside it, per the Dashboard architecture section above — skip this
+and any tab/browser-source open since before the change never learns the
+new theme). Every overlay page that already holds a live
+`createOverlaySSE()` connection (`mplfs.html`, `ENTVC.html`,
+`mpltag.html`, `Draft.html`, `DraftIndex.html`, `mploverlay_v7.html` via
+`overlay-debug.js`, `fights.html`) has one extra line right next to its
+existing listeners:
+```js
+sse.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
+```
+so a theme switch mid-broadcast applies instantly to every open
+instance, not just on next reload.
+
+**`html/js/theme-apply.js`** is the shared client-side piece, included on
+EVERY broadcast-source HTML page right after `cache-bust.js` (before
+`overlay-sse-shim.js` where both are present) — including pages that
+have no live SSE connection at all (`dynamic.html`, `gold-graph.html`,
+`ingame_blue.html`, `ingame_camv1.html`, `ingame_red.html`,
+`overlays.html`, `postgame.html`, `sponsors.html`, `sponsortv.html`):
+those pick up a changed theme on their next reload/refresh only, since
+there's nothing pushing to them live. It does two things:
+1. On load, reads `/api/theme` and applies the result as
+   `data-theme="..."` on `<html>` via `applyTheme(theme)` — this is what
+   any future per-theme CSS (or a JS `wsTvcAsset()`-style lookup) actually
+   reads.
+2. Exposes `applyTheme()`/`THEME_VALUES` globally so each page's own SSE
+   listener (above) can call it, instead of duplicating the theme list
+   and validation in 16 separate files.
+
+**This initial read is a deliberately SYNCHRONOUS `XMLHttpRequest`, not
+`fetch()`.** `theme-apply.js` is loaded first, but an async `fetch()`
+only resolves after the browser has already moved on to running every
+OTHER script on the page — and several of those build scene content
+immediately at top-level script execution, not gated behind any later
+event (e.g. `mplfs.html`'s `buildWsSponsor();`, called unconditionally
+right after its own definition). Such code reads
+`document.documentElement`'s `data-theme` attribute assuming it's
+already correct; with an async fetch it usually isn't yet, so
+`wsTvcAsset()`-style lookups silently and consistently fall back to
+Regular's asset, every single page load, with no error and nothing
+that looks broken in the code itself. **This exact bug shipped**:
+Waiting TVC's sponsor box kept loading the Regular `Sponsor Box.png`
+under 10th Anniversary even though the theme value, `wsTvcAsset()`'s
+logic, and the anniversary asset itself were all independently
+correct — the read just happened a few milliseconds too early, every
+time, which is what made it look like "the code must be wrong
+somewhere" rather than a load-order problem. A synchronous XHR blocks
+this script — and by extension all HTML parsing/script execution after
+it — until the theme is known, at the one-time cost of a few ms per
+page load; in exchange, every line of every other script on the page
+can read `data-theme` unconditionally, with no ordering requirement
+placed on whoever writes that code. **When adding new code that reads
+the theme at page-load time (not from inside an SSE listener/event
+callback), you don't need to do anything special — this is exactly
+the case the synchronous read exists to make safe.** If a similar
+"theme looks right but the wrong asset loads" bug ever resurfaces,
+suspect a NEW async gap before the theme is known (e.g. a future
+`theme-apply.js` rewrite that goes back to `fetch()`), not the
+lookup logic itself.
+
+**Adding a 4th theme (or renaming one)** means updating, by hand, the
+same "independent unenforced copies of one list" pattern as API Mode:
+`THEME_VALID` in `routes/devapi.js`, `THEME_VALUES` in
+`html/js/theme-apply.js`, and in `dashboard.html`: `THEME_VALUES`,
+`THEME_LABELS` (the confirm dialog's human-readable name), and a new
+`<option>` in `#theme-select`.
+
+**The whole point of this architecture is that a theme changes NOTHING
+by default.** Every theme currently renders identically — this wiring
+only decides *which one is active* and gets that value onto every page
+as `data-theme`. To actually give 10th Anniversary (or Playoffs) its own
+look for a specific element, add an opt-in CSS override scoped to that
+theme and that selector, in the same file the element already lives in:
+```css
+[data-theme="10th_anniversary"] #foo-title { font-family: 'SomeAnniversaryFont'; }
+[data-theme="10th_anniversary"] #foo-page { background-image: url('/assets/10th_anniv_bg.png'); }
+```
+This works cleanly when Regular has **no** competing rule for that
+property on that selector (a brand-new element/property nobody styled
+before). **When Regular already sets the SAME property on the SAME (or
+a less-specific) selector — which is true for almost every color, since
+most elements already have a Regular-theme color — prefer a CSS custom
+property instead of a second competing rule:**
+```css
+[data-theme="10th_anniversary"] { --anniv-accent: #6c4614; }
+/* the element's own ONE real rule, unconditional: */
+.foo-label { color: var(--anniv-accent, #0a0a0a); }
+```
+A second `[data-theme="10th_anniversary"] .foo-label { color: ... }`
+rule has to out-specificity Regular's existing rule for the browser to
+actually pick it — easy to get subtly wrong (a compound/ID selector
+elsewhere, an `!important` from a dashboard Edit-tab override, source
+order) and, when it goes wrong, silently: no error, the element just
+keeps rendering in Regular's color under every theme, which reads
+exactly like "the theme CSS isn't taking" and can cost real time to
+diagnose. The variable pattern has no specificity question to get
+wrong at all — there is only ever one real rule for that property, its
+*value* is what changes, and `var()`'s second argument supplies each
+element's own correct Regular-theme fallback for free. Define the
+variable once, near the top of the file (see `--anniv-accent`), and
+reuse it for every element that should pick up the same brand color;
+add a differently-named variable only for a genuinely different themed
+value (e.g. `#ws-week-label`'s blue is its own literal, unrelated to
+the brand accent, and correctly stays a plain hardcoded value in its
+own already-`[data-theme]`-scoped rule since nothing else needs it).
+**Never write a rule as "everything except regular" (e.g.
+`:not([data-theme="regular"])`) or gate on absence of an attribute** —
+always scope to the specific theme(s) the change is actually for. Adding
+a 4th theme later must not silently inherit a change that was only ever
+meant for 10th Anniversary. An element with no theme-specific rule at
+all simply keeps its normal (Regular) styling under every theme, which
+is the correct default — most elements should never need a themed
+override, per the user's explicit "themes don't change everything unless
+we say so."
+
+**Themes are purely cosmetic — a reskin, not a feature.** A theme
+changes what something *looks like* (background asset, color, font,
+image) — never what it *does*, when it fires, its layout/positioning, or
+any other behavior. The one exception is when the user explicitly calls
+out a behavioral difference for a theme (e.g. "10th Anniversary's reveal
+animation is 200ms slower") — that's a real, deliberate exception stated
+up front, not something to infer or add speculatively. Any other
+architecture/structural work on this codebase (a new feature, a bugfix, a
+wiring change, a refactor) applies to **every** theme uniformly and
+should never be written as if it only applies to one — the theme system
+sits underneath everything else, not the other way around. If you're
+tempted to branch behavior on `data-theme` for something that isn't a
+skin (timing, data, layout, which elements exist), stop and confirm with
+the user first; that's almost certainly a misread of the request.
+
+**JS-driven cosmetic properties (not expressible in CSS) follow the same
+opt-in-per-theme shape as the CSS convention above.** A `<video>`'s `src`
+picked by JS (`showSceneVideo`/`SCENE_VIDEO_SRC` — see "Video-heavy
+overlays" below) can't be reskinned with a CSS override, so it gets a
+small lookup table + getter instead, keyed by theme first (matching the
+CSS convention's `[data-theme="..."] ...` grouping), falling back to the
+plain Regular-theme value when a theme has no override:
+```js
+const SCENE_VIDEO_SRC_BY_THEME = {
+  '10th_anniversary': { waiting: '/assets/annivloopsun.webm', lobby: '/assets/annivloopsun.webm' },
+};
+function getSceneVideoSrc(feature) {
+  const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+  return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
+}
+```
+Same rules as the CSS convention apply: only list the specific
+theme/feature pairs that actually differ, never write it as "everything
+except regular", and a feature missing from every theme's table simply
+keeps `SCENE_VIDEO_SRC`'s plain value under every theme. **This is
+decided once, at the moment a scene's background starts (`showSceneVideo`
+is called on Show/transition)** — switching themes while that scene is
+already on screen does not swap the running video live; the new theme's
+asset applies the next time the scene is (re)shown. Revisit this only if
+the user asks for live-swap-mid-scene behavior specifically.
+
+### The dashboard's Edit tab is theme-scoped — a drag/resize under one theme never affects another
+
+`overlay_styles.json` (`routes/overlayStyles.js`, `GET`/`POST
+/api/overlay-styles`, `POST /api/overlay-nudge`) stores every
+selector's Edit-tab position/size override — this predates the theme
+system and originally had no concept of themes at all: one flat
+`{ [file]: { [selector]: {left,top,width,height,fontSize} } } ` store,
+applied unconditionally regardless of anything else. That caused a real,
+confusing bug once themes existed: `#waiting-screen-page.wsm-count-2
+#ws-header` had a Regular-theme position saved from before 10th
+Anniversary existed, and because Edit-tab overrides are injected as
+`<style>` rules with `!important` (see `mplfs.html`'s
+`fetch('/api/overlay-styles?file=mplfs')` handler), that old saved
+position kept winning over the new `[data-theme="10th_anniversary"]
+#ws-header { ... }` CSS rule — higher specificity AND `!important` beats
+a plain theme-scoped rule with neither, so the header LOOKED like the
+theme CSS "wasn't taking" no matter how correct it was.
+
+**The fix — theme-scoped storage, transparent to every existing
+caller.** `lib/theme.js` exports `getTheme()` (shared with
+`routes/devapi.js`'s `/api/theme`, so both agree on "the current
+theme"). Every read/write in `routes/overlayStyles.js` now goes through
+a themed bucket key: `theme === 'regular'` keeps using the plain `file`
+bucket exactly as before (full backward compatibility — nothing changes
+for Regular), while any other theme reads/writes `` `${file}::${theme}` ``
+(e.g. `mplfs::10th_anniversary`) instead. `GET /api/overlay-styles`
+merges the two **per selector** — a selector customized under the
+active theme wins outright (its whole box, not a property blend, since
+Edit-tab saves always write a selector's complete box together); a
+selector nobody has touched yet under this theme falls back to
+Regular's value, so untouched elements don't just disappear. Nudges
+(`/api/overlay-nudge`) seed a brand-new themed entry from Regular's
+current value first, since a nudge is a relative `+Npx` adjustment, not
+an absolute position — starting from `{}` would nudge from `0,0`.
+
+**No client-side changes were needed for this** — `mplfs.html` (and
+every other overlay page) already just does
+`fetch('/api/overlay-styles?file=X')` and injects whatever comes back
+as `!important` CSS; the merge happens entirely server-side, so the
+client keeps working unmodified regardless of which theme is active.
+
+**Practical effect: dragging/resizing an element in the Edit tab while
+10th Anniversary is the active theme (Settings page picker) only ever
+affects 10th Anniversary — Regular's saved position for that same
+selector is untouched, and vice versa.** This is exactly the
+"themes are cosmetic, opt-in per theme" principle applied to the Edit
+tab specifically, per the user's explicit instruction. **When
+diagnosing "my theme CSS isn't taking"-type bugs, always check
+`overlay_styles.json` for a stale override on that selector before
+assuming the CSS itself is wrong** — an Edit-tab override, once saved,
+beats a plain `[data-theme="..."]` rule every time, theme-scoped or not.
+
+### Never size/fit content by measuring a possibly-hidden element — use Canvas `measureText()` instead
+
+`mplfs.html`'s Waiting TVC Hosts/Casters name row (`populateWsTalentBox`
+→ `buildAnnivNameBox`, 10th Anniversary only) needs to fit a variable
+number of variable-length names + separator stars into a fixed box
+(`.ws-talent-namebox`, 530×56, positioned inside the 571×61 namebar)
+without ever overflowing it — auto-shrinking the whole row (text and
+stars together, one `transform: scale()`) only as much as needed.
+
+**The first implementation measured this the "normal" way —
+`element.scrollWidth` vs. `element.clientWidth` after rendering at full
+size — and shipped a real, confusing bug.** `populateWsTalentBox` runs
+from `updateWsFromState()`, an SSE match-state handler that can fire
+**before** `showWaitingScreen()` ever shows the scene — the box sits
+inside a `display:none` ancestor at that point. `scrollWidth`/
+`clientWidth` on a hidden element give meaningless numbers (typically
+0/0, or otherwise not reflecting real layout), so the shrink-to-fit
+check (`scrollWidth > clientWidth`) silently evaluates false — no
+error, nothing that looks broken in the code — and locks in the
+unshrunk, full-size row. The overflow only becomes visible once the
+scene is *later* shown, by which point the measurement has already run
+and won't re-run again until the roster list changes. This reads as a
+flaky, hard-to-reproduce bug ("it overflows sometimes") when it's
+actually fully deterministic — it depends on whether match-state
+happened to update before or after the scene's first Show, not on
+anything random.
+
+**The fix: measure with a `<canvas>` 2D context's `measureText()`
+instead of any DOM layout property.**
+```js
+let _annivMeasureCtx = null;
+function annivTextWidth(text, font) {
+  if (!_annivMeasureCtx) _annivMeasureCtx = document.createElement('canvas').getContext('2d');
+  _annivMeasureCtx.font = font;
+  return _annivMeasureCtx.measureText(text).width;
+}
+```
+A detached `<canvas>` (never inserted into the document) has no
+layout/visibility state to depend on — `measureText()` gives the exact
+same answer whether the real scene is shown, hidden, or not yet built
+at all. Compute the natural (unscaled) total width from measured text
++ known star/gap widths, compare to the fixed box width, and apply
+`Math.min(1, boxWidth / naturalWidth)` as a single `transform: scale()`
+on a wrapper — this scales text and stars together (so they never look
+mismatched) and mathematically cannot overflow, since the scale factor
+is derived directly from the real content width, not inferred from a
+live layout that might not exist yet.
+
+**This is the same underlying bug class as the theme-apply.js race
+above and the Edit-tab live-sync gap** — something computed before the
+thing it depends on (a visible layout / a resolved theme / a broadcasted
+change) was actually ready. When building anything that sizes/positions
+itself based on *measuring* other content, check whether that
+measurement could ever run while hidden or not-yet-shown, and prefer a
+measurement technique with no visibility dependency (Canvas
+`measureText()` for text; for other cases, consider whether the
+calculation can be done from known/config values instead of a live DOM
+read at all) over `scrollWidth`/`clientWidth`/`getBoundingClientRect()`,
+which are only meaningful once the element has real layout.
 
 ## Video-heavy overlays — permanently-decoding media is a real, sustained cost
 

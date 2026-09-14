@@ -53,7 +53,12 @@ function puiBuildCard(i) {
 
   const bg = document.createElement('img');
   bg.className = 'pui-bg';
-  bg.src = side === 'home' ? 'assets/ingame/ui/uiblue.png' : 'assets/ingame/ui/uired.png';
+  /* 10th Anniversary versions are the same 180x89 (see the coordinate
+     comment at the top of this file), so no layout recalculation needed. */
+  const puiIsAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  bg.src = puiIsAnniv
+    ? (side === 'home' ? 'assets/ingame/anniversary/ui/uiblue.png' : 'assets/ingame/anniversary/ui/uired.png')
+    : (side === 'home' ? 'assets/ingame/ui/uiblue.png' : 'assets/ingame/ui/uired.png');
   bg.alt = '';
   card.appendChild(bg);
 

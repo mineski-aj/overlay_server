@@ -9,8 +9,8 @@
 // change — only the one line that used to say `new EventSource(...)`.
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
-// below for why this exists. Current bump: added 'post_h2h'/'h2h_config'.
-const OVERLAY_WORKER_VERSION = 20; // 20: renamed 'stolengoldtest' to 'stolengold' in KNOWN_EVENTS
+// below for why this exists. Current bump: added 'theme'.
+const OVERLAY_WORKER_VERSION = 21; // 21: added 'theme' (broadcast theme picker) to KNOWN_EVENTS
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

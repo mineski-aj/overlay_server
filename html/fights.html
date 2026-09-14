@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <script src="js/cache-bust.js"></script>
+<script src="js/theme-apply.js"></script>
 <script src="js/overlay-sse-shim.js"></script>
 <title>Fight Recap</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -761,6 +762,7 @@ function connectSSE() {
   // createOverlaySSE() is always same-origin, which matches actual
   // real-world usage here exactly.
   const es = createOverlaySSE();
+  es.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
   es.addEventListener('debugoff', () => {
     const p = document.getElementById('debug-panel');
     if (p) p.style.display = 'none';
