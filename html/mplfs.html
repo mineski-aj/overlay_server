@@ -1015,9 +1015,11 @@
        Waiting TVC's own anniversary Sponsor Box.png, reused — see
        buildWlSponsor), only the label's own separate solid white
        background is removed. Scoped to #wl-sponsor-cat specifically, not
-       the shared .sponsor-cat-label class — that's reused as-is by
-       Today's/Tomorrow's Schedule and Consolidated Post 2's own sponsor
-       boxes, which must stay Regular-look. */
+       the shared .sponsor-cat-label class — Today's/Tomorrow's Schedule
+       now get the identical treatment via their own #ts-sponsor-cat/
+       #tw-sponsor-cat rule below (explicitly requested once their sponsor
+       box art itself was switched to match); Consolidated Post 2's own
+       sponsor box keeps the shared class's normal white label, untouched. */
     #wl-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
     [data-theme="10th_anniversary"] #wl-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
@@ -1064,6 +1066,17 @@
       text-transform: uppercase;
       word-break: break-word;
     }
+    /* 10th Anniversary — same treatment as Waiting TVC/Lobby's own
+       #ws-sponsor-cat/#wl-sponsor-cat (see those rules' comments): the
+       label's separate solid white plate is removed so the sponsor box
+       art shows through underneath, and the text picks up the same
+       brand accent color. Scoped to #ts-sponsor-cat/#tw-sponsor-cat
+       specifically, not the shared .sponsor-cat-label class, matching
+       the existing per-ID pattern (Consolidated Post 2's own sponsor
+       box keeps its normal white label, untouched). */
+    #ts-sponsor-cat, #tw-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+    [data-theme="10th_anniversary"] #ts-sponsor-cat,
+    [data-theme="10th_anniversary"] #tw-sponsor-cat { background-color: transparent; }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -1278,6 +1291,13 @@
     .th-teambox-blue { left: 505px;  top: 64px; }
     .th-teambox-red  { left: 1060px; top: 64px; }
     .th-teambox img.th-teambox-bg { position: absolute; left: 0; top: 0; width: 355px; height: 86px; }
+    /* 10th Anniversary — dedicated per-side art, same 355x86. */
+    [data-theme="10th_anniversary"] .th-teambox-blue img.th-teambox-bg {
+      content: url('/assets/hexagon/anniversary/hexagonteambackblue.png');
+    }
+    [data-theme="10th_anniversary"] .th-teambox-red img.th-teambox-bg {
+      content: url('/assets/hexagon/anniversary/hexagonteambackred.png');
+    }
     .th-teambox-logo { position: absolute; top: 14px; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; }
     .th-teambox-blue .th-teambox-logo { left: 26px; }
     .th-teambox-red  .th-teambox-logo { left: 271px; }
@@ -1333,14 +1353,81 @@
     .th-axis-val-red  { color: #d92027; }
     .th-axis-chip-blue { background: #1656d5; }
     .th-axis-chip-red  { background: #d92027; }
+    /* 10th Anniversary — new blue/red across this whole scene. */
+    [data-theme="10th_anniversary"] .th-axis-val-blue  { color: #0095fd; }
+    [data-theme="10th_anniversary"] .th-axis-val-red   { color: #ff243e; }
+    [data-theme="10th_anniversary"] .th-axis-chip-blue { background: #0095fd; }
+    [data-theme="10th_anniversary"] .th-axis-chip-red  { background: #ff243e; }
+    /* 10th Anniversary only — every radar axis (GAME WIN RATE%, FIRST
+       BLOOD%, KP%, TOWER TAKE%, TURTLE CONTROL%, LORD CONTROL%) is pulled
+       off the hexagon into its own small card using annivstater.png
+       (143x95), replacing buildThRadar's normal .th-axis treatment
+       entirely for this theme (see the isAnniv branch there, which now
+       covers every axis index, not just FIRST BLOOD). Each card's position
+       is the exact per-axis canvas-absolute left/top the user gave
+       (TH_RADAR_AXES' `annivPos`), not derived from the hexagon's own
+       vertex geometry — buildThRadar converts it to be relative to
+       #th-radar (left:660,top:180 on the canvas) since these divs render
+       as its children. Rectangle_1_copy's blue+red rows are stacked on
+       top of each other (row per team), 7px apart. 18.35pt/19.99pt at
+       72dpi = 18.35px/19.99px directly (pt equals px at 72dpi, same as
+       this session's other 72dpi specs). Labels break one word per line
+       (percent sticks to the last word), except "GAME WIN RATE%" which
+       only breaks before RATE% — see TH_RADAR_AXES' `annivLabel` field
+       for the exact per-axis text. */
+    .th-fb-card {
+      position: absolute;
+      width: 143px; height: 95px;
+      background-image: url('/assets/hexagon/anniversary/annivstater.png');
+      background-size: 100% 100%;
+      z-index: 2;
+    }
+    .th-fb-label {
+      position: absolute;
+      left: 10px; top: 0; width: 125px; height: 35px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 18.35px;
+      line-height: 1.05;
+      color: #876330; text-align: center;
+    }
+    .th-fb-valrow {
+      position: absolute;
+      left: 10px; top: 36px; width: 125px; height: 59px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 19.99px;
+    }
+    .th-fb-row { display: flex; align-items: center; gap: 8px; }
+    .th-fb-chip { width: 14px; height: 14px; flex: 0 0 auto; border-radius: 2px; }
+    .th-fb-chip-blue { background: #0095fd; }
+    .th-fb-chip-red  { background: #ff243e; }
+    .th-fb-num-blue { color: #0095fd; }
+    .th-fb-num-red  { color: #ff243e; }
     #th-title { position: absolute; left: 589px; top: 795px; width: 743px; height: 90px; z-index: 3; }
     #th-title-bg { position: absolute; left: 0; top: 0; width: 743px; height: 90px; }
+    /* 10th Anniversary — repositioned/resized per .hexagontitle (the
+       anniversary hexagontitle.png is natively 572x97, an exact match —
+       no distortion). z-index stays the existing 3; the pasted spec's
+       z-index:190 is that design file's own local layer numbering, not
+       meant to be copied onto this page's actual stacking scale. */
+    [data-theme="10th_anniversary"] #th-title {
+      left: 676px; top: 801px;
+      width: 572px; height: 97px;
+    }
+    [data-theme="10th_anniversary"] #th-title-bg {
+      width: 572px; height: 97px;
+      content: url('/assets/hexagon/anniversary/hexagontitle.png');
+    }
     #th-title-text {
       position: absolute; left: 0; top: 0; width: 100%; height: 100%;
       display: flex; align-items: center; justify-content: center;
       font-family: 'Anton', sans-serif; font-size: 44px; color: #0a0a0a;
       text-transform: uppercase; letter-spacing: 0.02em;
     }
+    /* 10th Anniversary — the new hexagontitle.png already bakes "TEAM
+       HEAD TO HEAD" into the art (unlike Regular's plain frame, which
+       needs this separate text overlay) — hide the redundant DOM text so
+       it doesn't double up on top of the image's own lettering. */
+    [data-theme="10th_anniversary"] #th-title-text { display: none; }
     /* overflow:hidden clips the name/logo to the plate's own bounds, so the
        slide transition (translateY in .th-slide-el) wipes cleanly through
        the box edges instead of the incoming/outgoing text floating visibly
@@ -1349,6 +1436,13 @@
     .th-namebox-blue { left: 162px;  top: 790px; }
     .th-namebox-red  { left: 1411px; top: 790px; }
     .th-namebox img.th-namebox-bg { position: absolute; left: 0; top: 0; width: 347px; height: 62px; }
+    /* 10th Anniversary — dedicated per-side art, same 347x62. */
+    [data-theme="10th_anniversary"] .th-namebox-blue img.th-namebox-bg {
+      content: url('/assets/hexagon/anniversary/hexagonnamebackblue.png');
+    }
+    [data-theme="10th_anniversary"] .th-namebox-red img.th-namebox-bg {
+      content: url('/assets/hexagon/anniversary/hexagonnamebackred.png');
+    }
     .th-namebox-logo {
       position: absolute; top: 0; width: 62px; height: 62px;
       display: flex; align-items: center; justify-content: center;
@@ -1378,6 +1472,15 @@
       position: absolute; left: 0; top: 880px; width: 1920px; height: 152px;
       background: #f4f4f5; z-index: 2;
     }
+    /* 10th Anniversary — annivstatbackgrounder.png (1920x162, an exact
+       width/near-exact height match) instead of the flat #f4f4f5 fill,
+       per .annivstatbackgrounder's own pasted position/size. */
+    [data-theme="10th_anniversary"] #th-bottom-panel {
+      top: 875px; height: 162px;
+      background: transparent;
+      background-image: url('/assets/hexagon/anniversary/annivstatbackgrounder.png');
+      background-size: 100% 100%;
+    }
     #th-bars {
       position: absolute; left: 300px; top: 900px; width: 1320px; height: 120px;
       display: flex; align-items: center; gap: 24px; z-index: 3;
@@ -1393,6 +1496,8 @@
     }
     .th-bar-row .th-bar-label { text-align: left; }
     .th-bar-row-rev .th-bar-label { text-align: right; }
+    /* 10th Anniversary — KDA/TEAM GPM/etc labels. */
+    [data-theme="10th_anniversary"] .th-bar-label { color: #6c4614; }
     .th-bar {
       position: relative; flex: 1; height: 32px;
       display: flex; border-radius: 2px; overflow: hidden;
@@ -1404,6 +1509,11 @@
     /* Vertical gradient depth — darker at the top, true color at the bottom. */
     .th-bar-seg-blue { background: linear-gradient(to bottom, #0b3a94 0%, #1656d5 100%); }
     .th-bar-seg-red  { background: linear-gradient(to bottom, #8f0d12 0%, #d92027 100%); }
+    /* 10th Anniversary — flat new blue/red instead of the gradient, same
+       flat-color treatment already used for this session's other
+       anniversary bar fills (Gold Difference, side-check bars). */
+    [data-theme="10th_anniversary"] .th-bar-seg-blue { background: #0095fd; }
+    [data-theme="10th_anniversary"] .th-bar-seg-red  { background: #ff243e; }
     /* ── MVP HIGHLIGHTS PAGE — single-player MVP card, fed by the
        game-mvp/view API (see /api/highlights-url in Settings to repoint
        it). Signature-pose hires photo sits behind the plaque, the plaque
@@ -1464,6 +1574,13 @@
       display: flex; align-items: center; justify-content: flex-start;
       font-family: 'Anton', sans-serif; font-size: 103px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; text-align: left; white-space: nowrap;
+    }
+    /* 10th Anniversary — "MVP HIGHLIGHTS" title, white with the same
+       subtle glow used for every other white-on-video text this theme
+       adds elsewhere in this file (scoreboard stats, tricode, etc.). */
+    [data-theme="10th_anniversary"] #hl-title {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
     }
     /* ── MVP HIGHLIGHTS STATS BACKER — sits directly below .hl-hero.
        Same KDA/KP%/API-named-stat data as MVP Scene (hlApply reuses the
@@ -1529,6 +1646,20 @@
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
       z-index: 10; object-fit: cover;
     }
+    /* 10th Anniversary — the animated mvptext.webm behind the hero image
+       has no anniversary equivalent yet, so a static placeholder
+       (gamemvptitle.png, per the pasted .v spec) stands in for it at its
+       own explicit canvas position — deliberately NOT the same box as
+       #mv-box-bg above, which the user gave a different position/size
+       for. Same stacking tier as #mv-box-bg (below #mv-hero-img/#mv-photo)
+       so the hero render still draws on top of it. */
+    #mv-title-anniv-bg { display: none; }
+    [data-theme="10th_anniversary"] #mv-box-bg { display: none; }
+    [data-theme="10th_anniversary"] #mv-title-anniv-bg {
+      display: block;
+      position: absolute; left: 1000px; top: 60px; width: 801px; height: 507px;
+      z-index: 10; object-fit: contain;
+    }
     #mv-hero-img {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
       z-index: 11; object-fit: contain; object-position: 50% 100%; display: block;
@@ -1548,6 +1679,9 @@
       font-family: 'Anton', sans-serif; font-size: 50px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
     }
+    /* 10th Anniversary — "OF THE GAME" no longer needed next to the new
+       REGULAR SEASON / MATCH plate. */
+    [data-theme="10th_anniversary"] #mv-ofthegame { display: none; }
     #mv-matchbox {
       position: absolute; left: 1402px; top: 562px; width: 224px; height: 57px; z-index: 13;
       background: #0a0a0a; color: #fff;
@@ -1561,6 +1695,39 @@
       font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 13px;
       opacity: 0.85; text-transform: uppercase;
     }
+    /* 10th Anniversary — annivmvptitleback.png replaces the black plate;
+       REGULAR SEASON / MATCH n - GAME n move from a stacked flex column to
+       Rectangle_1/Rectangle_1_copy's side-by-side local offsets inside it
+       (20pt @ 72dpi = 20px, same conversion this file uses everywhere
+       else, brown General Sans Bold, center/center — "same font
+       properties as the previous one" per the request, so both spans
+       share one rule). Position reuses #mv-matchbox's current LIVE
+       top-left (1391,543 — an existing Regular-theme Edit-tab nudge, see
+       overlay_styles.json) rather than the unadjusted base CSS default,
+       since the new 500px-wide box anchored at the base default's 1402
+       would run almost to the canvas edge; the actual left/top actually
+       used also lives in overlay_styles.json's mplfs::10th_anniversary
+       bucket (a themed Edit-tab override already beats a plain rule here,
+       so both are kept in sync) — flagged as a judgment call, no exact
+       position was given for this box itself, only its internal labels. */
+    [data-theme="10th_anniversary"] #mv-matchbox {
+      left: 1391px; top: 543px;
+      width: 500px; height: 46px;
+      background-image: url('/assets/mvp/anniversary/annivmvptitleback.png');
+      background-size: 100% 100%;
+      background-color: transparent;
+    }
+    [data-theme="10th_anniversary"] #mv-matchbox-season,
+    [data-theme="10th_anniversary"] #mv-matchbox-game {
+      position: absolute; top: 0;
+      width: 210px; height: 46px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 20px;
+      color: var(--anniv-accent, #6c4614);
+      letter-spacing: normal; opacity: 1;
+    }
+    [data-theme="10th_anniversary"] #mv-matchbox-season { left: 26px; }
+    [data-theme="10th_anniversary"] #mv-matchbox-game   { left: 267px; }
 
     .mv-icon-title {
       position: absolute; z-index: 14; top: 672px; height: 24px;
@@ -1571,6 +1738,20 @@
     #mv-spell-title  { left: 1029px; width: 62px; }
     #mv-emblem-title { left: 1142px; width: 212px; }
     #mv-items-title  { left: 1404px; width: 380px; }
+    /* 10th Anniversary — SPELL/EMBLEM/IN-GAME EQUIPMENTS labels, brown
+       brand accent instead of black. */
+    [data-theme="10th_anniversary"] .mv-icon-title { color: var(--anniv-accent, #0a0a0a); }
+    /* 10th Anniversary — annivmvpdataback.png sits behind the SPELL/
+       EMBLEM/IN-GAME EQUIPMENTS titles+icons row (canvas-absolute
+       position given directly, not nested/local to anything). Stacking
+       tier below that row's z-index:14 so the icons/titles still draw on
+       top of the plate. */
+    #mv-stats-back { display: none; }
+    [data-theme="10th_anniversary"] #mv-stats-back {
+      display: block;
+      position: absolute; left: 966px; top: 663px; width: 862px; height: 115px;
+      z-index: 13;
+    }
 
     #mv-spell {
       position: absolute; left: 1029px; top: 707px; width: 62px; height: 62px; z-index: 14;
@@ -1620,6 +1801,8 @@
     #mv-kda-label { left: 843px;  width: 299px; }
     #mv-gpm-label { left: 1312px; width: 134px; }
     #mv-kp-label  { left: 1555px; width: 204px; }
+    /* 10th Anniversary — KDA/GPM/KP% titles, brown brand accent. */
+    [data-theme="10th_anniversary"] .mv-stat-label { color: var(--anniv-accent, #0a0a0a); }
 
     /* KDA/GPM/KP values — Anton, black, sized to fill the box height (see
        mvFitStatValue), fitted to width by JS if it ever overflows. */
@@ -1952,17 +2135,26 @@
       -webkit-mask-image: linear-gradient(to top, transparent 0%, transparent 25%, #000 50%);
               mask-image: linear-gradient(to top, transparent 0%, transparent 25%, #000 50%);
     }
+    /* 10th Anniversary — same per-team /photos/groupbg/<tricode>_bg.png
+       (a solid-color team-name wordmark on transparent), forced white
+       regardless of its original per-team color via the same
+       brightness(0) invert(1) trick used elsewhere in this file for
+       taupe-by-default role icons. */
+    [data-theme="10th_anniversary"] .lu-bg-photo {
+      filter: brightness(0) invert(1);
+    }
 
     /* Hidden until Phase 2 explicitly reveals them (.lu-phase2, set by
        luPlayGroupPhotoIntro the moment the group photo buttons out) — keeps
        Phase 1 to just the photo, no title/team-bar bleeding through any
        transparent part of the photo underneath it. */
-    .lu-title, .lu-teambar-logo, .lu-teambar-season, .lu-teambar-match {
+    .lu-title, .lu-teambar-logo, .lu-teambar-season, .lu-teambar-match, .lu-annivbanner {
       opacity: 0;
       transition: opacity 400ms ease;
     }
     .lu-phase2 .lu-title, .lu-phase2 .lu-teambar-logo,
-    .lu-phase2 .lu-teambar-season, .lu-phase2 .lu-teambar-match {
+    .lu-phase2 .lu-teambar-season, .lu-phase2 .lu-teambar-match,
+    .lu-phase2 .lu-annivbanner {
       opacity: 1;
     }
 
@@ -1976,6 +2168,39 @@
       font-family: 'Anton', sans-serif; font-weight: 400; font-size: 58px;
       color: #0a0a0a; text-transform: uppercase; letter-spacing: 0.01em;
       white-space: nowrap;
+    }
+    /* 10th Anniversary — .lu-title itself becomes a plain full-canvas
+       wrapper (was a centered flex row) so its two children can each use
+       their own pasted canvas-absolute position independently, instead
+       of being laid out relative to each other. .lu-title-text keeps
+       being a <span> in the HTML (static "TEAM LINE-UP", never varies)
+       but content:url() replaces its rendered content with the
+       teamlineupanniv.png image entirely — same technique this file
+       already uses for theme-swapped <img> sources, just applied to a
+       text element instead. */
+    [data-theme="10th_anniversary"] .lu-title {
+      left: 0; top: 0; width: 1920px; height: 1080px;
+      display: block;
+      /* Regular's z-index:10 sits above every .lu-player (max z-index 5)
+         since Regular's title never overlaps them (top: 46px, well above
+         the players' own 110px top). Anniversary's repositioned smart
+         logo/title image (81-181px) does reach into player territory
+         horizontally around the center slots, so it needs to sit BEHIND
+         them instead — same layer as the plain background, below every
+         player z-index. */
+      z-index: 1;
+    }
+    [data-theme="10th_anniversary"] .lu-title-logo {
+      position: absolute;
+      left: 667px; top: 94px;
+      width: 187px; height: 75px;
+      content: url('/assets/lineup/lineupsmart.png');
+    }
+    [data-theme="10th_anniversary"] .lu-title-text {
+      position: absolute;
+      left: 873px; top: 81px;
+      width: 430px; height: 100px;
+      content: url('/assets/lineup/anniversary/teamlineupanniv.png');
     }
 
     /* Player photo boxes — 900×900, evenly spaced/overlapping, staggered
@@ -2040,6 +2265,17 @@
     .lu-nametag-4 { left: 1090px; top: 770px; }
     .lu-nametag-5 { left: 1370px; top: 770px; }
     .lu-nametag-bg { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+    /* 10th Anniversary — dedicated Blue_NameBox.png/Red_NameBox.png
+       (347x62, close enough in aspect to the regular 217x39
+       killblueback/redback.png that stretching to the same 300x54 box
+       shows no visible distortion) instead of the reused kill-event
+       plates, per side. */
+    [data-theme="10th_anniversary"] #team-lineup-blue-page .lu-nametag-bg {
+      content: url('/assets/lineup/anniversary/Blue_NameBox.png');
+    }
+    [data-theme="10th_anniversary"] #team-lineup-red-page .lu-nametag-bg {
+      content: url('/assets/lineup/anniversary/Red_NameBox.png');
+    }
     .lu-nametag-role {
       position: absolute; left: 12px; top: 6px; width: 42px; height: 42px;
       object-fit: contain; filter: brightness(0); /* role/*.png icons are taupe by default — force solid black, same as the kill-event nametag's white notch */
@@ -2118,6 +2354,30 @@
       text-transform: uppercase; line-height: 0.597; letter-spacing: 0.14em;
       white-space: nowrap;
     }
+    /* 10th Anniversary — new secondaryrole.png (same 217x39, swapped via
+       content:url() same as everywhere else), icon forced black instead
+       of white (brightness(0), dropping the invert(1)), and the label
+       switches from Anton/white/tracked-out to plain General Sans
+       Bold/brown — dropping the Anton-specific line-height/letter-
+       spacing tuning along with it, none of which makes sense for a
+       different typeface. 14.37pt at 72dpi = 14.37px (this spec's own
+       stated dpi is 72, unlike the 300dpi pasted specs elsewhere in this
+       file that need scaling — at 72dpi, pt and px are already the same
+       number). */
+    [data-theme="10th_anniversary"] .lu-secrole-bg {
+      content: url('/assets/lineup/anniversary/secondaryrole.png');
+    }
+    [data-theme="10th_anniversary"] .lu-secrole-icon {
+      filter: brightness(0);
+    }
+    [data-theme="10th_anniversary"] .lu-secrole-label {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14.37px;
+      color: #6c4614;
+      line-height: normal;
+      letter-spacing: normal;
+    }
 
     /* Bottom bar — team crest centered, season label left, week/day/match
        label right (all independently positioned/editable). */
@@ -2133,6 +2393,66 @@
     }
     .lu-teambar-season { left: 140px;  justify-content: flex-start; }
     .lu-teambar-match  { left: 1300px; justify-content: flex-end; }
+    /* 10th Anniversary — new banner behind the crest+season+match group
+       but IN FRONT of the players (annivbanner.png, 1269x290, no Regular
+       equivalent at all — hidden under every other theme, same pattern
+       as this file's other anniversary-only decorative elements).
+       z-index:6 sits above every .lu-player (max z-index 5) and below
+       .lu-teambar-logo/season/match's 11, so it never covers the
+       crest/text it's backing but does cover any player photo it
+       overlaps. Added to the shared .lu-title/.lu-teambar-* opacity-0
+       -> .lu-phase2 opacity-1 fade group above so it fades in together
+       with the crest/season/match text instead of popping in the
+       instant display switches to block — no opacity of its own set
+       here, that shared rule owns it now. It's still never affected by
+       .lu-photo's own bottom-fade mask despite sitting in the same
+       vertical band — mask-image isn't an inherited CSS property, so
+       that was never actually at risk of leaking onto this element or
+       its crest/text children in the first place. */
+    .lu-annivbanner { display: none; }
+    [data-theme="10th_anniversary"] .lu-annivbanner {
+      display: block;
+      position: absolute;
+      left: 327px; top: 731px;
+      width: 1269px; height: 290px;
+      z-index: 6;
+    }
+    /* Crest moves onto the banner's shield cutout (Rectangle_2, canvas-
+       absolute — teambar elements are page-level siblings, not nested,
+       so no local-offset conversion needed here, unlike #st-weekday
+       elsewhere in this file). */
+    [data-theme="10th_anniversary"] .lu-teambar-logo {
+      left: 871px; top: 782px;
+      width: 178px; height: 178px;
+    }
+    /* Season/match text repositioned per Rectangle_1/Rectangle_1_copy,
+       both given "in relation to annivbanner.png" — i.e. LOCAL offsets
+       against the banner's own box (327,731), not canvas-absolute:
+       season 14,135 -> 327+14=341, 731+135=866; match 777,135 ->
+       327+777=1104, same 866 top. 28.02pt at 72dpi = 28.02px (this
+       spec's own stated dpi is 72 — pt and px are the same number at
+       72dpi, unlike the 300dpi specs elsewhere in this file). Both
+       lines center-center instead of the Regular flex-start/flex-end
+       split, brown instead of near-black, and Bold instead of the
+       Regular 800 weight — "MPL PH S18" is styled by this rule directly,
+       "REGULAR SEASON" (its own span, see the HTML) and the whole match
+       line are Semibold instead (see .lu-season-semibold and the
+       .lu-teambar-match rule below). */
+    [data-theme="10th_anniversary"] .lu-teambar-season,
+    [data-theme="10th_anniversary"] .lu-teambar-match {
+      top: 866px;
+      width: 478px; height: 72px;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 28.02px;
+      color: #6c4614;
+      text-align: center;
+      letter-spacing: normal;
+    }
+    [data-theme="10th_anniversary"] .lu-teambar-season { left: 341px; }
+    [data-theme="10th_anniversary"] .lu-teambar-match  { left: 1104px; font-weight: 600; }
+    [data-theme="10th_anniversary"] .lu-season-semibold { font-weight: 600; }
 
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
@@ -2167,6 +2487,19 @@
       width: 845px;
     }
     #st-header > img { display: block; width: 845px; }
+    /* 10th Anniversary — repositioned/resized per Layer_2 (396,71 1133x234)
+       and swapped to the anniversary Infinix Standing.png, which — unlike
+       Regular's — has no baked "SEASON 18 REGULAR SEASON" text at all,
+       just an empty rainbow pill where that text goes (see #st-weekday
+       below, which carries the full line for this theme). */
+    [data-theme="10th_anniversary"] #st-header {
+      left: 396px; top: 71px;
+      width: 1133px;
+    }
+    [data-theme="10th_anniversary"] #st-header > img {
+      width: 1133px; height: 234px;
+      content: url('/assets/Standings/anniversary/Infinix Standing.png');
+    }
     #st-weekday {
       position: absolute;
       left: 559px; top: 100px;
@@ -2182,6 +2515,29 @@
       text-transform: uppercase;
       white-space: nowrap;
     }
+    /* 10th Anniversary — "SEASON 18 REGULAR SEASON W<n>D<n>", same content
+       pattern and font properties as Waiting TVC/Lobby's week-label
+       (font-family/size, letter-spacing), repositioned per the pasted
+       .Rectangle_16 spec. #st-weekday is nested INSIDE #st-header
+       (position:absolute child — see the HTML), so left/top are LOCAL
+       offsets against #st-header's own box, not canvas-absolute — same
+       class of conversion as Waiting Lobby's #wl-week-label. Rectangle_16
+       gives 695,246 canvas-absolute; #st-header's own anniversary
+       position is 396,71 (see above), so: 695-396=299, 246-71=175.
+       Color is the same purple as Waiting TVC/Lobby's week-label
+       (var(--anniv-header-text)) — brown belongs to the column headers
+       on top of Standing_Header.png instead (see .st-col-label/.st-lteam
+       below), not this element; an earlier pass had that backwards. */
+    [data-theme="10th_anniversary"] #st-weekday {
+      left: 299px; top: 175px;
+      width: 535px; height: 43px;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+      text-transform: none;
+    }
+    [data-theme="10th_anniversary"] #st-weekday .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
     /* Standings — stats column header bar. Standing_Header.png is now the
        same width as Team_Box.png (1803px) and sits flush above row 1
        (top = ST_ROW_TOP − its own height, no gap) so the header and the
@@ -2198,6 +2554,9 @@
       width: 1803px; height: 27px;
       background-image: url('/assets/Standings/Standing_Header.png');
       background-size: 100% 100%;
+    }
+    [data-theme="10th_anniversary"] #st-colheader {
+      background-image: url('/assets/Standings/anniversary/Standing_Header.png');
     }
     .st-col-label {
       position: absolute;
@@ -2238,6 +2597,13 @@
     .st-l2 { left: 1035px; }
     .st-l3 { left: 1303px; }
     .st-l4 { left: 1555px; }
+    /* 10th Anniversary — brown/Semibold instead of white/Bold, for the
+       text sitting on top of Standing_Header.png. */
+    [data-theme="10th_anniversary"] .st-col-label,
+    [data-theme="10th_anniversary"] .st-lteam {
+      color: #6c4614;
+      font-weight: 600;
+    }
     /* Standings — team rows */
     #st-rows { position: absolute; top: 0; left: 0; width: 1920px; height: 1080px; }
     .st-row {
@@ -2307,6 +2673,18 @@
       font-size: 30px;
       color: #0e0e0e;
     }
+    /* 10th Anniversary — white Anton, 10pt (this project's pasted-spec
+       pt->px factor, 300/72 — same one used everywhere else in this file
+       for design-tool point sizes: 10 * 300/72 = 41.67px), plus the same
+       subtle glow as mploverlay_v7's white text (scoreboard stats, match
+       info, tricode, .pui-name). */
+    [data-theme="10th_anniversary"] .str-stat {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 41.67px;
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+    }
     .str-c1 { left: 768px; }
     .str-c2 { left: 1035px; }
     .str-c3 { left: 1303px; }
@@ -2356,6 +2734,51 @@
       white-space: nowrap;
       text-transform: uppercase;
     }
+    #ts-title-bg { display: none; }
+    /* 10th Anniversary — #ts-header itself becomes the new wide title
+       graphic's own frame (left:-192,top:30,1565x397 — same
+       #header-becomes-the-image-box pattern as Waiting TVC's #ws-header),
+       set via overlay_styles.json's mplfs::10th_anniversary bucket (both
+       the plain #ts-header entry for the 3-match arrangement this
+       position was designed against, and a matching
+       #today-schedule-page.tsm-count-2 #ts-header entry for 2-match days —
+       shifted down by the same +108px the Regular theme already uses
+       between its own 2-match/3-match #ts-header positions, since no
+       separate 2-match position was given). #ts-title (plain Anton text)
+       is hidden since the new art bakes "TODAY'S MATCHES" in already —
+       same duplicate-text bug class as Team Hexagon's title fix. */
+    [data-theme="10th_anniversary"] #ts-title { display: none; }
+    [data-theme="10th_anniversary"] #ts-title-bg {
+      display: block;
+      position: absolute;
+      left: 0; top: 0;
+      width: 1565px; height: 397px;
+    }
+    /* 10th Anniversary — the season+week line is pulled together into one
+       "SEASON 18 REGULAR SEASON W<n>D<n>" string (see applyTsWeekDay),
+       same content pattern/font/color as Waiting TVC/Lobby/Standings'
+       week-label (var(--anniv-header-text)). #ts-week's separate black box
+       is no longer needed once its content is folded into #ts-season.
+       Rectangle_1's 535,202 is LOCAL to the resized #ts-header above (its
+       nearest positioned ancestor), matching how Team Lineup's Rectangle_1
+       was explicitly "in relation to" its repositioned parent. */
+    [data-theme="10th_anniversary"] #ts-week { display: none; }
+    [data-theme="10th_anniversary"] #ts-season {
+      position: absolute;
+      left: 535px; top: 202px;
+      width: 508px; height: 41px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    [data-theme="10th_anniversary"] #ts-season .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
     /* Today's Schedule — native 858px match rows (strip + box in one asset) */
     #ts-matches {
       position: absolute;
@@ -2391,6 +2814,13 @@
     .tsm-label { left: 22px; }
     .tsm-time  { left: 0; width: 100%; justify-content: center; }
     .tsm-bo    { right: 22px; }
+    /* 10th Anniversary — brown instead of black, same brand accent as
+       everything else recolored for this theme. .tsm-label/.tsm-time/
+       .tsm-bo are shared by both Today's and Tomorrow's Schedule (same
+       tsmRowHtml), so this one rule covers both scenes. */
+    [data-theme="10th_anniversary"] .tsm-label,
+    [data-theme="10th_anniversary"] .tsm-time,
+    [data-theme="10th_anniversary"] .tsm-bo { color: var(--anniv-accent, #0a0a0a); }
     /* Rivalry blinker band — same masked-shine loop as the Waiting Screen
        TVC's .wsm-band-cot (see @keyframes wsm-cot-*), just resized/recentered
        to this row's 858×232 band instead of duplicating the animation. */
@@ -2498,6 +2928,45 @@
       white-space: nowrap;
       text-transform: uppercase;
     }
+    #tw-title-bg { display: none; }
+    /* 10th Anniversary — same treatment as Today's Schedule's #ts-header/
+       #ts-title/#ts-season/#ts-week (see those rules' comments for the
+       full reasoning): #tw-header becomes the new title graphic's own
+       frame, #tw-title (plain Anton text) is hidden since the art bakes
+       the headline in, #tw-week is hidden and folded into #tw-season as
+       one "SEASON 18 REGULAR SEASON W<n>D<n>" line. #tw-title-bg's src
+       swaps between annivtomorrow.png/annivnextweek.png depending on the
+       same day===3 condition twTitleText() already uses for the plain-text
+       version — see applyTwTitle. Rectangle_1's 537,201 is LOCAL to the
+       resized #tw-header, same as Today's Schedule's Rectangle_1. */
+    [data-theme="10th_anniversary"] #tw-header {
+      left: -192px; top: 30px;
+      width: 1565px; height: 397px;
+    }
+    [data-theme="10th_anniversary"] #tw-title { display: none; }
+    [data-theme="10th_anniversary"] #tw-title-bg {
+      display: block;
+      position: absolute;
+      left: 0; top: 0;
+      width: 1565px; height: 397px;
+    }
+    [data-theme="10th_anniversary"] #tw-week { display: none; }
+    [data-theme="10th_anniversary"] #tw-season {
+      position: absolute;
+      left: 537px; top: 201px;
+      width: 502px; height: 43px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 24px;
+      color: var(--anniv-header-text, #5e79fe);
+      letter-spacing: normal;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    [data-theme="10th_anniversary"] #tw-season .ws-week-wd { font-weight: 500; margin-left: 0.3em; }
     /* Tomorrow's Schedule match rows share Today's Schedule's .tsm-* classes */
     #tw-matches {
       position: absolute;
@@ -2814,8 +3283,11 @@
        already resolves to the anniversary version) stays visible under
        10th Anniversary — only the category label's own separate solid
        white background goes away, scoped to #ws-sponsor-cat only, not the
-       shared class, so Waiting Lobby/Today's/Tomorrow's Schedule keep
-       their normal white label. */
+       shared class — Waiting Lobby and Today's/Tomorrow's Schedule get
+       the same treatment via their own equivalent #wl-sponsor-cat/
+       #ts-sponsor-cat/#tw-sponsor-cat rules; Consolidated Post 2's sponsor
+       box is the one that still keeps the shared class's normal white
+       label. */
     #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
     [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
@@ -3032,6 +3504,28 @@
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 39.8px; color: #000;
       z-index: 2;
     }
+    /* 10th Anniversary — RICH GUY/SAND BAG/THE WINGMAN (cards 1/3/4 only,
+       not card 2's Visa-tag treatment) get a new decorative header plate
+       sitting behind the existing title text. A child of .p4k-card (same
+       as .p4k-title itself), so it inherits the card's own deal-in
+       transform automatically — no separate animation needed for "part
+       of the player card". No exact position was given, only the art
+       itself (434x52) — centered on the title text's own real live box
+       (0,-51,416x48 per overlay_styles.json's Edit-tab override, not the
+       CSS default above) since that's what the header needs to sit
+       behind; flagged as a judgment call. 40pt @ 72dpi = 40px for the
+       title text itself, same pt-equals-px-at-72dpi conversion used
+       throughout this file. */
+    .p4k-header-anniv { display: none; }
+    [data-theme="10th_anniversary"] .p4k-header-anniv {
+      display: block;
+      position: absolute; left: -9px; top: -53px; width: 434px; height: 52px;
+      z-index: 1;
+    }
+    [data-theme="10th_anniversary"] .p4k-title {
+      color: var(--anniv-accent, #000);
+      font-size: 40px;
+    }
 
     /* THE CARRY's Visa tag — a separately-positioned container sitting
        directly above card 2, sharing the same asset dimensions as
@@ -3127,6 +3621,9 @@
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 21px; color: #000;
       text-align: center; line-height: 1.05;
     }
+    /* 10th Anniversary — brown instead of black (.p4k-name stays white,
+       it was never black to begin with). */
+    [data-theme="10th_anniversary"] .p4k-stat-label { color: var(--anniv-accent, #000); }
 
     /* Stat value — its own box, separate from the label. */
     .p4k-value-box {
@@ -3138,6 +3635,13 @@
       font-family: 'Anton', sans-serif; font-weight: 400; font-size: 60px; color: #000;
       text-align: center; line-height: 1; text-transform: uppercase;
     }
+    [data-theme="10th_anniversary"] .p4k-stat-value { color: var(--anniv-accent, #000); }
+    /* 10th Anniversary — card 2 (THE CARRY)'s "DAMAGE DEALT" label + value
+       stay black instead of brown, unlike the other three cards' stats.
+       Higher specificity (id/card-scoped) than the plain-class rules
+       above, so this wins regardless of source order. */
+    [data-theme="10th_anniversary"] #p4k-card-2 .p4k-stat-label,
+    [data-theme="10th_anniversary"] #p4k-2-value { color: #000; }
 
     /* ── POST HEATMAP PAGE — MVP Highlights' exact layout (title top-left,
        signature photo + team plaque bottom-right), with the thermal
@@ -4662,6 +5166,7 @@
     <div id="post4key-page">
       <div id="p4k-card-1" class="p4k-card">
         <img class="p4k-bg" id="p4k-1-bg" alt="">
+        <img class="p4k-header-anniv" src="/assets/postgame/anniversary/post4headeranniv.png" alt="">
         <div class="p4k-title" id="p4k-1-title">RICH GUY</div>
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-1-photo-front" src="/photos/placeholder.png" alt="">
@@ -4694,6 +5199,7 @@
       </div>
       <div id="p4k-card-3" class="p4k-card">
         <img class="p4k-bg" id="p4k-3-bg" alt="">
+        <img class="p4k-header-anniv" src="/assets/postgame/anniversary/post4headeranniv.png" alt="">
         <div class="p4k-title" id="p4k-3-title">SAND BAG</div>
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-3-photo-front" src="/photos/placeholder.png" alt="">
@@ -4708,6 +5214,7 @@
       </div>
       <div id="p4k-card-4" class="p4k-card">
         <img class="p4k-bg" id="p4k-4-bg" alt="">
+        <img class="p4k-header-anniv" src="/assets/postgame/anniversary/post4headeranniv.png" alt="">
         <div class="p4k-title" id="p4k-4-title">THE WINGMAN</div>
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-4-photo-front" src="/photos/placeholder.png" alt="">
@@ -4974,8 +5481,9 @@
         <img class="lu-secrole-icon" id="lub-secrole-icon-5" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
+      <img class="lu-annivbanner" src="/assets/lineup/anniversary/annivbanner.png" alt="">
       <img class="lu-teambar-logo" id="lub-teambar-logo" src="" alt="" onerror="this.style.display='none'">
-      <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
+      <div class="lu-teambar-season">MPL PH S18&nbsp;<span class="lu-season-semibold">REGULAR SEASON</span></div>
       <div class="lu-teambar-match" id="lub-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
     </div>
     <div id="team-lineup-red-page">
@@ -5060,12 +5568,14 @@
         <img class="lu-secrole-icon" id="lur-secrole-icon-5" src="" alt="" onerror="this.style.display='none'">
         <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
+      <img class="lu-annivbanner" src="/assets/lineup/anniversary/annivbanner.png" alt="">
       <img class="lu-teambar-logo" id="lur-teambar-logo" src="" alt="" onerror="this.style.display='none'">
-      <div class="lu-teambar-season">MPL PH S18 REGULAR SEASON</div>
+      <div class="lu-teambar-season">MPL PH S18&nbsp;<span class="lu-season-semibold">REGULAR SEASON</span></div>
       <div class="lu-teambar-match" id="lur-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
     </div>
     <div id="today-schedule-page">
       <div id="ts-header">
+        <img id="ts-title-bg" src="/assets/Today's Schedule/anniversary/TODAY’S MATCHES.png" alt="">
         <div id="ts-title">Today&rsquo;s Matches</div>
         <div id="ts-subline">
           <span id="ts-season">Season 18 Regular Season</span>
@@ -5077,6 +5587,7 @@
     </div>
     <div id="tomorrow-schedule-page">
       <div id="tw-header">
+        <img id="tw-title-bg" src="" alt="">
         <div id="tw-title">See You Tomorrow</div>
         <div id="tw-subline">
           <span id="tw-season">Season 18 Regular Season</span>
@@ -5291,6 +5802,7 @@
     </div>
     <div id="mvp-page">
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
+      <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-hero-img" src="" alt="" onerror="this.style.display='none'">
       <img id="mv-photo" src="" alt="" onerror="this.style.display='none'">
 
@@ -5300,6 +5812,7 @@
         <div id="mv-matchbox-game">MATCH 1 - GAME 1</div>
       </div>
 
+      <img id="mv-stats-back" src="/assets/mvp/anniversary/annivmvpdataback.png" alt="">
       <div id="mv-spell-title" class="mv-icon-title">SPELL</div>
       <img id="mv-spell" src="" alt="" onerror="this.style.visibility='hidden'">
 
@@ -6772,8 +7285,17 @@
     // SCENE_VIDEO_SRC's plain (Regular-theme) file, unchanged.
     const SCENE_VIDEO_SRC_BY_THEME = {
       '10th_anniversary': {
-        waiting: '/assets/annivloopsun.webm',
-        lobby:   '/assets/annivloopwaves.webm',
+        waiting:    '/assets/annivloopsun.webm',
+        lobby:      '/assets/annivloopwaves.webm',
+        standings:  '/assets/annivloop.webm',
+        lineupblue: '/assets/annivloop.webm',
+        lineupred:  '/assets/annivloop.webm',
+        hexagon:    '/assets/annivloop.webm',
+        schedule:   '/assets/annivloopwaves.webm',
+        tomorrow:   '/assets/annivloopwaves.webm',
+        mvp:        '/assets/annivloop.webm',
+        highlights: '/assets/annivloop.webm',
+        post4key:   '/assets/annivloop.webm',
       },
     };
     function getSceneVideoSrc(feature) {
@@ -6857,12 +7379,14 @@
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
     // Per-theme Waiting TVC asset overrides — opt-in only, same pattern as
     // SCENE_VIDEO_SRC_BY_THEME (see CLAUDE.md's Theme system section).
-    // Deliberately scoped to Waiting-TVC-only call sites below — several
-    // of these filenames (esp. WS_MATCH_TYPE_ASSETS' box art) are ALSO
-    // reused as-is by Today's/Tomorrow's Schedule (tsmRowHtml) and Waiting
-    // Lobby (buildWlMatch), which must stay Regular-look under every theme
-    // unless separately asked for (same caution as the Waiting Lobby
-    // redcorner.webm precedent elsewhere in this file).
+    // Originally scoped to Waiting-TVC-only call sites — several of these
+    // filenames (esp. WS_MATCH_TYPE_ASSETS' box art) are ALSO reused as-is
+    // by Today's/Tomorrow's Schedule (tsmRowHtml) and Waiting Lobby
+    // (buildWlMatch). Today's/Tomorrow's Schedule now goes through
+    // wsTvcAsset() too (explicitly requested — see tsmRowHtml's own
+    // comment); Waiting Lobby's buildWlMatch does not yet and must stay
+    // Regular-look until separately asked for (same caution as the
+    // Waiting Lobby redcorner.webm precedent elsewhere in this file).
     const WS_TVC_ASSET_BY_THEME = {
       '10th_anniversary': {
         'TodayMatches.png':          'anniversary/TodayMatches.png',
@@ -7312,17 +7836,31 @@
     /* Shared row markup for Today's/Tomorrow's Schedule — background art and
        pulsing rivalry band now follow the same match-type → asset mapping as
        the Waiting Screen TVC (WS_MATCH_TYPE_ASSETS), just resized to this
-       row's 858×232 box, instead of a plain star/regular toggle. */
+       row's 858×232 box, instead of a plain star/regular toggle. Routed
+       through wsTvcAsset() (not a plain WS_TVC_ASSET+filename concat) so
+       10th Anniversary picks up Waiting TVC's anniversary box art here too
+       — explicitly requested for Today's Schedule ("today's schedule uses
+       assets from Waiting TVC... acquire the anniversary assets from
+       Waiting TVC/anniversary for this scene"), which supersedes
+       WS_TVC_ASSET_BY_THEME's older "stay Regular-look" scoping comment
+       for this call site (Tomorrow's Schedule shares this same function,
+       so it picks up the same swap as a side effect — only
+       'MatchBox_REGULAR MATCH.png' has an anniversary asset today, so
+       other match types simply keep their Regular art via wsTvcAsset's own
+       fallback, same as everywhere else this helper is used). Note: the
+       anniversary box art (571×173) has a different aspect ratio than this
+       row's native 858×232 box — .tsm-bg stretches to fit, so it will look
+       slightly different from a purpose-fit 858×232 asset. */
     function tsmRowHtml(m, centerHtml) {
       const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
       const logo = (side) =>
         `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      return `<div class="tsm-row"><img class="tsm-bg" src="${WS_TVC_ASSET}${typeAssets.box}.png" alt="">` +
+      return `<div class="tsm-row"><img class="tsm-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
         `<span class="tsm-label">${m.label}</span>` +
         (typeAssets.blinker
           ? `<span class="tsm-time star">${m.time}</span>` +
-            `<div class="tsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="tsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt="${typeAssets.blinker}"></div>`
+            `<div class="tsm-band-cot" style="--cot-mask:url('${wsTvcAsset(typeAssets.blinker + '.png')}')"><img class="tsm-band-cot-img" src="${wsTvcAsset(typeAssets.blinker + '.png')}" alt="${typeAssets.blinker}"></div>`
           : `<span class="tsm-time">${m.time}</span>`) +
         `<span class="tsm-bo">${m.bo}</span>` +
         `<div class="tsm-slot tsm-tri tsm-tri-l${m.matchType === 'enduring' ? ' tsm-tri-gold' : ''}">${m.left.tri}</div>` +
@@ -7438,8 +7976,32 @@
       const el = document.getElementById('tw-title');
       el.textContent = twTitleText(state);
       fitTitleText(el, 80, 40);
+      /* 10th Anniversary — swap the title graphic itself between the two
+         baked-in headlines, same day===3 condition as twTitleText() above
+         (see [data-theme="10th_anniversary"] #tw-title-bg CSS). Gated so
+         Regular theme never fetches this asset. */
+      if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+        document.getElementById('tw-title-bg').src = (state && state.day === 3)
+          ? "/assets/Today's Schedule/anniversary/annivnextweek.png"
+          : "/assets/Today's Schedule/anniversary/annivtomorrow.png";
+      }
     }
     applyTwTitle(null);
+
+    /* 10th Anniversary — "SEASON 18 REGULAR SEASON W<n>D<n>" folded into
+       #tw-season, same pattern as Today's Schedule's applyTsWeekDay — see
+       that function's comment. Uses the PREVIEWED day's week/day
+       (computeTomorrowWeekDay), same value the plain #tw-week already
+       showed. */
+    function applyTwWeekDay(state) {
+      if (state.week == null || state.day == null) return;
+      const wd = computeTomorrowWeekDay(state);
+      if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+        document.getElementById('tw-season').innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + wd.week + 'D' + wd.day + '</span>';
+      } else {
+        document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
+      }
+    }
 
 
     /* Staggered slide-in — title first, then each row, left to right */
@@ -8062,12 +8624,12 @@
        are NOT a width-driven auto-wrap (GAME WIN RATE % is longer than
        LORD CONTROL % but stays on one line), they're per-label. */
     const TH_RADAR_AXES = [
-      { key: 'winrate', label: 'GAME WIN RATE %'        },
-      { key: 'fb',      label: 'FIRST<br>BLOOD %'       },
-      { key: 'kp',      label: 'KP%'                    },
-      { key: 'tower',   label: 'TOWER TAKE %'           },
-      { key: 'turtle',  label: 'TURTLE<br>CONTROL %'    },
-      { key: 'lord',    label: 'LORD<br>CONTROL %'      },
+      { key: 'winrate', label: 'GAME WIN RATE %', annivLabel: 'GAME WIN<br>RATE%', annivPos: { left: 1061, top: 187 } },
+      { key: 'fb',      label: 'FIRST<br>BLOOD %', annivLabel: 'FIRST<br>BLOOD%', annivPos: { left: 1189, top: 345 } },
+      { key: 'kp',      label: 'KP%', annivLabel: 'KP%', annivPos: { left: 1188, top: 555 } },
+      { key: 'tower',   label: 'TOWER TAKE %', annivLabel: 'TOWER<br>TAKE%', annivPos: { left: 753, top: 704 } },
+      { key: 'turtle',  label: 'TURTLE<br>CONTROL %', annivLabel: 'TURTLE<br>CONTROL%', annivPos: { left: 579, top: 539 } },
+      { key: 'lord',    label: 'LORD<br>CONTROL %', annivLabel: 'LORD<br>CONTROL%', annivPos: { left: 558, top: 308 } },
     ];
     const TH_R = 250, TH_CX = 300, TH_CY = 300;
     /* Shared duration for both team shapes' entrance (see buildThRadar's
@@ -8102,15 +8664,27 @@
 
     function buildThRadar(blue, red, animate = true) {
       const root = document.getElementById('th-radar');
+      /* 10th Anniversary — the hexagon (grid rings + spokes) goes white
+         and 1px thicker (2px -> 3px); team polygons use the new blue/red
+         instead of the old #1656d5/#d92027. These are hardcoded into the
+         SVG markup strings below (not CSS, since they're SVG presentation
+         attributes on JS-generated elements), so the theme check lives
+         here rather than as a stylesheet override like everywhere else
+         in this scene. */
+      const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const gridColor = isAnniv ? '#ffffff' : '#9a9a9f';
+      const gridWidth = isAnniv ? 3 : 2;
+      const blueColor = isAnniv ? '#0095fd' : '#1656d5';
+      const redColor  = isAnniv ? '#ff243e' : '#d92027';
       let grid = '';
       for (let ring = 1; ring <= 5; ring++) {
         const r = TH_R * ring / 5;
         const pts = TH_RADAR_AXES.map((_, i) => { const p = thAxisPoint(i, r); return `${p.x},${p.y}`; }).join(' ');
-        grid += `<polygon points="${pts}" fill="none" stroke="#9a9a9f" stroke-width="2"/>`;
+        grid += `<polygon points="${pts}" fill="none" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
       }
       const spokes = TH_RADAR_AXES.map((_, i) => {
         const p = thAxisPoint(i, TH_R);
-        return `<line x1="${TH_CX}" y1="${TH_CY}" x2="${p.x}" y2="${p.y}" stroke="#9a9a9f" stroke-width="2"/>`;
+        return `<line x1="${TH_CX}" y1="${TH_CY}" x2="${p.x}" y2="${p.y}" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
       }).join('');
       function poly(stats, color, groupId) {
         const pts = TH_RADAR_AXES.map((ax, i) => {
@@ -8126,7 +8700,7 @@
           `<polygon points="${pts}" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="3"/></g>`;
       }
       const svg = `<svg id="th-radar-svg" width="600" height="600" viewBox="0 0 600 600">${grid}${spokes}` +
-        `${poly(red, '#d92027', 'th-radar-poly-red')}${poly(blue, '#1656d5', 'th-radar-poly-blue')}</svg>`;
+        `${poly(red, redColor, 'th-radar-poly-red')}${poly(blue, blueColor, 'th-radar-poly-blue')}</svg>`;
 
       /* Same fixed-width .th-axis box (150px) for the 4 side axes — only
          its anchor point/transform changes, so the name text and both value
@@ -8138,6 +8712,25 @@
          since those two sit right up against the team boxes / title bar. */
       const labels = TH_RADAR_AXES.map((ax, i) => {
         const p = thAxisPoint(i, TH_R + 42);
+        /* 10th Anniversary — every axis gets the annivstater.png card
+           treatment instead of the normal .th-axis treatment (see the
+           .th-fb-* CSS comment for why/positioning). ax.annivPos holds the
+           exact canvas-absolute left/top the user specified per-axis
+           (.annivstater pasted spec) — converted here to be relative to
+           #th-radar (left:660,top:180 on the canvas), since these label
+           divs render as children of #th-radar, not the page root. Same
+           th-radar-v-N-blue/red ids as the normal path, so thCountUp and
+           the static (!animate) branch below both keep working unmodified
+           — only the surrounding markup differs. */
+        if (isAnniv) {
+          const fbPosCss = `left:${ax.annivPos.left - 660}px; top:${ax.annivPos.top - 180}px;`;
+          return `<div class="th-fb-card" style="${fbPosCss}">` +
+            `<div class="th-fb-label">${ax.annivLabel}</div>` +
+            `<div class="th-fb-valrow">` +
+            `<div class="th-fb-row"><span class="th-fb-chip th-fb-chip-blue"></span><span class="th-fb-num th-fb-num-blue" id="th-radar-v-${i}-blue"></span></div>` +
+            `<div class="th-fb-row"><span class="th-fb-chip th-fb-chip-red"></span><span class="th-fb-num th-fb-num-red" id="th-radar-v-${i}-red"></span></div>` +
+            `</div></div>`;
+        }
         const valcol =
           `<div class="th-axis-valcol">` +
           `<div class="th-axis-val"><span class="th-axis-chip th-axis-chip-blue"></span><span class="th-axis-num th-axis-val-blue" id="th-radar-v-${i}-blue"></span></div>` +
@@ -8424,9 +9017,18 @@
       const photoEl  = document.getElementById('hl-player-photo');
 
       /* campid 1 = left/team1 (blue), campid 2 = right/team2 (red) —
-         same convention as the game's main/sub-info API. */
+         same convention as the game's main/sub-info API. 10th Anniversary
+         swaps to its own differently-named replacement art
+         (mvpreplaybacker.png/mvpreplaybackerred.png, same 462x174 size),
+         which lives under assets/mvp/anniversary/ rather than
+         assets/highlights/ — not a wsTvcAsset-style filename remap since
+         the base folder itself differs, so branch inline like
+         buildWlSponsor's own asset swap does for the same reason. */
       const isRed = player && player.campid === 2;
-      plaque.style.backgroundImage = `url('/assets/highlights/${isRed ? 'mvphlred' : 'mvphlblue'}.png')`;
+      const isAnniversaryHl = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      plaque.style.backgroundImage = isAnniversaryHl
+        ? `url('/assets/mvp/anniversary/${isRed ? 'mvpreplaybackerred' : 'mvpreplaybacker'}.png')`
+        : `url('/assets/highlights/${isRed ? 'mvphlred' : 'mvphlblue'}.png')`;
 
       const tricode = ((player && player.team_simple_name) || '').toUpperCase();
       logoEl.onerror = () => { logoEl.style.display = 'none'; };
@@ -8757,10 +9359,16 @@
 
     function mvApply(player, ms) {
       /* campid 1 = left/team1 (blue), campid 2 = right/team2 (red) —
-         same convention as MVP Highlights / the main-info API. */
+         same convention as MVP Highlights / the main-info API. 10th
+         Anniversary has its own reskinned mvpfsblue.png/mvpfsred.png
+         (same 1762x164 size, so no position change needed) under
+         assets/mvp/anniversary/ — same isAnniversary branch pattern as
+         hlApply's plaque swap above. */
       const isRed = player && player.campid === 2;
-      document.getElementById('mv-backer').style.backgroundImage =
-        `url('/assets/mvp/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`;
+      const isAnniversaryMv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      document.getElementById('mv-backer').style.backgroundImage = isAnniversaryMv
+        ? `url('/assets/mvp/anniversary/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`
+        : `url('/assets/mvp/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`;
 
       const logoEl = document.getElementById('mv-team-logo');
       const tricode = ((player && player.team_simple_name) || '').toUpperCase();
@@ -10056,13 +10664,39 @@
     const tsPage  = document.getElementById('today-schedule-page');
 
     function buildTsSponsor() {
+      // 10th Anniversary — exact same sponsor box as Waiting Lobby/Waiting
+      // TVC (same asset, same .wl-sponsor-bg/.sponsor-cat-label/
+      // .wl-sponsor-loop classes already shared verbatim below — see
+      // buildWlSponsor's own comment for why this can't go through
+      // wsTvcAsset('Sponsor_Box.png') directly: Waiting Lobby/Today's
+      // Schedule's Regular asset is "Sponsor_Box.png" (underscore) while
+      // Waiting TVC's anniversary art lives under a differently-named
+      // "Sponsor Box.png" (space) in its own folder).
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('ts-sponsor').innerHTML =
-        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="ts-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="ts-sponsor-img" src="" alt=""></div>`;
     }
     buildTsSponsor();
     const tsSponsorLoop = makeSponsorLoop('ts-sponsor-img', 'ts-sponsor-cat');
+
+    /* 10th Anniversary — "SEASON 18 REGULAR SEASON W<n>D<n>" folded into
+       #ts-season as one line (see the [data-theme="10th_anniversary"]
+       #ts-season CSS), same content pattern as Waiting TVC/Lobby/Standings'
+       week-label; #ts-week (the black box) is hidden under this theme
+       instead. Regular theme keeps the original two-piece layout. */
+    function applyTsWeekDay(ms) {
+      if (ms.week == null || ms.day == null) return;
+      if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+        document.getElementById('ts-season').innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+      } else {
+        document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
+      }
+    }
 
     async function showTodaySchedule() {
       /* Week/Day chip + match rows follow the Match Board state */
@@ -10072,9 +10706,7 @@
       const ms = await msPromise;
       if (activeFeature !== 'schedule') return; /* superseded while awaiting match state */
       if (ms) {
-        if (ms.week != null && ms.day != null) {
-          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
-        }
+        applyTsWeekDay(ms);
         buildTsMatches(ms);
       }
       showSceneVideo('schedule');
@@ -10128,8 +10760,16 @@
     const twPage  = document.getElementById('tomorrow-schedule-page');
 
     function buildTwSponsor() {
+      // 10th Anniversary — same swap as buildTsSponsor above, see its
+      // comment (and buildWlSponsor's) for why the anniversary asset
+      // lives under Waiting TVC's own folder/filename, not Waiting
+      // Lobby/Today's-Tomorrow's Schedule's "Sponsor_Box.png".
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('tw-sponsor').innerHTML =
-        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="tw-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="tw-sponsor-img" src="" alt=""></div>`;
     }
@@ -10171,10 +10811,7 @@
       if (activeFeature !== 'tomorrow') return; /* superseded while awaiting match state */
       applyTwTitle(ms);
       if (ms) {
-        if (ms.week != null && ms.day != null) {
-          const wd = computeTomorrowWeekDay(ms);
-          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
-        }
+        applyTwWeekDay(ms);
         buildTwMatches(ms);
       }
       showSceneVideo('tomorrow');
@@ -10231,6 +10868,18 @@
        move:   'up' | 'down' | 'neutral'   (rank movement arrow)
        status: null | 'secured' | 'eliminated' (playoffs chip on the team box) */
     const ST_ASSET = '/assets/Standings/';
+    /* 10th Anniversary only replaced Team_Box.png here (Indicator_*,
+       mplgold/silver, Standing_Up/Down/Neutral have no anniversary
+       counterpart) — this only swaps the folder for files that actually
+       have one, everything else stays on the Regular asset regardless
+       of theme. */
+    const ST_ANNIV_FILES = new Set(['Team_Box.png']);
+    function stThemedAsset(file) {
+      if (ST_ANNIV_FILES.has(file) && document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+        return ST_ASSET + 'anniversary/' + file;
+      }
+      return ST_ASSET + file;
+    }
     const ST_TEAMS = [
       { tri: 'TLPH', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
       { tri: 'FLCN', move: 'neutral', status: null, mp: 0, mwl: '0-0', gwl: '0-0', ngw: 0, medals: [] },
@@ -10258,7 +10907,7 @@
         ).join('');
         const medal = medalIcons ? `<div class="str-medals">${medalIcons}</div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
-          `<img class="str-bg" src="${ST_ASSET}Team_Box.png" alt="">` +
+          `<img class="str-bg" src="${stThemedAsset('Team_Box.png')}" alt="">` +
           `<div class="str-move"><img src="${ST_ASSET}${moveImg[t.move] || moveImg.neutral}" alt=""></div>` +
           `<div class="str-rank">${i + 1}</div>` + medal +
           `<div class="str-logo"><img src="/logos/${encodeURIComponent(t.tri)}.png" onerror="this.style.display='none'" alt=""></div>` +
@@ -10269,8 +10918,48 @@
           `<div class="str-stat str-c4">${t.ngw}</div>` +
           `</div>`;
       }).join('');
+      stSyncColumnsToHeaders();
     }
     buildStandings();
+
+    /* 10th Anniversary only — .str-c1..c4 (the row value cells) stop
+       carrying their own fixed left/width and instead always match
+       whatever position/width .st-l1..l4 (the column headers) actually
+       render at right now, including a dashboard Edit-tab drag saved to
+       #st-colheader's labels — dragging a header used to leave the
+       value column behind since they were two independently-positioned
+       selectors that just happened to share the same numbers. Written
+       as one injected <style> rule (not per-row inline styles) since
+       .str-cN is a shared class across every row and rows get rebuilt
+       wholesale by buildStandings() above.
+       #st-colheader and .st-row share the same page-level left (118px —
+       see both rules), so a header's offsetLeft relative to
+       #st-colheader is numerically identical to what .str-cN's left
+       relative to .st-row should be — no extra conversion needed. */
+    function stSyncColumnsToHeaders() {
+      if (document.documentElement.getAttribute('data-theme') !== '10th_anniversary') return;
+      const colheader = document.getElementById('st-colheader');
+      if (!colheader) return;
+      const pairs = [['st-l1', 'str-c1'], ['st-l2', 'str-c2'], ['st-l3', 'str-c3'], ['st-l4', 'str-c4']];
+      const css = pairs.map(([headerCls, cellCls]) => {
+        const header = colheader.querySelector('.' + headerCls);
+        /* offsetWidth is 0 while #standings-page is still display:none
+           (called from page-load buildStandings()/loadMplfsOverrides(),
+           before the scene has ever been shown) — skip that pair rather
+           than writing a bogus 0-width rule; showStandings() re-runs this
+           once the page is actually laid out (see there). */
+        if (!header || !header.offsetWidth) return '';
+        return '.' + cellCls + '{left:' + header.offsetLeft + 'px;width:' + header.offsetWidth + 'px;}';
+      }).join('');
+      if (!css) return;
+      let styleEl = document.getElementById('st-col-align-anniv');
+      if (!styleEl) {
+        styleEl = document.createElement('style');
+        styleEl.id = 'st-col-align-anniv';
+        document.head.appendChild(styleEl);
+      }
+      styleEl.textContent = css;
+    }
 
     /* Returns true only when the team data actually changed, so callers
        can skip a redundant buildStandings() rebuild — this event also
@@ -10288,7 +10977,17 @@
 
     function stApplyWeekDay(ms) {
       if (ms && ms.week != null && ms.day != null) {
-        document.getElementById('st-weekday').textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        // 10th Anniversary — same "SEASON 18 REGULAR SEASON W<n>D<n>"
+        // pattern as Waiting TVC/Lobby's week-label (see there for
+        // details) — anniversary's Infinix Standing.png has no baked
+        // season text at all (Regular's does), so this element carries
+        // the whole line instead of just "WEEK N - DAY N".
+        const stWeekday = document.getElementById('st-weekday');
+        if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+          stWeekday.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else {
+          stWeekday.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
+        }
       }
     }
 
@@ -10309,6 +11008,13 @@
       wsMatchesSlideIn('st-rows');
       stPage.classList.add('st-on');
       void stPage.offsetWidth; /* force reflow so the opacity transition runs */
+      /* Every earlier stSyncColumnsToHeaders() call (page-load buildStandings(),
+         loadMplfsOverrides()) ran while #standings-page was still
+         display:none — .st-l1..l4's offsetLeft/offsetWidth are always 0
+         then, same "measuring a hidden element" pitfall as elsewhere in
+         this project. The forced reflow above is the first point the
+         page has real layout, so re-run it here now that it does. */
+      stSyncColumnsToHeaders();
       stPage.classList.add('st-visible');
     }
 
@@ -10336,18 +11042,13 @@
       if (activeFeature === 'lobby') updateWlFromState(ms);
       /* Today's Schedule rows + week/day chip */
       if (activeFeature === 'schedule') {
-        if (ms.week != null && ms.day != null) {
-          document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
-        }
+        applyTsWeekDay(ms);
         buildTsMatches(ms);
       }
       /* Tomorrow's Schedule rows + week/day chip + sign-off title */
       if (activeFeature === 'tomorrow') {
         applyTwTitle(ms);
-        if (ms.week != null && ms.day != null) {
-          const wd = computeTomorrowWeekDay(ms);
-          document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
-        }
+        applyTwWeekDay(ms);
         buildTwMatches(ms);
       }
       /* Standings week/day chip */
@@ -11871,6 +12572,14 @@
       photoBox.style.clipPath = hiddenBelow > 0 ? `inset(0 0 ${hiddenBelow}px 0)` : 'none';
     }
 
+    // 10th Anniversary asset override — same filenames, reskinned art
+    // lives under assets/postgame/anniversary/ instead (see CLAUDE.md's
+    // Theme system section; same pattern as wsTvcAsset).
+    function p4kAsset(filename) {
+      const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      return '/assets/postgame/' + (isAnniv ? 'anniversary/' : '') + filename;
+    }
+
     function p4kApplyCard(n, s, value) {
       const bgEl     = document.getElementById(`p4k-${n}-bg`);
       const bgVisaEl = document.getElementById(`p4k-${n}-bg-visa`); // only exists for card 2
@@ -11880,14 +12589,16 @@
       const sigEl    = document.getElementById(`p4k-${n}-photo-sig`);
       const photoBox = document.getElementById(`p4k-card-${n}`)?.querySelector('.p4k-photo-box');
 
-      if (bgEl) bgEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourblue.png' : '/assets/postgame/bigfourred.png');
+      // 10th Anniversary — same filenames, reskinned art under
+      // assets/postgame/anniversary/ (see p4kAsset).
+      if (bgEl) bgEl.src = buildUrl(p4kAsset(s.campid === 1 ? 'bigfourblue.png' : 'bigfourred.png'));
       // Card 2 (THE CARRY) only — the Visa-branded backer sits on a
       // second layer on top of the plain one above, kept transparent
       // until phase 3 quick-fades it in (see p4kPlayAnimation). Reset
       // the fade state here too, in case a re-fetch mid-scene lands on
       // an already-faded-in card.
       if (bgVisaEl) {
-        bgVisaEl.src = buildUrl(s.campid === 1 ? '/assets/postgame/bigfourbluevisa.png' : '/assets/postgame/bigfourredvisa.png');
+        bgVisaEl.src = buildUrl(p4kAsset(s.campid === 1 ? 'bigfourbluevisa.png' : 'bigfourredvisa.png'));
         bgVisaEl.classList.remove('p4k-bg-visa-in');
       }
       if (nameEl) { nameEl.textContent = s.name || ''; p4kFitName(nameEl); }
@@ -14697,18 +15408,24 @@
 
     /* ── Load saved position/size overrides from dashboard editor ── */
     (function loadMplfsOverrides() {
-      /* Tomorrow's "Match Rows Block" is a fixed-px asset (.tsm-row is
-         858x232), so a plain width/height override on the flex container
-         would just clip/underfill it, not resize anything inside. Reading
-         its saved width/height as a target box and converting to
-         transform:scale() against this natural size instead makes the
-         whole block — every row, all its text and logos — scale together
-         as one unit (matches dashboard.html's TW_MATCHES_SCALE_NATIVE /
-         applyToEditIframe, which does the same conversion for the live
-         Edit-tab preview). */
+      /* Today's/Tomorrow's "Match Rows Block" is a fixed-px asset (.tsm-row
+         is 858x232), so a plain width/height override on the flex
+         container would just clip/underfill it, not resize anything
+         inside. Reading its saved width/height as a target box and
+         converting to transform:scale() against this natural size instead
+         makes the whole block — every row, all its text and logos — scale
+         together as one unit (matches dashboard.html's
+         TW_MATCHES_SCALE_NATIVE / applyToEditIframe, which does the same
+         conversion for the live Edit-tab preview). #ts-matches shares the
+         same natural sizes as #tw-matches (identical .tsm-row markup/CSS
+         in both scenes). This is a structural edit capability, not a
+         look, so it's not theme-scoped — it applies the same under every
+         theme. */
       var TW_MATCHES_SCALE_NATIVE = {
         '#tw-matches.tsm-count-2': { w: 858, h: 472 },
         '#tw-matches.tsm-count-3': { w: 858, h: 712 },
+        '#ts-matches.tsm-count-2': { w: 858, h: 472 },
+        '#ts-matches.tsm-count-3': { w: 858, h: 712 },
       };
       fetch(buildUrl('/api/overlay-styles?file=mplfs'))
         .then(function(r) { return r.json(); })
@@ -14750,6 +15467,10 @@
           style.id = 'mplfs-overrides';
           style.textContent = css;
           document.head.appendChild(style);
+          /* Standings column headers may have just moved via a saved
+             Edit-tab override above — re-sync .str-cN to match (see
+             stSyncColumnsToHeaders, anniversary-only, no-ops otherwise). */
+          if (typeof stSyncColumnsToHeaders === 'function') stSyncColumnsToHeaders();
         })
         .catch(function() {});
     })();

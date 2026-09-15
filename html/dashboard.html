@@ -4394,7 +4394,7 @@
      '#ts-header'/'#ts-matches'/etc position above still applies to
      both scenarios. */
   var TS_COUNT2_DEFAULTS = {
-    '#ts-matches.tsm-count-2':                       { left: 170, top: 255, width: 858 },
+    '#ts-matches.tsm-count-2':                       { left: 170, top: 255, width: 858, height: 472 },
     '#today-schedule-page.tsm-count-2 #ts-header':   { left: 170, top: 98,  width: 858 },
   };
   var TS_COUNT2_ELEMENTS = [
@@ -4402,7 +4402,7 @@
     { group: 'Matches', id: '#ts-matches.tsm-count-2',                    name: 'Match Rows Block'  },
   ];
   var TS_COUNT3_DEFAULTS = {
-    '#ts-matches.tsm-count-3':                       { left: 170, top: 255, width: 858 },
+    '#ts-matches.tsm-count-3':                       { left: 170, top: 255, width: 858, height: 712 },
     '#today-schedule-page.tsm-count-3 #ts-header':   { left: 170, top: 98,  width: 858 },
   };
   var TS_COUNT3_ELEMENTS = [
@@ -4412,16 +4412,23 @@
   /* Match Rows Block's width/height are NOT plain CSS box dimensions —
      .tsm-row is a fixed 858x232 asset, so literally resizing the flex
      container would just clip/underfill it, not resize anything inside.
-     Instead these two selectors get special-cased in applyToEditIframe()
+     Instead these selectors get special-cased in applyToEditIframe()
      (dashboard.html) and loadMplfsOverrides() (mplfs.html): width/height
      are read as a target box, converted to a transform:scale() against
      the natural size below (858 wide; 472 tall for 2 rows, 712 for 3 —
      row height 232 + 8px gap), so resizing the block visually scales
      every row, all their text, and logos together as one unit. Defaults
-     equal the natural size (scale = 1, no visible change until edited). */
+     equal the natural size (scale = 1, no visible change until edited).
+     #ts-matches uses the exact same natural sizes as #tw-matches since
+     both scenes share the identical .tsm-row markup/CSS. This capability
+     itself is structural (not a look), so it applies under every theme
+     the same way — see TS_COUNT2_DEFAULTS/TS_COUNT3_DEFAULTS above,
+     which are not theme-scoped either. */
   var TW_MATCHES_SCALE_NATIVE = {
     '#tw-matches.tsm-count-2': { w: 858, h: 472 },
     '#tw-matches.tsm-count-3': { w: 858, h: 712 },
+    '#ts-matches.tsm-count-2': { w: 858, h: 472 },
+    '#ts-matches.tsm-count-3': { w: 858, h: 712 },
     '#bpmmeter-sizewrap':      { w: 508, h: 97  },
     '#bpmtag-sizewrap':        { w: 508, h: 97  },
   };
@@ -4820,7 +4827,13 @@
     { group: 'Plaque',       id: '.hl-name',               name: 'Player Name' },
     { group: 'Plaque',       id: '.hl-hero',               name: 'Hero Image' },
     { group: 'Plaque',       id: '.hl-hero-name',          name: 'Hero Name' },
-    { group: 'Stats Backer', id: '#hl-stats-backer',      name: 'Stats Backer' },
+    /* Folded into the same 'Plaque' group as the crest/banner/hero above
+       it — explicitly requested so the whole card (banner through the
+       stats bar) drags/nudges together as one unit in the Edit tab.
+       Structural, not a look, so it's the same for every theme (this
+       config isn't theme-scoped to begin with — only the anniversary
+       reskin's own assets/colors differ, not this layout). */
+    { group: 'Plaque',       id: '#hl-stats-backer',      name: 'Stats Backer' },
   ];
 
   /* ── Post H2H (mplfs.html) element defaults ───────────────────────

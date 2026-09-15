@@ -1127,6 +1127,33 @@ calculation can be done from known/config values instead of a live DOM
 read at all) over `scrollWidth`/`clientWidth`/`getBoundingClientRect()`,
 which are only meaningful once the element has real layout.
 
+### "Copy/use the exact same X" means copy EVERY themed treatment tied to X, not just its most visible asset
+
+When the user says something like "replace the sponsor box with the exact
+same sponsor box used in Waiting Lobby/TVC (same everything)", that means
+literally everything about how that element already looks under the
+active theme — not just its background image. This bit the sponsor-box
+category label once: Waiting TVC/Lobby's `#ws-sponsor-cat`/`#wl-sponsor-cat`
+already had their own anniversary-only rule removing the label's solid
+white plate and recoloring its text (`background-color: transparent` +
+`color: var(--anniv-accent, ...)`, scoped per-ID, not on the shared
+`.sponsor-cat-label` class every sponsor box uses) — copying only the box
+art (`Sponsor Box.png`) in the first pass left Today's/Tomorrow's Schedule
+still showing the old white label plate, requiring a second round trip to
+notice and fix.
+
+**Before considering a "copy X exactly" task done, grep for every existing
+themed rule scoped to X's specific id/class family** (not just the base
+selector) — a themed reskin is frequently split across several separate
+per-ID overrides (asset src, a background removal, a recolor, a
+reposition) rather than living in one place, precisely because the
+shared class must stay Regular-look for elements that were *not* asked to
+match yet (see `.sponsor-cat-label`'s own comment, which spells out
+exactly which per-ID overrides exist and why). Copying the obvious/largest
+piece (the background image) and missing the smaller companion rule is
+the default failure mode — check for it explicitly every time, don't wait
+for the user to notice and correct it.
+
 ## Video-heavy overlays — permanently-decoding media is a real, sustained cost
 
 Full-resolution (1920×1080) 60fps VP9 loops that `autoplay`+`loop` and

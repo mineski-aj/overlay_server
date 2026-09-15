@@ -23,6 +23,10 @@
       background: transparent;
     }
 
+    /* 10th Anniversary brand accent — same variable/value used throughout
+       mplfs.html for recolored text under this theme. */
+    [data-theme="10th_anniversary"] { --anniv-accent: #6c4614; }
+
     /* Positioning frame — same slot the Waiting Screen TVC's sponsor box
        occupies (#ws-sponsor in mplfs.html/ENTVC.html), so this drops in at
        an identical spot if composited over the same footage. */
@@ -78,6 +82,14 @@
       text-transform: uppercase;
       word-break: break-word;
     }
+    /* 10th Anniversary — exact same treatment as mplfs.html's own
+       #ws-sponsor-cat/#wl-sponsor-cat/#ts-sponsor-cat/#tw-sponsor-cat: the
+       label's separate solid white plate is removed (box art shows
+       through) and the text picks up the brand accent color, scoped to
+       this page's #ws-sponsor-cat specifically, not the shared
+       .sponsor-cat-label class. */
+    #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+    [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
 
     /* White backdrop box around the 2nd (in-game style) logo loop — 300x300,
        centered on the loop below. Checked against the boxed sponsor bar
@@ -112,9 +124,17 @@
 
   <script>
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
+    // 10th Anniversary — same anniversary Sponsor Box.png every other
+    // sponsor box on the broadcast uses (Waiting TVC/Lobby, Today's/
+    // Tomorrow's Schedule). theme-apply.js's synchronous read already ran
+    // by this point, so data-theme is reliable here at top-level script
+    // execution (see CLAUDE.md's Theme system section).
+    const sponsorBoxBg = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+      ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+      : WS_TVC_ASSET + 'Sponsor Box.png';
 
     document.getElementById('ws-sponsor').innerHTML =
-      `<div class="wsm-sponsor"><img src="${WS_TVC_ASSET}Sponsor Box.png" alt="Official Sponsor">` +
+      `<div class="wsm-sponsor"><img src="${sponsorBoxBg}" alt="Official Sponsor">` +
       `<div class="sponsor-cat-label" id="ws-sponsor-cat"></div>` +
       `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>` +
       `<div class="ig-sponsor-box"></div>` +
