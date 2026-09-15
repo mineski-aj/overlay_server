@@ -407,6 +407,20 @@ router.get('/api/signature-photos', (req, res) => {
   }
 });
 
+// GET /api/team-logos — tricodes with a logo available in logos/, e.g. for
+// the dashboard's Wipe Out Random Test (see keTrigger in dashboard.html).
+const LOGOS_DIR = path.join(__dirname, '..', 'logos');
+router.get('/api/team-logos', (req, res) => {
+  try {
+    const tricodes = fs.readdirSync(LOGOS_DIR)
+      .filter(f => f.endsWith('.png'))
+      .map(f => f.slice(0, -'.png'.length));
+    res.set('Cache-Control', 'no-store').json({ tricodes });
+  } catch (e) {
+    res.status(500).json({ tricodes: [] });
+  }
+});
+
 router.get('/api/photo-manifest', (req, res) => {
   try {
     const poses = ['VICTORY', 'DEFEAT'];

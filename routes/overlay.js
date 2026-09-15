@@ -1161,9 +1161,16 @@ router.get('/overlay/killevent', (req, res) => {
   const roleNum = parseInt(req.query.role, 10);
   const role = roleNum >= 1 && roleNum <= 5 ? roleNum : null;
   const camp = req.query.camp === 'red' || req.query.camp === 'blue' ? req.query.camp : null;
-  const payload = JSON.stringify({ video, priority, playerIdx: null, playerName, role, camp });
+  // Manual-test-only override for Wipe Out's team logo (10th Anniversary) —
+  // lets the dashboard's Random Test pick any team's tricode directly,
+  // instead of being limited to whichever two teams the live match data
+  // (camp_list) currently has loaded. Real live-detected wipeouts (see
+  // broadcastKillEvent in lib/pollers.js) never send this — they resolve
+  // the logo from the live camp on the overlay page itself.
+  const teamTricode = req.query.teamTricode ? String(req.query.teamTricode).toUpperCase().trim() : null;
+  const payload = JSON.stringify({ video, priority, playerIdx: null, playerName, role, camp, teamTricode });
   state.overlayClients.forEach(c => { try { c.write(`event: killevent\ndata: ${payload}\n\n`); } catch {} });
-  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, video, playerName, role, camp });
+  res.set({ 'Cache-Control': 'no-store' }).json({ ok: true, video, playerName, role, camp, teamTricode });
 });
 
 // Map Selection tag (html/mpltag.html) — sequential per-game reveal.

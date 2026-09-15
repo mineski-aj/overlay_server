@@ -361,7 +361,7 @@ masterPoll();
   sse.addEventListener('killevent', function(e) {
     try {
       var d = JSON.parse(e.data);
-      if (d.video) enqueueKillEvent(d.video, d.priority, d.playerIdx, d.playerName, d.role, d.camp);
+      if (d.video) enqueueKillEvent(d.video, d.priority, d.playerIdx, d.playerName, d.role, d.camp, d.teamTricode);
     } catch {}
   });
   sse.addEventListener('featuretoggle', function(e) {

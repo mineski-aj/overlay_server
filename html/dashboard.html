@@ -1774,6 +1774,14 @@
     keSignatureNames = (d && d.names) || [];
   }).catch(function(){});
 
+  /* Team tricodes available for Wipe Out's Random Test (see keTrigger
+     below) — same "pick from every available asset, not just whichever
+     match is currently live" idea as keSignatureNames above. */
+  var keTeamTricodes = [];
+  fetch('/api/team-logos').then(function(r){ return r.json(); }).then(function(d) {
+    keTeamTricodes = (d && d.tricodes) || [];
+  }).catch(function(){});
+
   /* ── Feature toggle state ────────────────────────────────── */
   var featureStates  = {};
   var toggleBtns     = {};
@@ -3765,7 +3773,20 @@
       keTrigger.addEventListener('click', function() {
         var video = keSelect.value;
         var url = '/overlay/killevent?video=' + encodeURIComponent(video);
-        if (keePlayerMode === 'random' && keSignatureNames.length) {
+        if (video === 'wipedout.webm') {
+          /* Wipe Out has no acting player — 10th Anniversary shows the
+             wiping team's logo instead (see killEventTeamLogoSrc in
+             overlay-killevents.js), so Random Test picks a random tricode
+             from every team with a logo on file (keTeamTricodes) rather
+             than a playerName/role — same idea as keSignatureNames below,
+             and it works with no live match loaded, unlike sending just a
+             camp (which needs the overlay page's own live camp_list to
+             resolve into a team). */
+          if (keePlayerMode === 'random' && keTeamTricodes.length) {
+            var tricode = keTeamTricodes[Math.floor(Math.random() * keTeamTricodes.length)];
+            url += '&teamTricode=' + encodeURIComponent(tricode);
+          }
+        } else if (keePlayerMode === 'random' && keSignatureNames.length) {
           var name = keSignatureNames[Math.floor(Math.random() * keSignatureNames.length)];
           var role = 1 + Math.floor(Math.random() * 5); /* 1=EXP 2=JUNGLE 3=MID 4=ROAM 5=GOLD */
           var camp = Math.random() < 0.5 ? 'blue' : 'red';
@@ -3784,7 +3805,9 @@
       /* Player photo source for the kill-event popup — 'Random Test' pulls a
          random name from photos/SIGNATURE/ on each trigger; 'Live API' is the
          hook point for wiring the real acting player once gamedata supplies one
-         (currently a no-op: triggers without a playerName, so no photo shows). */
+         (currently a no-op: triggers without a playerName, so no photo shows).
+         Doesn't apply to Wipe Out — that event has no acting player at all;
+         see the camp-only branch in keTrigger's click handler above. */
       body.appendChild(el('div', 'features-label', 'Kill Event Player Photo'));
       var kePhotoRow = el('div', 'btn-row');
       var keBtnLive   = el('button', 'btn btn-action', 'Live API');
@@ -4027,9 +4050,15 @@
      to drag/resize, same pattern as Side Events' secAnimateIn below. */
   var KILLEVENT_DEFAULTS = {
     '#kill-event-sponsor-logo-clip': { left: 1055, top: 1005, width: 142, height: 58 },
+    '#kill-event-teamlogo-clip':     { left: 954, top: 827, width: 169, height: 169 },
   };
   var KILLEVENT_ELEMENTS = [
     { group: 'Kill Event', id: '#kill-event-sponsor-logo-clip', name: 'Sponsor Logo' },
+    /* Wipe Out has no acting player — 10th Anniversary shows the wiping
+       team's logo here instead of a photo/nametag (see showKillEventTeamLogo
+       in overlay-killevents.js). Own group since it moves independently of
+       the sponsor logo. */
+    { group: 'Wipe Out Team Logo', id: '#kill-event-teamlogo-clip', name: 'Wipe Out Team Logo' },
   ];
 
   /* ── Stolen Gold banner (mploverlay_v7.html) ───────────────────────

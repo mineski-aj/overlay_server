@@ -14,6 +14,8 @@ const killNameEl        = document.getElementById('kill-event-name');
 const killRoleIconEl    = document.getElementById('kill-event-role-icon');
 const killSponsorLogoClipEl  = document.getElementById('kill-event-sponsor-logo-clip');
 const killSponsorLogoEl      = document.getElementById('kill-event-sponsor-logo');
+const killTeamLogoClipEl     = document.getElementById('kill-event-teamlogo-clip');
+const killTeamLogoEl         = document.getElementById('kill-event-teamlogo');
 
 /* Never show a broken-image icon if a player's signature photo is
    missing — just leave that spot transparent instead. Reset to visible
@@ -21,6 +23,28 @@ const killSponsorLogoEl      = document.getElementById('kill-event-sponsor-logo'
 killPhotoEl.onerror = function() {
   killPhotoEl.style.visibility = 'hidden';
 };
+killTeamLogoEl.onerror = function() {
+  killTeamLogoEl.style.visibility = 'hidden';
+};
+
+/* Wipe Out (10th Anniversary only) has no acting player — instead of the
+   photo/nametag popup, it shows the logo of the team that did the
+   wiping. `camp` here is that team's camp ('blue'/'red'), same value
+   broadcastKillEvent's wipeout branch in lib/pollers.js already sends.
+   Resolved from the shared masterPoll data (overlay-core.js's `lastData`)
+   the same way overlay-scoreboard.js resolves its own team logos, rather
+   than adding a second, separate fetch for the same information. */
+function killEventTeamLogoSrc(camp, tricodeOverride) {
+  /* Manual-test-only override (dashboard's Wipe Out Random Test) — picks
+     any team's tricode directly instead of needing a live match's camp_list
+     loaded. Real live-detected wipeouts never send this. */
+  if (tricodeOverride) return '/logos/' + encodeURIComponent(tricodeOverride) + '.png';
+  if (!lastData || !lastData.camp_list) return null;
+  var cid = camp === 'red' ? 2 : 1;
+  var c = lastData.camp_list.find(function(cc) { return cc.campid === cid; });
+  var name = c && c.team_simple_name ? c.team_simple_name.toUpperCase().trim() : '';
+  return name ? '/logos/' + encodeURIComponent(name) + '.png' : null;
+}
 
 /* Kill events sponsored by a specific brand — the sponsor logo only
    shows for these videos, popping in alongside the photo. */
@@ -174,6 +198,12 @@ var KILL_POP_DELAY_MS = 300;
 var KILL_POP_HOLD_MS  = 1300;
 var KILL_POP_EXIT_MS  = 300;
 
+/* Wipe Out's team-logo popup holds 150ms longer than KILL_POP_HOLD_MS above
+   — kept as its own constant rather than changing KILL_POP_HOLD_MS itself,
+   since that one's shared with the player-photo popup used by every other
+   kill event. */
+var KILL_TEAMLOGO_EXTRA_HOLD_MS = 250;
+
 /* Must track #kill-event-photo-clip.ke-in #kill-event-photo's transition
    duration in mploverlay_v7.css — the bounce fires right as the slide-up lands. */
 var KILL_POP_ENTER_MS = 480;
@@ -236,6 +266,7 @@ function clearKillTimers() {
   if (killBounceTimer) { clearTimeout(killBounceTimer); killBounceTimer = null; }
   if (killHoldTimer)   { clearTimeout(killHoldTimer);   killHoldTimer   = null; }
   killPhotoEl.classList.remove('ke-bounce');
+  killTeamLogoEl.classList.remove('ke-bounce');
 }
 
 /* Instantly hides a still-visible popup piece (no animated slide-out) by
@@ -261,6 +292,7 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
   killSnapHide(killPhotoClipEl, killPhotoEl);
   killSnapHide(killNametagClipEl, killNametagBgEl);
   killSnapHide(killSponsorLogoClipEl, killSponsorLogoEl);
+  killSnapHide(killTeamLogoClipEl, killTeamLogoEl);
 
   killShowTimer = setTimeout(function() {
     killShowTimer = null;
@@ -299,11 +331,47 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
   killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + extraHoldMs + KILL_POP_EXIT_MS;
 }
 
+/* Wipe Out (10th Anniversary only) — same pop-in/pop-out timing as
+   showKillEventPlayer above (shares its timer vars, since only one of the
+   two ever runs for a given kill event), but drives the team-logo box
+   instead of the photo/nametag/sponsor-logo pieces, and holds
+   KILL_TEAMLOGO_EXTRA_HOLD_MS longer. */
+function showKillEventTeamLogo(camp, extraHoldMs, tricodeOverride) {
+  extraHoldMs = extraHoldMs || 0;
+  clearKillTimers();
+  killSnapHide(killPhotoClipEl, killPhotoEl);
+  killSnapHide(killNametagClipEl, killNametagBgEl);
+  killSnapHide(killSponsorLogoClipEl, killSponsorLogoEl);
+  killSnapHide(killTeamLogoClipEl, killTeamLogoEl);
+
+  killShowTimer = setTimeout(function() {
+    killShowTimer = null;
+    var src = killEventTeamLogoSrc(camp, tricodeOverride);
+    if (!src) return; /* unknown camp/team — leave the box empty rather than show a broken image */
+    killTeamLogoEl.style.visibility = '';
+    killTeamLogoEl.src = src;
+    killTeamLogoClipEl.classList.add('ke-in');
+    killBounceTimer = setTimeout(function() {
+      killBounceTimer = null;
+      killTeamLogoEl.classList.remove('ke-bounce');
+      void killTeamLogoEl.offsetWidth;
+      killTeamLogoEl.classList.add('ke-bounce');
+    }, KILL_POP_ENTER_MS);
+    killHoldTimer = setTimeout(function() {
+      killHoldTimer = null;
+      killTeamLogoClipEl.classList.remove('ke-in');
+    }, KILL_POP_HOLD_MS + KILL_TEAMLOGO_EXTRA_HOLD_MS + extraHoldMs);
+  }, KILL_POP_DELAY_MS);
+
+  killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + KILL_TEAMLOGO_EXTRA_HOLD_MS + extraHoldMs + KILL_POP_EXIT_MS;
+}
+
 function hideKillEventPlayer() {
   clearKillTimers();
   killPhotoClipEl.classList.remove('ke-in');
   killNametagClipEl.classList.remove('ke-in');
   killSponsorLogoClipEl.classList.remove('ke-in');
+  killTeamLogoClipEl.classList.remove('ke-in');
   killPopCycleEndsAt = 0;
 }
 
@@ -365,8 +433,20 @@ function playNextKillEvent() {
   var pauseCfg = killEventPauseCfg(entry.video);
   killPauseArmed = !!pauseCfg;
   if (killPauseArmed && KILL_EVENT_HAS_RVFC) killArmFramePause();
-  if (entry.playerName) showKillEventPlayer(entry.playerName, entry.role, entry.camp, killEventSponsorLogo(entry.video), killEventHoldExtensionMs(entry.video));
-  else hideKillEventPlayer();
+  /* Wipe Out has no acting player. Under 10th Anniversary it shows the
+     wiping team's logo instead (see showKillEventTeamLogo above); under
+     Regular it shows nothing, same as before this feature existed —
+     Wipe Out is the one kill event where "no playerName" doesn't just
+     mean "no popup at all", so it needs its own check ahead of the
+     generic playerName branch below. */
+  var isAnniversaryTheme = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  if (entry.video === 'wipedout.webm' && isAnniversaryTheme && (entry.camp || entry.teamTricode)) {
+    showKillEventTeamLogo(entry.camp, killEventHoldExtensionMs(entry.video), entry.teamTricode);
+  } else if (entry.playerName) {
+    showKillEventPlayer(entry.playerName, entry.role, entry.camp, killEventSponsorLogo(entry.video), killEventHoldExtensionMs(entry.video));
+  } else {
+    hideKillEventPlayer();
+  }
 
   killVideoEl.play().catch(function() {
     killClearPause();
@@ -384,12 +464,12 @@ window.addEventListener('message', function(e) {
   }
 });
 
-function enqueueKillEvent(video, priority, playerIdx, playerName, role, camp) {
+function enqueueKillEvent(video, priority, playerIdx, playerName, role, camp, teamTricode) {
   if (!featureEnabled.killevents) return;
   /* deduplicate: don't queue if same video is already playing or already queued */
   if (killEventCurrent === video) return;
   if (killEventQueue.some(function(e) { return e.video === video; })) return;
-  killEventQueue.push({ video: video, priority: priority, playerIdx: playerIdx || null, playerName: playerName || null, role: role || null, camp: camp || null });
+  killEventQueue.push({ video: video, priority: priority, playerIdx: playerIdx || null, playerName: playerName || null, role: role || null, camp: camp || null, teamTricode: teamTricode || null });
   playNextKillEvent();
 }
 
@@ -436,4 +516,11 @@ function previewKillEventSponsor() {
   killNametagClipEl.classList.add('ke-in');
   killSponsorLogoEl.src = KILL_EVENT_SPONSOR_LOGO[video];
   killSponsorLogoClipEl.classList.add('ke-in');
+
+  /* Also preview the Wipe Out team-logo box so it's positionable from the
+     same Edit tab config — harmless under any theme, it just never shows
+     live outside 10th Anniversary Wipe Out (see playNextKillEvent above). */
+  killTeamLogoEl.style.visibility = '';
+  killTeamLogoEl.src = killEventTeamLogoSrc('blue') || '';
+  killTeamLogoClipEl.classList.add('ke-in');
 }
