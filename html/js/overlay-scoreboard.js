@@ -572,16 +572,27 @@ function sbPollMatchState() {
         sbFitText(miCastersTxt, SB_MI_FIT_CONFIG.casters.maxWidth, SB_MI_FIT_CONFIG.casters.maxPx);
       }
 
-      var mapVal     = s.map || 'Broken Walls';
-      var mapNameTxt = document.querySelector('#sb-map-name .sb-map-name-text');
-      var mapLogoImg = document.getElementById('sb-map-logo-img');
-      if (mapNameTxt) {
-        mapNameTxt.textContent = mapVal.toUpperCase();
-        sbFitText(mapNameTxt, 169, 26);
-      }
-      if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
-        mapLogoImg.dataset.map = mapVal;
-        mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+      // 'NONE' is an explicit Match Board dropdown choice (match-
+      // dashboard.html's #map-select) meaning "no map configured" —
+      // checked before the 'Broken Walls' fallback below, which exists
+      // only for "field not set yet", not "deliberately cleared".
+      // Applies under every theme.
+      var mapBoxEl = document.getElementById('sb-map');
+      if (s.map === 'NONE') {
+        if (mapBoxEl) mapBoxEl.style.display = 'none';
+      } else {
+        if (mapBoxEl) mapBoxEl.style.display = '';
+        var mapVal     = s.map || 'Broken Walls';
+        var mapNameTxt = document.querySelector('#sb-map-name .sb-map-name-text');
+        var mapLogoImg = document.getElementById('sb-map-logo-img');
+        if (mapNameTxt) {
+          mapNameTxt.textContent = mapVal.toUpperCase();
+          sbFitText(mapNameTxt, 169, 26);
+        }
+        if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
+          mapLogoImg.dataset.map = mapVal;
+          mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+        }
       }
 
       /* scoreboard background — only Enduring Legacy has its own

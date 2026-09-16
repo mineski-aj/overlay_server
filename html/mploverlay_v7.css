@@ -1030,6 +1030,11 @@
   }
   #sb-score-c1 .sb-score-bar.filled { background: #1E64FF; }
   #sb-score-c2 .sb-score-bar.filled { background: #FF3232; }
+  /* 10th Anniversary — same anniversary blue/red pair used across the
+     rest of the broadcast (Consolidated Post 2's Damage bars, Post
+     H2H's comparison bars, Match Board's/Draft's own score bars). */
+  [data-theme="10th_anniversary"] #sb-score-c1 .sb-score-bar.filled { background: #0094fb; }
+  [data-theme="10th_anniversary"] #sb-score-c2 .sb-score-bar.filled { background: #ff243e; }
   /* Match info box — regular season / week-day / match-game, sits
      immediately left of the sponsor loop, same top/height so the two
      line up as one visual group in the top-right corner. */

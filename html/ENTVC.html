@@ -273,6 +273,7 @@
       position: absolute;
       left: 180px; top: 0px;
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
+      height: 130px; /* needed once the two stacked spans below are absolutely positioned — they no longer contribute to this box's own content height */
       font-family: 'Anton', sans-serif;
       font-weight: 400;
       font-size: 130px;
@@ -282,8 +283,28 @@
       white-space: nowrap;
       text-align: left;
     }
-    /* 10th Anniversary — mirrored from mplfs.html, see there for details. */
-    [data-theme="10th_anniversary"] #ws-timer-value {
+    /* Regular theme: #ws-timer-value has no text of its own anymore (see
+       the two stacked spans below) — .ws-timer-fill carries the actual
+       digits for every theme, .ws-timer-glow is 10th Anniversary only. */
+    .ws-timer-glow, .ws-timer-fill {
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%;
+    }
+    .ws-timer-glow { visibility: hidden; }
+    /* 10th Anniversary — mirrored from mplfs.html's #wl-timer-value /
+       .wl-timer-glow/.wl-timer-fill (see there for the full explanation
+       of why this needs two DOM sibling spans instead of a single
+       element's text-shadow on a background-clip:text element). */
+    [data-theme="10th_anniversary"] .ws-timer-glow {
+      visibility: visible;
+      color: #000;
+      -webkit-text-fill-color: #000;
+      text-shadow:
+        0 0 6px rgba(0, 0, 0, 0.3),
+        0 0 14px rgba(0, 0, 0, 0.2);
+    }
+    [data-theme="10th_anniversary"] .ws-timer-fill {
       background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
       -webkit-background-clip: text;
       background-clip: text;
@@ -656,7 +677,7 @@
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
-        <div id="ws-timer-value">30:30</div>
+        <div id="ws-timer-value"><span class="ws-timer-glow">30:30</span><span class="ws-timer-fill">30:30</span></div>
       </div>
       <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
       <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
@@ -698,7 +719,7 @@
       // several overlay browser sources/tabs open at once no longer eats
       // into the browser's shared connection pool per page.
       sseSource = createOverlaySSE();
-      sseSource.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
+      sseSource.addEventListener('theme', (e) => { applyTheme(JSON.parse(e.data).theme); applyBgVideoTheme(); });
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';
@@ -795,6 +816,23 @@
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
       return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
     }
+    // #bg-video (the idle-state fallback background, see mplfs.html's
+    // CLAUDE.md "Video-heavy overlays" section) sits completely outside
+    // the showSceneVideo/SCENE_VIDEO_SRC(_BY_THEME) system — same tiny
+    // opt-in-per-theme lookup as mplfs.html's own applyBgVideoTheme,
+    // per explicit request for this file's own default (deliberately a
+    // different file, annivloopwaves.webm, than mplfs.html's bg-video
+    // override, annivloop.webm — not a mirroring gap).
+    const BG_VIDEO_SRC = '/assets/bgloop.webm';
+    const BG_VIDEO_SRC_BY_THEME = {
+      '10th_anniversary': '/assets/annivloopwaves.webm',
+    };
+    function applyBgVideoTheme() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      const bgVideo = document.getElementById('bg-video');
+      if (bgVideo) bgVideo.src = BG_VIDEO_SRC_BY_THEME[theme] || BG_VIDEO_SRC;
+    }
+    applyBgVideoTheme();
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
     let sceneVideoVisible = false;
@@ -912,7 +950,18 @@
         ? Math.max(0, Math.round((t.endAt - (Date.now() + clockOffset)) / 1000))
         : Math.max(0, (t && t.remaining) || 0);
       const m = Math.floor(remain / 60), s = remain % 60;
-      el.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      const text = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+      /* #ws-timer-value has two stacked child spans (glow + fill, see its
+         CSS) for the 10th Anniversary glow effect, mirrored from
+         mplfs.html's #wl-timer-value. */
+      const fill = el.querySelector('.ws-timer-fill');
+      if (fill) {
+        fill.textContent = text;
+        const glow = el.querySelector('.ws-timer-glow');
+        if (glow) glow.textContent = text;
+      } else {
+        el.textContent = text;
+      }
     }
 
     function startWsTimer() {

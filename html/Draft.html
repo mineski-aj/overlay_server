@@ -821,6 +821,11 @@
     }
     #score-c1 .score-bar.scored { background: #1E64FF; }
     #score-c2 .score-bar.scored { background: #FF3232; }
+    /* 10th Anniversary — same anniversary blue/red pair used across the
+       rest of the broadcast (Consolidated Post 2's Damage bars, Post
+       H2H's comparison bars, Match Board's own score bar). */
+    [data-theme="10th_anniversary"] #score-c1 .score-bar.scored { background: #0094fb; }
+    [data-theme="10th_anniversary"] #score-c2 .score-bar.scored { background: #ff243e; }
 
     /* ── Team tricode labels ────────────────────────────────────── */
     #team-c1, #team-c2 {
@@ -2110,17 +2115,28 @@
            already positional (campid 1=left/2=right) and needs no swap. */
         dcoachSwapped = swapped;
 
-        /* Map bug — same source as the ingame scoreboard's #sb-map */
-        var mapVal     = s.map || 'Broken Walls';
-        var mapNameTxt = document.querySelector('#draft-map-name .draft-map-name-text');
-        var mapLogoImg = document.getElementById('draft-map-logo-img');
-        if (mapNameTxt) {
-          mapNameTxt.textContent = mapVal.toUpperCase();
-          draftFitText(mapNameTxt, 169, 26);
-        }
-        if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
-          mapLogoImg.dataset.map = mapVal;
-          mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+        /* Map bug — same source as the ingame scoreboard's #sb-map.
+           'NONE' is an explicit Match Board dropdown choice (match-
+           dashboard.html's #map-select) meaning "no map configured" —
+           checked before the 'Broken Walls' fallback below, which
+           exists only for "field not set yet", not "deliberately
+           cleared". Applies under every theme. */
+        var mapBoxEl = document.getElementById('draft-map');
+        if (s.map === 'NONE') {
+          if (mapBoxEl) mapBoxEl.style.display = 'none';
+        } else {
+          if (mapBoxEl) mapBoxEl.style.display = '';
+          var mapVal     = s.map || 'Broken Walls';
+          var mapNameTxt = document.querySelector('#draft-map-name .draft-map-name-text');
+          var mapLogoImg = document.getElementById('draft-map-logo-img');
+          if (mapNameTxt) {
+            mapNameTxt.textContent = mapVal.toUpperCase();
+            draftFitText(mapNameTxt, 169, 26);
+          }
+          if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
+            mapLogoImg.dataset.map = mapVal;
+            mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+          }
         }
 
         /* #scene background — only Enduring Legacy has its own draftbg

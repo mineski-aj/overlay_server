@@ -1183,6 +1183,15 @@ router.get('/overlay/killevent', (req, res) => {
 //      NOT required — it can be left open). If that game's winner
 //      already happens to be known at reveal time, its win banner is
 //      included in the same reveal instead of requiring an extra press.
+//      EXCEPT: if the game currently in progress (ms.currentGame) is
+//      itself ready and its map is the literal 'NONE' sentinel (an
+//      explicit "no map yet" pick — see html/mpltag.html's
+//      .ms-sideonly), jump straight to revealing THAT game instead of
+//      the strictly-next sequential index, skipping any earlier
+//      never-revealed games entirely — per explicit request, there's
+//      no reason to make the caster click through every earlier
+//      game's recap just to reach a "picking sides for the game in
+//      progress" status card.
 // "hide" clears everything at once and resets both counters so the
 // next show cycle starts back at game 1.
 const mapSelectionState = require('../lib/mapSelectionState');
@@ -1208,7 +1217,24 @@ router.get('/overlay/mapselecttag/show', (req, res) => {
   }
 
   // Priority 2 — reveal the next new game's side + map.
-  const nextIdx = tag.revealedGames;
+  let nextIdx = tag.revealedGames;
+  // Skip-ahead — see this route's own header comment. Only when the
+  // in-progress game is genuinely ahead of what's been revealed AND
+  // itself ready AND explicitly marked NONE; otherwise falls through
+  // to the normal strictly-sequential nextIdx untouched.
+  const currentIdx = (ms.currentGame || 1) - 1;
+  if (currentIdx > nextIdx && currentIdx < ms.maxGames) {
+    const currentGame = ms.games[currentIdx];
+    const currentReady = currentGame && currentGame.tossWinner && currentGame.tossSide && currentGame.map;
+    if (currentReady && currentGame.map === 'NONE') {
+      nextIdx = currentIdx;
+      // The games we're jumping past were never actually revealed, so
+      // there's nothing for a later Priority-1 pass to "catch up" on
+      // their behalf — advance revealedWins in lockstep so it never
+      // tries.
+      tag.revealedWins = nextIdx;
+    }
+  }
   const game = ms.games[nextIdx];
   const ready = game && game.tossWinner && game.tossSide && game.map;
   if (nextIdx >= ms.maxGames || !ready) {

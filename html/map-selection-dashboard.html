@@ -399,8 +399,24 @@
         onClick: function () { act('side', { game: g.game, side: 'red' }); } }),
     ]));
 
-    // Step 3 — map
-    var mapBtns = MAPS.map(function (m) {
+    // Step 3 — map. "None" is an explicit pick (stored as the literal
+    // string 'NONE', same sentinel Match Board's own Map dropdown
+    // uses — see mdbApplyMapAndLabel/fetchCmbData in mplfs.html), NOT
+    // null/unset — g.map is truthy either way, so the Winner step
+    // below (disabled: !g.map) unlocks as soon as a map choice of
+    // EITHER kind has actually been made. Sending null instead would
+    // read as "map step not yet touched" and lock Winner out, which is
+    // exactly the bug this shipped with once already. Same class as
+    // the 4 real map buttons so it lines up with them, just with no
+    // thumbnail (there's no art for "no map").
+    var noneBtn = document.createElement('button');
+    noneBtn.className = 'pick-btn map-btn' + (g.map === 'NONE' ? ' selected' : '');
+    noneBtn.disabled = !g.tossSide;
+    var noneSpan = document.createElement('span');
+    noneSpan.textContent = 'None';
+    noneBtn.appendChild(noneSpan);
+    noneBtn.addEventListener('click', function () { act('map', { game: g.game, map: 'NONE' }); });
+    var mapBtns = [noneBtn].concat(MAPS.map(function (m) {
       var b = document.createElement('button');
       b.className = 'pick-btn map-btn' + (g.map === m ? ' selected' : '');
       b.disabled = !g.tossSide;
@@ -412,7 +428,7 @@
       b.appendChild(img); b.appendChild(span);
       b.addEventListener('click', function () { act('map', { game: g.game, map: m }); });
       return b;
-    });
+    }));
     card.appendChild(buildStep('Map', mapBtns));
 
     // Step 4 — winner
@@ -451,7 +467,7 @@
 
     var mapItem = document.createElement('div');
     mapItem.className = 'game-summary-item';
-    mapItem.innerHTML = 'Map: <b>' + escapeHtml(g.map || '—') + '</b>';
+    mapItem.innerHTML = 'Map: <b>' + escapeHtml(g.map === 'NONE' ? 'None' : (g.map || '—')) + '</b>';
     row.appendChild(mapItem);
 
     var homeSideItem = document.createElement('div');

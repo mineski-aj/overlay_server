@@ -467,6 +467,11 @@
     .cp2-row { background-repeat: no-repeat; background-size: 730px 154px; background-position: 0 0; }
     .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/consoblue3.png'); }
     .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/consored3.png'); }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/consolidated_post/anniversary/, same convention as
+       p4kAsset/mbAsset (page 1 background). */
+    [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/anniversary/consoblue3.png'); }
+    [data-theme="10th_anniversary"] .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/anniversary/consored3.png'); }
     /* Page 2's background, as its own stacked layer instead of swapping
        the base background-image directly (which can't be transitioned).
        z-index:-1 (not 0) is required to keep it under every real
@@ -490,6 +495,10 @@
     }
     .cp2-row:not(.cp2-mirrored)::after { background-image: url('/assets/consolidated_post/consoblue4.png'); }
     .cp2-row.cp2-mirrored::after       { background-image: url('/assets/consolidated_post/consored4.png'); }
+    /* 10th Anniversary — page 2's crossfade layer, same convention as
+       the page 1 override above. */
+    [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored)::after { background-image: url('/assets/consolidated_post/anniversary/consoblue4.png'); }
+    [data-theme="10th_anniversary"] .cp2-row.cp2-mirrored::after       { background-image: url('/assets/consolidated_post/anniversary/consored4.png'); }
     .cp2-row.cp2-page2::after { opacity: 1; }
 
     /* blue — left column, 11px gap: pitch = row height (154) + 11 */
@@ -608,6 +617,10 @@
        black backdrop, not the original #111. */
     .cp2-row:not(.cp2-mirrored) .cp2-dmg-bar { background: linear-gradient(to right, #1540d0, #2d6ef5); }
     .cp2-mirrored .cp2-dmg-bar { background: linear-gradient(to left, #a30000, #ff3b3b); }
+    /* 10th Anniversary — page 2's Damage bars, flat brand colors instead
+       of Regular's gradient. */
+    [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored) .cp2-dmg-bar { background: #0094fb; }
+    [data-theme="10th_anniversary"] .cp2-mirrored .cp2-dmg-bar { background: #ff243e; }
     .cp2-dmg-num-dark, .cp2-dmg-num-light {
       position: absolute; inset: 0; display: flex; align-items: center; padding-left: 8px;
       font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1;
@@ -690,6 +703,10 @@
       transition: opacity 300ms ease;
     }
     #cmb-board.cmb-visible { opacity: 1; }
+    /* 10th Anniversary — same filename, reskinned art under
+       assets/consolidated_post/anniversary/, same convention as
+       p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] #cmb-board { background-image: url('/assets/consolidated_post/anniversary/consomiddle.png'); }
 
     .cmb-header {
       position: absolute; left: 0; top: 0; width: 311px; height: 22px;
@@ -698,6 +715,12 @@
     .cmb-header span {
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 12px;
       color: #fff; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+    /* 10th Anniversary — "MATCH n - GAME n" label, brown brand color +
+       General Sans Semibold instead of Regular's white/bold. */
+    [data-theme="10th_anniversary"] .cmb-header span {
+      color: #876330;
+      font-weight: 600;
     }
     .cmb-gametime-label {
       position: absolute; left: 20px; top: 22px; width: 140px; height: 43px;
@@ -768,21 +791,58 @@
        generalized to take target element ids instead of hardcoded
        'ckm-*' ones) but a taller 311×426 layout: header row (icon+name)
        on top, a "KILL MAP" title band, then a near-square 311×316 map
-       area below spanning the full width. consomapback2.png's title
-       band and header are plain light gray/white — the pasted spec's
-       red Rectangle_3 fill was placeholder noise (verified against the
-       actual asset), so this stays dark-on-light like .ckm-label. */
+       area below spanning the full width.
+       Split into two stacked sub-containers, #ckm2-part1 (311×67, map
+       icon+name — consopart1.png) and #ckm2-part2 (311×359, "KILL MAP"
+       label + the map graphic/dots — consopart2.png), replacing the old
+       single consomapback2.png background — same combined 311×426
+       footprint, per explicit request, so that when Match Board's Map
+       Selection is NONE, #ckm2-part1 (and everything nested inside it)
+       can simply be hidden and #ckm2-part2/#cp2-sponsor slide up to
+       close the exact 67px gap it leaves (see .cp2-map-none below and
+       fetchCmbData's isPost2 branch). Every child's position below is
+       unchanged in absolute canvas terms — just recomputed relative to
+       whichever of the two containers now actually hosts it (subtract
+       that container's own 0/67 top offset from the old #ckm2-board-
+       relative value), so nothing visually moves when NONE isn't
+       selected. Applies under every theme — this is not a cosmetic
+       reskin. */
     #ckm2-board {
       position: absolute; left: 805px; top: 521px; width: 311px; height: 426px;
-      background-image: url('/assets/consolidated_post/consomapback2.png');
-      background-size: 311px 426px; background-repeat: no-repeat;
       z-index: 189;
       opacity: 0; pointer-events: none;
       transition: opacity 300ms ease;
     }
     #ckm2-board.ckm2-visible { opacity: 1; }
+    #ckm2-part1 {
+      position: absolute; left: 0; top: 0; width: 311px; height: 67px;
+      background-image: url('/assets/consolidated_post/consopart1.png');
+      background-size: 311px 67px; background-repeat: no-repeat;
+    }
+    #ckm2-part2 {
+      position: absolute; left: 0; top: 67px; width: 311px; height: 359px;
+      background-image: url('/assets/consolidated_post/consopart2.png');
+      background-size: 311px 359px; background-repeat: no-repeat;
+    }
+    /* NONE — #ckm2-part1 hidden outright (its own children go with it,
+       no per-child hide needed); #ckm2-part2 slides up into the exact
+       67px gap that leaves. #cp2-sponsor gets the matching shift via
+       its own rule further down (it shares a base position rule with
+       #mdb-sponsor, an unrelated scene's sponsor box — this modifier is
+       scoped to the #cp2-sponsor id specifically so it never touches
+       #mdb-sponsor). !important on all three — the dashboard Edit tab
+       already has a saved position override for both #ckm2-board (a
+       registered CP2_ELEMENTS entry) and the compound
+       "#cp2-sponsor, #mdb-sponsor" selector (see CLAUDE.md's Theme
+       system section on Edit-tab overrides always beating a plain
+       rule) — a real-world drag/resize save is itself injected as
+       !important CSS, so without matching that here this NONE-driven
+       shift would be silently defeated by whatever position someone
+       last dragged these to. */
+    #ckm2-part1.cp2-map-none { display: none !important; }
+    #ckm2-part2.cp2-map-none { top: 0px !important; }
     .ckm2-label {
-      position: absolute; left: 0px; top: 67px; width: 311px; height: 43px;
+      position: absolute; left: 0px; top: 0px; width: 311px; height: 43px;
       display: flex; align-items: center; justify-content: center; text-align: center;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px; color: #0a0a0a;
     }
@@ -791,10 +851,10 @@
       display: flex; align-items: center; justify-content: center; text-align: center;
       font-family: 'Anton', sans-serif; font-size: 27.5px; line-height: 1.05; color: #000;
     }
-    .ckm2-icon    { position: absolute; left: 10px; top: 6px;   width: 45px;  height: 45px;  object-fit: contain; }
-    .ckm2-graphic { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; object-fit: cover; }
-    .ckm2-kills   { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; overflow: visible; }
-    #ckm2-bounds  { position: absolute; left: 0px;  top: 110px; width: 311px; height: 316px; pointer-events: none; }
+    .ckm2-icon    { position: absolute; left: 10px; top: 6px;  width: 45px;  height: 45px;  object-fit: contain; }
+    .ckm2-graphic { position: absolute; left: 0px;  top: 43px; width: 311px; height: 316px; object-fit: cover; }
+    .ckm2-kills   { position: absolute; left: 0px;  top: 43px; width: 311px; height: 316px; overflow: visible; }
+    #ckm2-bounds  { position: absolute; left: 0px;  top: 43px; width: 311px; height: 316px; pointer-events: none; }
 
     /* Sponsor loop below the Kill Map — same frame/system as Tomorrow's
        Schedule's #tw-sponsor (.wl-sponsor-bg/.sponsor-cat-label/
@@ -1096,13 +1156,16 @@
        #ws-sponsor-cat/#wl-sponsor-cat (see those rules' comments): the
        label's separate solid white plate is removed so the sponsor box
        art shows through underneath, and the text picks up the same
-       brand accent color. Scoped to #ts-sponsor-cat/#tw-sponsor-cat
-       specifically, not the shared .sponsor-cat-label class, matching
-       the existing per-ID pattern (Consolidated Post 2's own sponsor
-       box keeps its normal white label, untouched). */
-    #ts-sponsor-cat, #tw-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
+       brand accent color. Scoped to #ts-sponsor-cat/#tw-sponsor-cat/
+       #cp2-sponsor-cat/#mdb-sponsor-cat/#p2h-sponsor-cat specifically,
+       not the shared .sponsor-cat-label class, matching the existing
+       per-ID pattern. */
+    #ts-sponsor-cat, #tw-sponsor-cat, #cp2-sponsor-cat, #mdb-sponsor-cat, #p2h-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
     [data-theme="10th_anniversary"] #ts-sponsor-cat,
-    [data-theme="10th_anniversary"] #tw-sponsor-cat { background-color: transparent; }
+    [data-theme="10th_anniversary"] #tw-sponsor-cat,
+    [data-theme="10th_anniversary"] #cp2-sponsor-cat,
+    [data-theme="10th_anniversary"] #mdb-sponsor-cat,
+    [data-theme="10th_anniversary"] #p2h-sponsor-cat { background-color: transparent; }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -1167,9 +1230,11 @@
     .wl-timer-glow { visibility: hidden; }
     /* 10th Anniversary — same gold gradient fill as Waiting TVC's
        #ws-timer-value (background-image line below is byte-identical to
-       #ws-timer-value's), plus a black glow (Waiting TVC's is completely
-       flat, no glow/shadow at all — this is the one deliberate
-       difference between the two, per explicit request).
+       #ws-timer-value's), plus a black glow. Waiting TVC's #ws-timer-value
+       now reuses these exact same .wl-timer-glow/.wl-timer-fill classes
+       for the identical glow, per explicit request to match (this used to
+       be flat with no glow — the one deliberate difference between the
+       two — until that request).
        Three prior approaches all still washed the gradient out in the
        real renderer that matters here (this session's headless test
        browser never reproduced any of the three failures, so none of
@@ -1673,18 +1738,34 @@
       z-index: 10; object-fit: cover;
     }
     /* 10th Anniversary — the animated mvptext.webm behind the hero image
-       has no anniversary equivalent yet, so a static placeholder
-       (gamemvptitle.png, per the pasted .v spec) stands in for it at its
-       own explicit canvas position — deliberately NOT the same box as
-       #mv-box-bg above, which the user gave a different position/size
-       for. Same stacking tier as #mv-box-bg (below #mv-hero-img/#mv-photo)
-       so the hero render still draws on top of it. */
+       now has a real anniversary equivalent (assets/mvp/anniversary/
+       mvptext.webm, JS-swapped via applyMvBoxBgTheme — same convention
+       as WL_REDCORNER_SRC_BY_THEME/LU_STINGER_SRC_BY_THEME, since a
+       <video> src can't use a CSS content:url() override), repositioned
+       to its own explicit canvas position — deliberately NOT the same
+       box as Regular's #mv-box-bg position above, which the user gave a
+       different position/size for. Same stacking tier (z-index:10,
+       below #mv-hero-img/#mv-photo) so the hero render still draws on
+       top of it. #mv-title-anniv-bg (the old static gamemvptitle.png
+       stand-in used before this video existed) is unused now that the
+       video is back — stays permanently hidden under every theme. */
     #mv-title-anniv-bg { display: none; }
-    [data-theme="10th_anniversary"] #mv-box-bg { display: none; }
-    [data-theme="10th_anniversary"] #mv-title-anniv-bg {
+    [data-theme="10th_anniversary"] #mv-box-bg {
+      left: 1000px; top: 60px; width: 801px; height: 507px;
+    }
+    /* 10th Anniversary only — decorative flourish over the title area, no
+       Regular-theme equivalent at all (same pattern as #ws-anniv-logo).
+       Position/size only, from the user's pasted design-tool spec — its
+       background-image/z-index values are placeholder export noise, not
+       real styling intent (see CLAUDE.md's "Working from pasted
+       design-tool CSS" convention). z-index sits above #mv-hero-img/
+       #mv-photo so it reads as an overlay on top of the hero render. */
+    #mv-anniv-gameflower { display: none; }
+    [data-theme="10th_anniversary"] #mv-anniv-gameflower {
       display: block;
-      position: absolute; left: 1000px; top: 60px; width: 801px; height: 507px;
-      z-index: 10; object-fit: contain;
+      position: absolute;
+      left: 1158px; top: 60px; width: 476px; height: 52px;
+      z-index: 15; object-fit: contain;
     }
     #mv-hero-img {
       position: absolute; left: 953px; top: 74px; width: 867px; height: 470px;
@@ -1873,6 +1954,10 @@
     .ft-teambox-blue { left: 196px;  top: 109px; }
     .ft-teambox-red  { left: 1278px; top: 109px; }
     .ft-teambox img.ft-teambox-bg { position: absolute; left: 0; top: 0; width: 446px; height: 108px; }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/finalteam/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .ft-teambox-blue .ft-teambox-bg { content: url('/assets/finalteam/anniversary/finalteambackblue.png'); }
+    [data-theme="10th_anniversary"] .ft-teambox-red .ft-teambox-bg { content: url('/assets/finalteam/anniversary/finalteambackred.png'); }
     .ft-teambox-logo {
       position: absolute; top: 14px; width: 80px; height: 80px;
       display: flex; align-items: center; justify-content: center;
@@ -1885,6 +1970,13 @@
       display: flex; align-items: center; justify-content: center;
       font-family: 'Anton', sans-serif; font-size: 71px; color: #fff;
       text-transform: uppercase; white-space: nowrap;
+    }
+    /* 10th Anniversary — black glow on every white text element in this
+       scene, to lift it off the new lighter anniversary backer art. */
+    [data-theme="10th_anniversary"] .ft-teambox-name,
+    [data-theme="10th_anniversary"] .ft-matchbar-label,
+    [data-theme="10th_anniversary"] .ft-card-name {
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
     }
     .ft-teambox-blue .ft-teambox-name { left: 145px; }
     .ft-teambox-red  .ft-teambox-name { left: 91px; }
@@ -1912,11 +2004,19 @@
     .ft-score-bar { width: 9px; height: 100%; background: #3a3a3a; flex-shrink: 0; }
     .ft-teambox-blue .ft-score-bar.filled { background: #1E64FF; }
     .ft-teambox-red  .ft-score-bar.filled { background: #FF3232; }
+    /* 10th Anniversary — flat brand blue/red replaced with the
+       anniversary gradient pair, per explicit request (applies to every
+       blue/red accent on this scene, not just this bar). */
+    [data-theme="10th_anniversary"] .ft-teambox-blue .ft-score-bar.filled { background: linear-gradient(to right, #ff465a, #ff8357); }
+    [data-theme="10th_anniversary"] .ft-teambox-red  .ft-score-bar.filled { background: linear-gradient(to right, #ffcb49, #ffcb49); }
 
     /* Match bar — bicolor strip between the team boxes and the card row;
        shows which match this lineup is for (dashboard Match Board state). */
     #ft-matchbar { position: absolute; left: 614px; top: 272px; width: 692px; height: 39px; z-index: 4; }
     #ft-matchbar-bg { position: absolute; left: 0; top: 0; width: 692px; height: 39px; }
+    /* 10th Anniversary — same filename, reskinned art under
+       assets/finalteam/anniversary/. */
+    [data-theme="10th_anniversary"] #ft-matchbar-bg { content: url('/assets/finalteam/anniversary/finalteammatch.png'); }
     .ft-matchbar-label, .ft-matchbar-series {
       position: absolute; top: 0; height: 39px;
       display: flex; align-items: center;
@@ -1984,6 +2084,34 @@
        right (away) side recolors it to red. Always left=blue/right=red
        regardless of which team that happens to be. */
     .ft-card-fader.ft-red { filter: saturate(0.85) hue-rotate(120deg); }
+    /* 10th Anniversary — finalfader.png's own shape/fade recolored to
+       exact brand hex values (not achievable via a filter on the raster
+       asset's baked-in color) using it as a mask instead of a visible
+       image. IMPORTANT: `content: none`/`content: ''` does NOT actually
+       suppress a real <img>'s rendered pixels in the real renderer (only
+       `content: url(...)` — swapping to a DIFFERENT image — reliably
+       overrides a replaced element's content, same as every other
+       content:url() swap elsewhere in this file) — the first attempt at
+       this used content:none and still visibly showed the original blue
+       PNG on top of the masked background, since content:none was
+       silently a no-op here. Fixed by swapping content to a fully
+       transparent 1x1 PNG (data URI, no extra asset file needed) so the
+       img's own pixels are genuinely gone, THEN mask-image reapplies
+       finalfader.png purely as an alpha/luminance shape over the flat
+       background-color, which can now actually show through. filter:
+       none avoids Regular's saturate(0.85)/hue-rotate(120deg) touching
+       this exact hex. */
+    [data-theme="10th_anniversary"] .ft-card-fader.ft-blue,
+    [data-theme="10th_anniversary"] .ft-card-fader.ft-red {
+      content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+      filter: none;
+      -webkit-mask-image: url('/assets/finalteam/finalfader.png');
+      mask-image: url('/assets/finalteam/finalfader.png');
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+    }
+    [data-theme="10th_anniversary"] .ft-card-fader.ft-blue { background: #ff465a; }
+    [data-theme="10th_anniversary"] .ft-card-fader.ft-red  { background: #ffac50; }
     .ft-card-photo {
       position: absolute; left: 0; top: 210px; width: 183px; height: 380px;
       object-fit: cover; object-position: 50% 15%; z-index: 3;
@@ -2002,6 +2130,10 @@
     }
     .ft-card-name.ft-blue { background: #1656d5; }
     .ft-card-name.ft-red  { background: #d92027; }
+    /* 10th Anniversary — same anniversary gradient pair as the score
+       bar/role plate (see CLAUDE.md's Theme system section). */
+    [data-theme="10th_anniversary"] .ft-card-name.ft-blue { background: linear-gradient(to right, #ff465a, #ff8357); }
+    [data-theme="10th_anniversary"] .ft-card-name.ft-red  { background: linear-gradient(to right, #ffcb49, #ffcb49); }
     /* Role icon — square, white, on its own backing plate matching the
        name bar's own color (blue for home, red for away). */
     .ft-card-role {
@@ -2010,6 +2142,10 @@
     }
     .ft-card-role.ft-blue { left: 0px; background: #1656d5; }
     .ft-card-role.ft-red  { right: 0px; background: #d92027; }
+    /* 10th Anniversary — same anniversary gradient pair as the score
+       bar/name plate above. */
+    [data-theme="10th_anniversary"] .ft-card-role.ft-blue { background: linear-gradient(to right, #ff465a, #ff8357); }
+    [data-theme="10th_anniversary"] .ft-card-role.ft-red  { background: linear-gradient(to right, #ffcb49, #ffcb49); }
     /* Filter goes on the icon itself, not the box — putting it on
        .ft-card-role would also whiten the colored background behind it. */
     .ft-card-role img { width: 70%; height: 70%; object-fit: contain; filter: brightness(0) invert(1); }
@@ -3142,6 +3278,7 @@
       position: absolute;
       left: 180px; top: 0px;
       width: 355px; /* fixed — font isn't truly tabular, digit widths vary enough to make the label drift otherwise */
+      height: 130px; /* needed once the two stacked spans below are absolutely positioned — they no longer contribute to this box's own content height */
       font-family: 'Anton', sans-serif;
       font-weight: 400;
       font-size: 130px;
@@ -3151,20 +3288,17 @@
       white-space: nowrap;
       text-align: left;
     }
-    /* 10th Anniversary — a gold gradient fill with a subtle embossed/lifted
-       edge, replacing the Regular theme's plain solid fill. Gradient text
-       via background-clip:text (glyph shape becomes the mask); the "lifted"
-       look is a light highlight riding the top edge plus a soft warm shadow
-       underneath — text-shadow still renders correctly here even though
-       the fill itself is transparent, since it follows the glyph outline,
-       not the final paint color. */
-    [data-theme="10th_anniversary"] #ws-timer-value {
-      background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      -webkit-text-fill-color: transparent;
-    }
+    /* 10th Anniversary — same gold gradient fill + black glow as Waiting
+       Lobby's #wl-timer-value, per explicit request to match (this used
+       to be the one deliberate difference between the two — Waiting TVC
+       flat, Waiting Lobby glowing — until now). Reuses the exact same
+       .wl-timer-glow/.wl-timer-fill classes/markup/JS (renderTimerFromState
+       already handles both IDs generically via querySelector), instead of
+       duplicating the gradient/glow rules under new ws-prefixed classes —
+       see .wl-timer-glow's own comment for why this has to be two DOM
+       sibling spans rather than a single element's text-shadow (three
+       prior approaches on a background-clip:text element all failed in
+       the real renderer). */
     /* 10th Anniversary — new decorative watermark, no Regular-theme
        equivalent at all (unlike everything else above, which reskins an
        existing element). Hidden under every other theme. */
@@ -3322,11 +3456,11 @@
        already resolves to the anniversary version) stays visible under
        10th Anniversary — only the category label's own separate solid
        white background goes away, scoped to #ws-sponsor-cat only, not the
-       shared class — Waiting Lobby and Today's/Tomorrow's Schedule get
-       the same treatment via their own equivalent #wl-sponsor-cat/
-       #ts-sponsor-cat/#tw-sponsor-cat rules; Consolidated Post 2's sponsor
-       box is the one that still keeps the shared class's normal white
-       label. */
+       shared class — Waiting Lobby, Today's/Tomorrow's Schedule,
+       Consolidated Post 2, Middle Board, and Post H2H get the same
+       treatment via their own equivalent #wl-sponsor-cat/#ts-sponsor-cat/
+       #tw-sponsor-cat/#cp2-sponsor-cat/#mdb-sponsor-cat/#p2h-sponsor-cat
+       rules. */
     #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
     [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
     /* Draft/in-game style sponsor loop — same slot region the old crossfade
@@ -3715,6 +3849,14 @@
       font-family: 'Anton', sans-serif; font-size: 103px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; text-align: left; white-space: nowrap;
     }
+    /* 10th Anniversary — "PLAYER HEATMAP" title, white with the same
+       subtle glow used for every other white-on-video text this theme
+       adds elsewhere in this file (MVP Highlights title, scoreboard
+       stats, tricode, etc.), so it lifts off annivloopwavesnosun.webm. */
+    [data-theme="10th_anniversary"] #hm-title {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+    }
 
     /* Independently positioned/sized top-level pieces — each can be
        dragged/resized on its own from the dashboard Edit tab (see
@@ -4073,6 +4215,15 @@
     #middleboard.mdb-out .mdb-box:nth-child(6) { animation: mdb-flip-out 300ms ease-in 450ms both; }
     #mdb-game-time-label { position:absolute; left:960px; top:257px; z-index:77; transform:translateX(-50%); font-family:'General Sans',sans-serif; font-size:23px; font-weight:700; color:rgb(0,0,0); text-transform:uppercase; white-space:nowrap; }
     #mdb-game-time-value { position:absolute; left:960px; top:264px; z-index:78; transform:translateX(-50%); font-family:'General Sans',sans-serif; font-size:74px; font-weight:700; color:rgb(0,0,0); white-space:nowrap; }
+    /* 10th Anniversary — "GAME TIME" label + value, white with the same
+       subtle glow used for every other white-on-video text this theme
+       adds elsewhere in this file (MVP Highlights title, Heatmap title,
+       etc.), so it lifts off the anniversary background video. */
+    [data-theme="10th_anniversary"] #mdb-game-time-label,
+    [data-theme="10th_anniversary"] #mdb-game-time-value {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+    }
     #mdb-game-label-bar  { position:absolute; left:960px; top:351px; width:190px; height:31px; z-index:79; transform:translateX(-50%); background:rgb(0,0,0); display:flex; align-items:center; justify-content:center; }
     #mdb-game-label-bar span { font-family:'General Sans',sans-serif; font-size:18px; font-weight:600; color:#fff; text-transform:uppercase; white-space:nowrap; }
     /* Map Selection box — background art + logo + map name, same
@@ -4097,6 +4248,16 @@
       left: 805px; top: 957px;
       width: 340px; height: 94px;
     }
+    /* Map Selection NONE — see #ckm2-part1/#ckm2-part2's own CSS comment.
+       Scoped to the #cp2-sponsor id specifically (not the shared base
+       rule above), so #mdb-sponsor — a different scene's sponsor box —
+       never shifts. !important — the dashboard Edit tab has a saved
+       position override on the compound "#cp2-sponsor, #mdb-sponsor"
+       selector (CP2_ELEMENTS in dashboard.html), itself injected as
+       !important CSS; without matching that here, this rule loses to
+       whatever position someone last dragged the shared sponsor-loop
+       control to, regardless of this selector's higher specificity. */
+    #cp2-sponsor.cp2-map-none { top: 890px !important; }
     #mdb-sponsor {
       z-index: 151;
       opacity: 0; pointer-events: none;
@@ -4108,6 +4269,10 @@
     #playerboard { position:absolute; top:0; left:0; width:1920px; height:1080px; pointer-events:none; z-index:150; display:none; }
     .pb-card { position:absolute; width:317px; height:139px; overflow:visible; will-change:transform,opacity; }
     .pb-card-bg { position:absolute; top:0; left:0; width:100%; height:100%; z-index:2; }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/postgame/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .pb-card:not(.pb-red) .pb-card-bg { content: url('/assets/postgame/anniversary/blue_player.png'); }
+    [data-theme="10th_anniversary"] .pb-card.pb-red .pb-card-bg { content: url('/assets/postgame/anniversary/red_player.png'); }
     .pb-hero  { position:absolute; left:0; top:0; width:185px; height:105px; z-index:1; object-fit:cover; }
     .pb-level { position:absolute; left:6px; top:79px; width:23px; height:23px; z-index:13; display:flex; align-items:center; justify-content:center; font-family:'General Sans',sans-serif; font-weight:700; font-size:21px; color:#121212; }
     .pb-role  { position:absolute; left:3px; top:109px; width:27px; height:27px; z-index:14; object-fit:contain; filter:brightness(0); }
@@ -4162,6 +4327,13 @@
     .mb-score-bar { width:14px; height:50px; background:#1a1a1a; flex-shrink:0; }
     #mb-camp1 .mb-score-bar.scored { background:#1E64FF; }
     #mb-camp2 .mb-score-bar.scored { background:#FF3232; }
+    /* 10th Anniversary — same anniversary blue/red pair used elsewhere
+       (Consolidated Post 2's Damage bars, Post H2H's comparison bars).
+       Match Board's #mb-camp1/#mb-camp2 are also what Consolidated Post
+       1 & 2 and Post H2H reuse via .cp-compact (see this block's own
+       comment above), so this single override covers all of them. */
+    [data-theme="10th_anniversary"] #mb-camp1 .mb-score-bar.scored { background:#0094fb; }
+    [data-theme="10th_anniversary"] #mb-camp2 .mb-score-bar.scored { background:#ff243e; }
     /* Consolidated Post's matchboard variant — also used by Post H2H
        (same compact layout, no relation otherwise). Other scenes (Post
        Items/Stats/Emblem) keep the regular Matchboard untouched. Toggled
@@ -4280,6 +4452,14 @@
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 14px;
       color: #fff; text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
     }
+    /* 10th Anniversary — "MATCH n - GAME n" plate, brand cream background
+       + brown General Sans Semibold text instead of Regular's black
+       plate/white text. */
+    [data-theme="10th_anniversary"] .p2h-header {
+      background: #fae798;
+      color: #876330;
+      font-weight: 600;
+    }
     .p2h-gametime-label {
       position: absolute; left: 960px; top: 192px; width: 309px; height: 54px;
       transform: translateX(-50%);
@@ -4297,6 +4477,14 @@
       display: flex; align-items: center; justify-content: center;
       font-family: 'General Sans', sans-serif; font-weight: 900; font-size: 44px; line-height: 1;
       color: #0a0a0a; text-transform: uppercase; text-align: center; white-space: nowrap;
+    }
+    /* 10th Anniversary — "<ROLE> HEAD TO HEAD" title, white with the
+       same subtle glow used for every other white-on-video text this
+       theme adds elsewhere in this file (MVP Highlights title, Heatmap
+       title, Middle Board's Game Time, etc.). */
+    [data-theme="10th_anniversary"] .p2h-title {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
     }
     /* Stat block: left/width/row-pitch measured off the guide's actual
        bar pixels (bars found at x=676-1243, center split at x=959 —
@@ -4317,6 +4505,29 @@
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px;
       color: #0a0a0a; text-transform: uppercase; text-align: center;
     }
+    /* 10th Anniversary — the label now sits in its own pill container
+       (postanniverbar.png), stacked directly above the bar on the Y
+       axis (adjacent, zero overlap) — NOT layered on top of it in Z.
+       Container is centered on the 567px-wide row ((567-267)/2 = 150),
+       top:0 height:28 so its bottom edge lands exactly at the bar
+       track's own top edge (28px) with no gap and no overlap.
+       13px side padding (box-sizing:border-box) reproduces the pasted
+       spec's inset text box (241px wide) without a separate child
+       element; p2hFitRowLabel below measures against this same 241px
+       inner width for the auto-scale-down request. No glow — brown
+       text on this lighter pill reads fine without one. */
+    [data-theme="10th_anniversary"] .p2h-row-label {
+      left: 150px; top: 0;
+      width: 267px; height: 28px;
+      padding: 0 13px;
+      box-sizing: border-box;
+      background-image: url('/assets/PostH2H/anniversary/postanniverbar.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      color: #876330;
+      text-shadow: none;
+      font-size: 24px;
+    }
     .p2h-bar-track {
       position: absolute; left: 0; top: 28px; width: 100%; height: 34px;
       /* Full-width, fixed — darkest red at the bar's own far-right edge,
@@ -4331,6 +4542,11 @@
       background: linear-gradient(to right, #0F2E70, #1E64FF);
       transition: width 500ms ease;
     }
+    /* 10th Anniversary — flat brand colors instead of Regular's
+       gradients, same #0094fb/#ff243e pair as Consolidated Post 2's
+       page 2 Damage bars. */
+    [data-theme="10th_anniversary"] .p2h-bar-track { background: #ff243e; }
+    [data-theme="10th_anniversary"] .p2h-bar-fill { background: #0094fb; }
     .p2h-value-home, .p2h-value-away {
       position: absolute; top: 0; height: 34px; width: 45%;
       display: flex; align-items: center;
@@ -4381,6 +4597,9 @@
       object-fit: cover; object-position: 50% 0%; display: block;
       z-index: 40;
     }
+    /* 10th Anniversary — same filename, reskinned art under
+       assets/PostH2H/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .p2h-photobg { content: url('/assets/PostH2H/anniversary/PhotoBG.png'); }
     /* Bounding box for the photo layer only — sized to the card's own
        current 485x672 footprint, same as Post 4 Key's .p4k-photo-box.
        overflow:hidden here is what actually keeps the pose bounce inside
@@ -4417,6 +4636,10 @@
       position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
       z-index: 42; display: block;
     }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/PostH2H/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .p2h-home .p2h-box { content: url('/assets/PostH2H/anniversary/PH2HBlue_Box.png'); }
+    [data-theme="10th_anniversary"] .p2h-away .p2h-box { content: url('/assets/PostH2H/anniversary/PH2HRed_Box.png'); }
     /* Nameplate row lives inside the top ~50px of the box art (measured
        off PH2HBlue_Box.png: logo slot x5-73, role slot x76-143, name
        text starts ~x150 after the chevron point) — positioned relative
@@ -5340,7 +5563,7 @@
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
-        <div id="ws-timer-value">30:30</div>
+        <div id="ws-timer-value"><span class="wl-timer-glow">30:30</span><span class="wl-timer-fill">30:30</span></div>
       </div>
       <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
       <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
@@ -5860,6 +6083,7 @@
     <div id="mvp-page">
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
+      <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
       <img id="mv-hero-img" src="" alt="" onerror="this.style.display='none'">
       <img id="mv-photo" src="" alt="" onerror="this.style.display='none'">
 
@@ -5970,12 +6194,16 @@
     </div>
 
     <div id="ckm2-board">
-      <div class="ckm2-label">KILL MAP</div>
-      <img class="ckm2-icon" id="ckm2-icon" src="" alt="">
-      <div class="ckm2-name" id="ckm2-name"></div>
-      <img class="ckm2-graphic" src="/assets/consolidated_post/consomap.png" alt="">
-      <svg class="ckm2-kills" id="ckm2-kills" viewBox="0 0 205 211" preserveAspectRatio="none"></svg>
-      <div id="ckm2-bounds"></div>
+      <div id="ckm2-part1">
+        <img class="ckm2-icon" id="ckm2-icon" src="" alt="">
+        <div class="ckm2-name" id="ckm2-name"></div>
+      </div>
+      <div id="ckm2-part2">
+        <div class="ckm2-label">KILL MAP</div>
+        <img class="ckm2-graphic" src="/assets/consolidated_post/consomap.png" alt="">
+        <svg class="ckm2-kills" id="ckm2-kills" viewBox="0 0 205 211" preserveAspectRatio="none"></svg>
+        <div id="ckm2-bounds"></div>
+      </div>
     </div>
 
     <div id="cp2-sponsor"></div>
@@ -6308,7 +6536,7 @@
       // several overlay browser sources/tabs open at once no longer eats
       // into the browser's shared connection pool per page.
       sseSource = createOverlaySSE();
-      sseSource.addEventListener('theme', (e) => { applyTheme(JSON.parse(e.data).theme); applyBgVideoTheme(); });
+      sseSource.addEventListener('theme', (e) => { applyTheme(JSON.parse(e.data).theme); applyBgVideoTheme(); applyMvBoxBgTheme(); });
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';
@@ -7350,12 +7578,21 @@
         hexagon:    '/assets/annivloop.webm',
         schedule:   '/assets/annivloopwaves.webm',
         tomorrow:   '/assets/annivloopwaves.webm',
-        mvp:        '/assets/annivloop.webm',
+        mvp:        '/assets/annivloopwavesnosun.webm',
         highlights: '/assets/annivloop.webm',
         post4key:   '/assets/annivloop.webm',
         credits:    '/assets/annivloopwavesnosun.webm',
         post_carry: '/assets/annivloopwavesnosun.webm',
         heatmap:    '/assets/annivloopwavesnosun.webm',
+        hearts:     '/assets/annivloopwavesnosun.webm',
+        timeline:   '/assets/annivloopwavesnosun.webm',
+        emblems:    '/assets/annivloopwavesnosun.webm',
+        items:      '/assets/annivloopwavesnosun.webm',
+        stats:      '/assets/annivloopwavesnosun.webm',
+        consolidated_post:   '/assets/annivloopwavesnosun.webm',
+        consolidated_post_2: '/assets/annivloopwavesnosun.webm',
+        post_h2h:   '/assets/annivloopwavesnosun.webm',
+        finalteam:  '/assets/annivloopwavesnosun.webm',
       },
     };
     function getSceneVideoSrc(feature) {
@@ -7379,6 +7616,20 @@
       if (bgVideo) bgVideo.src = BG_VIDEO_SRC_BY_THEME[theme] || BG_VIDEO_SRC;
     }
     applyBgVideoTheme();
+    // #mv-box-bg (MVP Scene's animated text-behind-hero video) — same tiny
+    // opt-in-per-theme lookup as #bg-video above, since a <video> src also
+    // can't use a CSS content:url() override (see #mv-box-bg's own CSS
+    // comment for the anniversary reposition that goes with this).
+    const MV_BOX_BG_SRC = '/assets/mvp/mvptext.webm';
+    const MV_BOX_BG_SRC_BY_THEME = {
+      '10th_anniversary': '/assets/mvp/anniversary/mvptext.webm',
+    };
+    function applyMvBoxBgTheme() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      const mvBoxBg = document.getElementById('mv-box-bg');
+      if (mvBoxBg) mvBoxBg.src = MV_BOX_BG_SRC_BY_THEME[theme] || MV_BOX_BG_SRC;
+    }
+    applyMvBoxBgTheme();
     /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
        needs to know which file to play once THEY start it) but must NOT
        get transitionToImpl's automatic immediate showSceneVideo call
@@ -7755,6 +8006,29 @@
       if (!_annivMeasureCtx) _annivMeasureCtx = document.createElement('canvas').getContext('2d');
       _annivMeasureCtx.font = font;
       return _annivMeasureCtx.measureText(text).width;
+    }
+    // 10th Anniversary — Post H2H's bar label auto-shrinks to fit its new
+    // pill container (see .p2h-row-label's CSS) instead of overflowing.
+    // Canvas measureText() again, not scrollWidth/clientWidth — p2hApply
+    // (which sets this label's text) can run via p2hLiveRefresh's
+    // h2h_config SSE listener while Post H2H isn't the visible scene,
+    // same hidden-ancestor risk as populateWsTalentBox above. 241 is the
+    // pasted spec's inner content width (267px container minus the
+    // 13px/2 side padding already baked into .p2h-row-label's CSS).
+    const P2H_LABEL_MAX_SIZE = 24;
+    const P2H_LABEL_MIN_SIZE = 12;
+    const P2H_LABEL_INNER_WIDTH = 241;
+    function p2hFitRowLabel(el, text) {
+      if (document.documentElement.getAttribute('data-theme') !== '10th_anniversary') {
+        el.style.fontSize = ''; /* clear any stale inline size from a prior anniversary render, falling back to Regular's plain 22px CSS */
+        return;
+      }
+      let size = P2H_LABEL_MAX_SIZE;
+      const upper = text.toUpperCase();
+      while (size > P2H_LABEL_MIN_SIZE && annivTextWidth(upper, `700 ${size}px 'General Sans'`) > P2H_LABEL_INNER_WIDTH) {
+        size--;
+      }
+      el.style.fontSize = size + 'px';
     }
     // Position/size straight from the pasted design spec (.Rectangle_1),
     // relative to the 571×61 .ws-talent-namebar (= NAMEBOX.png's own
@@ -8517,6 +8791,16 @@
     }
 
     const WL_REDCORNER_SRC = WL_ASSET + 'redcorner.webm';
+    // JS-driven cosmetic swap (video src can't use a CSS content:url()
+    // override) — same opt-in-per-theme shape as SCENE_VIDEO_SRC_BY_THEME,
+    // see CLAUDE.md's Theme system section.
+    const WL_REDCORNER_SRC_BY_THEME = {
+      '10th_anniversary': WL_ASSET + 'anniversary/redcorner.webm',
+    };
+    function getWlRedcornerSrc() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      return WL_REDCORNER_SRC_BY_THEME[theme] || WL_REDCORNER_SRC;
+    }
     const wlRedcornerEl = document.getElementById('wl-redcorner');
 
     /* redcorner.webm and bgloopsun2.webm are the same 10s/60fps duration by
@@ -8532,7 +8816,8 @@
        shows. Never paused on hide, same as the shared scene video itself —
        it just keeps looping in the background so phase never resets. */
     function syncWlRedcorner() {
-      if (wlRedcornerEl.getAttribute('src') !== WL_REDCORNER_SRC) wlRedcornerEl.src = WL_REDCORNER_SRC;
+      const redcornerSrc = getWlRedcornerSrc();
+      if (wlRedcornerEl.getAttribute('src') !== redcornerSrc) wlRedcornerEl.src = redcornerSrc;
       const activeSceneVideoEl = sceneVideoEls[sceneVideoLayer];
       wlRedcornerEl.currentTime = activeSceneVideoEl.currentTime || 0;
       wlRedcornerEl.play().catch(() => {});
@@ -10479,6 +10764,16 @@
        luPlayGroupPhotoIntro above) — keyed per side, see its declaration
        below for why. */
     const LU_STINGER_SRC = '/assets/lineup/lineupstinger.webm';
+    // JS-driven cosmetic swap (video src can't use a CSS content:url()
+    // override) — same opt-in-per-theme shape as SCENE_VIDEO_SRC_BY_THEME/
+    // WL_REDCORNER_SRC_BY_THEME, see CLAUDE.md's Theme system section.
+    const LU_STINGER_SRC_BY_THEME = {
+      '10th_anniversary': '/assets/lineup/anniversary/lineupstinger.webm',
+    };
+    function getLuStingerSrc() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      return LU_STINGER_SRC_BY_THEME[theme] || LU_STINGER_SRC;
+    }
     const LU_STINGER_LEAD_MS = 500; // stinger starts this long before the intro ends
     const luIntroVideo   = document.getElementById('lu-intro-video');
     const luStingerVideo = document.getElementById('lu-stinger-video');
@@ -10612,7 +10907,7 @@
       await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
       if (token !== luIntroTokens[side]) return; /* superseded mid-intro */
 
-      luStingerVideo.src = LU_STINGER_SRC;
+      luStingerVideo.src = getLuStingerSrc();
       luStingerVideo.currentTime = 0;
       luStingerVideo.style.display = 'block';
       await luWaitVideoMeta(luStingerVideo);
@@ -10872,10 +11167,18 @@
     /* Consolidated Post 2's sponsor loop, below the Kill Map — same
        system/markup as Tomorrow's Schedule's above, just a different
        container (#cp2-sponsor) and its own show/hide hooks in
-       showConsolidatedPost2/hideConsolidatedPost2. */
+       showConsolidatedPost2/hideConsolidatedPost2. 10th Anniversary —
+       exact same sponsor box as Waiting Lobby/Waiting TVC/Today's-
+       Tomorrow's Schedule (see buildTsSponsor's comment for why the
+       anniversary asset lives under Waiting TVC's own folder/filename
+       instead of this box's own Regular "Sponsor_Box.png"). */
     function buildCp2Sponsor() {
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('cp2-sponsor').innerHTML =
-        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="cp2-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="cp2-sponsor-img" src="" alt=""></div>`;
     }
@@ -10885,10 +11188,15 @@
     /* Middle Board's own sponsor loop — same markup/system as Consolidated
        Post 2's above, sharing that box's position (#cp2-sponsor,
        #mdb-sponsor CSS rule) so the two always line up; started/stopped
-       from showMiddleBoard/hideMiddleBoard instead of a Post scene. */
+       from showMiddleBoard/hideMiddleBoard instead of a Post scene.
+       Same 10th Anniversary swap as buildCp2Sponsor above. */
     function buildMdbSponsor() {
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('mdb-sponsor').innerHTML =
-        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
         `<div class="sponsor-cat-label" id="mdb-sponsor-cat"></div>` +
         `<div class="wl-sponsor-loop"><img id="mdb-sponsor-img" src="" alt=""></div>`;
     }
@@ -11870,7 +12178,7 @@
       }
     }
 
-    async function fetchCmbData(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false) {
+    async function fetchCmbData(ckmIconId = 'ckm-icon', ckmNameId = 'ckm-name', singleLineName = false, isPost2 = false) {
       try {
         const [msR, piR, mapSelR] = await Promise.allSettled([
           fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -11925,19 +12233,49 @@
              tab's per-game list, indexed by the same gameNum the label
              above already shows; fall back to ms.map only when that
              game's slot hasn't actually been picked yet (still null). */
-          const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
-          const mapName = (gameEntry && gameEntry.map) || ms.map || '';
           const iconEl  = document.getElementById(ckmIconId);
           const nameEl  = document.getElementById(ckmNameId);
-          if (iconEl) iconEl.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
-          if (nameEl) {
-            nameEl.innerHTML = mapName
-              ? (singleLineName ? mapName.toUpperCase() : mapName.toUpperCase().replace(' ', '<br>'))
-              : '';
-            // Forcing one line (Post 2) risks overflow for longer map names
-            // (e.g. "Dangerous Grass") that used to wrap instead — shrink
-            // to fit rather than let it spill out of the box.
-            if (singleLineName) ckmFitName(nameEl);
+          const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
+          // 'NONE' is an explicit "no map" choice meaning either Match
+          // Board's own dropdown (ms.map, see mdbApplyMapAndLabel's
+          // identical check) OR this specific game's own Map Selection
+          // slot (gameEntry.map, both dashboards use the same literal
+          // sentinel) — either one hides, not just ms.map falling
+          // through the || chain below. Applies under every theme.
+          const isNone = ms.map === 'NONE' || (gameEntry && gameEntry.map === 'NONE');
+          if (isPost2) {
+            // Post 2 — hide #ckm2-part1 outright (icon+name go with it,
+            // no per-element hide needed) and slide #ckm2-part2/
+            // #cp2-sponsor up to fill the freed space (see
+            // #ckm2-part1/#ckm2-part2's own CSS comment). Post 1 has no
+            // equivalent split — its Kill Map panel isn't part of this
+            // request, so it keeps the plain icon/name hide below.
+            const part1El = document.getElementById('ckm2-part1');
+            const part2El = document.getElementById('ckm2-part2');
+            const sponsorEl = document.getElementById('cp2-sponsor');
+            if (part1El) part1El.classList.toggle('cp2-map-none', isNone);
+            if (part2El) part2El.classList.toggle('cp2-map-none', isNone);
+            if (sponsorEl) sponsorEl.classList.toggle('cp2-map-none', isNone);
+          } else if (isNone) {
+            if (iconEl) iconEl.style.display = 'none';
+            if (nameEl) nameEl.style.display = 'none';
+          }
+          if (!isNone) {
+            const mapName = (gameEntry && gameEntry.map) || ms.map || '';
+            if (iconEl) {
+              iconEl.style.display = '';
+              iconEl.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
+            }
+            if (nameEl) {
+              nameEl.style.display = '';
+              nameEl.innerHTML = mapName
+                ? (singleLineName ? mapName.toUpperCase() : mapName.toUpperCase().replace(' ', '<br>'))
+                : '';
+              // Forcing one line (Post 2) risks overflow for longer map names
+              // (e.g. "Dangerous Grass") that used to wrap instead — shrink
+              // to fit rather than let it spill out of the box.
+              if (singleLineName) ckmFitName(nameEl);
+            }
           }
         }
       } catch {}
@@ -12539,7 +12877,7 @@
          proxy calls strictly behind the first instead of overlapping them,
          making the whole scene — the middle board most visibly, since it
          was last — feel like it took forever to populate. */
-      fetchCmbData('ckm2-icon', 'ckm2-name', true);
+      fetchCmbData('ckm2-icon', 'ckm2-name', true, true);
       fetchCkmKills('ckm2-kills', 'ckm2-bounds');
       await fetchConsolidatedPost2Data();
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while awaiting data */
@@ -13833,7 +14171,9 @@
         const pct = totalNum > 0
           ? ((stat.invert ? awayNum : homeNum) / totalNum) * 100
           : 50; /* guard divide-by-zero, also the "equal" case — starts from 0 same as every other row, just grows to the 50% midpoint */
-        document.getElementById('p2h-row-' + i + '-label').textContent = stat.label;
+        const labelEl = document.getElementById('p2h-row-' + i + '-label');
+        labelEl.textContent = stat.label;
+        p2hFitRowLabel(labelEl, stat.label);
 
         /* Zero baseline, instant (no transition) — the real width/count
            animation is triggered later via p2hAnimateBars, once this row
@@ -13854,10 +14194,20 @@
       return rows;
     }
 
-    document.getElementById('p2h-sponsor').innerHTML =
-      `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
-      `<div class="sponsor-cat-label" id="p2h-sponsor-cat"></div>` +
-      `<div class="wl-sponsor-loop"><img id="p2h-sponsor-img" src="" alt=""></div>`;
+    // 10th Anniversary — exact same sponsor box as Waiting Lobby/Waiting
+    // TVC/Today's-Tomorrow's Schedule/Consolidated Post 2/Middle Board
+    // (see buildCp2Sponsor's comment for why the anniversary asset lives
+    // under Waiting TVC's own folder/filename).
+    (function buildP2hSponsor() {
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const sponsorBg = isAnniversary
+        ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : WL_ASSET + 'Sponsor_Box.png';
+      document.getElementById('p2h-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="p2h-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="p2h-sponsor-img" src="" alt=""></div>`;
+    })();
     const p2hSponsorLoop = makeSponsorLoop('p2h-sponsor-img', 'p2h-sponsor-cat');
 
     let p2hVisible = false;
@@ -14802,6 +15152,18 @@
     ════════════════════════════════════════════════ */
     let mbVisible = false;
 
+    // 10th Anniversary — same filenames, reskinned art under
+    // assets/postgame/anniversary/, same convention as p4kAsset above —
+    // but only the plain victory/postname art has an anniversary variant
+    // (no anniversary defeat or Enduring Legacy variant exists yet), so
+    // this only swaps the specific filenames actually covered; anything
+    // else keeps Regular's art under every theme.
+    const MB_ANNIV_ASSETS = new Set(['blue_victory.png', 'red_victory.png', 'postname_blue.png', 'postname_red.png']);
+    function mbAsset(filename) {
+      const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      return 'assets/postgame/' + (isAnniv && MB_ANNIV_ASSETS.has(filename) ? 'anniversary/' : '') + filename;
+    }
+
     function buildMbCamp(container, campNum) {
       const L = campNum === 1; /* left side */
 
@@ -14812,7 +15174,7 @@
       const bg = document.createElement('img');
       bg.id = `mb-bg${campNum}`;
       bg.style.cssText = `position:absolute;left:0;top:0;width:713px;height:86px;z-index:1;display:block`;
-      bg.src = L ? 'assets/postgame/postname_blue.png' : 'assets/postgame/postname_red.png';
+      bg.src = mbAsset(L ? 'postname_blue.png' : 'postname_red.png');
       container.appendChild(bg);
 
       /* team logo — 70×70 wrapper + fallback circle + img (mirrors scoreboard pattern) */
@@ -14985,10 +15347,30 @@
       const matchNum = (ms && ms.match) || 1;
       mdbSet('mdb-game-label-text', ms ? ('MATCH ' + matchNum + ' - GAME ' + gameNum) : 'MATCH 0 - GAME 0');
 
+      // 'NONE' is an explicit "no map" choice meaning either — Match
+      // Board's own dropdown (match-dashboard.html's #map-select) OR
+      // this specific game's own Map Selection slot (map-selection-
+      // dashboard.html's per-game "None" button, both dashboards using
+      // the same literal sentinel). Match Board's flat field wins
+      // outright over the per-game slot when itself is NONE, so a
+      // caster picking NONE there can't be silently overridden by an
+      // already-picked per-game map. Applies under every theme — this
+      // is not a cosmetic reskin.
+      const mapBoxEl = document.getElementById('mdb-map');
+      if (ms && ms.map === 'NONE') {
+        if (mapBoxEl) mapBoxEl.style.display = 'none';
+        return;
+      }
+
       // Same per-game map lookup as Consolidated Middle Board's
       // fetchCmbData above — prefer this game's own Map Selection slot,
       // fall back to ms.map only if that slot isn't picked yet.
       const gameEntry = mapSel && Array.isArray(mapSel.games) ? mapSel.games[gameNum - 1] : null;
+      if (gameEntry && gameEntry.map === 'NONE') {
+        if (mapBoxEl) mapBoxEl.style.display = 'none';
+        return;
+      }
+      if (mapBoxEl) mapBoxEl.style.display = '';
       const mapName = (gameEntry && gameEntry.map) || (ms && ms.map) || '';
       const mapLogoImg = document.getElementById('mdb-map-logo-img');
       const mapNameTxt = document.querySelector('#mdb-map-name .mdb-map-name-text');
@@ -15244,13 +15626,13 @@
         const v1 = document.getElementById('mb-victor1');
         const v2 = document.getElementById('mb-victor2');
         if (v1) {
-          if      (wc === 1) { v1.src = 'assets/postgame/blue_victory.png'; v1.style.display = ''; }
-          else if (wc === 2) { v1.src = 'assets/postgame/blue_defeat.png';  v1.style.display = ''; }
+          if      (wc === 1) { v1.src = mbAsset('blue_victory.png'); v1.style.display = ''; }
+          else if (wc === 2) { v1.src = mbAsset('blue_defeat.png');  v1.style.display = ''; }
           else               { v1.style.display = 'none'; }
         }
         if (v2) {
-          if      (wc === 2) { v2.src = 'assets/postgame/red_victory.png'; v2.style.display = ''; }
-          else if (wc === 1) { v2.src = 'assets/postgame/red_defeat.png';  v2.style.display = ''; }
+          if      (wc === 2) { v2.src = mbAsset('red_victory.png'); v2.style.display = ''; }
+          else if (wc === 1) { v2.src = mbAsset('red_defeat.png');  v2.style.display = ''; }
           else               { v2.style.display = 'none'; }
         }
       }
@@ -15271,8 +15653,8 @@
         const isEnduring = curMatch && curMatch.matchType === 'enduring';
         const bg1 = document.getElementById('mb-bg1');
         const bg2 = document.getElementById('mb-bg2');
-        if (bg1) bg1.src = isEnduring ? 'assets/postgame/postname_blue_ENDURING LEGACY.png' : 'assets/postgame/postname_blue.png';
-        if (bg2) bg2.src = isEnduring ? 'assets/postgame/postname_red_ENDURING LEGACY.png'  : 'assets/postgame/postname_red.png';
+        if (bg1) bg1.src = isEnduring ? 'assets/postgame/postname_blue_ENDURING LEGACY.png' : mbAsset('postname_blue.png');
+        if (bg2) bg2.src = isEnduring ? 'assets/postgame/postname_red_ENDURING LEGACY.png'  : mbAsset('postname_red.png');
 
         /* The tricode text sits directly on that background's gold panel
            in the Enduring Legacy art (white elsewhere), so it needs to

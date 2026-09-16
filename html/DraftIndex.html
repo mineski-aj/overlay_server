@@ -101,6 +101,13 @@
       white-space: nowrap;
       overflow: hidden;
     }
+    /* 10th Anniversary — "DRAFT INDEX" title, white with a black glow to
+       lift it off the scene background, same convention as mplfs.html's
+       MVP Highlights/Heatmap titles (see that file's CLAUDE.md). */
+    [data-theme="10th_anniversary"] #di-title-text {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+    }
 
     /* ── Phase 2 — mini Smart badge + blue/red team panels + stat bars
        (see indexguide2.png / indexguide3.png) ── */
@@ -111,6 +118,30 @@
       object-fit: contain;
     }
 
+    /* 10th Anniversary only — decorative backdrop behind every other
+       Phase 2 element, no Regular-theme equivalent at all (same pattern
+       as mplfs.html's #ws-anniv-logo). First child in #di-phase2's DOM
+       order (see the HTML below) and no z-index of its own, same as
+       every other Phase 2 element — that alone keeps it painting behind
+       everything else here, none of which sets z-index either. Position/
+       size only, from the user's pasted design-tool spec — its
+       background-image/z-index values are placeholder export noise, not
+       real styling intent (see CLAUDE.md's "Working from pasted
+       design-tool CSS" convention) — the real anniversary asset and
+       paint order are used instead. Starts at opacity:0, same as every
+       other Phase 2 shell element, and fades in with diRevealPhase2(). */
+    #di-anniv-bg { display: none; }
+    [data-theme="10th_anniversary"] #di-anniv-bg {
+      display: block;
+      position: absolute;
+      left: 299px; top: 311px;
+      width: 1308px; height: 472px;
+      background-image: url('/assets/index/anniversary/annivindex.png');
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      opacity: 0;
+    }
+
     .di-team-box {
       position: absolute;
       width: 285px; height: 414px;
@@ -119,6 +150,11 @@
     }
     #di-blue-box { left: 166px;  top: 340px; background-image: url('/assets/index/indexblue.png'); }
     #di-red-box  { left: 1429px; top: 342px; background-image: url('/assets/index/indexred.png'); }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/index/anniversary/, same convention as mplfs.html's
+       p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] #di-blue-box { background-image: url('/assets/index/anniversary/indexblue.png'); }
+    [data-theme="10th_anniversary"] #di-red-box  { background-image: url('/assets/index/anniversary/indexred.png'); }
 
     .di-team-logo {
       position: absolute;
@@ -208,6 +244,8 @@
       text-align: center;
       margin-bottom: 4px;
     }
+    /* 10th Anniversary — brown brand color instead of Regular's near-black. */
+    [data-theme="10th_anniversary"] .di-bar-label { color: #876330; }
     .di-bar-line {
       display: flex;
       align-items: center;
@@ -240,6 +278,73 @@
     }
     .di-bar-seg-blue { background: #1E64FF; }
     .di-bar-seg-red  { background: #FF3232; }
+    /* 10th Anniversary — same anniversary blue/red pair as Consolidated
+       Post 2's Damage bars/Post H2H's comparison bars. Radius is a huge
+       value rather than a hand-computed half-height, so it stays a true
+       pill regardless of the track's own (re-laid-out below) height. */
+    [data-theme="10th_anniversary"] .di-bar-seg-blue { background: #0094fb; border-radius: 999px 0 0 999px; }
+    [data-theme="10th_anniversary"] .di-bar-seg-red  { background: #ff243e; border-radius: 0 999px 999px 0; }
+
+    /* 10th Anniversary — full re-layout of the 7 stat rows, per explicit
+       request/pasted spec: fixed 672x50 rows on a 57px pitch (50px row +
+       7px gap) instead of Regular's flex-auto-distributed rows, starting
+       at (625,361) — the container itself moves/resizes to that exact
+       bounding box (7*50 + 6*7 = 392px tall) and a `gap` on the flex
+       column reproduces the 57px pitch with zero per-row math, keeping
+       the file's existing "only the container box is drag/resize-able"
+       philosophy (see the comment above #di-bars-container) — no
+       per-row nth-child positioning needed.
+       Within each row: the label moves from ABOVE the bar (Regular's
+       column layout) to CENTERED in the horizontal gap between the two
+       value numbers (the pasted spec's two value boxes, x=8-144 and
+       x=528-664, leave an exact x=144-528 gap for it) — both share one
+       top 29px band, per the pasted Rectangle_1/Rectangle_1_copy specs
+       — with the actual color bar sitting in the remaining band below
+       (y=29 to the row's own 50px bottom edge). Once every child below
+       is made position:absolute, they fall out of .di-bar-row's/
+       .di-bar-line's own flex layout automatically, so neither of those
+       needs its own display/flex override here. */
+    [data-theme="10th_anniversary"] #di-bars-container {
+      left: 625px; top: 361px;
+      width: 672px; height: 392px;
+      gap: 7px;
+    }
+    [data-theme="10th_anniversary"] .di-bar-row {
+      flex: 0 0 50px;
+      position: relative;
+    }
+    [data-theme="10th_anniversary"] .di-bar-label {
+      position: absolute;
+      left: 144px; top: 0;
+      width: 384px; height: 29px;
+      margin-bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    [data-theme="10th_anniversary"] .di-bar-num {
+      position: absolute;
+      top: 24px; width: 136px; height: 29px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 21px;
+      color: #fff;
+      z-index: 2; /* above .di-bar-track below — see its own comment */
+    }
+    [data-theme="10th_anniversary"] .di-bar-num-blue { left: 20px;  text-align: left;  justify-content: flex-start; }
+    [data-theme="10th_anniversary"] .di-bar-num-red  { left: 514px; text-align: right; justify-content: flex-end;  }
+    [data-theme="10th_anniversary"] .di-bar-track {
+      position: absolute;
+      left: 8px; top: 29px;
+      width: 656px; height: 21px;
+      border-radius: 999px;
+      /* Explicit z-index (both .di-bar-num and this one, see above) since
+         plain DOM order alone put this on top of the two number spans —
+         they're both position:absolute with no z-index, so per normal
+         stacking rules the LATER-appended sibling (this track — see
+         buildBarsRows' append order: numBlue, track, numRed) painted
+         over the earlier one (numBlue), hiding it. */
+      z-index: 1;
+    }
   </style>
 </head>
 <body>
@@ -259,6 +364,7 @@
   </div>
 
   <div id="di-phase2">
+    <div id="di-anniv-bg"></div>
     <img id="di-smart-logo-p2" src="/assets/index/indexsmart.png" alt="">
 
     <div id="di-blue-box" class="di-team-box">
@@ -326,6 +432,7 @@
   var diBlueBox = document.getElementById('di-blue-box');
   var diRedBox  = document.getElementById('di-red-box');
   var diBarsContainer = document.getElementById('di-bars-container');
+  var diAnnivBg = document.getElementById('di-anniv-bg'); /* 10th Anniversary only, see its CSS */
 
   /* sceneToken guards against a stale setTimeout/fetch from a previous
      SHOW still running after a HIDE (or another SHOW) supersedes it —
@@ -341,7 +448,7 @@
      display:block, leaving the whole scene invisible). Cancelling
      every animation on these elements at the start of each entry point
      clears that slate first. */
-  var DI_ANIMATED_ELS = [diRoot, diLogoP1, diTitle, diLogoP2, diBlueBox, diRedBox, diBarsContainer];
+  var DI_ANIMATED_ELS = [diRoot, diLogoP1, diTitle, diLogoP2, diBlueBox, diRedBox, diBarsContainer, diAnnivBg];
   function diCancelAllAnimations() {
     DI_ANIMATED_ELS.forEach(function (el) {
       el.getAnimations().forEach(function (a) { a.cancel(); });
@@ -652,6 +759,14 @@
   /* ── Phase 2 entrance — mini logo pops in, team panels slide in from
      their respective sides, bars fade in and grow (staggered). ── */
   function diRevealPhase2() {
+    /* 10th Anniversary only — display:none under every other theme (see
+       its CSS), so animating it there is a harmless no-op. Same simple
+       fade shape as diBarsContainer, since it's just a decorative
+       backdrop with no motion/slide of its own. */
+    diAnnivBg.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 400, easing: 'ease-out', fill: 'both' }
+    );
     diLogoP2.animate(
       [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1)' }],
       { duration: 500, easing: EASE_OUT, fill: 'both' }
@@ -761,6 +876,7 @@
       diRedBox.style.opacity = '1';
       diRedBox.style.transform = 'translateX(0)';
       diBarsContainer.style.opacity = '1';
+      diAnnivBg.style.opacity = '1';
       /* Data content itself starts hidden (independent of the shell
          above, which restores instantly) and fades in per-section as
          diPollPhase2Data validates it — same never-give-up polling as
@@ -776,6 +892,7 @@
     diBlueBox.style.opacity = '0';
     diRedBox.style.opacity = '0';
     diBarsContainer.style.opacity = '0';
+    diAnnivBg.style.opacity = '0';
     diResetPhase2Transition();
     DI_BARS.forEach(function (_, i) { diSetBar(i, 0, 0, false); });
 
@@ -886,6 +1003,7 @@
     diRedBox.style.opacity = '1';
     diRedBox.style.transform = 'translateX(0)';
     diBarsContainer.style.opacity = '1';
+    diAnnivBg.style.opacity = '1';
     diFetchPhase2Data().then(function (r) {
       if (token !== sceneToken) return;
       diApplyPhase2Data(r[0], r[1], false, r[2]);

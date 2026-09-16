@@ -193,6 +193,85 @@
       white-space: nowrap; line-height: 1;
     }
 
+    /* ── Side Selection card — alternate graphic used INSTEAD OF the
+       normal side+map+win box sequence above, for whichever game is
+       currently in progress if that game's map is the literal 'NONE'
+       sentinel (see routes/overlay.js's mapselecttag reveal logic and
+       lib/mapSelectionState.js — same sentinel Match Board's own Map
+       dropdown/map-selection-dashboard.html's per-game "None" button
+       both use). A single persistent instance, not one per game index
+       like .ms-gameblock — it always shows whichever game most recently
+       triggered it, replacing (not stacking beside) any previously-
+       revealed games' blocks while active, per explicit request. See
+       showGame()'s isNone branch below for the show/hide choreography. */
+    .ms-sideonly {
+      position: absolute; left: 42px; top: 850px; width: 495px; height: 147px;
+      z-index: 4; /* above .ms-sidebox (3) — irrelevant in practice since the
+                     gameblocks are hidden whenever this is visible, but keeps
+                     the stacking order sane if that ever changes */
+      background-size: 100% 100%; background-repeat: no-repeat;
+      opacity: 0;
+      transform: translateX(-32px);
+      transition: opacity 360ms cubic-bezier(.16,1,.3,1), transform 360ms cubic-bezier(.16,1,.3,1);
+    }
+    .ms-sideonly.ms-sideonly-visible { opacity: 1; transform: translateX(0); }
+    .ms-sideonly.ms-no-anim { transition: none; }
+    .ms-sideonly-blue { background-image: url('/assets/mapselect/blueselect.png'); }
+    .ms-sideonly-red  { background-image: url('/assets/mapselect/redselect.png'); }
+
+    /* Every child position below is LOCAL to .ms-sideonly's own 495x147
+       box, straight from the pasted design spec — its background-color/
+       z-index values are placeholder export noise, not real styling
+       intent (see CLAUDE.md's "Working from pasted design-tool CSS"
+       convention). */
+    .ms-sideonly-logo {
+      position: absolute; left: 42px; top: 14px; width: 119px; height: 119px;
+      object-fit: contain;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 300ms cubic-bezier(.16,1,.3,1), transform 300ms cubic-bezier(.16,1,.3,1);
+    }
+    .ms-sideonly-label {
+      position: absolute; left: 222px; top: 20px; width: 252px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22.4px; /* 5.37pt @ 300dpi */
+      color: #fff; text-transform: uppercase; text-align: center; white-space: nowrap;
+      /* Black glow to lift white text off blueselect/redselect's bright
+         gradient art — every theme, this feature isn't theme-gated. */
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transition: opacity 280ms ease-out;
+    }
+    .ms-sideonly-side {
+      position: absolute; left: 206px; top: 43px; width: 283px; height: 60px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 58.6px; /* 14.06pt @ 300dpi */
+      line-height: 1; color: #fff; text-transform: uppercase; text-align: center; white-space: nowrap;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 300ms cubic-bezier(.16,1,.3,1), transform 300ms cubic-bezier(.16,1,.3,1);
+    }
+    .ms-sideonly-game {
+      position: absolute; left: 285px; top: 105px; width: 121px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22.4px; /* 5.37pt @ 300dpi */
+      color: #fff; text-transform: uppercase; text-align: center; white-space: nowrap;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+      opacity: 0;
+      transform: translateY(-20px);
+      transition: opacity 320ms ease-out, transform 320ms ease-out;
+    }
+    .ms-sideonly-logo.ms-sideonly-visible,
+    .ms-sideonly-label.ms-sideonly-visible { opacity: 1; }
+    .ms-sideonly-logo.ms-sideonly-visible { transform: scale(1); }
+    .ms-sideonly-side.ms-sideonly-visible { opacity: 1; transform: scale(1); }
+    .ms-sideonly-game.ms-sideonly-visible { opacity: 1; transform: translateY(0); }
+    .ms-sideonly-logo.ms-no-anim,
+    .ms-sideonly-label.ms-no-anim,
+    .ms-sideonly-side.ms-no-anim,
+    .ms-sideonly-game.ms-no-anim { transition: none; }
+
     /* ── Player H2H (Gold) tag ──
        Coordinates are relative to Layer_1 (.ph2h-back, the 1319x247
        playerh2hback.png panel) exactly as pasted from the design tool,
@@ -225,6 +304,9 @@
       background-image: url('/assets/L3h2h/playerh2hback.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/L3h2h/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .ph2h-back { background-image: url('/assets/L3h2h/anniversary/playerh2hback.png'); }
     /* Stacking (front to back): nameplate > photo > hero. */
     .ph2h-photo {
       position: absolute; width: 303px; height: 303px;
@@ -247,6 +329,9 @@
     }
     .ph2h-plate.ph2h-home { left: 0px;    background-image: url('/assets/L3h2h/playerh2hblue.png'); }
     .ph2h-plate.ph2h-away { left: 1007px; background-image: url('/assets/L3h2h/playerh2hred.png');  } /* mirrored: 1319 - 0 - 312 */
+    /* 10th Anniversary — same convention as .ph2h-back above. */
+    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-home { background-image: url('/assets/L3h2h/anniversary/playerh2hblue.png'); }
+    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-away { background-image: url('/assets/L3h2h/anniversary/playerh2hred.png'); }
 
     /* Rendered pure black regardless of the source icon's own color —
        role/*.png icons are a light taupe, not black. */
@@ -274,6 +359,11 @@
       background-size: 100% 100%; background-repeat: no-repeat;
       overflow: hidden; border-radius: 8px; z-index: 6;
     }
+    /* 10th Anniversary — same filename, reskinned art under
+       assets/L3h2h/anniversary/ (the on-disk filename really does have
+       a literal space — %20-encoded here same as the Regular rule
+       above). */
+    [data-theme="10th_anniversary"] .ph2h-title { background-image: url('/assets/L3h2h/anniversary/playerh2h%20title.png'); }
     .ph2h-title-sheen {
       position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
       background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
@@ -332,6 +422,11 @@
       position: absolute; left: 0; top: 0; height: 100%; width: 0;
       background: #1E64FF; transition: width 700ms ease-out;
     }
+    /* 10th Anniversary — same anniversary blue/red pair used across the
+       rest of the broadcast (Consolidated Post 2's Damage bars, Post
+       H2H's comparison bars, every score bar). */
+    [data-theme="10th_anniversary"] .ph2h-bar-track { background: #ff243e; }
+    [data-theme="10th_anniversary"] .ph2h-bar-fill { background: #0094fb; }
     /* Away/red advantage: fill grows from the bar's right edge instead
        of the left — anchor flips, direction of growth flips with it. */
     .ph2h-bar-fill.ph2h-fill-right { left: auto; right: 0; }
@@ -624,8 +719,122 @@
     revealPhase(rec.winbox, rec.winContent, null);
   }
 
+  /* ── Side Selection card (see its own CSS comment) ──
+     Single persistent instance (not keyed by gameIndex like blocks{}) —
+     always shows whichever game most recently triggered it. */
+  var sideOnlyRec = null;
+  var sideOnlyVisible = false;
+
+  function ensureSideOnlyCard() {
+    if (sideOnlyRec) return sideOnlyRec;
+    var card = document.createElement('div');
+    card.className = 'ms-sideonly';
+    var logo = document.createElement('img');
+    logo.className = 'ms-sideonly-logo';
+    logo.onerror = function () { logo.style.display = 'none'; };
+    var label = document.createElement('div');
+    label.className = 'ms-sideonly-label';
+    label.textContent = 'SIDE SELECTION';
+    var sideText = document.createElement('div');
+    sideText.className = 'ms-sideonly-side';
+    var gameText = document.createElement('div');
+    gameText.className = 'ms-sideonly-game';
+    card.appendChild(logo); card.appendChild(label); card.appendChild(sideText); card.appendChild(gameText);
+    MAPSEL_PAGE.appendChild(card);
+    sideOnlyRec = { card: card, logo: logo, label: label, sideText: sideText, gameText: gameText };
+    return sideOnlyRec;
+  }
+
+  /* Fluid single-motion reveal, deliberately different from
+     revealSideAndMap's fully-sequential box-by-box chain: the card
+     itself fades/slides in from the left, then (starting while the
+     card is still mid-transition, same CONTENT_DELAY stagger idiom
+     used everywhere else in this file) the logo pops in alongside the
+     SIDE SELECTION label fading in, then — after the same
+     CONTENT_DELAY + CONTENT_DURATION + PHASE_GAP beat
+     revealPhase()'s own box→content chain uses — the BLUE/RED SIDE
+     text pops in together with the game number sliding down into
+     place. */
+  function revealSideOnly(rec, instant) {
+    var card = rec.card, logo = rec.logo, label = rec.label, sideText = rec.sideText, gameText = rec.gameText;
+    var els = [card, logo, label, sideText, gameText];
+    if (instant) {
+      els.forEach(function (el) { el.classList.add('ms-no-anim'); el.classList.add('ms-sideonly-visible'); });
+      return;
+    }
+    // Reset to the hidden entrance state first, even if this card is
+    // already on screen for a DIFFERENT game (consecutive NONE games,
+    // e.g. game 2 NONE -> game 3 NONE) — content (logo/text) is already
+    // swapped to the new game by showGame() before this runs, but
+    // re-adding a class that's already present is a no-op, so without
+    // this reset the new game's content would just silently swap in
+    // with no animation at all. This makes every NONE reveal "jump"
+    // straight to the latest game via the same fresh entrance, per
+    // explicit request, instead of only the very first one animating.
+    els.forEach(function (el) { el.classList.add('ms-no-anim'); el.classList.remove('ms-sideonly-visible'); });
+    void card.offsetWidth;
+    els.forEach(function (el) { el.classList.remove('ms-no-anim'); });
+    void card.offsetWidth;
+    card.classList.add('ms-sideonly-visible');
+    setTimeout(function () {
+      logo.classList.add('ms-sideonly-visible');
+      label.classList.add('ms-sideonly-visible');
+    }, CONTENT_DELAY);
+    setTimeout(function () {
+      sideText.classList.add('ms-sideonly-visible');
+      gameText.classList.add('ms-sideonly-visible');
+    }, CONTENT_DELAY + CONTENT_DURATION + PHASE_GAP);
+  }
+
+  function hideSideOnly(instant) {
+    if (!sideOnlyRec) return;
+    if (!sideOnlyVisible) return;
+    sideOnlyVisible = false;
+    var rec = sideOnlyRec;
+    [rec.card, rec.logo, rec.label, rec.sideText, rec.gameText].forEach(function (el) {
+      if (instant) el.classList.add('ms-no-anim');
+      el.classList.remove('ms-sideonly-visible');
+    });
+  }
+
+  /* Hides every already-revealed game's normal block — "skip all
+     previous games, just show the latest game in progress" — per
+     explicit request, the Side Selection card fully replaces the
+     normal history-stacking display while it's active, rather than
+     appearing alongside it. */
+  function hideAllGameblocks() {
+    Object.keys(blocks).forEach(function (k) { blocks[k].wrap.style.display = 'none'; });
+  }
+  function showAllGameblocks() {
+    Object.keys(blocks).forEach(function (k) { blocks[k].wrap.style.display = ''; });
+  }
+
   function showGame(gameIndex, game, matchNum, homeTeam, awayTeam, instant) {
     if (!pageOn) { MAPSEL_PAGE.classList.add('ms-on'); pageOn = true; }
+    // 'NONE' — this game's map hasn't been picked yet (an explicit
+    // choice, not just "not set" — see the sentinel's own doc comment
+    // above .ms-sideonly). Show the alternate Side Selection card
+    // instead of the normal side+map+win sequence, and hide every
+    // other already-revealed game's block while it's up. Applies under
+    // every theme — this is not a cosmetic reskin.
+    if (game.map === 'NONE') {
+      hideAllGameblocks();
+      var sideRec = ensureSideOnlyCard();
+      sideRec.logo.src = logoUrl(teamShort(game.tossWinner, homeTeam, awayTeam));
+      sideRec.sideText.textContent = (game.tossSide === 'red' ? 'RED' : 'BLUE') + ' SIDE';
+      sideRec.gameText.textContent = 'GAME ' + game.game;
+      sideRec.card.classList.remove('ms-sideonly-blue', 'ms-sideonly-red');
+      sideRec.card.classList.add(game.tossSide === 'red' ? 'ms-sideonly-red' : 'ms-sideonly-blue');
+      sideOnlyVisible = true;
+      revealSideOnly(sideRec, instant);
+      return;
+    }
+    // A real map — make sure the Side Selection card (if it was up for
+    // an earlier restore/reconnect pass over this same index) and any
+    // stale hidden-gameblock state from a previous NONE reveal are both
+    // cleared before proceeding normally.
+    hideSideOnly(instant);
+    showAllGameblocks();
     var rec = ensureBlock(gameIndex, game, matchNum, homeTeam, awayTeam);
     revealSideAndMap(rec, instant);
   }
@@ -647,10 +856,17 @@
         el.classList.remove('ms-box-visible', 'ms-content-visible');
       });
     });
+    if (sideOnlyRec) {
+      [sideOnlyRec.card, sideOnlyRec.logo, sideOnlyRec.label, sideOnlyRec.sideText, sideOnlyRec.gameText].forEach(function (el) {
+        el.classList.remove('ms-sideonly-visible');
+      });
+    }
     setTimeout(function () {
       MAPSEL_PAGE.classList.remove('ms-on');
       MAPSEL_PAGE.innerHTML = '';
       blocks = {};
+      sideOnlyRec = null;
+      sideOnlyVisible = false;
     }, 360);
   }
 
@@ -808,6 +1024,18 @@
         }
       }
       var idx = previewRevealedGames;
+      // Skip-ahead — same as the real route's Priority 2 (routes/
+      // overlay.js), mirrored here so Preview matches the real
+      // behavior instead of silently diverging from it.
+      var currentIdx = (ms.currentGame || 1) - 1;
+      if (currentIdx > idx && currentIdx < ms.maxGames) {
+        var currentGame = ms.games[currentIdx];
+        var currentReady = currentGame && currentGame.tossWinner && currentGame.tossSide && currentGame.map;
+        if (currentReady && currentGame.map === 'NONE') {
+          idx = currentIdx;
+          previewRevealedWins = idx;
+        }
+      }
       var game = ms.games[idx];
       var ready = game && game.tossWinner && game.tossSide && game.map;
       if (idx >= ms.maxGames || !ready) return; // nothing ready to preview yet
