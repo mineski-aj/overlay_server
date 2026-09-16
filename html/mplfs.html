@@ -50,10 +50,15 @@
        "SEASON 18 REGULAR SEASON W<n>D<n>" header overlay text, on BOTH
        Waiting TVC's #ws-week-label and Waiting Lobby's #wl-week-label —
        a deliberately different color from --anniv-accent, not a
-       duplicate/typo of it. */
+       duplicate/typo of it.
+       --anniv-credits-color: white text for Credit Reel's scrolling
+       logo titles/headings/lines (paired with a text-shadow on those
+       same selectors, since Regular has no shadow at all to race
+       against). */
     [data-theme="10th_anniversary"] {
       --anniv-accent: #6c4614;
       --anniv-header-text: #5e79fe;
+      --anniv-credits-color: #ffffff;
     }
 
     /* ── CONFIG BAR ── */
@@ -951,6 +956,27 @@
     }
     .wlm-box { position: relative; width: 786px; height: 240px; }
     .wlm-box > img.wlm-box-bg { position: absolute; left: 0; top: 0; width: 786px; height: 240px; }
+    /* 10th Anniversary only — same MatchboxHighlight.png as the Waiting
+       Screen TVC's .wsm-current-highlight, just scaled up to this box's
+       larger 786x240 size (native asset is 571x134; 741x173 keeps the
+       exact same aspect ratio scaled to this box). Waiting Lobby only
+       ever shows ONE match box (wlBuildMatch always builds "the current
+       Match Board match" — see its own comment), so unlike Waiting TVC's
+       carousel there's no per-index check needed: it's always the
+       current match, so it renders unconditionally under this theme.
+       Rendered last in buildWlMatch's HTML so it paints on top, same
+       "DOM order, no z-index" convention as .wsm-current-highlight.
+       Plain left/top (not left:50%+transform) — LOCAL offsets against
+       .wlm-box, same convention as .wlm-logo-l/.wlm-logo-r below — so the
+       dashboard Edit tab's drag/resize (mplfs_wl, see dashboard.html's
+       WL_DEFAULTS/WL_ELEMENTS) can override left/top/width/height
+       directly without fighting a transform. 22.5/67 keep it at the
+       original centered/bottom-anchored spot: (786-741)/2, 240-173. */
+    .wlm-current-highlight {
+      position: absolute; left: 22.5px; top: 67px;
+      width: 741px; height: 173px;
+      pointer-events: none;
+    }
     .wlm-label, .wlm-time, .wlm-bo {
       position: absolute; top: 0; height: 55px;
       display: flex; align-items: center;
@@ -3169,6 +3195,19 @@
       width: 571px; height: 173px;
     }
     .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 173px; }
+    /* 10th Anniversary only — "this is the currently selected Match Board
+       match" indicator, MatchboxHighlight.png (571x173's own asset, native
+       569x133 — sized to sit under the 39px header band, covering the same
+       area as .wsm-slot below). Rendered last in buildWsMatches' per-box
+       HTML (see there) so it naturally paints on top of everything else in
+       the box, same "no explicit z-index, DOM order wins" convention the
+       rest of .wsm-box's children already rely on (e.g. .wsm-band-cot). */
+    .wsm-box .wsm-current-highlight {
+      position: absolute; left: 50%; top: 39px;
+      width: 569px; height: 133px;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
     .wsm-box .wsm-band-label,
     .wsm-box .wsm-band-time,
     .wsm-box .wsm-band-bo {
@@ -4190,6 +4229,16 @@
       text-align: center; margin: 0 0 10px 0;
     }
     .cr-space { width: 100%; }
+    /* 10th Anniversary only — white text + drop shadow for the Credit
+       Reel's scrolling content, so it stays legible over
+       annivloopwaves.webm (see SCENE_VIDEO_SRC_BY_THEME below) instead
+       of Regular's plain #0a0a0a. */
+    [data-theme="10th_anniversary"] .cr-logo-title,
+    [data-theme="10th_anniversary"] .cr-heading,
+    [data-theme="10th_anniversary"] .cr-line {
+      color: var(--anniv-credits-color, #0a0a0a);
+      text-shadow: 0 4px 12px rgba(0, 0, 0, 0.85);
+    }
 
     /* ── POST H2H — role-based head-to-head stat comparison. Two mirrored
        player-card panels (directly mirroring MVP Highlights' #hl-plaque
@@ -4640,6 +4689,14 @@
       display: flex; align-items: center; justify-content: center; z-index: 2;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 30px; color: #fff;
       text-transform: uppercase; white-space: nowrap; text-align: center;
+    }
+    /* 10th Anniversary only — .pc-stat-label/.pc-stat-value/.pc-slice-label
+       span already carry their own drop shadow under every theme; .pc-name
+       and .pc-donut-total are the only Post Carry white texts that don't,
+       so they're the ones that need an anniversary-only opt-in shadow. */
+    [data-theme="10th_anniversary"] .pc-name,
+    [data-theme="10th_anniversary"] .pc-donut-total {
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
     }
     .pc-footer-value {
       position: absolute; top: 63.8px; height: 51px; z-index: 2;
@@ -6251,7 +6308,7 @@
       // several overlay browser sources/tabs open at once no longer eats
       // into the browser's shared connection pool per page.
       sseSource = createOverlaySSE();
-      sseSource.addEventListener('theme', (e) => applyTheme(JSON.parse(e.data).theme));
+      sseSource.addEventListener('theme', (e) => { applyTheme(JSON.parse(e.data).theme); applyBgVideoTheme(); });
 
       sseSource.onopen = () => {
         const wasDisconnected = sseDot.className === 'error';
@@ -7296,12 +7353,32 @@
         mvp:        '/assets/annivloop.webm',
         highlights: '/assets/annivloop.webm',
         post4key:   '/assets/annivloop.webm',
+        credits:    '/assets/annivloopwavesnosun.webm',
+        post_carry: '/assets/annivloopwavesnosun.webm',
+        heatmap:    '/assets/annivloopwavesnosun.webm',
       },
     };
     function getSceneVideoSrc(feature) {
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
       return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
     }
+    // #bg-video (the idle-state fallback background, see CLAUDE.md's
+    // "Video-heavy overlays" section) sits completely outside the
+    // showSceneVideo/SCENE_VIDEO_SRC(_BY_THEME) system — it's a plain
+    // <video> with a fixed src, never driven by transitionToImpl — so it
+    // needs its own tiny opt-in-per-theme lookup, same convention as
+    // SCENE_VIDEO_SRC_BY_THEME above, or it would keep showing Regular's
+    // bgloop.webm underneath every scene while 10th Anniversary is active.
+    const BG_VIDEO_SRC = '/assets/bgloop.webm';
+    const BG_VIDEO_SRC_BY_THEME = {
+      '10th_anniversary': '/assets/annivloop.webm',
+    };
+    function applyBgVideoTheme() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'regular';
+      const bgVideo = document.getElementById('bg-video');
+      if (bgVideo) bgVideo.src = BG_VIDEO_SRC_BY_THEME[theme] || BG_VIDEO_SRC;
+    }
+    applyBgVideoTheme();
     /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
        needs to know which file to play once THEY start it) but must NOT
        get transitionToImpl's automatic immediate showSceneVideo call
@@ -7520,20 +7597,27 @@
       });
     }
 
+    // 10th Anniversary only — "this is the currently selected Match Board
+    // match" indicator (see .wsm-current-highlight CSS above). Not part of
+    // WS_TVC_ASSET_BY_THEME since there's no Regular-theme counterpart to
+    // fall back to — the effect simply doesn't exist outside this theme.
+    const WS_CURRENT_MATCH_HIGHLIGHT = 'anniversary/MatchboxHighlight.png';
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
+      const theme = document.documentElement.getAttribute('data-theme');
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       let html = opts.title === false ? '' : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
-      matches.forEach(m => {
+      matches.forEach((m, i) => {
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
           ? `<img class="wsm-score-img" src="${WS_TVC_ASSET}SCORES/${m.score.l}-${m.score.r}.png" ` +
             `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" ` +
             `alt="${m.score.l}-${m.score.r}">`
           : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
+        const isCurrentMatch = theme === '10th_anniversary' && opts.currentMatch != null && (i + 1) === opts.currentMatch;
         html += `<div class="wsm-box"><img class="wsm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
@@ -7545,7 +7629,9 @@
           logo(m, 'l') +
           `<div class="wsm-slot wsm-center">${center}</div>` +
           logo(m, 'r') +
-          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
+          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div>` +
+          (isCurrentMatch ? `<img class="wsm-current-highlight" src="${WS_TVC_ASSET}${WS_CURRENT_MATCH_HIGHLIGHT}" alt="">` : '') +
+          `</div>`;
       });
       root.innerHTML = html;
 
@@ -8037,7 +8123,7 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
+      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES, { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
@@ -8185,6 +8271,11 @@
       // helper picks that up for free. Blinker assets have no anniversary
       // variant yet, so they harmlessly fall through to the Regular file
       // via wsTvcAsset()'s own fallback — safe either way.
+      // 10th Anniversary only — see .wlm-current-highlight CSS above.
+      const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const highlight = isAnniversary
+        ? `<img class="wlm-current-highlight" src="${WS_TVC_ASSET}anniversary/MatchboxHighlight.png" alt="">`
+        : '';
       root.innerHTML =
         `<div class="wlm-box"><img class="wlm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
         `<span class="wlm-label">${m.label}</span>` +
@@ -8197,7 +8288,9 @@
         logo('l') +
         `<div class="wlm-slot wlm-center">${center}</div>` +
         logo('r') +
-        `<div class="wlm-slot wlm-tri wlm-tri-r${m.matchType === 'enduring' ? ' wlm-tri-gold' : ''}">${m.right.tri}</div></div>`;
+        `<div class="wlm-slot wlm-tri wlm-tri-r${m.matchType === 'enduring' ? ' wlm-tri-gold' : ''}">${m.right.tri}</div>` +
+        highlight +
+        `</div>`;
     }
 
     /* Sponsor box — Draft/in-game style loop (see startWlSponsorLoop below):

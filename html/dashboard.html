@@ -4238,6 +4238,9 @@
     '.wlm-label, .wlm-time, .wlm-bo': { fontSize: 22 },
     '.wlm-tri':                       { fontSize: 46 },
     '.wlm-score-l, .wlm-score-r':     { fontSize: 44 },
+    /* 10th Anniversary only — MatchboxHighlight.png, same local-offset-
+       against-.wlm-box convention as the logos above. */
+    '.wlm-current-highlight':         { left: 22.5, top: 67, width: 741, height: 173 },
   };
 
   var WL_ELEMENTS = [
@@ -4256,6 +4259,7 @@
     { group: 'Match Card Text', id: '.wlm-label, .wlm-time, .wlm-bo', name: 'Header Text Size' },
     { group: 'Match Card Text', id: '.wlm-tri',                       name: 'Team Code Size'   },
     { group: 'Match Card Text', id: '.wlm-score-l, .wlm-score-r',     name: 'Score Size'       },
+    { group: 'Match Highlight (10th Anniv)', id: '.wlm-current-highlight', name: 'Match Highlight' },
   ];
 
   /* ── Today's / Tomorrow's Schedule (mplfs.html) element defaults ──

@@ -318,6 +318,15 @@
       width: 571px; height: 173px;
     }
     .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 173px; }
+    /* 10th Anniversary only — mirrored from mplfs.html, see there for
+       details. "This is the currently selected Match Board match"
+       indicator, MatchboxHighlight.png. */
+    .wsm-box .wsm-current-highlight {
+      position: absolute; left: 50%; top: 39px;
+      width: 569px; height: 133px;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
     .wsm-box .wsm-band-label,
     .wsm-box .wsm-band-time,
     .wsm-box .wsm-band-bo {
@@ -969,20 +978,25 @@
       return String(h).padStart(2, '0') + ':' + min + ' GMT+8';
     }
 
+    // 10th Anniversary only — mirrored from mplfs.html, see there for
+    // details. "This is the currently selected Match Board match" indicator.
+    const WS_CURRENT_MATCH_HIGHLIGHT = 'anniversary/MatchboxHighlight.png';
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
+      const theme = document.documentElement.getAttribute('data-theme');
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
       let html = opts.title === false ? '' : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
-      matches.forEach(m => {
+      matches.forEach((m, i) => {
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
           ? `<img class="wsm-score-img" src="${WS_TVC_ASSET}SCORES/${m.score.l}-${m.score.r}.png" ` +
             `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" ` +
             `alt="${m.score.l}-${m.score.r}">`
           : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
+        const isCurrentMatch = theme === '10th_anniversary' && opts.currentMatch != null && (i + 1) === opts.currentMatch;
         html += `<div class="wsm-box"><img class="wsm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
           `<span class="wsm-band-label">${m.label}</span>` +
           (typeAssets.blinker
@@ -994,7 +1008,9 @@
           logo(m, 'l') +
           `<div class="wsm-slot wsm-center">${center}</div>` +
           logo(m, 'r') +
-          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
+          `<div class="wsm-slot wsm-tri wsm-tri-r${m.matchType === 'enduring' ? ' wsm-tri-gold' : ''}">${m.right.tri}</div>` +
+          (isCurrentMatch ? `<img class="wsm-current-highlight" src="${WS_TVC_ASSET}${WS_CURRENT_MATCH_HIGHLIGHT}" alt="">` : '') +
+          `</div>`;
       });
       root.innerHTML = html;
 
@@ -1286,7 +1302,7 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES);
+      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES, { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
