@@ -2225,11 +2225,12 @@
      needs live data should make its backend module forward onto
      overlayClients the same way, then just add a listener here — never
      open its own EventSource. */
-  var relayCache = { match: null, mapselection: null, standings: null };
+  var relayCache = { match: null, mapselection: null, standings: null, theme: null };
   var relayIframeIds = {
     match:        ['matchboard-iframe', 'mapselection-iframe'], // Map Selection wants match/series changes too, instead of its own poll
     mapselection: ['mapselection-iframe'],
     standings:    ['standings-iframe'],
+    theme:        ['mapselection-iframe'], // Map Selection locks map picks to None during 10th Anniversary
   };
 
   function relaySend(channel, data, ok) {
@@ -2255,10 +2256,13 @@
   seedRelay('match', '/match/state');
   seedRelay('mapselection', '/mapselection/state');
   seedRelay('standings', '/standings/state');
+  seedRelay('theme', '/api/theme');
 
   dashboardSSE.addEventListener('theme', function (e) {
     var d = JSON.parse(e.data);
     if (THEME_VALUES.indexOf(d.theme) !== -1) applyThemeSelect(d.theme);
+    relayCache.theme = d;
+    relaySend('theme', d, true);
   });
 
   dashboardSSE.addEventListener('match', function (e) {
@@ -2279,7 +2283,7 @@
     } catch (err) {}
   });
   dashboardSSE.addEventListener('error', function () {
-    ['match', 'mapselection', 'standings'].forEach(function (ch) { relaySend(ch, relayCache[ch], false); });
+    ['match', 'mapselection', 'standings', 'theme'].forEach(function (ch) { relaySend(ch, relayCache[ch], false); });
   });
 
   // Bootstrap request: an iframe that just finished loading (and logging

@@ -1191,10 +1191,21 @@ router.get('/overlay/killevent', (req, res) => {
 //      never-revealed games entirely — per explicit request, there's
 //      no reason to make the caster click through every earlier
 //      game's recap just to reach a "picking sides for the game in
-//      progress" status card.
+//      progress" status card. ONLY for Regular/Playoffs though — this
+//      skip-ahead assumes .ms-sideonly's OLD single-replace-in-place
+//      behavior, where an un-revealed earlier NONE game is harmless to
+//      skip since it'd just get overwritten anyway. 10th Anniversary
+//      forces every game's map to 'NONE' (see server.js's
+//      /mapselection/action) and instead accumulates one persistent
+//      card per game index (html/mpltag.html's ensureSideOnlyBlock) —
+//      skipping ahead there permanently loses every skipped game's own
+//      card (it never gets its own reveal call), which is exactly the
+//      "Game 1 never shows once Game 2 is in progress" bug this guard
+//      fixes. Anniversary must always reveal strictly sequentially.
 // "hide" clears everything at once and resets both counters so the
 // next show cycle starts back at game 1.
 const mapSelectionState = require('../lib/mapSelectionState');
+const { getTheme } = require('../lib/theme');
 
 router.get('/overlay/mapselecttag-state', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json(state.mapSelectTag);
@@ -1223,7 +1234,7 @@ router.get('/overlay/mapselecttag/show', (req, res) => {
   // itself ready AND explicitly marked NONE; otherwise falls through
   // to the normal strictly-sequential nextIdx untouched.
   const currentIdx = (ms.currentGame || 1) - 1;
-  if (currentIdx > nextIdx && currentIdx < ms.maxGames) {
+  if (getTheme() !== '10th_anniversary' && currentIdx > nextIdx && currentIdx < ms.maxGames) {
     const currentGame = ms.games[currentIdx];
     const currentReady = currentGame && currentGame.tossWinner && currentGame.tossSide && currentGame.map;
     if (currentReady && currentGame.map === 'NONE') {

@@ -104,6 +104,7 @@ app.post('/standings/state', function (req, res) {
 // Map Selection state — coin toss / side / map / winner per game, own
 // dashboard tab. Same dashboard password as match/standings state.
 const mapSelectionState = require('./lib/mapSelectionState');
+const { getTheme } = require('./lib/theme');
 
 app.get('/mapselection/state', function (req, res) {
   res.json(mapSelectionState.get());
@@ -130,6 +131,12 @@ app.post('/mapselection/action', function (req, res) {
   if (!token || token !== getMatchPassword()) return res.status(401).json({ error: 'Unauthorized' });
   var action = body.action;
   var game   = body.game;
+  // During the 10th Anniversary theme, map selection is locked to 'NONE' —
+  // reject any other map pick server-side too, not just via the disabled
+  // dashboard buttons, so a stale tab or a direct API call can't bypass it.
+  if (action === 'map' && body.map !== 'NONE' && getTheme() === '10th_anniversary') {
+    return res.status(403).json({ error: 'Map selection is locked to None during the 10th Anniversary theme.' });
+  }
   switch (action) {
     case 'toss':   mapSelectionState.setToss(game, body.winner); break;
     case 'side':   mapSelectionState.setSide(game, body.side); break;

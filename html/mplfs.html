@@ -2048,8 +2048,14 @@
        badge and spell icon sit in the strip just above the name bar. */
     #ft-cards { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; z-index: 2; }
     .ft-card {
-      position: absolute; top: 320px; width: 183px; height: 650px;
+      position: absolute; top: 320px; width: 183px; height: 620px;
       overflow: hidden;
+      /* Crops 6px off each side (12px gap between adjacent columns, since
+         each card contributes 6px) — applies to every theme, purely a
+         layout crop, not a themed treatment. The extra middle-gap doubling
+         (24px between column 4 and 5) is a separate +12px shift applied to
+         the whole red side in ftBuildCardHtml, not part of this crop. */
+      clip-path: inset(0 6px);
     }
     .ft-card-hero {
       position: absolute;
@@ -2138,17 +2144,19 @@
       border-radius: 50%; object-fit: cover; z-index: 4;
     }
     .ft-card-name {
-      position: absolute; left: 0; top: 590px; width: 183px; height: 60px;
+      position: absolute; left: 0; top: 590px; width: 183px; height: 30px;
       display: flex; align-items: center; justify-content: center;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px; color: #fff;
       text-transform: uppercase; white-space: nowrap; z-index: 4;
     }
     .ft-card-name.ft-blue { background: #1656d5; }
     .ft-card-name.ft-red  { background: #d92027; }
-    /* 10th Anniversary — same anniversary gradient pair as the score
-       bar/role plate (see CLAUDE.md's Theme system section). */
-    [data-theme="10th_anniversary"] .ft-card-name.ft-blue { background: linear-gradient(to right, #ff465a, #ff8357); }
-    [data-theme="10th_anniversary"] .ft-card-name.ft-red  { background: linear-gradient(to right, #ffcb49, #ffcb49); }
+    /* 10th Anniversary — solid brand colors (no longer the shared
+       score-bar/role-plate gradient — see CLAUDE.md's Theme system
+       section for why this lives here, opt-in per theme, rather than on
+       the base rule above). */
+    [data-theme="10th_anniversary"] .ft-card-name.ft-blue { background: #0091f6; }
+    [data-theme="10th_anniversary"] .ft-card-name.ft-red  { background: #f83b51; }
     /* Role icon — square, white, on its own backing plate matching the
        name bar's own color (blue for home, red for away). */
     .ft-card-role {
@@ -2157,10 +2165,10 @@
     }
     .ft-card-role.ft-blue { left: 0px; background: #1656d5; }
     .ft-card-role.ft-red  { right: 0px; background: #d92027; }
-    /* 10th Anniversary — same anniversary gradient pair as the score
-       bar/name plate above. */
-    [data-theme="10th_anniversary"] .ft-card-role.ft-blue { background: linear-gradient(to right, #ff465a, #ff8357); }
-    [data-theme="10th_anniversary"] .ft-card-role.ft-red  { background: linear-gradient(to right, #ffcb49, #ffcb49); }
+    /* 10th Anniversary — solid brand colors, same pair as the name plate
+       above. */
+    [data-theme="10th_anniversary"] .ft-card-role.ft-blue { background: #0091f6; }
+    [data-theme="10th_anniversary"] .ft-card-role.ft-red  { background: #f83b51; }
     /* Filter goes on the icon itself, not the box — putting it on
        .ft-card-role would also whiten the colored background behind it. */
     .ft-card-role img { width: 70%; height: 70%; object-fit: contain; filter: brightness(0) invert(1); }
@@ -2774,10 +2782,39 @@
     .st-l2 { left: 1035px; }
     .st-l3 { left: 1303px; }
     .st-l4 { left: 1555px; }
+    /* Week-earned column labels (W1..W8) — same left values as the medal
+       columns below (.str-medal's left = (wk-1) * 60, .str-medals itself
+       at left:300 relative to .st-row), since #st-colheader and .st-row
+       share the same page-level left (see comment above stSyncColumnsToHeaders()) —
+       so a label here and its medal column line up with no extra offset. */
+    .st-wk-label {
+      position: absolute;
+      top: 0;
+      width: 44px; height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: #fff;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    .st-wk1 { left: 360px; }
+    .st-wk2 { left: 420px; }
+    .st-wk3 { left: 480px; }
+    .st-wk4 { left: 540px; }
+    .st-wk5 { left: 600px; }
+    .st-wk6 { left: 660px; }
+    .st-wk7 { left: 720px; }
+    .st-wk8 { left: 780px; }
     /* 10th Anniversary — brown/Semibold instead of white/Bold, for the
        text sitting on top of Standing_Header.png. */
     [data-theme="10th_anniversary"] .st-col-label,
-    [data-theme="10th_anniversary"] .st-lteam {
+    [data-theme="10th_anniversary"] .st-lteam,
+    [data-theme="10th_anniversary"] .st-wk-label {
       color: #6c4614;
       font-weight: 600;
     }
@@ -2790,6 +2827,23 @@
       font-family: 'General Sans', sans-serif;
     }
     .st-row .str-bg { position: absolute; top: 0; left: 0; width: 1803px; height: 71px; }
+    /* 10th Anniversary only — playoffs-bound status replaces the flat
+       Indicator_Secured/Eliminated badge (.str-status, Regular theme) with
+       the whole row pulsating between the normal box art and a
+       green/red-tinted variant instead. Stacked directly on top of
+       .str-bg at the same size/position and animated on its own opacity —
+       .str-bg itself never changes, so this is a pure crossfade, not a
+       src swap (which can't be animated/interpolated). */
+    .str-bg-pulse {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1803px; height: 71px;
+      animation: strBgPulse 1.6s ease-in-out infinite alternate;
+    }
+    @keyframes strBgPulse {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
     .str-move {
       position: absolute;
       left: 30px; top: 4px;
@@ -2818,29 +2872,68 @@
       justify-content: center;
     }
     .str-logo img { max-width: 54px; max-height: 54px; }
+    /* 8 fixed week columns (one per possible week, W1..W8) instead of a
+       packed row — a medal renders in the column for the week it was
+       actually earned (left = (wk-1) * 60, matching the .st-wk1..st-wk8
+       header labels' spacing above) instead of being left-packed in earned
+       order, so which week each medal belongs to is shown by its column
+       position under the matching W1..W8 header label rather than a label
+       under the medal itself. Pitch is 60 (54px icon + 6px gap) now that
+       the icons are bigger than the original 44px column width — each
+       icon is centered on its column (see .str-medal below), so it
+       overflows evenly left/right of the 44px box without touching its
+       neighbor. */
     .str-medals {
       position: absolute;
-      left: 300px; top: 5px;
-      height: 54px;
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
+      left: 360px; top: 5px;
+      width: 464px; height: 54px;
     }
     .str-medal {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      position: absolute;
+      top: 0;
       width: 44px;
+      display: flex;
+      justify-content: center;
     }
-    .str-medal-icon { width: 44px; height: 44px; display: block; }
-    .str-medal-wk {
+    /* Bigger than the 44px column width on purpose — centered via the
+       flex box above so it overflows evenly left/right of its column
+       instead of shifting off-center the way a plain block img would. */
+    .str-medal-icon { width: 54px; height: 54px; display: block; }
+    /* 10th Anniversary playoffs-bound pulse (see .str-bg-pulse above) —
+       while the row pulsates toward the green/red box, the medals fade
+       out and .str-status-text fades in over the same 464px column
+       (matching .str-medals' own left/top/width/height exactly), then
+       swap back as it pulsates back to the normal box. Same 1.6s
+       ease-in-out infinite alternate timing as strBgPulse so all three
+       animations stay in phase — they're started together by the same
+       buildStandings() innerHTML write, and never restarted independently. */
+    .str-medals.str-medals-pulsing {
+      animation: strMedalsFade 1.6s ease-in-out infinite alternate;
+    }
+    @keyframes strMedalsFade {
+      from { opacity: 1; }
+      to   { opacity: 0; }
+    }
+    .str-status-text {
+      position: absolute;
+      left: 360px; top: 5px;
+      width: 464px; height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-family: 'General Sans', sans-serif;
       font-weight: 700;
-      font-size: 13px;
-      line-height: 1;
-      color: #0a0a0a;
-      text-align: center;
-      margin-top: 2px;
+      font-size: 33px;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 0, 0, 0.55), 1px 1px 2px rgba(0, 0, 0, 0.5);
+      animation: strStatusTextFade 1.6s ease-in-out infinite alternate;
+    }
+    @keyframes strStatusTextFade {
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
     .str-tri {
       position: absolute;
@@ -5917,6 +6010,14 @@
       <div id="st-colheader">
         <span class="st-col-label st-l0">RANK</span>
         <span class="st-lteam">TEAM</span>
+        <span class="st-wk-label st-wk1">W1</span>
+        <span class="st-wk-label st-wk2">W2</span>
+        <span class="st-wk-label st-wk3">W3</span>
+        <span class="st-wk-label st-wk4">W4</span>
+        <span class="st-wk-label st-wk5">W5</span>
+        <span class="st-wk-label st-wk6">W6</span>
+        <span class="st-wk-label st-wk7">W7</span>
+        <span class="st-wk-label st-wk8">W8</span>
         <span class="st-col-label st-l1">MATCH POINT</span>
         <span class="st-col-label st-l2">MATCH W/L</span>
         <span class="st-col-label st-l3">GAME W/L</span>
@@ -10127,6 +10228,11 @@
     }
 
     const FT_CARD_W = 183, FT_MARGIN = 45;
+    /* Columns 0-4 are blue, 5-9 are red (see buildFtCards) — the crop
+       above already puts a 12px gap between every adjacent pair, so this
+       extra shift on the red side only is what doubles the middle gap
+       (4|5 boundary) to 24px without touching any other column gap. */
+    const FT_MID_GAP_EXTRA = 12;
 
     /* Reveal stagger — both the card wall's own fade-in AND (separately,
        see showFinalTeam) the hero webms' later fade-in converge outward->
@@ -10145,7 +10251,7 @@
        is always one of FT_ROLE_ORDER, guaranteed by the fixed column
        layout, so the role icon is never conditionally missing. */
     function ftBuildCardHtml(side, colIndex, roleKey, live) {
-      const left = FT_MARGIN + colIndex * FT_CARD_W;
+      const left = FT_MARGIN + colIndex * FT_CARD_W + (colIndex >= 5 ? FT_MID_GAP_EXTRA : 0);
       const ign  = (live && live.ign) || '';
       const heroSrc  = live && live.heroId ? ftHeroWebmUrl(live.heroId) : '';
       const spellSrc = live && live.skillId ? ftSpellUrl(live.skillId) : null;
@@ -11334,23 +11440,33 @@
 
     function buildStandings() {
       const root = document.getElementById('st-rows');
+      const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const moveImg   = { up: 'Standing_Up.png', down: 'Standing_Down.png', neutral: 'Standing_Neutral.png' };
       const statusImg = { secured: 'Indicator_Secured.png', eliminated: 'Indicator_Eliminated.png' };
+      const statusBoxImg = { secured: 'Team_BoxGreen.png', eliminated: 'Team_BoxRed.png' };
+      const statusTextLabel = { secured: 'PLAYOFFS SECURED', eliminated: 'PLAYOFFS ELIMINATED' };
       root.innerHTML = stTeams.map((t, i) => {
-        const status = statusImg[t.status]
+        const status = (!isAnniv && statusImg[t.status])
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
+        const bgPulse = (isAnniv && statusBoxImg[t.status])
+          ? `<img class="str-bg-pulse" src="${ST_ASSET}anniversary/${statusBoxImg[t.status]}" alt="">` : '';
+        const statusText = (isAnniv && statusTextLabel[t.status])
+          ? `<div class="str-status-text">${statusTextLabel[t.status]}</div>` : '';
         const medalFile  = { gold: 'mplgold.png', silver: 'mplsilver.png' };
         const medalIcons = (t.medals || []).map((m) =>
-          `<div class="str-medal">` +
+          `<div class="str-medal" style="left:${(m.wk - 1) * 60}px">` +
             `<img class="str-medal-icon" src="${ST_ASSET}${medalFile[m.type] || medalFile.gold}" alt="">` +
-            (m.wk ? `<div class="str-medal-wk">W${m.wk}</div>` : '') +
           `</div>`
         ).join('');
-        const medal = medalIcons ? `<div class="str-medals">${medalIcons}</div>` : '';
+        // Fades opposite the PLAYOFFS SECURED/ELIMINATED text above —
+        // same pulse-driven crossfade as .str-bg-pulse, just applied to
+        // the medals column instead of the whole row background.
+        const medalsPulsing = (isAnniv && statusBoxImg[t.status]) ? ' str-medals-pulsing' : '';
+        const medal = medalIcons ? `<div class="str-medals${medalsPulsing}">${medalIcons}</div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +
-          `<img class="str-bg" src="${stThemedAsset('Team_Box.png')}" alt="">` +
+          `<img class="str-bg" src="${stThemedAsset('Team_Box.png')}" alt="">` + bgPulse +
           `<div class="str-move"><img src="${ST_ASSET}${moveImg[t.move] || moveImg.neutral}" alt=""></div>` +
-          `<div class="str-rank">${i + 1}</div>` + medal +
+          `<div class="str-rank">${i + 1}</div>` + medal + statusText +
           `<div class="str-logo"><img src="/logos/${encodeURIComponent(t.tri)}.png" onerror="this.style.display='none'" alt=""></div>` +
           `<div class="str-tri">${t.tri}</div>` + status +
           `<div class="str-stat str-c1">${t.mp}</div>` +

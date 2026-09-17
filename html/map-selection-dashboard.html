@@ -178,6 +178,10 @@
   var token = sessionStorage.getItem('match_token') || '';
   var state = null;
   var MAPS = ['Broken Walls', 'Dangerous Grass', 'Expanding Rivers', 'Flying Cloud'];
+  // During the 10th Anniversary theme, map selection is locked to 'NONE' —
+  // see the Map step in buildGameCard() below. Relayed from dashboard.html
+  // (see connectSSE()), same pattern as 'match'/'mapselection'.
+  var currentTheme = 'regular';
 
   /* ── AUTH ── */
   function showApp()   { document.getElementById('login-wrap').style.display = 'none'; document.getElementById('app').classList.add('visible'); }
@@ -224,6 +228,7 @@
   function connectSSE() {
     connectRelay('mapselection', function (s) { state = s; render(); }, setSyncStatus);
     connectRelay('match', function () { loadState(); }, null);
+    connectRelay('theme', function (d) { currentTheme = (d && d.theme) || 'regular'; render(); }, null);
   }
 
   function setSyncStatus(ok) {
@@ -409,6 +414,7 @@
     // exactly the bug this shipped with once already. Same class as
     // the 4 real map buttons so it lines up with them, just with no
     // thumbnail (there's no art for "no map").
+    var annivLock = currentTheme === '10th_anniversary';
     var noneBtn = document.createElement('button');
     noneBtn.className = 'pick-btn map-btn' + (g.map === 'NONE' ? ' selected' : '');
     noneBtn.disabled = !g.tossSide;
@@ -416,10 +422,15 @@
     noneSpan.textContent = 'None';
     noneBtn.appendChild(noneSpan);
     noneBtn.addEventListener('click', function () { act('map', { game: g.game, map: 'NONE' }); });
+    // Real maps are blocked (not just visually — the server rejects a
+    // non-NONE pick too, see server.js's /mapselection/action) during the
+    // 10th Anniversary theme, which has no map-select art of its own —
+    // None is the only choice until the theme switches back.
     var mapBtns = [noneBtn].concat(MAPS.map(function (m) {
       var b = document.createElement('button');
       b.className = 'pick-btn map-btn' + (g.map === m ? ' selected' : '');
-      b.disabled = !g.tossSide;
+      b.disabled = !g.tossSide || annivLock;
+      if (annivLock) b.title = 'Map selection is locked to None during the 10th Anniversary theme.';
       var img = document.createElement('img');
       img.src = mapUrl(m);
       img.onerror = function () { img.style.display = 'none'; };
@@ -430,6 +441,12 @@
       return b;
     }));
     card.appendChild(buildStep('Map', mapBtns));
+    if (annivLock) {
+      var annivNote = document.createElement('div');
+      annivNote.className = 'upcoming-note';
+      annivNote.textContent = 'Map selection is locked to None during the 10th Anniversary theme.';
+      card.appendChild(annivNote);
+    }
 
     // Step 4 — winner
     card.appendChild(buildStep('Winner of Game ' + g.game, [

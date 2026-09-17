@@ -172,7 +172,18 @@
     }
     .ms-sidebox { z-index: 3; }
     .ms-mapbox-mask { left: 29px; top: 898px; width: 353px; height: 123px; z-index: 2; }
-    .ms-winbox-mask { left: 30px; top: 1020px; width: 139px; height: 31px; z-index: 1; }
+    /* Shared position for every map-selection win box — both the
+       regular real-map flow (ensureBlock) and the 10th Anniversary
+       accumulating side-only flow (ensureSideOnlyBlock) use this exact
+       same .ms-winbox-mask, by explicit request, so it's one position
+       maintained in one place rather than a per-flow override. */
+    .ms-winbox-mask {
+      left: 42px !important;
+      top: 997px !important;
+      width: 139px !important;
+      height: 31px !important;
+      z-index: 1;
+    }
 
     .ms-mapbox.ms-box-enter {
       opacity: 1;
@@ -561,6 +572,7 @@
   var MAPSEL_PAGE = document.getElementById('mapselect-page');
   var blocks = {}; // gameIndex -> { wrap, sidebox/mapbox/winbox, *Content, *text els, game }
   var pageOn = false;
+  function isAnniv() { return document.documentElement.getAttribute('data-theme') === '10th_anniversary'; }
 
   // Consecutive game blocks sit fully side-by-side (not stacked/overlapping):
   // block N's left edge is 20px past block (N-1)'s RIGHT edge, i.e. each
@@ -568,6 +580,18 @@
   var PANEL_WIDTH = 353;
   var PANEL_GAP   = 20;
   var STEP        = PANEL_WIDTH + PANEL_GAP;
+
+  // 10th Anniversary — every game's map is forced to the 'NONE' sentinel
+  // (see map-selection-dashboard.html/server.js), so the anniversary tag
+  // always takes the isNone branch below, but unlike Regular's single
+  // replace-in-place Side Selection card (per its own explicit-request
+  // comment), each game gets its OWN persistent card that accumulates
+  // left-to-right — same left-to-right history idea as .ms-gameblock
+  // above, just sized to .ms-sideonly's own wider 495px card instead of
+  // the 353px side/map column.
+  var sideOnlyBlocks = {}; // gameIndex -> { wrap, card, logo, label, sideText, gameText, winbox, winContent, winText, game }
+  var SIDEONLY_PANEL_WIDTH = 495;
+  var SIDEONLY_STEP        = SIDEONLY_PANEL_WIDTH + PANEL_GAP;
 
   function logoUrl(short)  { return '/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
   function mapIconUrl(name) { return '/maps/' + encodeURIComponent(name || '') + '.png'; }
@@ -797,6 +821,77 @@
     });
   }
 
+  /* ── 10th Anniversary — per-game accumulating Side Selection card ──
+     Same .ms-gameblock full-canvas wrapper + translateX offset as the
+     regular side+map+win blocks above, and the SAME .ms-winbox/
+     .ms-winbox-mask/.ms-win-text win banner (via the same boxWithContent()
+     helper, unmodified) for the winner — only the "map" box is skipped,
+     since there's no map to show. One persistent instance per gameIndex
+     (unlike the singleton ms-sideonly card above), so earlier games stay
+     on screen exactly like blocks{} does. */
+  function ensureSideOnlyBlock(gameIndex) {
+    if (sideOnlyBlocks[gameIndex]) return sideOnlyBlocks[gameIndex];
+
+    var wrap = document.createElement('div');
+    wrap.className = 'ms-gameblock';
+    wrap.style.transform = 'translateX(' + (gameIndex * SIDEONLY_STEP) + 'px)';
+
+    var card = document.createElement('div');
+    card.className = 'ms-sideonly';
+    var logo = document.createElement('img');
+    logo.className = 'ms-sideonly-logo';
+    logo.onerror = function () { logo.style.display = 'none'; };
+    var label = document.createElement('div');
+    label.className = 'ms-sideonly-label';
+    label.textContent = 'SIDE SELECTION';
+    var sideText = document.createElement('div');
+    sideText.className = 'ms-sideonly-side';
+    var gameText = document.createElement('div');
+    gameText.className = 'ms-sideonly-game';
+    card.appendChild(logo); card.appendChild(label); card.appendChild(sideText); card.appendChild(gameText);
+
+    var win = boxWithContent('ms-winbox', 'ms-winbox-mask');
+    var winText = document.createElement('div');
+    winText.className = 'ms-win-text';
+    win.content.appendChild(winText);
+
+    wrap.appendChild(card); wrap.appendChild(win.outer);
+    MAPSEL_PAGE.appendChild(wrap);
+
+    var rec = {
+      wrap: wrap, card: card, logo: logo, label: label, sideText: sideText, gameText: gameText,
+      winbox: win.box, winContent: win.content, winText: winText,
+    };
+    sideOnlyBlocks[gameIndex] = rec;
+    return rec;
+  }
+
+  /* Same fluid single-motion card reveal as revealSideOnly above, minus
+     the "reset to hidden first" step — this instance is brand new per
+     game index, never reused for a different game, so there's no stale
+     content to reset away from. Chains into the win banner's own
+     revealPhase() (same as ensureBlock's side→map→win chain) once the
+     card's own reveal finishes, if the winner is already known. */
+  function revealSideOnlyBlock(rec, instant) {
+    var els = [rec.card, rec.logo, rec.label, rec.sideText, rec.gameText];
+    if (instant) {
+      els.forEach(function (el) { el.classList.add('ms-no-anim'); el.classList.add('ms-sideonly-visible'); });
+      if (rec.game && rec.game.winner) revealPhaseInstant(rec.winbox, rec.winContent);
+      return;
+    }
+    void rec.card.offsetWidth; // force layout at the hidden entrance state before animating in (freshly-appended node, same idiom as revealPhase())
+    rec.card.classList.add('ms-sideonly-visible');
+    setTimeout(function () {
+      rec.logo.classList.add('ms-sideonly-visible');
+      rec.label.classList.add('ms-sideonly-visible');
+    }, CONTENT_DELAY);
+    setTimeout(function () {
+      rec.sideText.classList.add('ms-sideonly-visible');
+      rec.gameText.classList.add('ms-sideonly-visible');
+      if (rec.game && rec.game.winner) revealPhase(rec.winbox, rec.winContent, null);
+    }, CONTENT_DELAY + CONTENT_DURATION + PHASE_GAP);
+  }
+
   /* Hides every already-revealed game's normal block — "skip all
      previous games, just show the latest game in progress" — per
      explicit request, the Side Selection card fully replaces the
@@ -813,11 +908,26 @@
     if (!pageOn) { MAPSEL_PAGE.classList.add('ms-on'); pageOn = true; }
     // 'NONE' — this game's map hasn't been picked yet (an explicit
     // choice, not just "not set" — see the sentinel's own doc comment
-    // above .ms-sideonly). Show the alternate Side Selection card
-    // instead of the normal side+map+win sequence, and hide every
-    // other already-revealed game's block while it's up. Applies under
-    // every theme — this is not a cosmetic reskin.
+    // above .ms-sideonly). Regular/Playoffs: show the alternate Side
+    // Selection card instead of the normal side+map+win sequence, and
+    // hide every other already-revealed game's block while it's up (per
+    // explicit request, unchanged). 10th Anniversary: every game is
+    // 'NONE' (map choice is locked to it during that theme), so instead
+    // it gets its own accumulating per-game card, same left-to-right
+    // history as the normal blocks{} — see ensureSideOnlyBlock() above.
     if (game.map === 'NONE') {
+      if (isAnniv()) {
+        var annivRec = ensureSideOnlyBlock(gameIndex);
+        annivRec.game = game;
+        annivRec.logo.src = logoUrl(teamShort(game.tossWinner, homeTeam, awayTeam));
+        annivRec.sideText.textContent = (game.tossSide === 'red' ? 'RED' : 'BLUE') + ' SIDE';
+        annivRec.gameText.textContent = 'GAME ' + game.game;
+        annivRec.card.classList.remove('ms-sideonly-blue', 'ms-sideonly-red');
+        annivRec.card.classList.add(game.tossSide === 'red' ? 'ms-sideonly-red' : 'ms-sideonly-blue');
+        if (game.winner) populateWinBox(annivRec, game, homeTeam, awayTeam);
+        revealSideOnlyBlock(annivRec, instant);
+        return;
+      }
       hideAllGameblocks();
       var sideRec = ensureSideOnlyCard();
       sideRec.logo.src = logoUrl(teamShort(game.tossWinner, homeTeam, awayTeam));
@@ -840,8 +950,15 @@
   }
 
   function showWinner(gameIndex, game, homeTeam, awayTeam, instant) {
-    var rec = blocks[gameIndex];
-    if (!rec) return; // the side+map reveal should always precede this
+    // blocks[gameIndex] for a real-map game, sideOnlyBlocks[gameIndex] for
+    // a 10th Anniversary 'NONE' game — both record shapes carry the same
+    // winbox/winContent fields (see ensureBlock()/ensureSideOnlyBlock()),
+    // so revealWinOnly() below works unchanged either way. Regular's
+    // singleton NONE card has no per-index record at all and is
+    // intentionally not handled here — it never showed a winner before
+    // this change, and still doesn't.
+    var rec = blocks[gameIndex] || sideOnlyBlocks[gameIndex];
+    if (!rec) return; // the side+map (or side-only) reveal should always precede this
     rec.game = game;
     populateWinBox(rec, game, homeTeam, awayTeam);
     revealWinOnly(rec, instant);
@@ -856,6 +973,15 @@
         el.classList.remove('ms-box-visible', 'ms-content-visible');
       });
     });
+    Object.keys(sideOnlyBlocks).forEach(function (k) {
+      var rec = sideOnlyBlocks[k];
+      [rec.card, rec.logo, rec.label, rec.sideText, rec.gameText].forEach(function (el) {
+        el.classList.remove('ms-sideonly-visible');
+      });
+      [rec.winbox, rec.winContent].forEach(function (el) {
+        el.classList.remove('ms-box-visible', 'ms-content-visible');
+      });
+    });
     if (sideOnlyRec) {
       [sideOnlyRec.card, sideOnlyRec.logo, sideOnlyRec.label, sideOnlyRec.sideText, sideOnlyRec.gameText].forEach(function (el) {
         el.classList.remove('ms-sideonly-visible');
@@ -865,6 +991,7 @@
       MAPSEL_PAGE.classList.remove('ms-on');
       MAPSEL_PAGE.innerHTML = '';
       blocks = {};
+      sideOnlyBlocks = {};
       sideOnlyRec = null;
       sideOnlyVisible = false;
     }, 360);

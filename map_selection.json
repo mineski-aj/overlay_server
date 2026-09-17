@@ -7,25 +7,25 @@
       "homeSide": "blue",
       "awaySide": "red",
       "map": "NONE",
-      "winner": "away",
+      "winner": "home",
       "locked": true
     },
     {
       "game": 2,
-      "tossWinner": "away",
+      "tossWinner": "home",
       "tossSide": "red",
-      "homeSide": "blue",
-      "awaySide": "red",
+      "homeSide": "red",
+      "awaySide": "blue",
       "map": "NONE",
-      "winner": null,
-      "locked": false
+      "winner": "away",
+      "locked": true
     },
     {
       "game": 3,
       "tossWinner": "home",
-      "tossSide": "blue",
-      "homeSide": "blue",
-      "awaySide": "red",
+      "tossSide": "red",
+      "homeSide": "red",
+      "awaySide": "blue",
       "map": "NONE",
       "winner": null,
       "locked": false
