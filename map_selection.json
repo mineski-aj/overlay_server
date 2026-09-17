@@ -3,19 +3,19 @@
     {
       "game": 1,
       "tossWinner": "home",
-      "tossSide": "red",
-      "homeSide": "red",
-      "awaySide": "blue",
+      "tossSide": "blue",
+      "homeSide": "blue",
+      "awaySide": "red",
       "map": "NONE",
-      "winner": "home",
+      "winner": "away",
       "locked": true
     },
     {
       "game": 2,
-      "tossWinner": "home",
+      "tossWinner": "away",
       "tossSide": "red",
-      "homeSide": "red",
-      "awaySide": "blue",
+      "homeSide": "blue",
+      "awaySide": "red",
       "map": "NONE",
       "winner": null,
       "locked": false
@@ -26,7 +26,7 @@
       "tossSide": "blue",
       "homeSide": "blue",
       "awaySide": "red",
-      "map": "Broken Walls",
+      "map": "NONE",
       "winner": null,
       "locked": false
     },

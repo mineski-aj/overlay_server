@@ -1206,6 +1206,17 @@
       white-space: nowrap;
       color: var(--anniv-accent, #0a0a0a);
     }
+    /* 10th Anniversary only — white text + drop shadow instead of the
+       shared --anniv-accent brown, since this label sits on a busy
+       gradient/photo background (see screenshot) rather than the flat
+       plaques most --anniv-accent text sits on. A dedicated override here
+       rather than touching --anniv-accent itself, since that variable is
+       shared by many unrelated elements (sponsor labels, stat labels,
+       etc.) that should keep their normal brown. */
+    [data-theme="10th_anniversary"] #wl-timer-label-img {
+      color: #ffffff;
+      text-shadow: 0 3px 6px rgba(0, 0, 0, 0.75), 0 0 10px rgba(0, 0, 0, 0.45);
+    }
     #wl-timer-value {
       position: relative;
       width: 355px;
@@ -1272,12 +1283,16 @@
       visibility: visible;
       color: #000;
       -webkit-text-fill-color: #000;
-      /* Subtle — just enough separation from the busy background, not a
-         heavy black outline. Lower opacity + tighter blur than the
-         first pass. */
+      /* Ambient embossed glow (unchanged) plus a real directional drop
+         shadow underneath, for separation from the busy gradient
+         background (see screenshot) — the ambient-only glow wasn't
+         enough on its own. Shared by both Waiting TVC (#ws-timer-value)
+         and Waiting Lobby (#wl-timer-value), mirrored to ENTVC.html's
+         .ws-timer-glow. */
       text-shadow:
         0 0 6px rgba(0, 0, 0, 0.3),
-        0 0 14px rgba(0, 0, 0, 0.2);
+        0 0 14px rgba(0, 0, 0, 0.2),
+        0 4px 6px rgba(0, 0, 0, 0.5);
     }
     [data-theme="10th_anniversary"] .wl-timer-fill {
       background-image: linear-gradient(180deg, #ffeec4 0%, #fee7b6 50%, #f9d185 100%);
@@ -2852,15 +2867,17 @@
     }
     /* 10th Anniversary — white Anton, 10pt (this project's pasted-spec
        pt->px factor, 300/72 — same one used everywhere else in this file
-       for design-tool point sizes: 10 * 300/72 = 41.67px), plus the same
-       subtle glow as mploverlay_v7's white text (scoreboard stats, match
-       info, tricode, .pui-name). */
+       for design-tool point sizes: 10 * 300/72 = 41.67px). Stronger,
+       more directional drop shadow than the usual subtle glow (below the
+       glow strength every other .str-stat sibling started from) — the
+       row background is a busy gradient/pattern (see screenshot), so the
+       plain glow wasn't enough to keep these legible. */
     [data-theme="10th_anniversary"] .str-stat {
       font-family: 'Anton', sans-serif;
       font-weight: 400;
       font-size: 41.67px;
       color: #ffffff;
-      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.65), 0 0 8px rgba(0, 0, 0, 0.4);
     }
     .str-c1 { left: 768px; }
     .str-c2 { left: 1035px; }
@@ -9067,8 +9084,13 @@
       const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const gridColor = isAnniv ? '#ffffff' : '#9a9a9f';
       const gridWidth = isAnniv ? 3 : 2;
-      const blueColor = isAnniv ? '#0095fd' : '#1656d5';
-      const redColor  = isAnniv ? '#ff243e' : '#d92027';
+      /* Darker than the axis-label chips' own #0095fd/#ff243e (see
+         .th-axis-val-blue/-red above, unchanged) — those sit on flat
+         backgrounds and read fine bright; these two polygons sit directly
+         on the busy gradient scene background (see screenshot) and were
+         getting lost against it at the brighter shade. */
+      const blueColor = isAnniv ? '#0068c9' : '#1656d5';
+      const redColor  = isAnniv ? '#d1001f' : '#d92027';
       let grid = '';
       for (let ring = 1; ring <= 5; ring++) {
         const r = TH_R * ring / 5;
