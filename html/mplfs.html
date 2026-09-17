@@ -2808,10 +2808,25 @@
       left: 300px; top: 5px;
       height: 54px;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 6px;
     }
-    .str-medal-icon { width: 44px; height: 44px; }
+    .str-medal {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44px;
+    }
+    .str-medal-icon { width: 44px; height: 44px; display: block; }
+    .str-medal-wk {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      line-height: 1;
+      color: #0a0a0a;
+      text-align: center;
+      margin-top: 2px;
+    }
     .str-tri {
       position: absolute;
       left: 205px; top: 4px;
@@ -11304,7 +11319,10 @@
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
         const medalFile  = { gold: 'mplgold.png', silver: 'mplsilver.png' };
         const medalIcons = (t.medals || []).map((m) =>
-          `<img class="str-medal-icon" src="${ST_ASSET}${medalFile[m] || medalFile.gold}" alt="">`
+          `<div class="str-medal">` +
+            `<img class="str-medal-icon" src="${ST_ASSET}${medalFile[m.type] || medalFile.gold}" alt="">` +
+            (m.wk ? `<div class="str-medal-wk">W${m.wk}</div>` : '') +
+          `</div>`
         ).join('');
         const medal = medalIcons ? `<div class="str-medals">${medalIcons}</div>` : '';
         return `<div class="st-row" style="top:${Math.round(ST_ROW_TOP + i * ST_ROW_PITCH)}px">` +

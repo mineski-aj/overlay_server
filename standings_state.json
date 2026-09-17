@@ -9,9 +9,18 @@
       "gwl": "13-2",
       "ngw": 11,
       "medals": [
-        "silver",
-        "gold",
-        "gold"
+        {
+          "type": "silver",
+          "wk": 2
+        },
+        {
+          "type": "gold",
+          "wk": 3
+        },
+        {
+          "type": "gold",
+          "wk": 4
+        }
       ]
     },
     {
@@ -23,8 +32,14 @@
       "gwl": "13-5",
       "ngw": 8,
       "medals": [
-        "silver",
-        "silver"
+        {
+          "type": "silver",
+          "wk": 1
+        },
+        {
+          "type": "silver",
+          "wk": 4
+        }
       ]
     },
     {
@@ -36,9 +51,18 @@
       "gwl": "11-6",
       "ngw": 5,
       "medals": [
-        "gold",
-        "gold",
-        "silver"
+        {
+          "type": "gold",
+          "wk": 1
+        },
+        {
+          "type": "gold",
+          "wk": 2
+        },
+        {
+          "type": "silver",
+          "wk": 3
+        }
       ]
     },
     {
