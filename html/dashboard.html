@@ -4384,10 +4384,16 @@
        — left/top are LOCAL offsets against #ws-timer's own box, not canvas
        coordinates (matches exactly where the old flex layout put it). */
     '#ws-timer-value':    { left: 180, top: 0, fontSize: 130 },
+    /* Canvas-absolute (not a child of #ws-timer's box, unlike the two
+       above) — same selector/CSS box in both mplfs.html and ENTVC.html,
+       so this one entry edits both via the shared 'mplfs' styleFile
+       bucket, no separate ENTVC config needed. */
+    '#ws-timer-countdown-label': { left: 1262, top: 121, width: 143, height: 59, fontSize: 21 },
   };
   var WS_TIMER_ELEMENTS = [
-    { group: 'Countdown Label', id: '#ws-timer-label-bg', name: 'Container Background' },
-    { group: 'Countdown Timer', id: '#ws-timer-value',    name: 'Countdown Timer'       },
+    { group: 'Countdown Label',      id: '#ws-timer-label-bg',          name: 'Container Background' },
+    { group: 'Countdown Timer',      id: '#ws-timer-value',             name: 'Countdown Timer'       },
+    { group: 'Show Starts In Text',  id: '#ws-timer-countdown-label',   name: 'Show Starts In Text'   },
   ];
 
   /* ── Today's / Tomorrow's Schedule — per-match-count layout ───────
