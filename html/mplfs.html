@@ -3978,10 +3978,20 @@
     /* 10th Anniversary — "PLAYER HEATMAP" title, white with the same
        subtle glow used for every other white-on-video text this theme
        adds elsewhere in this file (MVP Highlights title, scoreboard
-       stats, tricode, etc.), so it lifts off annivloopwavesnosun.webm. */
+       stats, tricode, etc.), so it lifts off annivloopwavesnosun.webm.
+       Drop shadow deepened twice now (bigger blur + offset each time)
+       and the title recentered above the map box's top edge (.hm-map-box:
+       left 60px, width 740px → center x 430px; #hm-title is 641px wide,
+       so left 110px centers it on that same 430px), then nudged 5px
+       right of that centered position per a follow-up request — all
+       10th Anniversary only, Regular keeps its original left-aligned
+       placement. */
     [data-theme="10th_anniversary"] #hm-title {
       color: #ffffff;
-      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+      text-shadow: 0 0 16px rgba(0, 0, 0, 0.6), 3px 3px 5px rgba(0, 0, 0, 0.65);
+      left: 115px;
+      justify-content: center;
+      text-align: center;
     }
 
     /* Independently positioned/sized top-level pieces — each can be
