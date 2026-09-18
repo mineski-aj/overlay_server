@@ -2019,11 +2019,12 @@
     .ft-score-bar { width: 9px; height: 100%; background: #3a3a3a; flex-shrink: 0; }
     .ft-teambox-blue .ft-score-bar.filled { background: #1E64FF; }
     .ft-teambox-red  .ft-score-bar.filled { background: #FF3232; }
-    /* 10th Anniversary — flat brand blue/red replaced with the
-       anniversary gradient pair, per explicit request (applies to every
-       blue/red accent on this scene, not just this bar). */
-    [data-theme="10th_anniversary"] .ft-teambox-blue .ft-score-bar.filled { background: linear-gradient(to right, #ff465a, #ff8357); }
-    [data-theme="10th_anniversary"] .ft-teambox-red  .ft-score-bar.filled { background: linear-gradient(to right, #ffcb49, #ffcb49); }
+    /* 10th Anniversary — score bar now matches the Match Board's own
+       10th Anniversary score bar colors exactly (#mb-camp1/#mb-camp2
+       .mb-score-bar.scored below), replacing the earlier anniversary
+       gradient pair, per explicit request. */
+    [data-theme="10th_anniversary"] .ft-teambox-blue .ft-score-bar.filled { background: #0094fb; }
+    [data-theme="10th_anniversary"] .ft-teambox-red  .ft-score-bar.filled { background: #ff243e; }
 
     /* Match bar — bicolor strip between the team boxes and the card row;
        shows which match this lineup is for (dashboard Match Board state). */
@@ -7852,6 +7853,7 @@
       '10th_anniversary': {
         'TodayMatches.png':          'anniversary/TodayMatches.png',
         'MatchBox_REGULAR MATCH.png': 'anniversary/MatchBox_REGULAR MATCH.png',
+        'MatchBox_EPIC RIVALRY.png': 'anniversary/MatchBox_EPIC RIVALRY.png',
         'HOST_BOXv1.png':            'anniversary/HOST_BOXv1.png',
         'CASTER_BOXv1.png':          'anniversary/CASTER_BOXv1.png',
         'NAMEBOX.png':               'anniversary/NAMEBOX.png',
