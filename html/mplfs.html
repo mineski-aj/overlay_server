@@ -2134,6 +2134,11 @@
     }
     [data-theme="10th_anniversary"] .ft-card-fader.ft-blue { background: #ff465a; }
     [data-theme="10th_anniversary"] .ft-card-fader.ft-red  { background: #ffac50; }
+    /* Base position/size shared by every photo — each of the 10 also
+       gets its own id (#ft-photo-0..9, set in ftBuildCardHtml) so its
+       `left` alone can be nudged individually from the dashboard Edit
+       tab (FT_ELEMENTS/FT_DEFAULTS) to compensate for a given photo's
+       own off-center framing, without moving any other card. */
     .ft-card-photo {
       position: absolute; left: 0; top: 210px; width: 183px; height: 380px;
       object-fit: cover; object-position: 50% 15%; z-index: 3;
@@ -2173,6 +2178,11 @@
     /* Filter goes on the icon itself, not the box — putting it on
        .ft-card-role would also whiten the colored background behind it. */
     .ft-card-role img { width: 70%; height: 70%; object-fit: contain; filter: brightness(0) invert(1); }
+    /* 10th Anniversary only — blue side's role icon nudged 2px right,
+       red side's nudged 2px left, both within their own plate, per
+       explicit request; Regular theme is untouched. */
+    [data-theme="10th_anniversary"] .ft-card-role.ft-blue img { position: relative; left: 2px; }
+    [data-theme="10th_anniversary"] .ft-card-role.ft-red  img { position: relative; left: -2px; }
 
     /* ── TEAM LINE-UP PAGES ──
        Two independent fullscreen instances (Blue = home team, Red = away
@@ -10280,7 +10290,7 @@
         (heroSrc  ? `<video class="ft-card-hero" src="${heroSrc}" loop muted playsinline preload="auto"></video>` : '') +
         `<div class="ft-card-rest" style="--ft-delay:${ftStaggerDelayMs(colIndex)}ms;">` +
         `<img class="ft-card-fader ft-${side}" src="/assets/finalteam/finalfader.png" alt="">` +
-        (photoSrc ? `<img class="ft-card-photo" src="${photoSrc}" alt="" onerror="this.style.display='none'">` : '') +
+        (photoSrc ? `<img class="ft-card-photo" id="ft-photo-${colIndex}" src="${photoSrc}" alt="" onerror="this.style.display='none'">` : '') +
         (spellSrc ? `<img class="ft-card-spell" src="${spellSrc}" alt="" onerror="this.style.display='none'">` : '') +
         `<div class="ft-card-name ft-${side}">${ign}</div>` +
         `<div class="ft-card-role ft-${side}"><img src="${roleSrc}" alt="" onerror="this.parentElement.style.display='none'"></div>` +
@@ -11422,7 +11432,8 @@
        (GET /standings/state + SSE /standings/events). ST_TEAMS is only the
        fallback when the server has no standings state yet.
        move:   'up' | 'down' | 'neutral'   (rank movement arrow)
-       status: null | 'secured' | 'eliminated' (playoffs chip on the team box) */
+       status: null | 'secured' | 'eliminated' | 'redzone' (playoffs chip on
+       the team box; 'redzone' is eliminated's red pulse with no caption) */
     const ST_ASSET = '/assets/Standings/';
     /* 10th Anniversary only replaced Team_Box.png here (Indicator_*,
        mplgold/silver, Standing_Up/Down/Neutral have no anniversary
@@ -11455,7 +11466,15 @@
       const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const moveImg   = { up: 'Standing_Up.png', down: 'Standing_Down.png', neutral: 'Standing_Neutral.png' };
       const statusImg = { secured: 'Indicator_Secured.png', eliminated: 'Indicator_Eliminated.png' };
-      const statusBoxImg = { secured: 'Team_BoxGreen.png', eliminated: 'Team_BoxRed.png' };
+      /* 'redzone' shares eliminated's red pulse box art (same blinker,
+         same medals-fade-out) but is deliberately absent from
+         statusTextLabel below — no "PLAYOFFS ELIMINATED"-style caption,
+         per explicit request. It's also absent from statusImg above:
+         Regular theme has no non-text red indicator asset to show, so a
+         redzone team renders with no status badge at all under Regular
+         (10th Anniversary's pulsing row background is the only
+         "blinker" this codebase has). */
+      const statusBoxImg = { secured: 'Team_BoxGreen.png', eliminated: 'Team_BoxRed.png', redzone: 'Team_BoxRed.png' };
       const statusTextLabel = { secured: 'PLAYOFFS SECURED', eliminated: 'PLAYOFFS ELIMINATED' };
       root.innerHTML = stTeams.map((t, i) => {
         const status = (!isAnniv && statusImg[t.status])
@@ -11771,7 +11790,18 @@
         syncBoard('matchboard', true);
         showMatchBoard();
         if (newFeature === 'timeline') await hideBeforeTimeline();
-        else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') { /* own player photos already shown; skip middle/player board */ }
+        else if (newFeature === 'consolidated_post' || newFeature === 'consolidated_post_2') {
+          /* Own player photos already shown, so middle/player board are
+             never SHOWN for these — but must still be actively hidden in
+             case they're still on from a prior Post scene (e.g. Post
+             Hearts -> Consolidated Post 2), same reasoning as the
+             post4key/post_h2h branch below. Previously a no-op here, which
+             left middle/playerboard stuck visible across that exact
+             transition. */
+          syncBoard('middleboard', false);
+          syncBoard('playerboard', false);
+          hideMiddleBoard(); hidePlayerBoard();
+        }
         else if (newFeature === 'post4key' || newFeature === 'post_h2h') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);

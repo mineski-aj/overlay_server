@@ -65,7 +65,7 @@ function sgdcFindRoleByName(name) {
    resolved either way, so the caller can leave the <img> with no src
    instead of showing a broken-image icon. */
 function sgdcRoleIconSrc(role, camp1, camp2) {
-  let label = SGDC_ROLE_SHORT_LABEL[role];
+  let label = SGDC_ROLE_SHORT_LABEL[role] || SGDC_ROLE_LABEL[role];
   if (!label) {
     const crossRole = sgdcFindRoleByName(camp1 && camp1.name) || sgdcFindRoleByName(camp2 && camp2.name);
     label = crossRole && SGDC_ROLE_LABEL[crossRole];

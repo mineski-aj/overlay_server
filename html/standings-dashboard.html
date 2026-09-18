@@ -329,7 +329,7 @@
       row.appendChild(tri);
 
       var st = document.createElement('select');
-      [['', 'None'], ['secured', 'Playoffs Bound'], ['eliminated', 'Eliminated']].forEach(function (o) {
+      [['', 'None'], ['secured', 'Playoffs Bound'], ['eliminated', 'Eliminated'], ['redzone', 'Redzone']].forEach(function (o) {
         var opt = document.createElement('option');
         opt.value = o[0]; opt.textContent = o[1];
         st.appendChild(opt);

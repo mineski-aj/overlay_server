@@ -4484,6 +4484,19 @@
     '.st-l4':        { left: 1555, top: 0,  width: 260,  height: 27 },
     '#st-rows':      { left: 0,    top: 0,   width: 1920, height: 1080 },
     '.str-medals':   { visible: true },
+    /* W1-W8 header labels (.st-wk-label, shared class across all 8 —
+       one row edits all of them at once, same idiom as .wlm-label/
+       .tsm-label elsewhere). Selector itself is theme-scoped
+       ([data-theme="10th_anniversary"] baked into the key, not just
+       into which overlay_styles.json bucket it happens to save under)
+       so the generated !important CSS rule can only ever match while
+       10th Anniversary is the active theme, regardless of which theme
+       was selected at the moment this was edited — per explicit
+       request, Regular's plain .st-wk-label 14px stays untouched and
+       non-editable. Default (14) matches the current unedited look
+       under both themes, so adding this entry changes nothing until
+       actually adjusted. */
+    '[data-theme="10th_anniversary"] .st-wk-label': { fontSize: 14 },
   };
   var ST_ELEMENTS = [
     { group: 'Header',    id: '#st-header',    name: 'Title / Season / Week' },
@@ -4496,6 +4509,7 @@
     { group: 'Net Game Win Label', id: '.st-l4',  name: 'Net Game Win Label (within bar)' },
     { group: 'Body',   id: '#st-rows',      name: 'Team Rows'             },
     { group: 'Medal',  id: '.str-medals',   name: 'Medallions (gold/silver row)' },
+    { group: 'Week Labels', id: '[data-theme="10th_anniversary"] .st-wk-label', name: 'Week Columns W1-W8 Text Size (10th Anniversary)' },
   ];
 
   /* ── Map bug (Draft.html) — same box as mploverlay_v7's ingame
@@ -4975,14 +4989,41 @@
   ];
 
   /* ── Final Team (mplfs.html) element defaults ────────────────────
-     Only the MPL logo between the two team boxes is individually
-     editable for now — the rest of the scene (team boxes, cards) isn't
-     wired into the Edit tab yet. */
+     MPL logo + the 10 card wall photos. Columns are fixed (see
+     FT_ROLE_ORDER/buildFtCards in mplfs.html): blue is EXP/JUNGLE/MID/
+     ROAM/GOLD left-to-right (cols 0-4), red mirrors it GOLD/ROAM/MID/
+     JUNGLE/EXP (cols 5-9, gold nearest center on both sides). Each
+     photo (#ft-photo-0..9, set in ftBuildCardHtml) is left-only —
+     `top` is intentionally absent so dragging/nudging is locked to
+     horizontal, since the ask was purely to pan a photo's own
+     off-center framing left/right within its fixed card, not move it
+     vertically. Own group per photo (not paired) since each needs a
+     different nudge depending on that individual player's photo. */
   var FT_DEFAULTS = {
     '#ft-mpl-logo': { left: 885, top: 84, width: 150, height: 150 },
+    '#ft-photo-0': { left: 0 },
+    '#ft-photo-1': { left: 0 },
+    '#ft-photo-2': { left: 0 },
+    '#ft-photo-3': { left: 0 },
+    '#ft-photo-4': { left: 0 },
+    '#ft-photo-5': { left: 0 },
+    '#ft-photo-6': { left: 0 },
+    '#ft-photo-7': { left: 0 },
+    '#ft-photo-8': { left: 0 },
+    '#ft-photo-9': { left: 0 },
   };
   var FT_ELEMENTS = [
     { group: 'MPL Logo', id: '#ft-mpl-logo', name: 'MPL Logo' },
+    { group: 'Blue EXP Photo',    id: '#ft-photo-0', name: 'Blue EXP Photo' },
+    { group: 'Blue Jungle Photo', id: '#ft-photo-1', name: 'Blue Jungle Photo' },
+    { group: 'Blue Mid Photo',    id: '#ft-photo-2', name: 'Blue Mid Photo' },
+    { group: 'Blue Roam Photo',   id: '#ft-photo-3', name: 'Blue Roam Photo' },
+    { group: 'Blue Gold Photo',   id: '#ft-photo-4', name: 'Blue Gold Photo' },
+    { group: 'Red Gold Photo',    id: '#ft-photo-5', name: 'Red Gold Photo' },
+    { group: 'Red Roam Photo',    id: '#ft-photo-6', name: 'Red Roam Photo' },
+    { group: 'Red Mid Photo',     id: '#ft-photo-7', name: 'Red Mid Photo' },
+    { group: 'Red Jungle Photo',  id: '#ft-photo-8', name: 'Red Jungle Photo' },
+    { group: 'Red EXP Photo',     id: '#ft-photo-9', name: 'Red EXP Photo' },
   ];
 
   /* ── Credit Reel (mplfs.html) element defaults ───────────────────
