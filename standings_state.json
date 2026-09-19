@@ -1,13 +1,32 @@
 {
   "teams": [
     {
-      "tri": "TLPH",
-      "move": "neutral",
+      "tri": "FLCN",
+      "move": "up",
       "status": null,
       "mp": 7,
       "mwl": "7-1",
-      "gwl": "15-3",
-      "ngw": 12,
+      "gwl": "15-5",
+      "ngw": 10,
+      "medals": [
+        {
+          "type": "silver",
+          "wk": 1
+        },
+        {
+          "type": "silver",
+          "wk": 4
+        }
+      ]
+    },
+    {
+      "tri": "TLPH",
+      "move": "down",
+      "status": null,
+      "mp": 7,
+      "mwl": "7-2",
+      "gwl": "15-5",
+      "ngw": 10,
       "medals": [
         {
           "type": "silver",
@@ -19,25 +38,6 @@
         },
         {
           "type": "gold",
-          "wk": 4
-        }
-      ]
-    },
-    {
-      "tri": "FLCN",
-      "move": "neutral",
-      "status": null,
-      "mp": 6,
-      "mwl": "6-1",
-      "gwl": "13-5",
-      "ngw": 8,
-      "medals": [
-        {
-          "type": "silver",
-          "wk": 1
-        },
-        {
-          "type": "silver",
           "wk": 4
         }
       ]
@@ -67,17 +67,17 @@
     },
     {
       "tri": "RORA",
-      "move": "up",
+      "move": "neutral",
       "status": null,
-      "mp": 4,
-      "mwl": "4-4",
-      "gwl": "10-8",
-      "ngw": 2,
+      "mp": 5,
+      "mwl": "5-4",
+      "gwl": "12-8",
+      "ngw": 4,
       "medals": []
     },
     {
       "tri": "OMG",
-      "move": "down",
+      "move": "neutral",
       "status": null,
       "mp": 4,
       "mwl": "4-4",
@@ -90,19 +90,19 @@
       "move": "neutral",
       "status": null,
       "mp": 3,
-      "mwl": "3-5",
-      "gwl": "9-12",
-      "ngw": -3,
+      "mwl": "3-6",
+      "gwl": "9-14",
+      "ngw": -5,
       "medals": []
     },
     {
       "tri": "APBR",
       "move": "neutral",
       "status": null,
-      "mp": 1,
-      "mwl": "1-6",
-      "gwl": "4-13",
-      "ngw": -9,
+      "mp": 2,
+      "mwl": "2-6",
+      "gwl": "6-13",
+      "ngw": -7,
       "medals": []
     },
     {
@@ -110,9 +110,9 @@
       "move": "neutral",
       "status": null,
       "mp": 0,
-      "mwl": "0-7",
-      "gwl": "2-14",
-      "ngw": -12,
+      "mwl": "0-8",
+      "gwl": "2-16",
+      "ngw": -14,
       "medals": []
     }
   ]
