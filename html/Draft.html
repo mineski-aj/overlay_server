@@ -1535,6 +1535,29 @@
     return document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   }
 
+  /* Star match backgrounds (Epic Rivalry, Enduring Legacy, etc. — see
+     html/match-dashboard.html's MATCH_TYPES for the full label list) —
+     same suffix convention as the asset filenames on disk
+     (assets/draft/draftbg_<SUFFIX>.png / assets/draft/anniversary/
+     draftbg_<SUFFIX>.png). Not every matchType has art in every theme
+     (or at all yet) — resolved at runtime via Image() preload (this is a
+     CSS background-image, not an <img>, so onerror isn't usable directly)
+     rather than a hardcoded whitelist, so a newly-dropped-in asset just
+     works with no code change, and a missing one silently falls back to
+     the plain themed background instead of a broken image. */
+  var STAR_MATCH_SUFFIX = {
+    epic: 'EPIC RIVALRY', international: 'INTERNATIONAL RIVALRY',
+    golden: 'GOLDEN RIVALRY', clash: 'CLASH OF TITANS', enduring: 'ENDURING LEGACY',
+  };
+  function setBgWithFallback(el, primaryUrl, fallbackUrl) {
+    if (!el) return;
+    if (primaryUrl === fallbackUrl) { el.style.backgroundImage = "url('" + fallbackUrl + "')"; return; }
+    var probe = new Image();
+    probe.onload  = function () { el.style.backgroundImage = "url('" + primaryUrl + "')"; };
+    probe.onerror = function () { el.style.backgroundImage = "url('" + fallbackUrl + "')"; };
+    probe.src = primaryUrl;
+  }
+
   var DEFAULT_URL = window.location.protocol + '//' + window.location.hostname + ':5001/api/gamedata';
   var STORAGE_KEY = 'draft_overlay_api_url';
   var POLL_MS     = 1000;
@@ -2139,16 +2162,20 @@
           }
         }
 
-        /* #scene background — only Enduring Legacy has its own draftbg
-           variant (the other rivalry types only have Waiting TVC/Lobby
-           art), so every other matchType keeps the normal art. 10th
-           Anniversary has no Enduring Legacy variant of its own, so it
-           always uses its one draftbg.png regardless of matchType. */
-        var curMatch  = (s.todayMatches || [])[(s.match || 1) - 1];
+        /* #scene background — a star match (Epic Rivalry, Enduring
+           Legacy, etc.) uses its own draftbg variant when one exists for
+           the active theme, checked at runtime (see setBgWithFallback
+           above) rather than hardcoded per matchType, so this covers
+           both Regular's and 10th Anniversary's assets/draft(/anniversary)/
+           folders uniformly and falls back to the plain themed
+           background if that matchType has no art for this theme. */
+        var curMatch   = (s.todayMatches || [])[(s.match || 1) - 1];
         var isEnduring = curMatch && curMatch.matchType === 'enduring';
-        scene.style.backgroundImage = isAnniversaryTheme()
-          ? "url('assets/draft/anniversary/draftbg.png')"
-          : "url('assets/draft/" + (isEnduring ? 'draftbg_ENDURING LEGACY.png' : 'draftbg.png') + "')";
+        var draftBase  = 'assets/draft/' + (isAnniversaryTheme() ? 'anniversary/' : '');
+        var draftPlain = draftBase + 'draftbg.png';
+        var starSuffix = curMatch && STAR_MATCH_SUFFIX[curMatch.matchType];
+        var draftStar  = starSuffix ? draftBase + 'draftbg_' + starSuffix + '.png' : draftPlain;
+        setBgWithFallback(scene, draftStar, draftPlain);
 
         /* #team-c1/#team-c2 sit directly on that background's gold panel
            in the Enduring Legacy art (white elsewhere), so they need to

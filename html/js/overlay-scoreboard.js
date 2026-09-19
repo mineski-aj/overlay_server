@@ -1,5 +1,26 @@
 /* ── [FEATURE: scoreboard] — always-on ingame scoreboard overlay ── */
 
+/* Star match backgrounds (Epic Rivalry, Enduring Legacy, etc. — see
+   html/match-dashboard.html's MATCH_TYPES for the full label list) —
+   same suffix convention as the asset filenames on disk
+   (assets/ingame/ingamepng2_<SUFFIX>.png / assets/ingame/anniversary/
+   ingamepng2_<SUFFIX>.png). Not every matchType has art in every theme
+   (or at all yet) — resolved at runtime via #scoreboard-bg's own onerror
+   (it's a real <img>, unlike Draft.html's CSS-background #scene) rather
+   than a hardcoded whitelist, so a newly-dropped-in asset just works
+   with no code change, and a missing one silently falls back to the
+   plain themed background instead of a broken image. */
+var STAR_MATCH_SUFFIX = {
+  epic: 'EPIC RIVALRY', international: 'INTERNATIONAL RIVALRY',
+  golden: 'GOLDEN RIVALRY', clash: 'CLASH OF TITANS', enduring: 'ENDURING LEGACY',
+};
+function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
+  if (!imgEl) return;
+  if (primarySrc === fallbackSrc) { imgEl.onerror = null; imgEl.src = fallbackSrc; return; }
+  imgEl.onerror = function () { imgEl.onerror = null; imgEl.src = fallbackSrc; };
+  imgEl.src = primarySrc;
+}
+
 (function buildScoreboard() {
   var overlay = document.createElement('div');
   overlay.id = 'scoreboard-overlay';
@@ -595,30 +616,30 @@ function sbPollMatchState() {
         }
       }
 
-      /* scoreboard background — only Enduring Legacy has its own
-         ingamepng2 variant (the other rivalry types only have Waiting
-         TVC/Lobby art), so every other matchType keeps the normal art.
-         10th Anniversary has no Enduring Legacy variant of its own, so it
-         always uses its one ingamepng2.png regardless of matchType (same
-         precedence as Draft.html's #scene background). */
-      var curMatch   = (s.todayMatches || [])[(s.match || 1) - 1];
-      var isEnduring = curMatch && curMatch.matchType === 'enduring';
-      var sbBg = document.getElementById('scoreboard-bg');
-      if (sbBg) {
-        sbBg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
-          ? 'assets/ingame/anniversary/ingamepng2.png'
-          : (isEnduring ? 'assets/ingame/ingamepng2_ENDURING LEGACY.png' : 'assets/ingame/ingamepng2.png');
-      }
+      /* scoreboard background — a star match (Epic Rivalry, Enduring
+         Legacy, etc.) uses its own ingamepng2 variant when one exists for
+         the active theme, checked at runtime (see sbSetImgWithFallback
+         above) rather than hardcoded per matchType, so this covers both
+         Regular's and 10th Anniversary's assets/ingame(/anniversary)/
+         folders uniformly and falls back to the plain themed background
+         if that matchType has no art for this theme. */
+      var curMatch    = (s.todayMatches || [])[(s.match || 1) - 1];
+      var isEnduring  = curMatch && curMatch.matchType === 'enduring';
+      var isAnniv     = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      var ingameBase  = 'assets/ingame/' + (isAnniv ? 'anniversary/' : '');
+      var ingamePlain = ingameBase + 'ingamepng2.png';
+      var starSuffix  = curMatch && STAR_MATCH_SUFFIX[curMatch.matchType];
+      var ingameStar  = starSuffix ? ingameBase + 'ingamepng2_' + starSuffix + '.png' : ingamePlain;
+      sbSetImgWithFallback(document.getElementById('scoreboard-bg'), ingameStar, ingamePlain);
 
       /* #scoreboard-tricode-c1/c2 sit directly on that background's gold
          panel in the Enduring Legacy art (white elsewhere) — flip color
          now for whatever text is already there, and record the flag for
          registerPollHandler below (which is what actually keeps the
          tricode text up to date). 10th Anniversary never shows that gold
-         panel (see the sbBg.src branch above), so it stays white here
+         panel (see the ingameBase branch above), so it stays white here
          regardless of matchType — flipping it black would leave black
          text with no gold panel under it. */
-      var isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       sbIsEnduring = isEnduring && !isAnniv;
       var triC1 = document.getElementById('scoreboard-tricode-c1');
       var triC2 = document.getElementById('scoreboard-tricode-c2');
