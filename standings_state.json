@@ -1,8 +1,35 @@
 {
   "teams": [
     {
-      "tri": "FLCN",
+      "tri": "TLPH",
       "move": "up",
+      "status": "secured",
+      "mp": 8,
+      "mwl": "8-2",
+      "gwl": "17-5",
+      "ngw": 12,
+      "medals": [
+        {
+          "type": "silver",
+          "wk": 2
+        },
+        {
+          "type": "gold",
+          "wk": 3
+        },
+        {
+          "type": "gold",
+          "wk": 4
+        },
+        {
+          "type": "gold",
+          "wk": 5
+        }
+      ]
+    },
+    {
+      "tri": "FLCN",
+      "move": "down",
       "status": null,
       "mp": 7,
       "mwl": "7-1",
@@ -16,29 +43,10 @@
         {
           "type": "silver",
           "wk": 4
-        }
-      ]
-    },
-    {
-      "tri": "TLPH",
-      "move": "down",
-      "status": null,
-      "mp": 7,
-      "mwl": "7-2",
-      "gwl": "15-5",
-      "ngw": 10,
-      "medals": [
+        },
         {
           "type": "silver",
-          "wk": 2
-        },
-        {
-          "type": "gold",
-          "wk": 3
-        },
-        {
-          "type": "gold",
-          "wk": 4
+          "wk": 5
         }
       ]
     },
@@ -46,10 +54,10 @@
       "tri": "ONIC",
       "move": "neutral",
       "status": null,
-      "mp": 5,
-      "mwl": "5-2",
-      "gwl": "11-6",
-      "ngw": 5,
+      "mp": 6,
+      "mwl": "6-2",
+      "gwl": "13-7",
+      "ngw": 6,
       "medals": [
         {
           "type": "gold",
@@ -80,9 +88,9 @@
       "move": "neutral",
       "status": null,
       "mp": 4,
-      "mwl": "4-4",
-      "gwl": "9-12",
-      "ngw": -3,
+      "mwl": "4-5",
+      "gwl": "9-14",
+      "ngw": -5,
       "medals": []
     },
     {
@@ -100,9 +108,9 @@
       "move": "neutral",
       "status": null,
       "mp": 2,
-      "mwl": "2-6",
-      "gwl": "6-13",
-      "ngw": -7,
+      "mwl": "2-7",
+      "gwl": "7-15",
+      "ngw": -8,
       "medals": []
     },
     {

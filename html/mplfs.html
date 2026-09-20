@@ -15715,8 +15715,9 @@
       const files = pbPhotoManifest[pose] || [];
       if (!files.length) return null;
       if (pbDebugPhotos) return '/photos/' + pose + '/' + files[Math.floor(Math.random() * files.length)];
-      const exact = name + '_' + pose + '_resized.png';
-      return files.includes(exact) ? '/photos/' + pose + '/' + exact : null;
+      const exact = (name + '_' + pose + '_resized.png').toLowerCase();
+      const match = files.find(f => f.toLowerCase() === exact);
+      return match ? '/photos/' + pose + '/' + match : null;
     }
 
     // Sets an img's photo, falling back to a transparent placeholder (no
