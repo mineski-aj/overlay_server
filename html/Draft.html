@@ -4217,6 +4217,7 @@
     e.photoCanvas.style.opacity = '0';
     e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
     e.photoOrigAlpha = null;
+    e.photoErasePd = null;
     e.photoH = null;
     p.photoName    = undefined;
     p.photoPhase   = 'none';
@@ -4329,10 +4330,19 @@
 
     e.photoCtx.clearRect(0, 0, PHOTO_W, Hp);
     e.photoCtx.drawImage(e.photoImg, 0, 0, PHOTO_W, Hp);
-    var src = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp).data;
+    var pd = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp);
+    var src = pd.data;
     var orig = new Uint8ClampedArray(src.length / 4);
     for (var i = 3, ai = 0; i < src.length; i += 4, ai++) orig[ai] = src[i];
     e.photoOrigAlpha = orig;
+    /* Cache this same ImageData object for updatePhotoErase to mutate
+       in place every frame (see there) instead of re-reading it back
+       from the canvas each frame — its RGB pixels never change during
+       the erase, only the alpha byte, and only because we ourselves
+       write it via putImageData the frame before, so re-fetching it
+       via getImageData every frame was a fully redundant GPU/CPU
+       round trip of our own already-known data. */
+    e.photoErasePd = pd;
     e.photoCanvas.style.opacity = '1';
     e.photoImg.style.opacity = '0';
   }
@@ -4348,7 +4358,7 @@
     e.photoMatteCtx.drawImage(matteVid, 0, 0, PHOTO_W, Hp);
     var m = e.photoMatteCtx.getImageData(0, 0, PHOTO_W, Hp).data;
 
-    var pd = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp);
+    var pd = e.photoErasePd;
     var pdata = pd.data;
     for (var i = 3, ai = 0; i < pdata.length; i += 4, ai++) {
       pdata[i] = Math.min(e.photoOrigAlpha[ai], 255 - matteAlphaAt(m, i));
@@ -4363,6 +4373,7 @@
     e.photoImg.style.display = 'none';
     e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
     e.photoOrigAlpha = null;
+    e.photoErasePd = null;
     p.photoName  = undefined;
     p.photoPhase = 'none';
   }
