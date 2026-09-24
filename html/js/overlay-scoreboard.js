@@ -636,11 +636,10 @@ function sbPollMatchState() {
          panel in the Enduring Legacy art (white elsewhere) — flip color
          now for whatever text is already there, and record the flag for
          registerPollHandler below (which is what actually keeps the
-         tricode text up to date). 10th Anniversary never shows that gold
-         panel (see the ingameBase branch above), so it stays white here
-         regardless of matchType — flipping it black would leave black
-         text with no gold panel under it. */
-      sbIsEnduring = isEnduring && !isAnniv;
+         tricode text up to date). Both Regular's and 10th Anniversary's
+         Enduring Legacy art have that same gold panel, so this applies
+         under either theme. */
+      sbIsEnduring = isEnduring;
       var triC1 = document.getElementById('scoreboard-tricode-c1');
       var triC2 = document.getElementById('scoreboard-tricode-c2');
       if (triC1) triC1.style.color = sbIsEnduring ? '#0a0a0a' : '#fff';
