@@ -2923,14 +2923,9 @@
     body.appendChild(addItemBtn);
 
     var clearItemBtn = el('button','btn btn-action','Clear Items');
-    clearItemBtn.style.cssText += 'width:100%;margin-bottom:3px;background:#1a1000;color:#ffcc1a;border-color:#a87800;';
+    clearItemBtn.style.cssText += 'width:100%;background:#1a1000;color:#ffcc1a;border-color:#a87800;';
     clearItemBtn.addEventListener('click', function(){ ekgCall('debugClearItems',[]); });
     body.appendChild(clearItemBtn);
-
-    var combineBtn = el('button','btn btn-action','Combine (next filled)');
-    combineBtn.style.cssText += 'width:100%;background:#12001a;color:#c87aff;border-color:#7a00cc;';
-    combineBtn.addEventListener('click', function(){ ekgCall('debugCombineItem',[]); });
-    body.appendChild(combineBtn);
   }
 
   /* ── Ingame Blue / Red HRM controls ─────────────────────── */
