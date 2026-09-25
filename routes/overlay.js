@@ -266,6 +266,25 @@ router.get('/overlay/goldgraphcheck/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// Match Card (mpltag.html) — two independent team-logo video loops for
+// the live match's blue/red teams, plain checkOverlays pattern. The
+// client resolves which team goes on which side itself, from
+// /match/state's home/away + swapped (see html/mpltag.html), so no
+// team data needs to travel in this event's payload.
+// GET /overlay/matchcard/show
+router.get('/overlay/matchcard/show', (req, res) => {
+  state.checkOverlays.matchcard = true;
+  state.overlayClients.forEach(c => { try { c.write('event: matchcard\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/matchcard/hide
+router.get('/overlay/matchcard/hide', (req, res) => {
+  state.checkOverlays.matchcard = false;
+  state.overlayClients.forEach(c => { try { c.write('event: matchcard\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // Player H2H — one of 5 roles at a time, mutually exclusive (unlike the
 // plain checkOverlays pattern above). The client itself is responsible
 // for animating the previously-shown role out before animating a newly
@@ -312,10 +331,12 @@ router.get('/overlay/mpltagoverlays/hide', (req, res) => {
   state.mapSelectTag.revealedGames = 0;
   state.mapSelectTag.revealedWins = 0;
   state.playerh2h.role = null;
+  state.checkOverlays.matchcard = false;
   state.overlayClients.forEach(c => {
     try {
       c.write('event: mapselecttag\ndata: {"action":"hide"}\n\n');
       c.write('event: playerh2h\ndata: {"action":"hide"}\n\n');
+      c.write('event: matchcard\ndata: {"action":"hide"}\n\n');
     } catch {}
   });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true });

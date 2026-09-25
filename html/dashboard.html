@@ -2122,7 +2122,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag', 'stolengold'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2495,6 +2495,7 @@
          enclosure as this card's own BPM Meter show/hide toggle. */
       checkToggles: [
         { name: 'BPM Meter', key: 'bpmmeter_tag', extraButtons: BPM_METER_EXTRA_BUTTONS },
+        { name: 'Match Card', key: 'matchcard' },
       ],
     },
     {
@@ -4264,6 +4265,24 @@
     { group: 'BPM Meter Size',     id: '#bpmtag-sizewrap', name: 'Meter Size'         },
   ];
 
+  /* ── Match Card (mpltag.html) element defaults — two independent
+     team-logo video clips, the center "VS" clip, plus the NEXT MATCH
+     label, own group each so nudging one never moves the others. */
+  var MC_DEFAULTS = {
+    '#mc-blue-clip':    { left: 210,    top: 290,     width: 500, height: 500    },
+    '#mc-red-clip':     { left: 1210,   top: 290,     width: 500, height: 500    },
+    '#mc-vs-clip':      { left: 710,    top: 399.375, width: 500, height: 281.25 },
+    '#mc-next-match':   { left: 28,     top: 14,      width: 596, height: 157    },
+    '#mc-next-match-text': { fontSize: 137.33 },
+  };
+  var MC_ELEMENTS = [
+    { group: 'Match Card Blue', id: '#mc-blue-clip', name: 'Blue Team Logo' },
+    { group: 'Match Card Red',  id: '#mc-red-clip',  name: 'Red Team Logo'  },
+    { group: 'Match Card VS',   id: '#mc-vs-clip',   name: 'VS Graphic'     },
+    { group: 'Match Card Next Match',      id: '#mc-next-match',      name: 'Next Match Position' },
+    { group: 'Match Card Next Match Text', id: '#mc-next-match-text', name: 'Next Match Font Size' },
+  ];
+
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
   var WL_DEFAULTS = {
     '#wl-header':         { left: 40,   top: 80,  width: 967, height: 150 },
@@ -5561,6 +5580,15 @@
       elements:    BPMTAG_ELEMENTS,
       defaults:    BPMTAG_DEFAULTS,
       showFn:      'bpmTagAnimateIn',
+    },
+    mpltag_matchcard: {
+      label:       'Match Card · mpltag',
+      file:        'mpltag.html',
+      styleFile:   'mpltag',
+      defaultsKey: 'sb_edit_defaults_mpltag_matchcard',
+      elements:    MC_ELEMENTS,
+      defaults:    MC_DEFAULTS,
+      showFn:      'mcAnimateIn',
     },
     mplfs_lobby: {
       label:       'Waiting Lobby · mplfs',

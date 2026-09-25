@@ -454,6 +454,144 @@
     .ph2h-diff.ph2h-diff-away { left: 289px; justify-content: flex-end;  color: #FF3232; } /* mirrored: bar right(436) - 147 */
 
     /* ── Local debug bar (press ` to toggle) ── */
+    /* ── [FEATURE: match-card] Match Card — two independent team-logo
+       video loops (assets/matchcard/*_LOOP_*.webm, already-animated
+       art) for the live match's blue/red teams. Each side is its own
+       clip+burst+video stack, independently positioned/sized from the
+       Edit tab (per CLAUDE.md's "every element independently editable"
+       rule — the clip is what the Edit tab drags/resizes; burst+video
+       just fill it, they're not independently positionable pieces, same
+       as #ph2h-clip/#ph2h-overlay's own non-editable inner pair above).
+       overflow:visible so the impact burst's glow can bleed a little
+       past the clip's own box without being clipped mid-pop. Symmetric
+       default placement either side of canvas-center (960px) with a
+       500px gap between them, filled by the dedicated "VS" clip
+       (#mc-vs-clip, below) dead center of the canvas. */
+    #mc-blue-clip, #mc-red-clip {
+      position: absolute; top: 290px; width: 500px; height: 500px;
+      overflow: visible; display: none; pointer-events: none; z-index: 5;
+    }
+    #mc-blue-clip { left: 210px; }
+    #mc-red-clip  { left: 1210px; }
+    #mc-blue-clip.mc-on, #mc-red-clip.mc-on { display: block; }
+
+    /* "VS" — dead center of the 1920x1080 canvas (960,540), sized to
+       exactly fill the 500px gap between the two team clips above at
+       its native 16:9 (1280x720 source) aspect. Plays once alongside
+       the team logos' entrance (see mcShowCards() below), not looped —
+       it's a one-shot reveal graphic, not an ambient loop like the team
+       art. */
+    #mc-vs-clip {
+      position: absolute; left: 710px; top: 399.375px; width: 500px; height: 281.25px;
+      overflow: visible; display: none; pointer-events: none; z-index: 4;
+    }
+    #mc-vs-clip.mc-on { display: block; }
+    #mc-vs-video {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      transform: scale(0.6);
+      transform-origin: center center;
+    }
+    #mc-vs-video.mc-in  { animation: mc-vs-pop 400ms cubic-bezier(0.19, 1, 0.22, 1) both; }
+    @keyframes mc-vs-pop {
+      0%   { opacity: 0; transform: scale(0.5); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    #mc-vs-video.mc-out { animation: mc-pop-out 280ms ease-in both; } /* shares mc-pop-out with the team videos below */
+
+    /* Impact burst — a quick radial flash behind each logo, timed (via
+       animation-delay below) to pop at the exact instant that side's
+       own drop-in animation lands, so it reads as one "hit" rather than
+       two unrelated effects. Pure decoration, never blocks input. */
+    #mc-blue-burst, #mc-red-burst {
+      position: absolute; left: 50%; top: 50%; width: 100%; height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.35) 35%, rgba(255,255,255,0) 70%);
+      opacity: 0;
+      transform: translate(-50%, -50%) scale(0.2);
+      pointer-events: none;
+      z-index: 1;
+    }
+    #mc-blue-burst.mc-burst-play { animation: mc-burst-pop 550ms ease-out; animation-delay: 300ms; }
+    #mc-red-burst.mc-burst-play  { animation: mc-burst-pop 550ms ease-out; animation-delay: 420ms; }
+    @keyframes mc-burst-pop {
+      0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.9; }
+      40%  { transform: translate(-50%, -50%) scale(1.35); opacity: 0.55; }
+      100% { transform: translate(-50%, -50%) scale(1.9);  opacity: 0; }
+    }
+
+    #mc-blue-video, #mc-red-video {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: contain;
+      opacity: 0;
+      z-index: 2;
+      transform-origin: center center;
+    }
+    /* Drop-in-and-settle: overshoot past full size/rotation, snap back
+       slightly the other way, then settle — a proper multi-step bounce
+       (a plain transition can only ease toward one target, not bounce
+       past and back), plus a small rotation swing for extra punch. Red
+       staggered 120ms behind blue so the two don't land in perfect
+       lockstep. animation-fill-mode:both via the shorthand keeps each
+       side pinned at its final resting transform once the animation
+       ends, so the looping video underneath doesn't jump. */
+    #mc-blue-video.mc-in { animation: mc-drop-blue 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+    #mc-red-video.mc-in  { animation: mc-drop-red  640ms cubic-bezier(0.2, 0.8, 0.2, 1) both; animation-delay: 120ms; }
+    @keyframes mc-drop-blue {
+      0%   { opacity: 0; transform: translateX(-320px) scale(0.35) rotate(-20deg); }
+      55%  { opacity: 1; transform: translateX(22px)   scale(1.16) rotate(4deg); }
+      75%  {              transform: translateX(-10px)  scale(0.96) rotate(-1.5deg); }
+      100% { opacity: 1; transform: translateX(0)       scale(1)    rotate(0deg); }
+    }
+    @keyframes mc-drop-red {
+      0%   { opacity: 0; transform: translateX(320px)  scale(0.35) rotate(20deg); }
+      55%  { opacity: 1; transform: translateX(-22px)  scale(1.16) rotate(-4deg); }
+      75%  {              transform: translateX(10px)   scale(0.96) rotate(1.5deg); }
+      100% { opacity: 1; transform: translateX(0)       scale(1)    rotate(0deg); }
+    }
+    /* Hide — a quick shrink+fade, no bounce (that's an entrance-only
+       flourish), timed to HIDE_MS in the JS below. */
+    #mc-blue-video.mc-out, #mc-red-video.mc-out { animation: mc-pop-out 280ms ease-in both; }
+    @keyframes mc-pop-out {
+      0%   { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.55); }
+    }
+
+    /* ── NEXT MATCH label ──────────────────────────────────────────
+       Pasted design-tool spec: left:28, top:14, width:596, height:157
+       (.Rectangle_2) — only position/size is real intent per CLAUDE.md's
+       "Working from pasted design-tool CSS" convention; its
+       background-color (a placeholder yellow fill) is export noise, not
+       a real asset, so it's deliberately not reproduced here — the black
+       glow below is what actually lifts the text off whatever's playing
+       underneath the transparent canvas, not off a design-tool plate.
+       Leads the Match Card sequence: slides in first, then (see the JS
+       below) the team logos animate in 1s after this settles. */
+    #mc-next-match {
+      position: absolute; left: 28px; top: 14px; width: 596px; height: 157px;
+      display: none;
+      align-items: center; justify-content: center;
+      overflow: visible; /* text is allowed to breathe past its own box, same as other big display titles in this codebase */
+      pointer-events: none; z-index: 6;
+    }
+    #mc-next-match.mc-on { display: flex; }
+    #mc-next-match-text {
+      font-family: 'Anton', sans-serif;
+      font-size: 137.33px; /* 103pt @ 96dpi = 103 * 96/72, per user confirmation (this box is too short for this codebase's usual @300dpi pasted-spec conversion) */
+      line-height: 1;
+      color: #fff;
+      text-align: center;
+      white-space: nowrap;
+      text-shadow: 0 0 18px rgba(0,0,0,0.85), 0 0 40px rgba(0,0,0,0.6), 0 0 70px rgba(0,0,0,0.4);
+      transform: translateX(-700px);
+      /* Sharp initial acceleration (steep early slope) into a long
+         ease-out tail — an "expo-out" style curve, punchier off the
+         start than a plain ease-out while still landing smoothly. */
+      transition: transform 350ms cubic-bezier(0.19, 1, 0.22, 1);
+    }
+    #mc-next-match-text.mc-nm-in { transform: translateX(0); }
+
     #debug-bar {
       position: fixed; left: 0; bottom: 0; width: 100%;
       background: rgba(10,10,16,.92); border-top: 1px solid #333;
@@ -533,6 +671,12 @@
 <div id="canvas">
   <div id="mapselect-page"></div>
   <div id="ph2h-clip"><div id="ph2h-overlay"></div></div>
+  <!-- [FEATURE: match-card] see the IIFE at the bottom of this file's
+       script block for team resolution + show/hide. -->
+  <div id="mc-next-match"><div id="mc-next-match-text">NEXT MATCH</div></div>
+  <div id="mc-blue-clip"><div id="mc-blue-burst"></div><video id="mc-blue-video" loop muted playsinline preload="auto"></video></div>
+  <div id="mc-red-clip"><div id="mc-red-burst"></div><video id="mc-red-video" loop muted playsinline preload="auto"></video></div>
+  <div id="mc-vs-clip"><video id="mc-vs-video" src="/assets/matchcard/vs_matchcard.webm" muted playsinline preload="auto"></video></div>
   <!-- [FEATURE: bpm-meter] built dynamically via the IIFE at the bottom
        of this file's <script> block. -->
   <div id="bpmtag-clip">
@@ -1619,6 +1763,210 @@
   document.getElementById('ph2h-dbg-hide').addEventListener('click', function () {
     fetch('/overlay/playerh2h/hide');
   });
+})();
+
+/* ── [FEATURE: match-card] Match Card ──────────────────────────────────
+   Simple checkOverlays-pattern panel (see CLAUDE.md "Simpler show/hide")
+   — two independently-positioned team-logo video loops
+   (assets/matchcard/<TRICODE>_LOOP_1000x1000_5mbps.webm, already-animated
+   art baked in — the entrance transition below on TOP of that loop is
+   this page's own "eye-catching" reveal) for the live match's blue/red
+   teams.
+
+   Team identity is resolved from /match/state's home/away + swapped —
+   the SAME convention mplfs.html's Final Team scene uses for its series
+   score bars (see updateFtScoreBars there), NOT the live game feed's
+   campid identity (updateFtTeamIdentity), because Match Card is meant to
+   be shown pre-game, before any camp data exists at all. */
+(function () {
+  var BLUE_CLIP  = document.getElementById('mc-blue-clip');
+  var RED_CLIP   = document.getElementById('mc-red-clip');
+  var BLUE_BURST = document.getElementById('mc-blue-burst');
+  var RED_BURST  = document.getElementById('mc-red-burst');
+  var BLUE_VIDEO = document.getElementById('mc-blue-video');
+  var RED_VIDEO  = document.getElementById('mc-red-video');
+  var VS_CLIP    = document.getElementById('mc-vs-clip');
+  var VS_VIDEO   = document.getElementById('mc-vs-video');
+  // Freeze on frame 130 of the source (30fps, see the ffprobe check when
+  // this asset was added) instead of playing through to its own end and
+  // holding there — never loops either way (no `loop` attribute), this
+  // just picks an earlier hold frame than the clip's last one.
+  var VS_FREEZE_TIME = 130 / 30;
+  VS_VIDEO.addEventListener('timeupdate', function () {
+    if (VS_VIDEO.currentTime >= VS_FREEZE_TIME) {
+      VS_VIDEO.pause();
+      VS_VIDEO.currentTime = VS_FREEZE_TIME;
+    }
+  });
+  // Matches the mc-pop-out hide animation's own duration, plus a small margin.
+  var HIDE_MS = 320;
+
+  // Restarting a CSS `animation` by re-adding a class the browser thinks
+  // is already applied is a silent no-op without a forced reflow in
+  // between (same idiom mplfs.html uses everywhere for its show/hide
+  // transitions, e.g. `void fooPage.offsetWidth`) — needed here because
+  // a fast hide-then-reshow can re-add 'mc-in'/'mc-burst-play' before the
+  // browser ever drops the previous animation state.
+  function restartAnimation(el, cls) {
+    el.classList.remove(cls);
+    void el.offsetWidth;
+    el.classList.add(cls);
+  }
+
+  function cardUrl(tricode) {
+    return tricode ? '/assets/matchcard/' + encodeURIComponent(tricode) + '_LOOP_1000x1000_5mbps.webm' : '';
+  }
+
+  function setSide(video, tricode) {
+    var src = cardUrl(tricode);
+    video.onerror = function () { video.onerror = null; video.removeAttribute('src'); };
+    if (src && video.getAttribute('src') !== src) video.src = src;
+    else if (!src) video.removeAttribute('src');
+  }
+
+  function applyTeams(ms) {
+    var home = (ms && ms.home) || {};
+    var away = (ms && ms.away) || {};
+    var isSwapped = !!(ms && ms.swapped);
+    var blueTri = ((isSwapped ? away.short : home.short) || '').toUpperCase().trim();
+    var redTri  = ((isSwapped ? home.short : away.short) || '').toUpperCase().trim();
+    setSide(BLUE_VIDEO, blueTri);
+    setSide(RED_VIDEO, redTri);
+  }
+
+  var NEXT_MATCH      = document.getElementById('mc-next-match');
+  var NEXT_MATCH_TEXT = document.getElementById('mc-next-match-text');
+  var NM_SLIDE_MS  = 350;  // matches #mc-next-match-text's own transition duration
+  var NM_TO_CARDS_MS = 1000; // "1 second later" gap between the label settling and the cards starting
+
+  var shouldShow  = false;
+  var hideTimer   = null;
+  var cardsTimer  = null;
+  var logosTimer  = null;
+  var VS_TO_LOGOS_MS = 400; // VS leads the team logos in by this much
+
+  // Team logos + bursts — fired 500ms after mcShowVs() below, so VS
+  // reads as the lead-in beat and the logos as the payoff.
+  function mcShowLogos() {
+    if (!shouldShow) return;
+    BLUE_CLIP.classList.add('mc-on');
+    RED_CLIP.classList.add('mc-on');
+    BLUE_VIDEO.play().catch(function () {});
+    RED_VIDEO.play().catch(function () {});
+    BLUE_VIDEO.classList.remove('mc-out');
+    RED_VIDEO.classList.remove('mc-out');
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      if (!shouldShow) return;
+      restartAnimation(BLUE_VIDEO, 'mc-in');
+      restartAnimation(RED_VIDEO, 'mc-in');
+      restartAnimation(BLUE_BURST, 'mc-burst-play');
+      restartAnimation(RED_BURST, 'mc-burst-play');
+    }); });
+  }
+
+  // VS + team data — the second half of the overall sequence, fired by
+  // mcAnimateIn() only after NEXT MATCH has slid in and settled. Leads
+  // the team logos in by VS_TO_LOGOS_MS (see mcShowLogos above).
+  function mcShowCards() {
+    if (!shouldShow) return;
+    clearTimeout(logosTimer);
+    fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (ms) {
+      if (!shouldShow) return; // hidden again before the fetch landed
+      applyTeams(ms);
+      VS_CLIP.classList.add('mc-on');
+      VS_VIDEO.currentTime = 0; // one-shot reveal, always plays from the top
+      VS_VIDEO.play().catch(function () {});
+      VS_VIDEO.classList.remove('mc-out');
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        if (!shouldShow) return;
+        restartAnimation(VS_VIDEO, 'mc-in');
+      }); });
+      logosTimer = setTimeout(mcShowLogos, VS_TO_LOGOS_MS);
+    }).catch(function () {});
+  }
+
+  function mcAnimateIn() {
+    shouldShow = true;
+    clearTimeout(hideTimer);
+    clearTimeout(cardsTimer);
+    clearTimeout(logosTimer);
+    NEXT_MATCH.classList.add('mc-on');
+    requestAnimationFrame(function () { requestAnimationFrame(function () {
+      if (!shouldShow) return;
+      restartAnimation(NEXT_MATCH_TEXT, 'mc-nm-in');
+    }); });
+    cardsTimer = setTimeout(mcShowCards, NM_SLIDE_MS + NM_TO_CARDS_MS);
+  }
+
+  function mcAnimateOut() {
+    shouldShow = false;
+    clearTimeout(cardsTimer);
+    clearTimeout(logosTimer);
+    NEXT_MATCH_TEXT.classList.remove('mc-nm-in');
+    NEXT_MATCH.classList.remove('mc-on');
+    BLUE_VIDEO.classList.remove('mc-in');
+    RED_VIDEO.classList.remove('mc-in');
+    VS_VIDEO.classList.remove('mc-in');
+    BLUE_BURST.classList.remove('mc-burst-play');
+    RED_BURST.classList.remove('mc-burst-play');
+    BLUE_VIDEO.classList.add('mc-out');
+    RED_VIDEO.classList.add('mc-out');
+    VS_VIDEO.classList.add('mc-out');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      BLUE_CLIP.classList.remove('mc-on');
+      RED_CLIP.classList.remove('mc-on');
+      VS_CLIP.classList.remove('mc-on');
+      BLUE_VIDEO.classList.remove('mc-out');
+      RED_VIDEO.classList.remove('mc-out');
+      VS_VIDEO.classList.remove('mc-out');
+      BLUE_VIDEO.pause();
+      RED_VIDEO.pause();
+      VS_VIDEO.pause();
+    }, HIDE_MS);
+  }
+
+  /* Keep the logos in sync with a live match_state change while the
+     card is already on screen (e.g. a side swap decided right before
+     the game starts) — same reasoning as mplfs.html's own 'match' SSE
+     listener. */
+  var es = createOverlaySSE();
+  es.addEventListener('matchcard', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') mcAnimateIn();
+      else if (d.action === 'hide') mcAnimateOut();
+    } catch (err) {}
+  });
+  es.addEventListener('match', function (e) {
+    if (!shouldShow) return;
+    try { applyTeams(JSON.parse(e.data)); } catch (err) {}
+  });
+
+  /* Restore real server-side shown/hidden state on load (checkOverlays.
+     matchcard), so a (re)loaded page picks up an already-shown card
+     instead of guessing — default is hidden (CSS default), matching the
+     server default of false, so there's no flash either way. */
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.matchcard) mcAnimateIn(); })
+    .catch(function () {});
+
+  /* ── Preview hook — chain onto whatever window.previewTrigger already
+     exists (mapselect's own, itself chained onto by playerh2h below).
+     mcAnimateIn()'s only side effect is a GET fetch of live match state,
+     never a write to shared state, so no PREVIEW_ONLY-style guard is
+     needed — same reasoning as playerh2h's own chain. */
+  var prevTrigger = window.previewTrigger;
+  window.previewTrigger = function (event, action) {
+    if (event === 'matchcard') {
+      if (action === 'hide') mcAnimateOut(); else mcAnimateIn();
+      return;
+    }
+    if (prevTrigger) prevTrigger(event, action);
+  };
+
+  window.mcAnimateIn = mcAnimateIn;
 })();
 
 /* ── [FEATURE: bpm-meter] "Heart-Stopping Moment" BPM meter ───────────
