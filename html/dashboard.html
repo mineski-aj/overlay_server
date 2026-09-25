@@ -4994,24 +4994,31 @@
      FT_ROLE_ORDER/buildFtCards in mplfs.html): blue is EXP/JUNGLE/MID/
      ROAM/GOLD left-to-right (cols 0-4), red mirrors it GOLD/ROAM/MID/
      JUNGLE/EXP (cols 5-9, gold nearest center on both sides). Each
-     photo (#ft-photo-0..9, set in ftBuildCardHtml) is left-only —
-     `top` is intentionally absent so dragging/nudging is locked to
-     horizontal, since the ask was purely to pan a photo's own
-     off-center framing left/right within its fixed card, not move it
-     vertically. Own group per photo (not paired) since each needs a
-     different nudge depending on that individual player's photo. */
+     photo (#ft-photo-0..9, set in ftBuildCardHtml) is left-only for
+     position — `top` is intentionally absent so dragging/nudging is
+     locked to horizontal, since the ask was purely to pan a photo's
+     own off-center framing left/right within its fixed card, not move
+     it vertically. cropX/cropY are a separate, independent control —
+     the real crop point (CSS object-position, in %) inside the photo's
+     own fixed box, for compensating a source photo whose subject isn't
+     centered in the ORIGINAL image (as opposed to `left`, which pans
+     the whole already-cropped box sideways within the card and can
+     reveal card background if pushed too far). Defaults match the base
+     .ft-card-photo CSS rule's own object-position: 50% 15%. Own group
+     per photo (not paired) since each needs a different adjustment
+     depending on that individual player's photo. */
   var FT_DEFAULTS = {
     '#ft-mpl-logo': { left: 885, top: 84, width: 150, height: 150 },
-    '#ft-photo-0': { left: 0 },
-    '#ft-photo-1': { left: 0 },
-    '#ft-photo-2': { left: 0 },
-    '#ft-photo-3': { left: 0 },
-    '#ft-photo-4': { left: 0 },
-    '#ft-photo-5': { left: 0 },
-    '#ft-photo-6': { left: 0 },
-    '#ft-photo-7': { left: 0 },
-    '#ft-photo-8': { left: 0 },
-    '#ft-photo-9': { left: 0 },
+    '#ft-photo-0': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-1': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-2': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-3': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-4': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-5': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-6': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-7': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-8': { left: 0, cropX: 50, cropY: 15 },
+    '#ft-photo-9': { left: 0, cropX: 50, cropY: 15 },
   };
   var FT_ELEMENTS = [
     { group: 'MPL Logo', id: '#ft-mpl-logo', name: 'MPL Logo' },
@@ -6120,6 +6127,11 @@
       if (p.fontSize !== undefined && !skipFontSize) d.push('font-size:' + p.fontSize + 'px !important');
       if (p.strokeWidth !== undefined) d.push('stroke-width:' + p.strokeWidth + 'px !important');
       if (p.r !== undefined) d.push('r:' + p.r + 'px !important');
+      if (p.cropX !== undefined || p.cropY !== undefined) {
+        var cx = p.cropX !== undefined ? p.cropX : 50;
+        var cy = p.cropY !== undefined ? p.cropY : 15;
+        d.push('object-position:' + cx + '% ' + cy + '% !important');
+      }
       if (p.visible === false) d.push('display:none !important');
       return sel + '{' + d.join(';') + '}';
     }).join('\n');
@@ -6327,6 +6339,8 @@
     { key: 'feather',  label: 'Feather',   step: 5 },
     { key: 'featherIntensity', label: 'Intensity', step: 5 },
     { key: 'smoothRadius', label: 'Spike Smoothing', step: 0.5, unit: 's' },
+    { key: 'cropX', label: 'Crop X', step: 1, unit: '%' },
+    { key: 'cropY', label: 'Crop Y', step: 1, unit: '%' },
   ];
 
   function showEditControls(id) {
@@ -6608,6 +6622,8 @@
       if (v.feather  !== undefined) out[sel].feather  = v.feather;
       if (v.featherIntensity !== undefined) out[sel].featherIntensity = v.featherIntensity;
       if (v.smoothRadius !== undefined) out[sel].smoothRadius = v.smoothRadius;
+      if (v.cropX    !== undefined) out[sel].cropX    = v.cropX;
+      if (v.cropY    !== undefined) out[sel].cropY    = v.cropY;
       if (v.visible === false) out[sel].display = 'none';
     });
     var styleFile = EDIT_CONFIGS[currentConfigKey].styleFile;
@@ -6659,6 +6675,8 @@
       if (s.feather  !== undefined) editValues[sel].feather  = parseNum(s.feather);
       if (s.featherIntensity !== undefined) editValues[sel].featherIntensity = parseNum(s.featherIntensity);
       if (s.smoothRadius !== undefined) editValues[sel].smoothRadius = parseNum(s.smoothRadius);
+      if (s.cropX    !== undefined) editValues[sel].cropX    = parseNum(s.cropX);
+      if (s.cropY    !== undefined) editValues[sel].cropY    = parseNum(s.cropY);
       if (s.display  !== undefined) editValues[sel].visible  = (s.display !== 'none');
     });
   }

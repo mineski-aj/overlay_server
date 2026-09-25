@@ -2154,7 +2154,8 @@
     [data-theme="10th_anniversary"] .ft-card-fader.ft-red  { background: #ffac50; }
     /* Base position/size shared by every photo — each of the 10 also
        gets its own id (#ft-photo-0..9, set in ftBuildCardHtml) so its
-       `left` alone can be nudged individually from the dashboard Edit
+       `left` (box pan) and now its own crop point (object-position, via
+       cropX/cropY) can be nudged individually from the dashboard Edit
        tab (FT_ELEMENTS/FT_DEFAULTS) to compensate for a given photo's
        own off-center framing, without moving any other card. */
     .ft-card-photo {
@@ -16196,12 +16197,24 @@
               return sel + '{' + decls.join(';') + '}';
             }
             var decls = Object.keys(props).filter(function(prop) {
-              return !(skipFontSize(sel) && prop === 'fontSize');
+              return !(skipFontSize(sel) && prop === 'fontSize') && prop !== 'cropX' && prop !== 'cropY';
             }).map(function(prop) {
               var cssProp = prop === 'fontSize' ? 'font-size' : prop;
               return cssProp + ':' + props[prop] + ' !important';
-            }).join(';');
-            return sel + '{' + decls + '}';
+            });
+            /* cropX/cropY (Final Team player photos) aren't real CSS
+               property names — they're a pair that together become one
+               object-position declaration, so they can't go through the
+               generic prop->cssProp pass-through above like left/top/
+               width/height do. Falls back to the base CSS rule's own
+               50%/15% for whichever axis wasn't saved, same convention
+               as TW_MATCHES_SCALE_NATIVE's width/height fallback above. */
+            if (props.cropX !== undefined || props.cropY !== undefined) {
+              var cx = props.cropX !== undefined ? parseFloat(props.cropX) : 50;
+              var cy = props.cropY !== undefined ? parseFloat(props.cropY) : 15;
+              decls.push('object-position:' + cx + '% ' + cy + '% !important');
+            }
+            return sel + '{' + decls.join(';') + '}';
           }).join('\n');
           var style = document.createElement('style');
           style.id = 'mplfs-overrides';
