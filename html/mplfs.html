@@ -6695,10 +6695,20 @@
         document.head.appendChild(tag);
       }
       tag.textContent = Object.keys(liveStylePatches).map((sel) => {
-        const decls = Object.entries(liveStylePatches[sel])
-          .map(([prop, val]) => (prop === 'fontSize' ? 'font-size' : prop) + ':' + val + ' !important')
-          .join(';');
-        return sel + '{' + decls + '}';
+        const p = liveStylePatches[sel];
+        const decls = Object.entries(p)
+          .filter(([prop]) => prop !== 'cropX' && prop !== 'cropY')
+          .map(([prop, val]) => (prop === 'fontSize' ? 'font-size' : prop) + ':' + val + ' !important');
+        /* cropX/cropY (Final Team photo nudges) aren't real CSS property
+           names — same special-case object-position pairing as
+           loadMplfsOverrides uses for the Edit-tab-saved (reload) path,
+           mirrored here for the live nudge (stylepatch) path. */
+        if (p.cropX !== undefined || p.cropY !== undefined) {
+          const cx = p.cropX !== undefined ? p.cropX : 50;
+          const cy = p.cropY !== undefined ? p.cropY : 15;
+          decls.push('object-position:' + cx + '% ' + cy + '% !important');
+        }
+        return sel + '{' + decls.join(';') + '}';
       }).join('\n');
     }
 

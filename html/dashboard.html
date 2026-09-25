@@ -2407,7 +2407,26 @@
             { label: 'Photo', selector: '#mv-photo',    fallback: 953, topFallback: 74 },
           ] },
         { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
-        { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide' },
+        { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide',
+          /* Quick per-photo Crop X nudge — same #ft-photo-0..9 selectors
+             as FT_ELEMENTS/FT_DEFAULTS in the Edit tab, fallback matches
+             their cropX default (50). Column order matches the card wall
+             left-to-right (see FT_ROLE_ORDER's comment in mplfs.html):
+             blue P1-P5 EXP/Jungle/Mid/Roam/Gold, red P1-P5 Gold/Roam/Mid/
+             Jungle/EXP (red mirrors blue, gold nearest center on both
+             sides). */
+          nudges: [
+            { label: 'Blue P1', selector: '#ft-photo-0', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Blue P2', selector: '#ft-photo-1', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Blue P3', selector: '#ft-photo-2', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Blue P4', selector: '#ft-photo-3', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Blue P5', selector: '#ft-photo-4', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Red P1',  selector: '#ft-photo-5', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Red P2',  selector: '#ft-photo-6', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Red P3',  selector: '#ft-photo-7', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Red P4',  selector: '#ft-photo-8', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+            { label: 'Red P5',  selector: '#ft-photo-9', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
+          ] },
         { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
         { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
       ],
@@ -2630,9 +2649,48 @@
   function nudgeGetCurrentTop(selector, fallback) {
     return nudgeGetCurrentProp(nudgeTopCache, 'top', selector, fallback);
   }
+  /* Generic single-axis nudge for a non-left/top numeric prop (e.g. Final
+     Team's per-photo Crop X, see #ft-photo-0..9's `nudges` below) — keyed
+     by prop+selector since, unlike left/top, more than one extraProp can
+     target the same selector (Crop X and Crop Y both on #ft-photo-0).
+     Stored/patched as a bare number (not a "Npx" CSS length) and clamped
+     to n.min/n.max since these are percentage-style values, not an
+     open-ended canvas position. */
+  var nudgeExtraCache = {}; // "prop|selector" -> current value (number)
+  function nudgeGetCurrentExtra(prop, selector, fallback) {
+    var key = prop + '|' + selector;
+    if (nudgeExtraCache[key] !== undefined) return Promise.resolve(nudgeExtraCache[key]);
+    return fetch('/api/overlay-styles?file=mplfs').then(function (r) { return r.json(); }).then(function (saved) {
+      var v = saved && saved[selector] && saved[selector][prop];
+      var val = v !== undefined ? parseFloat(v) : fallback;
+      nudgeExtraCache[key] = val;
+      return val;
+    }).catch(function () { return fallback; });
+  }
   function buildNudgeControl(n) {
     var wrap = el('span', 'nudge-group');
     wrap.appendChild(el('span', 'nudge-label', n.label));
+    if (n.extraProp) {
+      var step = n.step || NUDGE_STEP;
+      function doNudgeExtra(delta) {
+        nudgeGetCurrentExtra(n.extraProp, n.selector, n.fallback).then(function (cur) {
+          var next = cur + delta;
+          if (n.min !== undefined) next = Math.max(n.min, next);
+          if (n.max !== undefined) next = Math.min(n.max, next);
+          nudgeExtraCache[n.extraProp + '|' + n.selector] = next;
+          var props = {};
+          props[n.extraProp] = next;
+          fetch('/api/overlay-nudge', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: 'mplfs', selector: n.selector, props: props }),
+          }).catch(function () {});
+        });
+      }
+      wrap.appendChild(btn('◀', 'btn-nudge', function () { doNudgeExtra(-step); }));
+      wrap.appendChild(btn('▶', 'btn-nudge', function () { doNudgeExtra(step); }));
+      return wrap;
+    }
     function doNudge(delta) {
       nudgeGetCurrentLeft(n.selector, n.fallback).then(function (cur) {
         var next = cur + delta;
