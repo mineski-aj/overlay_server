@@ -5,192 +5,146 @@
   "game_start_time": null,
   "game_end_time": "2026-09-26T04:02:29.259Z",
   "game_duration": "25:58",
-  "camp1_tricode": "APBR",
-  "camp2_tricode": "RORA",
-  "camp1": {
+  "home": {
     "tricode": "APBR",
+    "camp_code": "11149",
+    "camp_name": "AP.BREN",
     "players": [
       {
         "player1": {
-          "slot": "slot1",
-          "name": "watch1",
           "player_name": "JMPINKMAN",
           "role": "EXP LANER",
-          "hero_id": 26,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": [
-            {
-              "game_time_s": 1539,
-              "game_time_fmt": "25:39",
-              "item_id": 3009,
-              "item_name": "Hunter Strike",
-              "is_tier3": true
-            }
-          ]
+          "bpm_on_end": null
         }
       },
       {
         "player2": {
-          "slot": "slot2",
-          "name": "watch2",
           "player_name": "JamesPangks",
           "role": "JUNGLER",
-          "hero_id": 127,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player3": {
-          "slot": "slot3",
-          "name": "watch3",
           "player_name": "LanceCy",
           "role": "MID LANER",
-          "hero_id": 61,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player4": {
-          "slot": "slot4",
-          "name": "watch4",
           "player_name": "SpiderMilez",
           "role": "ROAMER",
-          "hero_id": 92,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player5": {
-          "slot": "slot5",
-          "name": "watch5",
           "player_name": "Shizou",
           "role": "GOLD LANER",
-          "hero_id": 31,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       }
     ]
   },
-  "camp2": {
+  "away": {
     "tricode": "RORA",
+    "camp_code": "10845",
+    "camp_name": "Aurora Gaming PH",
     "players": [
       {
         "player1": {
-          "slot": "slot10",
-          "name": "watch10",
           "player_name": "Nathzz",
           "role": "EXP LANER",
-          "hero_id": 99,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player2": {
-          "slot": "slot9",
-          "name": "watch9",
           "player_name": "Koyl",
           "role": "JUNGLER",
-          "hero_id": 27,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player3": {
-          "slot": "slot8",
-          "name": "watch8",
           "player_name": "Yue",
           "role": "MID LANER",
-          "hero_id": 91,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player4": {
-          "slot": "slot7",
-          "name": "watch7",
           "player_name": "Light",
           "role": "ROAMER",
-          "hero_id": 112,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       },
       {
         "player5": {
-          "slot": "slot6",
-          "name": "watch6",
           "player_name": "Domeng",
           "role": "GOLD LANER",
-          "hero_id": 120,
           "avg_bpm": null,
           "peak_bpm": null,
           "pct_above_120": null,
           "avg_bpm_at_objectives": null,
           "peak_bpm_at_objectives": null,
           "avg_clash_bpm": null,
-          "bpm_on_end": null,
-          "item_timeline": []
+          "bpm_on_end": null
         }
       }
     ]
