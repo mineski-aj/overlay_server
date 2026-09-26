@@ -30,11 +30,11 @@
     {
       "tri": "FLCN",
       "move": "neutral",
-      "status": null,
-      "mp": 7,
-      "mwl": "7-1",
-      "gwl": "15-5",
-      "ngw": 10,
+      "status": "secured",
+      "mp": 8,
+      "mwl": "8-1",
+      "gwl": "17-6",
+      "ngw": 11,
       "medals": [
         {
           "type": "silver",
@@ -53,11 +53,11 @@
     {
       "tri": "ONIC",
       "move": "neutral",
-      "status": null,
+      "status": "secured",
       "mp": 7,
-      "mwl": "7-2",
-      "gwl": "15-7",
-      "ngw": 8,
+      "mwl": "7-3",
+      "gwl": "16-9",
+      "ngw": 7,
       "medals": [
         {
           "type": "gold",
@@ -77,15 +77,25 @@
       "tri": "RORA",
       "move": "neutral",
       "status": null,
-      "mp": 5,
-      "mwl": "5-4",
-      "gwl": "12-8",
-      "ngw": 4,
+      "mp": 6,
+      "mwl": "6-4",
+      "gwl": "14-8",
+      "ngw": 6,
+      "medals": []
+    },
+    {
+      "tri": "TNC",
+      "move": "up",
+      "status": null,
+      "mp": 4,
+      "mwl": "4-6",
+      "gwl": "11-14",
+      "ngw": -3,
       "medals": []
     },
     {
       "tri": "OMG",
-      "move": "neutral",
+      "move": "down",
       "status": null,
       "mp": 4,
       "mwl": "4-6",
@@ -94,23 +104,13 @@
       "medals": []
     },
     {
-      "tri": "TNC",
-      "move": "neutral",
-      "status": null,
-      "mp": 3,
-      "mwl": "3-6",
-      "gwl": "9-14",
-      "ngw": -5,
-      "medals": []
-    },
-    {
       "tri": "APBR",
       "move": "neutral",
       "status": null,
       "mp": 3,
-      "mwl": "3-7",
-      "gwl": "9-15",
-      "ngw": -6,
+      "mwl": "3-8",
+      "gwl": "9-17",
+      "ngw": -8,
       "medals": []
     },
     {
@@ -118,9 +118,9 @@
       "move": "neutral",
       "status": null,
       "mp": 0,
-      "mwl": "0-9",
-      "gwl": "2-18",
-      "ngw": -16,
+      "mwl": "0-10",
+      "gwl": "2-20",
+      "ngw": -18,
       "medals": []
     }
   ]
