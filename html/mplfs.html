@@ -12378,8 +12378,11 @@
         const winCamp = gd.win_camp || 0;
         const pose1 = winCamp === 0 || winCamp === 1 ? 'VICTORY' : 'DEFEAT';
         const pose2 = winCamp === 0 || winCamp === 2 ? 'VICTORY' : 'DEFEAT';
+        /* No sort by s.pos — seat_1..seat_5 order from the API is already
+           the intended top-to-bottom EXP/JUNGLE/MID/ROAM/GOLD order (see
+           pbApplySeats/embFillSeats). Sorting by pos scrambled this. */
         const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
-          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          .map(k => camp[k]).filter(Boolean);
         if (c1) extractSeats(c1).forEach((s, i) => { cpData[i]     = { s, pose: pose1 }; });
         if (c2) extractSeats(c2).forEach((s, i) => { cpData[5 + i] = { s, pose: pose2 }; });
 
@@ -13080,8 +13083,11 @@
         const winCamp = gd.win_camp || 0;
         const pose1 = winCamp === 0 || winCamp === 1 ? 'VICTORY' : 'DEFEAT';
         const pose2 = winCamp === 0 || winCamp === 2 ? 'VICTORY' : 'DEFEAT';
+        /* No sort by s.pos — seat_1..seat_5 order from the API is already
+           the intended top-to-bottom EXP/JUNGLE/MID/ROAM/GOLD order (see
+           pbApplySeats/embFillSeats). Sorting by pos scrambled this. */
         const extractSeats = camp => ['seat_1','seat_2','seat_3','seat_4','seat_5']
-          .map(k => camp[k]).filter(Boolean).sort((a, b) => a.pos - b.pos);
+          .map(k => camp[k]).filter(Boolean);
         if (c1) extractSeats(c1).forEach((s, i) => { cp2Data[i]     = { s, pose: pose1 }; });
         if (c2) extractSeats(c2).forEach((s, i) => { cp2Data[5 + i] = { s, pose: pose2 }; });
 

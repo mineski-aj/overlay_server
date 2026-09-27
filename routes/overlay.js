@@ -1096,6 +1096,24 @@ router.get('/overlay/draftpredict/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/draftpredict2/show
+// Draft Predict v2 — same checkOverlays shape as draftpredict above, kept
+// as its own independent key so v1 never has to change (see CLAUDE.md /
+// Draft.html's 'dp2'-prefixed block for why this exists as a parallel
+// feature instead of replacing draftpredict).
+router.get('/overlay/draftpredict2/show', (req, res) => {
+  state.checkOverlays.draftpredict2 = true;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict2\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/draftpredict2/hide
+router.get('/overlay/draftpredict2/hide', (req, res) => {
+  state.checkOverlays.draftpredict2 = false;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict2\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/debugoff — hide debug bars on all overlays
 router.get('/overlay/debugoff', (req, res) => {
   state.overlayClients.forEach(c => { try { c.write('event: debugoff\ndata: {}\n\n'); } catch {} });
@@ -1139,7 +1157,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale'];
+const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale','draftpredict2_rationale'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

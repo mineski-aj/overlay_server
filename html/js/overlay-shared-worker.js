@@ -33,7 +33,7 @@
 // and will silently never learn the new event otherwise.
 const KNOWN_EVENTS = [
   'bpmmeter', 'bpmmeter_tag', 'consolidated_post', 'consolidated_post_2', 'cp2page', 'credits', 'debugmode', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
-  'draftpredict', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
+  'draftpredict', 'draftpredict2', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
   'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'matchcard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerh2h', 'playerui',

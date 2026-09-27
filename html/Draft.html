@@ -1507,6 +1507,218 @@
       -webkit-box-decoration-break: clone;
       padding: 0 2px;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       Draft Predict v2 — identical visual shape to the 'dp-' block
+       above, 'dp2'-prefixed so it never shares a selector with it (see
+       the "#1 rule" in CLAUDE.md and the "same function, different
+       data" scope this was built to). Only the DATA plumbing differs
+       (see the 'dp2'-prefixed script block below) — the carousel/
+       rationale-bubble visuals are a deliberate 1:1 copy. ── */
+    .dp2-panel {
+      position: absolute;
+      top: 644px;
+      width: 758px;
+      height: 136px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #dp2-blue-panel { left: 0px; }
+    #dp2-red-panel  { left: 1162px; }
+    .dp2-panel-inner {
+      width: 758px;
+      height: 136px;
+      transform: translateY(136px);
+      transition: transform .45s cubic-bezier(.4,0,.2,1);
+    }
+    #dp2-blue-panel.dp2-visible .dp2-panel-inner,
+    #dp2-red-panel.dp2-visible  .dp2-panel-inner { transform: none; }
+    #dp2-blue-panel.dp2-no-anim .dp2-panel-inner,
+    #dp2-red-panel.dp2-no-anim  .dp2-panel-inner { transition: none !important; }
+
+    .dp2-panel-header {
+      height: 26px;
+      display: flex; align-items: center;
+      padding: 0 12px;
+      position: relative; z-index: 2;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    }
+    #dp2-blue-panel .dp2-panel-header { background: #004dd5; justify-content: flex-end; }
+    #dp2-red-panel  .dp2-panel-header { background: #f31400; justify-content: flex-start; }
+
+    .dp2-header-text {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .dp2-panel-body {
+      height: 110px;
+      background: #161616;
+      position: relative;
+      overflow: hidden;
+    }
+    .dp2-carousel-viewport { position: absolute; inset: 0; overflow: hidden; }
+
+    .dp2-fade-edge {
+      position: absolute; top: 0; bottom: 0;
+      width: 60px; z-index: 10;
+      pointer-events: none;
+      transform: translateZ(0);
+    }
+    .dp2-fade-edge-l { left: 0;  background: linear-gradient(to right, #161616, transparent); }
+    .dp2-fade-edge-r { right: 0; background: linear-gradient(to left,  #161616, transparent); }
+
+    .dp2-hero-card {
+      position: absolute; top: 0; left: 0;
+      width: 80px; height: 110px;
+      background: #fefefe;
+      will-change: transform;
+      transition: filter .35s;
+    }
+    .dp2-portrait-wrap {
+      position: relative;
+      width: 80px; height: 87px;
+      overflow: hidden;
+      background: #1c1c1c;
+    }
+    .dp2-portrait-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      display: block;
+    }
+    .dp2-portrait-fallback {
+      width: 100%; height: 100%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 900; color: rgba(255,255,255,.1);
+    }
+    .dp2-portrait-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      border: 2px solid rgba(22,22,22,0.7);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .dp2-rank-badge {
+      position: absolute; top: 4px; left: 4px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4;
+    }
+    #dp2-blue-panel .dp2-rank-badge.dp2-rank-top { background: #004dd5; }
+    #dp2-red-panel  .dp2-rank-badge.dp2-rank-top { background: #f31400; }
+    .dp2-rank-badge.dp2-rank-low { background: #161616; }
+    .dp2-rank-num {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 12px;
+      color: #fff;
+      line-height: 1;
+    }
+    .dp2-pct-area {
+      width: 80px; height: 23px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fefefe;
+    }
+    .dp2-pct-text {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 15px;
+      letter-spacing: .5px;
+    }
+    #dp2-blue-panel .dp2-pct-text { color: #004dd5; }
+    #dp2-red-panel  .dp2-pct-text { color: #f31400; }
+
+    .dp2-hero-card.dp2-dimmed {
+      opacity: .18;
+      filter: grayscale(1) brightness(.4);
+    }
+    .dp2-hero-card.dp2-pressing {
+      transform: translateX(var(--dp2-tx,0px)) scale(.91) translateY(3px) !important;
+      transition: transform .07s ease-in !important;
+    }
+    .dp2-hero-card.dp2-chosen {
+      z-index: 10;
+      opacity: 1 !important; filter: none !important;
+      transform: translateX(var(--dp2-tx,0px)) scale(1.10) translateY(-4px) !important;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .dp2-hero-card.dp2-chosen .dp2-portrait-wrap::before {
+      border-color: #f0c040;
+      box-shadow: 0 0 14px rgba(240,192,64,.6), 0 0 32px rgba(240,192,64,.25);
+    }
+    .dp2-hero-card.dp2-chosen .dp2-rank-badge { transform: translateY(8px); }
+    .dp2-hero-card.dp2-chosen .dp2-pct-text { color: #161616 !important; }
+    .dp2-hero-card.dp2-chosen .dp2-portrait-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 30%, rgba(240,192,64,.35) 50%, transparent 70%);
+      animation: dp2-shimmer 1.5s ease infinite;
+    }
+    @keyframes dp2-shimmer {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(220%); }
+    }
+
+    .dp2-ai-button {
+      position: absolute;
+      top: 608px;
+      width: 153px;
+      height: 72px;
+      object-fit: contain;
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(.35);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, top .3s ease;
+    }
+    #dp2-ai-button-blue { left: 546px; }
+    #dp2-ai-button-red  { left: 1221px; }
+    .dp2-ai-button.dp2-visible { opacity: 1; transform: scale(1); }
+    .dp2-ai-button.dp2-no-panel { top: 700px; }
+
+    .dp2-rationale-bubble {
+      position: absolute;
+      bottom: 436px;
+      width: 725px;
+      height: 110px;
+      border-radius: 36px;
+      background-image: linear-gradient(-104deg, rgb(218,218,218) 0%, rgb(240,240,240) 49%, rgb(255,255,255) 100%);
+      box-shadow: inset 0px 0px 24px 0px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(.06);
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease, bottom .3s ease;
+    }
+    #dp2-rationale-bubble-blue { left: 16px;   transform-origin: 83.66% 100%; }
+    #dp2-rationale-bubble-red  { left: 1179px; transform-origin: 16.34% 100%; }
+    .dp2-rationale-bubble.dp2-visible { opacity: 1; transform: scale(1); }
+    .dp2-rationale-bubble.dp2-no-panel { bottom: 343px; }
+    .dp2-rationale-bubble-inner {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      box-sizing: border-box;
+      padding: 20px 34px 50px 34px;
+    }
+    .dp2-rationale-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      line-height: 1.35;
+      color: #161616;
+    }
+    .dp2-rationale-text strong {
+      font-weight: 1000;
+      background-color: rgba(255, 214, 0, 0.45);
+      border-radius: 4px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      padding: 0 2px;
+    }
   </style>
 </head>
 <body>
@@ -3727,6 +3939,19 @@
       'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
     dpLiveRouletteBtn.onclick = function () { window.__dpTestRouletteLive(); };
     document.body.appendChild(dpLiveRouletteBtn);
+
+    /* Draft Predict v2 — same fake blue-then-red reveal + rationale
+       demo as v1's TEST DRAFT PREDICT button above, just calling the
+       'dp2'-prefixed pipeline (see window.__dp2TestReveal). */
+    var dp2DebugBtn = document.createElement('button');
+    dp2DebugBtn.textContent = 'TEST DRAFT PREDICT V2';
+    dp2DebugBtn.style.cssText =
+      'position:fixed;top:10px;left:530px;z-index:99999;' +
+      'background:#f040c0;color:#fff;border:none;border-radius:4px;' +
+      'padding:8px 14px;font-family:sans-serif;font-weight:700;font-size:13px;' +
+      'cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5);';
+    dp2DebugBtn.onclick = function () { window.__dp2TestReveal(); };
+    document.body.appendChild(dp2DebugBtn);
   }
 
   /* Each sample pairs rationale text with its own `emphasis` array (the
@@ -3921,6 +4146,1079 @@
 
   dpFetchLive();
   setInterval(dpFetchLive, 3000);
+
+  /* ═══════════════════════════════════════════════════════════
+     Draft Predict v2 — same function as v1 above (candidate
+     carousels + rationale bubble), 'dp2'-prefixed to stay fully
+     independent, but pulling its data differently per the redesign:
+     1) Hero art is resolved from candidates[].heroName via
+        heronames.json (id -> hero/HERO_<id>_KOTAK.png), not from the
+        Predict API's own heroId + a hardcoded numeric-id conversion
+        table (v1's DP_HERO_CONVERSIONS) — heroName is a plain,
+        case-insensitive string match, so there's no table to keep in
+        sync every time a new hero ships.
+     2) "Which candidate actually got picked/banned" is read straight
+        from THIS SAME /proxy/predictions response's own draftState
+        (blueBans/redBans/bluePicks/redPicks — already the same hex
+        heroId scheme as candidates[].heroId), even when
+        _localFallback is set. v1 overrides draftState from the real
+        game feed (dpTrackRealDraftSeat + DP_HERO_CONVERSIONS) so its
+        local-fixture demo mode tracks a real draft's timing; v2 has
+        no such override — it trusts whatever draftState the Predict
+        API itself reports, live or fixture, uniformly. ── */
+
+  /* heronames.json — [{ id, name }] list, loaded once. Lookup key is
+     the lowercased name (candidates[].heroName arrives upper-case,
+     e.g. "FANNY"; heronames.json stores "Fanny" — match is
+     case-insensitive per spec, punctuation/spacing must still match
+     exactly, e.g. "Yi Sun-shin" vs "YI SUN-SHIN"). */
+  var DP2_HERO_ID_BY_NAME = {};
+  fetch('/heronames.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (list) {
+      (list || []).forEach(function (h) {
+        if (h && h.name) DP2_HERO_ID_BY_NAME[String(h.name).trim().toLowerCase()] = h.id;
+      });
+    })
+    .catch(function (err) { console.error('Draft Predict v2: could not load heronames.json', err); });
+
+  function dp2HeroImgSrc(heroName) {
+    if (!heroName) return null;
+    var id = DP2_HERO_ID_BY_NAME[String(heroName).trim().toLowerCase()];
+    return id ? ('hero/HERO_' + id + '_KOTAK.png') : null;
+  }
+
+  var DP2_CARD_W = 85;
+  var dp2ScrollSpeed = 0.5;
+
+  function dp2FmtPct(p) { return p.toFixed(2) + '%'; }
+
+  function dp2CreateCarousel(viewportEl, direction) {
+    var c = {
+      viewport: viewportEl, direction: direction,
+      cardEls: [], cardOffsets: [], cardOpacity: [], scrollPos: 0,
+      state: 'stopped', raf: null, pickedIdx: -1,
+      clearTimer: null, onPickDone: null, isAnimating: false,
+      /* Which predictions[] slot's candidates are physically loaded
+         right now — set by every caller of c.init() (dp2RenderPrediction,
+         dp2ProcessPickQueue's re-init branch). null until first init. */
+      loadedSlot: null,
+    };
+
+    var FADE_PX = 55;
+
+    function applyPositions() {
+      var viewW = c.viewport.offsetWidth;
+      var N = c.cardEls.length;
+      if (!N) return;
+      var SET_W = N * DP2_CARD_W;
+      var inMotion = c.state === 'roulette' || c.state === 'settling';
+
+      c.cardEls.forEach(function (el, i) {
+        var x = c.cardOffsets[i] - c.scrollPos;
+        if (x + DP2_CARD_W < 0) { c.cardOffsets[i] += SET_W; x += SET_W; }
+        if (x > viewW)          { c.cardOffsets[i] -= SET_W; x -= SET_W; }
+        el.style.transform = 'translateX(' + x + 'px)';
+        if (!inMotion) el.style.setProperty('--dp2-tx', x + 'px');
+
+        if (inMotion) {
+          var t = c.direction === -1
+            ? Math.min(1, Math.max(0, (x + FADE_PX) / FADE_PX))
+            : Math.min(1, Math.max(0, (viewW - x) / FADE_PX));
+          if (c.cardOpacity[i] === undefined || Math.abs(c.cardOpacity[i] - t) > 0.004) {
+            el.style.opacity = t;
+            c.cardOpacity[i] = t;
+          }
+        } else if (c.cardOpacity[i] !== '') {
+          el.style.opacity = '';
+          c.cardOpacity[i] = '';
+        }
+      });
+    }
+
+    function tick() {
+      var viewW = c.viewport.offsetWidth;
+      if (c.state === 'roulette') {
+        c.scrollPos += c.direction * dp2ScrollSpeed;
+      } else if (c.state === 'settling') {
+        var targetX = viewW / 2 - DP2_CARD_W / 2;
+        var targetScroll = c.cardOffsets[c.pickedIdx] - targetX;
+        var diff = targetScroll - c.scrollPos;
+        c.scrollPos += diff * 0.10;
+        if (Math.abs(diff) < 0.6) {
+          c.scrollPos = targetScroll;
+          c.state = 'picked';
+          applyPositions();
+          triggerPress();
+          return;
+        }
+      }
+      applyPositions();
+      if (c.state === 'roulette' || c.state === 'settling') {
+        c.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function triggerPress() {
+      var chosen = c.cardEls[c.pickedIdx];
+      if (!chosen) return;
+      c.cardEls.forEach(function (el, i) {
+        if (i !== c.pickedIdx) el.classList.add('dp2-dimmed');
+      });
+      chosen.classList.add('dp2-pressing');
+      setTimeout(function () {
+        chosen.classList.remove('dp2-pressing');
+        chosen.classList.add('dp2-chosen');
+      }, 90);
+      c.clearTimer = setTimeout(function () {
+        c.cardEls.forEach(function (el) { el.classList.remove('dp2-dimmed', 'dp2-pressing', 'dp2-chosen'); });
+        c.isAnimating = false;
+        if (c.onPickDone) c.onPickDone();
+      }, c._clearMs || 2250);
+    }
+
+    c.init = function (candidates) {
+      viewportEl.innerHTML = '';
+      c.cardEls = [];
+      c.cardOffsets = [];
+      c.cardOpacity = [];
+      c.scrollPos = 0;
+      var viewW = viewportEl.offsetWidth;
+      var N = candidates.length;
+      candidates.forEach(function (cand, i) {
+        var src = dp2HeroImgSrc(cand.heroName);
+        var el = document.createElement('div');
+        el.className = 'dp2-hero-card';
+        el.dataset.heroId = cand.heroId;
+        el.innerHTML =
+          '<div class="dp2-portrait-wrap">' +
+          (src
+            ? '<img src="' + src + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+            : '') +
+          '<div class="dp2-portrait-fallback" style="' + (src ? '' : 'display:flex') + '">' + cand.heroName.charAt(0) + '</div>' +
+          '<div class="dp2-rank-badge ' + (i < 5 ? 'dp2-rank-top' : 'dp2-rank-low') + '"><span class="dp2-rank-num">' + (i + 1) + '</span></div>' +
+          '</div>' +
+          '<div class="dp2-pct-area"><span class="dp2-pct-text">' + dp2FmtPct(cand.probability) + '</span></div>';
+        viewportEl.appendChild(el);
+        c.cardEls.push(el);
+        c.cardOffsets.push(i * DP2_CARD_W);
+      });
+      var startOffset = viewW / 2 - (N * DP2_CARD_W) / 2;
+      c.cardOffsets = c.cardOffsets.map(function (o) { return o + startOffset; });
+      applyPositions();
+    };
+
+    c.startRoulette = function () {
+      cancelAnimationFrame(c.raf);
+      clearTimeout(c.clearTimer);
+      c.cardEls.forEach(function (el) {
+        el.classList.remove('dp2-dimmed', 'dp2-pressing', 'dp2-chosen');
+        el.style.opacity = '';
+      });
+      c.cardOpacity = [];
+      c.state = 'roulette';
+      c.isAnimating = false;
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.settle = function (heroId, onDone, clearMs) {
+      c._clearMs = clearMs || 4500;
+      var idx = -1;
+      for (var i = 0; i < c.cardEls.length; i++) { if (c.cardEls[i].dataset.heroId === heroId) { idx = i; break; } }
+      if (idx === -1) { c.startRoulette(); if (onDone) setTimeout(onDone, c._clearMs); return; }
+      c.pickedIdx = idx;
+      c.onPickDone = onDone || null;
+      c.isAnimating = true;
+      c.state = 'settling';
+      cancelAnimationFrame(c.raf);
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.reset = function () {
+      clearTimeout(c.clearTimer);
+      c.startRoulette();
+    };
+
+    c.applyPositions = applyPositions;
+    return c;
+  }
+
+  /* ── App state ─────────────────────────────────────────────── */
+  var dp2BluePanelEl, dp2RedPanelEl, dp2BlueHeaderTextEl, dp2RedHeaderTextEl;
+  var dp2BlueAiBtnEl, dp2RedAiBtnEl;
+  var dp2BlueRationaleBubbleEl, dp2RedRationaleBubbleEl, dp2BlueRationaleInnerEl, dp2RedRationaleInnerEl;
+  var dp2BlueRationaleTextEl, dp2RedRationaleTextEl;
+  var dp2BlueC = null;
+  var dp2RedC  = null;
+  var dp2ActivePanel    = null;
+  var dp2PanelVisible   = false;
+  var dp2PrevData       = null;
+  var dp2ActiveData     = null;
+  var dp2DisplayedSlot  = null;
+  var dp2UserHidden     = true;
+  var dp2DisplayedDraftRef = null;
+  var dp2PickQueue      = [];
+  var dp2PrevDraftKey   = null;
+
+  var dp2RationaleTimers    = { blue: null, red: null };
+  var dp2RationaleSeqTimers = { blue: null, red: null };
+  var dp2RationaleEnabled   = true;
+  /* Per-side "a bubble is currently on screen (or mid hide-out)" flag,
+     plus a per-side FIFO of {text, emphasis} waiting their turn. A real
+     double pick/ban turn (two same-side reveals close together, e.g.
+     the Blue-Blue back-to-back picks in the standard MLBB draft
+     sequence) used to make the second reveal's dp2ShowRationaleBubble
+     call immediately overwrite the first one's still-active bubble —
+     the first rationale effectively never got seen. Now a same-side
+     request made while busy queues instead of overwriting, and
+     dp2HideRationaleSide pops the next queued one once the current
+     bubble's own natural hold + hide-out animation finishes, so every
+     qualifying rationale gets its full turn instead of some being
+     skipped. */
+  var dp2RationaleBusy  = { blue: false, red: false };
+  var dp2RationaleQueue = { blue: [], red: [] };
+  /* Set true for the duration of a __dp2TestReveal() debug run — same
+     "suspend real polling so the demo can't get clobbered mid-play"
+     guard as v1's dpDebugTestActive. */
+  var dp2DebugTestActive = false;
+
+  var DP2_AI_BTN_POP_MS       = 350;
+  var DP2_BUBBLE_GROW_MS      = 400;
+  var DP2_RATIONALE_MIN_H     = 110;
+  var DP2_RATIONALE_MAX_H     = 237;
+  var DP2_RATIONALE_HIDE_MULT = 2;
+  /* How hard to try before finally giving up on a slot's rationale that
+     hasn't backfilled yet (see dp2ProcessPickQueue's retry loop) — v1
+     only retries once after 1.5s; v2 must not skip a real rationale
+     just because the API was briefly slow to attach it, so it retries
+     several times across a longer window before finally giving up. */
+  var DP2_RATIONALE_RETRY_MS    = 1000;
+  var DP2_RATIONALE_MAX_RETRIES = 8;
+  /* How long to let the roulette visibly run for a slot whose real
+     pick isn't among its own AI-predicted top 10 at all, before sliding
+     the panel back down with nothing settled — see dp2ProcessPickQueue's
+     final idx===-1 fallback. Comparable to a real reveal's own
+     roulette-then-settle stretch, so an unpredicted pick still reads as
+     "the AI looked and had no match" instead of the panel silently
+     vanishing almost instantly. */
+  var DP2_NO_MATCH_ROULETTE_MS = 1800;
+
+  function dp2GetActiveCarousel() {
+    return dp2ActivePanel === 'blue' ? dp2BlueC : dp2ActivePanel === 'red' ? dp2RedC : null;
+  }
+
+  function dp2SyncBubblePosition(side) {
+    var panelEl  = side === 'blue' ? dp2BluePanelEl : dp2RedPanelEl;
+    var bubbleEl = side === 'blue' ? dp2BlueRationaleBubbleEl : dp2RedRationaleBubbleEl;
+    var btnEl    = side === 'blue' ? dp2BlueAiBtnEl : dp2RedAiBtnEl;
+    if (!panelEl || !bubbleEl || !btnEl) return;
+    var noPanel = !panelEl.classList.contains('dp2-visible');
+    bubbleEl.classList.toggle('dp2-no-panel', noPanel);
+    btnEl.classList.toggle('dp2-no-panel', noPanel);
+  }
+
+  function dp2SetPanelInstant(el) {
+    el.classList.add('dp2-no-anim');
+    el.offsetHeight;
+    el.classList.remove('dp2-no-anim');
+  }
+
+  function dp2ShowPanel(side, animated) {
+    var el = side === 'blue' ? dp2BluePanelEl : dp2RedPanelEl;
+    var alreadyVisible = el.classList.contains('dp2-visible');
+    var useAnim = animated === true || (animated === undefined && !alreadyVisible);
+
+    var hiddenC = side === 'blue' ? dp2RedC : dp2BlueC;
+    if (hiddenC && hiddenC.state === 'roulette') {
+      cancelAnimationFrame(hiddenC.raf); hiddenC.state = 'stopped';
+    }
+
+    if (!useAnim) {
+      dp2SetPanelInstant(dp2BluePanelEl);
+      dp2SetPanelInstant(dp2RedPanelEl);
+    }
+
+    dp2BluePanelEl.classList.toggle('dp2-visible', side === 'blue');
+    dp2RedPanelEl.classList.toggle('dp2-visible', side === 'red');
+
+    dp2SyncBubblePosition('blue');
+    dp2SyncBubblePosition('red');
+
+    dp2ActivePanel  = side;
+    dp2PanelVisible = true;
+  }
+
+  /* keepRationale: true when this hide is happening right after this
+     same entry's own rationale bubble was just shown (see
+     dp2ProcessPickQueue's advance() below) — the panels still hide
+     (draft's over, nothing left to carousel/roulette), but the bubble
+     that just appeared is left alone to run its normal 10s hold and
+     auto-hide on its own timer, instead of being wiped ~50ms after it
+     appeared. Every other caller (a real Hide command, a user-hidden
+     restore) omits this and gets the original "clear everything"
+     behavior. */
+  function dp2HideAll(keepRationale) {
+    dp2BluePanelEl.classList.remove('dp2-visible');
+    dp2RedPanelEl.classList.remove('dp2-visible');
+    dp2PanelVisible = false;
+    dp2UserHidden   = true;
+    if (keepRationale) {
+      /* Same "bubble outlived its own panel" repositioning that a
+         normal side-switch already goes through (see dp2ShowPanel) —
+         reflows it to the no-panel fallback spot instead of leaving it
+         floating with a big empty gap where the panel used to be. */
+      dp2SyncBubblePosition('blue');
+      dp2SyncBubblePosition('red');
+    } else {
+      dp2HideRationaleBubbles(true);
+    }
+  }
+
+  function dp2IsValidRationale(text) {
+    if (!text || typeof text !== 'string') return false;
+    var t = text.trim();
+    if (!t) return false;
+    var lower = t.toLowerCase();
+    return lower !== 'null' && lower !== 'undefined';
+  }
+
+  function dp2EscapeHtml(text) {
+    return text.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function dp2BuildEmphasisRegex(phrases) {
+    if (!Array.isArray(phrases) || !phrases.length) return null;
+    var escaped = phrases
+      .filter(function (p) { return p && typeof p === 'string' && p.trim(); })
+      .slice()
+      .sort(function (a, b) { return b.length - a.length; })
+      .map(function (p) { return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!escaped.length) return null;
+    return new RegExp(escaped.join('|'), 'g');
+  }
+
+  function dp2HighlightRationale(text, emphasis) {
+    var re = dp2BuildEmphasisRegex(emphasis);
+    if (!re) return dp2EscapeHtml(text);
+    var result = '';
+    var lastIndex = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      result += dp2EscapeHtml(text.slice(lastIndex, m.index));
+      result += '<strong>' + dp2EscapeHtml(m[0]) + '</strong>';
+      lastIndex = m.index + m[0].length;
+    }
+    result += dp2EscapeHtml(text.slice(lastIndex));
+    return result;
+  }
+
+  /* Returns true when this rationale either started showing right now
+     OR was queued to show once the current same-side bubble finishes
+     its turn — false only when it was rejected outright (disabled,
+     missing elements, or not a real rationale string). Callers that
+     need to know "will this pick's rationale be seen at all" (see
+     dp2ProcessPickQueue's decide()) should treat true as "yes,
+     eventually" regardless of which case it was. */
+  function dp2ShowRationaleBubble(side, text, emphasis) {
+    var btnEl    = side === 'blue' ? dp2BlueAiBtnEl : dp2RedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dp2BlueRationaleBubbleEl : dp2RedRationaleBubbleEl;
+    var innerEl  = side === 'blue' ? dp2BlueRationaleInnerEl : dp2RedRationaleInnerEl;
+    var textEl   = side === 'blue' ? dp2BlueRationaleTextEl : dp2RedRationaleTextEl;
+    if (!dp2RationaleEnabled || !btnEl || !bubbleEl || !innerEl || !textEl || !dp2IsValidRationale(text)) return false;
+
+    if (dp2RationaleBusy[side]) {
+      /* This side's bubble is still on screen (or mid hide-out) from an
+         earlier reveal in the same double turn — queue instead of
+         overwriting it, so the one already showing gets its full 10s
+         hold instead of being cut short. dp2HideRationaleSide pops this
+         once that one's hide-out animation actually finishes. */
+      dp2RationaleQueue[side].push({ text: text, emphasis: emphasis });
+      return true;
+    }
+    dp2RationaleBusy[side] = true;
+
+    dp2SyncBubblePosition(side);
+
+    clearTimeout(dp2RationaleTimers[side]);
+    clearTimeout(dp2RationaleSeqTimers[side]);
+
+    textEl.innerHTML = dp2HighlightRationale(text, emphasis);
+
+    var targetH = Math.max(DP2_RATIONALE_MIN_H, Math.min(DP2_RATIONALE_MAX_H, innerEl.scrollHeight));
+    bubbleEl.style.height = targetH + 'px';
+
+    btnEl.style.transitionDuration = '';
+    bubbleEl.style.transitionDuration = '';
+    btnEl.classList.remove('dp2-visible');
+    bubbleEl.classList.remove('dp2-visible');
+    void btnEl.offsetWidth;
+
+    btnEl.classList.add('dp2-visible');
+    btnEl.currentTime = 0;
+    btnEl.play().catch(function () {});
+
+    dp2RationaleSeqTimers[side] = setTimeout(function () {
+      bubbleEl.classList.add('dp2-visible');
+    }, DP2_AI_BTN_POP_MS);
+
+    dp2RationaleTimers[side] = setTimeout(function () {
+      dp2HideRationaleSide(side);
+    }, 10000);
+    return true;
+  }
+
+  /* force: true for a real "hide everything now" (dashboard Hide, a
+     new draft starting, the rationale feature toggled off) — clears
+     this side's pending queue too, since nothing queued should surface
+     after an explicit hide. Left falsy for the normal 10s-hold timeout
+     above, so a queued same-side rationale gets its own turn once this
+     one's hide-out animation completes. */
+  function dp2HideRationaleSide(side, force) {
+    var btnEl    = side === 'blue' ? dp2BlueAiBtnEl : dp2RedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dp2BlueRationaleBubbleEl : dp2RedRationaleBubbleEl;
+    if (!btnEl || !bubbleEl) return;
+    clearTimeout(dp2RationaleSeqTimers[side]);
+
+    var bubbleHideMs = DP2_BUBBLE_GROW_MS / DP2_RATIONALE_HIDE_MULT;
+    var btnHideMs    = DP2_AI_BTN_POP_MS  / DP2_RATIONALE_HIDE_MULT;
+
+    bubbleEl.style.transitionDuration = bubbleHideMs + 'ms';
+    bubbleEl.classList.remove('dp2-visible');
+
+    dp2RationaleSeqTimers[side] = setTimeout(function () {
+      btnEl.style.transitionDuration = btnHideMs + 'ms';
+      btnEl.classList.remove('dp2-visible');
+      setTimeout(function () {
+        btnEl.pause();
+        dp2RationaleBusy[side] = false;
+        if (force) {
+          dp2RationaleQueue[side] = [];
+        } else if (dp2RationaleQueue[side].length) {
+          var next = dp2RationaleQueue[side].shift();
+          dp2ShowRationaleBubble(side, next.text, next.emphasis);
+        }
+      }, btnHideMs);
+    }, bubbleHideMs);
+  }
+
+  function dp2HideRationaleBubbles(force) {
+    clearTimeout(dp2RationaleTimers.blue);
+    clearTimeout(dp2RationaleTimers.red);
+    dp2HideRationaleSide('blue', force);
+    dp2HideRationaleSide('red', force);
+  }
+
+  function dp2SetHeaderText(side, teamName, type) {
+    var tricode = (teamName || side).toUpperCase();
+    if (side === 'blue') {
+      dp2BlueHeaderTextEl.textContent = 'AI DRAFT PREDICTOR — ' + tricode + ' ' + type;
+    } else {
+      dp2RedHeaderTextEl.textContent = type + ' ' + tricode + ' — AI DRAFT PREDICTOR';
+    }
+  }
+
+  function dp2RenderPrediction(pred, data) {
+    dp2DisplayedSlot = pred.slot;
+    var side     = pred.side.toLowerCase();
+    var team     = side === 'blue' ? (data.blueTeam && data.blueTeam.name) : (data.redTeam && data.redTeam.name);
+    var carousel = side === 'blue' ? dp2BlueC : dp2RedC;
+
+    dp2SetHeaderText(side, team, pred.type);
+
+    var candidates = pred.candidates.slice(0, 10);
+    carousel.init(candidates);
+    /* Tags which slot's pool is physically loaded right now — see
+       dp2ProcessPickQueue's idx search for why this matters: a same-
+       side double turn's second entry can't trust "is this heroId
+       already sitting in the carousel" alone, since a strong candidate
+       commonly appears in more than one slot's top 10. */
+    carousel.loadedSlot = pred.slot;
+    carousel.startRoulette();
+
+    dp2ActivePanel = side;
+    if (!dp2UserHidden) dp2ShowPanel(side);
+  }
+
+  /* Pick detection — walks THIS SAME response's own draftState arrays
+     (already the same hex heroId scheme as candidates[].heroId, live
+     or _localFallback) by array-length diff, same exact-position
+     reasoning as v1's dpDetectReveal — just with no real-game-feed
+     override step first, per this feature's whole reason for
+     existing. */
+  function dp2DetectReveal(newData) {
+    if (!dp2DisplayedDraftRef) return false;
+
+    var ns = newData.draftState || {};
+
+    var added = [];
+    /* Which predictions[] entry (and therefore which top-10 candidate
+       list) belongs to each newly-arrived heroId — NOT assumed from
+       array position, and NOT resolved from only THIS poll's newly-
+       arrived heroIds in isolation. A same-side double turn (e.g. slot
+       8 + slot 9 both RED PICK) lets either teammate confirm first,
+       and the two confirmations don't even have to land in the SAME
+       poll — the game does NOT guarantee draftState.redPicks appends
+       in slot-ascending order, or that both land close together in
+       time at all.
+
+       This resolves every hero decided SO FAR for a side+type (not
+       just this poll's delta) against ALL of that side+type's
+       predictions, fresh, every single time — because a hero that
+       arrives alone with more than one still-open slot can be
+       genuinely ambiguous by itself (it may legitimately appear in
+       more than one slot's own top 10), but once a LATER arrival
+       uniquely matches one of those same open slots, that resolves the
+       ambiguity for BOTH by elimination — which only works if every
+       recompute sees the whole picture, not just its own delta.
+
+       This fixes a real, confirmed cascade: slot 9 (Hirara) confirmed
+       first while slot 8 was still undecided; Hirara happened to also
+       be one of slot 8's own top-10 candidates, so the old delta-only
+       positional logic guessed slot 8 for it (a coin flip with no way
+       to know better from Hirara alone) and permanently marked slot 8
+       "consumed". When slot 8 later confirmed for real (Carmilla),
+       the old logic had already excluded slot 8 from consideration and
+       forced Carmilla to be checked against slot 9's candidates
+       instead — where it was never a candidate at all — which is
+       exactly why the panel appeared to "skip" it as unpredicted, when
+       the real cause was slot 8's bookkeeping being wrongly consumed
+       by Hirara's earlier guess. Recomputing fresh from the full
+       decided-so-far list every time means Carmilla's arrival can
+       still correctly claim slot 8 (elimination now has both heroIds
+       to work with), even though Hirara's own earlier display already
+       played out and can't be undone. */
+    function resolveSideType(fullHeroIds, side, type) {
+      var predictionsSrc = newData.predictions || (dp2PrevData && dp2PrevData.predictions) || [];
+      var sortedSameType = predictionsSrc.slice().sort(function (a, b) { return a.slot - b.slot; })
+        .filter(function (p) { return p.side === side && p.type === type; });
+
+      var assigned = fullHeroIds.map(function () { return -1; });
+      var predUsed = sortedSameType.map(function () { return false; });
+
+      var changed = true;
+      while (changed) {
+        changed = false;
+        for (var hi = 0; hi < fullHeroIds.length; hi++) {
+          if (assigned[hi] !== -1) continue;
+          var matches = [];
+          for (var pi = 0; pi < sortedSameType.length; pi++) {
+            if (predUsed[pi]) continue;
+            var cands = sortedSameType[pi].candidates || [];
+            if (cands.some(function (c) { return c.heroId === fullHeroIds[hi]; })) matches.push(pi);
+          }
+          if (matches.length === 1) {
+            assigned[hi] = matches[0];
+            predUsed[matches[0]] = true;
+            changed = true;
+          }
+        }
+      }
+
+      var nextFree = 0;
+      function nextFreeIdx() {
+        while (nextFree < predUsed.length && predUsed[nextFree]) nextFree++;
+        return nextFree < predUsed.length ? nextFree : -1;
+      }
+      for (var hi2 = 0; hi2 < fullHeroIds.length; hi2++) {
+        if (assigned[hi2] !== -1) continue;
+        var fi = nextFreeIdx();
+        if (fi !== -1) { assigned[hi2] = fi; predUsed[fi] = true; nextFree = fi + 1; }
+      }
+
+      return fullHeroIds.map(function (heroId, k) {
+        var predIdx = assigned[k];
+        return {
+          heroId: heroId,
+          pred: predIdx !== -1 ? sortedSameType[predIdx] : null,
+          occurrence: predIdx,
+        };
+      });
+    }
+    function collect(arrName, side, type) {
+      var newArr   = ns[arrName] || [];
+      var knownLen = (dp2DisplayedDraftRef[arrName] || []).length;
+      if (newArr.length <= knownLen) return;
+      resolveSideType(newArr, side, type).slice(knownLen).forEach(function (r) {
+        added.push({ heroId: r.heroId, side: side.toLowerCase(), type: type.toLowerCase(), pred: r.pred, occurrence: r.occurrence });
+      });
+    }
+    collect('bluePicks', 'BLUE', 'PICK');
+    collect('redPicks',  'RED',  'PICK');
+    collect('blueBans',  'BLUE', 'BAN');
+    collect('redBans',   'RED',  'BAN');
+    if (!added.length) return false;
+
+    dp2DisplayedDraftRef = JSON.parse(JSON.stringify(ns));
+
+    if (dp2UserHidden) return true;
+
+    added.sort(function (a, b) { return (a.pred ? a.pred.slot : 999) - (b.pred ? b.pred.slot : 999); });
+
+    var wasAnimating = (dp2BlueC && dp2BlueC.isAnimating) || (dp2RedC && dp2RedC.isAnimating);
+    var wasIdle = dp2PickQueue.length === 0 && !wasAnimating;
+
+    if (wasIdle) {
+      dp2PickQueue = added.length <= 2 ? added : [added[added.length - 1]];
+      dp2ProcessPickQueue(newData);
+    } else {
+      /* Something is already mid-processing (a carousel settling, or
+         holding on its finished glow/rationale) — append every new
+         entry behind whatever's already queued instead of keeping only
+         the newest arrival. The old code here (`[dp2PickQueue[0],
+         latest]`) silently dropped the OTHER new entry whenever a
+         same-side double turn was detected while the panel was still
+         busy with a prior turn — that entry never got its own reveal
+         at all, no animation, no rationale check, nothing. Per the
+         explicit ask: nothing queued here is ever dropped; each entry
+         always gets its own full roulette/settle/hold turn, one at a
+         time, strictly in order — dp2ProcessPickQueue's own advance()
+         only starts the next one once the current one's full animation
+         (and any rationale it showed) has actually finished. */
+      dp2PickQueue = dp2PickQueue.concat(added);
+    }
+    return true;
+  }
+
+  function dp2ProcessPickQueue(fallbackData) {
+    if (!dp2PickQueue.length) return;
+    var entry = dp2PickQueue[0];
+    var next  = dp2PickQueue[1];
+
+    var consecutive = next && next.side === entry.side && next.type === entry.type;
+    var clearMs = consecutive ? 1000 : 2250;
+
+    var targetC = entry.side === 'blue' ? dp2BlueC : dp2RedC;
+    if (!targetC) { dp2PickQueue.shift(); dp2ProcessPickQueue(fallbackData); return; }
+
+    if (!dp2UserHidden) dp2ShowPanel(entry.side);
+
+    function onDone() {
+      /* justShowedBubble: whether THIS entry's own decide() just put a
+         rationale bubble on screen — threaded through so the
+         draft-complete branch below can leave it alone instead of
+         wiping it out immediately after showing it (see dp2HideAll's
+         own comment on keepRationale). */
+      function advance(justShowedBubble) {
+        dp2PickQueue.shift();
+        var data = dp2ActiveData || fallbackData;
+        if (dp2PickQueue.length) {
+          dp2ProcessPickQueue(data);
+        } else {
+          var latest = dp2DeriveActivePrediction(data);
+          if (latest) {
+            dp2RenderPrediction(latest, data);
+          } else {
+            dp2HideAll(justShowedBubble);
+          }
+        }
+      }
+
+      function decide() {
+        var showedBubble = false;
+        if (!dp2UserHidden && entry.pred && dp2IsValidRationale(entry.pred.rationale)) {
+          var rankIdx = entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; });
+          if (rankIdx > -1 && rankIdx < 5) {
+            /* true whether it started playing right now or was queued
+               behind this side's still-active bubble (a same-side
+               double turn) — either way it will be seen, just maybe not
+               immediately, so advance() below should still protect it
+               from dp2HideAll's "clear everything" branch. */
+            showedBubble = dp2ShowRationaleBubble(entry.side, entry.pred.rationale, entry.pred.rationaleEmphasis);
+          }
+        }
+        if (showedBubble) setTimeout(function () { advance(true); }, 50);
+        else advance(false);
+      }
+
+      /* Retry loop — a top-5 settle whose rationale hasn't backfilled
+         yet keeps re-checking /proxy/predictions for THIS exact slot
+         (by side+type+occurrence, same as v1) instead of giving up
+         after one short wait, so a real rationale that lands a little
+         late still gets shown rather than silently skipped. Only a
+         top-5 settle is worth retrying for — a 6th-10th/unranked pick
+         was never going to show a bubble regardless of rationale. */
+      var rankIdxNow = entry.pred ? entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; }) : -1;
+      var isTop5 = rankIdxNow > -1 && rankIdxNow < 5;
+      if (isTop5 && entry.pred && !dp2IsValidRationale(entry.pred.rationale)) {
+        var attempts = 0;
+        (function retry() {
+          attempts++;
+          setTimeout(function () {
+            fetch('/proxy/predictions', { cache: 'no-store' }).then(function (r) { return r.json(); })
+              .then(function (fresh) {
+                var freshPred = dp2PredictionAt(fresh && fresh.predictions, entry.pred.side, entry.pred.type, entry.occurrence);
+                if (freshPred && dp2IsValidRationale(freshPred.rationale)) {
+                  entry.pred = freshPred;
+                  decide();
+                } else if (attempts < DP2_RATIONALE_MAX_RETRIES) {
+                  retry();
+                } else {
+                  decide();
+                }
+              })
+              .catch(function () { if (attempts < DP2_RATIONALE_MAX_RETRIES) retry(); else decide(); });
+          }, DP2_RATIONALE_RETRY_MS);
+        })();
+        return;
+      }
+      decide();
+    }
+
+    /* "Is entry.heroId already sitting in the carousel" is only valid
+       evidence when the carousel's CURRENTLY LOADED pool is actually
+       this entry's own slot — otherwise a same-side double turn's
+       second entry can find its hero by pure coincidence inside the
+       FIRST entry's still-loaded pool (a strong candidate very
+       commonly appears in more than one slot's top 10) and skip
+       re-initializing to its own real candidates entirely. That's
+       exactly what shipped once live: slot 18 settled on Hylos, then
+       slot 19's real winner (Gloo) happened to also be one of slot
+       18's own top 10 — so the carousel never advanced off slot 18's
+       pool and just quietly re-settled on Gloo within it (rationale
+       still came out correct, since that's driven by entry.pred, not
+       by which pool is on screen — only the visual pool was wrong). */
+    var predSlot = entry.pred ? entry.pred.slot : null;
+    var idx = -1;
+    if (predSlot != null && targetC.loadedSlot === predSlot) {
+      for (var i = 0; i < targetC.cardEls.length; i++) { if (targetC.cardEls[i].dataset.heroId === entry.heroId) { idx = i; break; } }
+    }
+
+    var realIdx = -1;
+    if (idx === -1) {
+      var data2    = dp2ActiveData || fallbackData;
+      var sidePred = entry.pred;
+      var cands    = sidePred ? sidePred.candidates.slice(0, 10) : [];
+      for (var k = 0; k < cands.length; k++) { if (cands[k].heroId === entry.heroId) { realIdx = k; break; } }
+
+      /* Load THIS slot's own real pool/header regardless of whether the
+         actual pick turns out to be in it — even a genuinely
+         unpredicted pick (realIdx still -1 below) should visibly
+         roulette this slot's real candidates before giving up, rather
+         than leaving whatever pool a previous slot left behind on
+         screen for the brief moment before hiding. */
+      if (sidePred && targetC.loadedSlot !== sidePred.slot) {
+        dp2SetHeaderText(entry.side,
+          entry.side === 'blue' ? (data2.blueTeam && data2.blueTeam.name) : (data2.redTeam && data2.redTeam.name),
+          sidePred.type);
+        targetC.init(cands);
+        targetC.loadedSlot = sidePred.slot;
+        dp2ActivePanel   = entry.side;
+        dp2DisplayedSlot = sidePred.slot;
+      }
+      if (realIdx > -1) {
+        for (var j = 0; j < targetC.cardEls.length; j++) { if (targetC.cardEls[j].dataset.heroId === entry.heroId) { idx = j; break; } }
+      }
+    }
+
+    if (idx === -1) {
+      /* The real pick isn't among this slot's AI-predicted candidates
+         at all. Previously this hid the panel almost instantly (a
+         ~460ms fade), which read as the reveal silently skipping —
+         instead, when we do have this slot's real pool loaded, let the
+         roulette visibly run for a believable stretch first (same
+         "the AI looked, found nothing" feel as any other reveal), then
+         slide the panel down without ever settling on a card. Falls
+         back to the old fast hide only when there's no real pool to
+         show at all (entry.pred itself couldn't be resolved). */
+      var hasPool = !!(entry.pred && targetC.loadedSlot === entry.pred.slot && targetC.cardEls.length);
+      if (!dp2UserHidden && hasPool) {
+        targetC.startRoulette();
+        setTimeout(function () {
+          cancelAnimationFrame(targetC.raf);
+          targetC.state = 'stopped';
+          var elSide = entry.side === 'blue' ? dp2BluePanelEl : dp2RedPanelEl;
+          elSide.classList.remove('dp2-visible');
+          dp2PanelVisible = false;
+          dp2SyncBubblePosition(entry.side);
+          setTimeout(onDone, 460);
+        }, DP2_NO_MATCH_ROULETTE_MS);
+      } else if (!dp2UserHidden) {
+        var elSideFast = entry.side === 'blue' ? dp2BluePanelEl : dp2RedPanelEl;
+        elSideFast.classList.remove('dp2-visible');
+        dp2PanelVisible = false;
+        dp2SyncBubblePosition(entry.side);
+        setTimeout(onDone, 460);
+      } else {
+        onDone();
+      }
+      return;
+    }
+
+    var wasRouletting = targetC.state === 'roulette';
+    if (!wasRouletting) targetC.startRoulette();
+    setTimeout(function () {
+      targetC.settle(entry.heroId, onDone, clearMs);
+    }, wasRouletting ? 0 : 400);
+  }
+
+  function dp2PredictionAt(predictions, side, type, occurrence) {
+    var sorted = (predictions || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var count = 0;
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      if (p.side === side && p.type === type) {
+        if (count === occurrence) return p;
+        count++;
+      }
+    }
+    return null;
+  }
+
+  function dp2DeriveActivePrediction(data) {
+    var ds     = (data && data.draftState) || {};
+    var sorted = ((data && data.predictions) || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var counts = {
+      BLUE_BAN:  (ds.blueBans  || []).length,
+      RED_BAN:   (ds.redBans   || []).length,
+      BLUE_PICK: (ds.bluePicks || []).length,
+      RED_PICK:  (ds.redPicks  || []).length,
+    };
+    var seen = { BLUE_BAN: 0, RED_BAN: 0, BLUE_PICK: 0, RED_PICK: 0 };
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      var key = p.side + '_' + p.type;
+      if (seen[key] === undefined) continue;
+      if (seen[key] >= counts[key]) return p;
+      seen[key]++;
+    }
+    return null;
+  }
+
+  function dp2DraftKey(data) {
+    if (data.battleId) return String(data.battleId);
+    var r = data.roomName || '';
+    var b = (data.blueTeam && data.blueTeam.name) || '';
+    var rd = (data.redTeam  && data.redTeam.name)  || '';
+    if (!r && !b && !rd) return null;
+    return r + '|' + b + '|' + rd;
+  }
+
+  var dp2FetchInFlight = false;
+  function dp2FetchLive() {
+    if (dp2DebugTestActive) return; /* real polling suspended during a __dp2TestReveal() run — see there */
+    if (dp2FetchInFlight) return;
+    dp2FetchInFlight = true;
+    fetch('/proxy/predictions', { cache: 'no-store', signal: AbortSignal.timeout(8000) }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      /* No real-draft-feed override here (unlike v1's _localFallback
+         branch) — v2 trusts this SAME response's own draftState
+         uniformly, whether it's the live Predict API or
+         predictions_test.json's canned fixture. */
+      var key = dp2DraftKey(data);
+      var isNewDraft = dp2PrevData && dp2PrevDraftKey && key && key !== dp2PrevDraftKey;
+
+      if (!dp2PrevData || isNewDraft) {
+        if (isNewDraft) {
+          if (dp2BlueC) { clearTimeout(dp2BlueC.clearTimer); cancelAnimationFrame(dp2BlueC.raf); dp2BlueC.isAnimating = false; }
+          if (dp2RedC)  { clearTimeout(dp2RedC.clearTimer);  cancelAnimationFrame(dp2RedC.raf);  dp2RedC.isAnimating  = false; }
+          dp2PickQueue = [];
+          dp2HideRationaleBubbles(true);
+        }
+        dp2ApplyData(data);
+      } else {
+        var didReveal = dp2DetectReveal(data);
+        dp2ActiveData = data;
+        if (!didReveal && !(dp2BlueC && dp2BlueC.isAnimating) && !(dp2RedC && dp2RedC.isAnimating)) {
+          if (dp2PanelVisible && !dp2DeriveActivePrediction(data)) dp2HideAll();
+        }
+      }
+
+      dp2PrevDraftKey = key || dp2PrevDraftKey;
+      dp2PrevData = data;
+    }).catch(function () {})
+      .finally(function () { dp2FetchInFlight = false; });
+  }
+
+  function dp2ApplyData(data) {
+    dp2ActiveData = data;
+    dp2PrevData   = null;
+    dp2PickQueue  = [];
+    dp2DisplayedDraftRef = JSON.parse(JSON.stringify(data.draftState || {}));
+    var latest = dp2DeriveActivePrediction(data);
+    if (latest) dp2RenderPrediction(latest, data);
+  }
+
+  /* ── Remote control — 'draftpredict2' show/hide (checkOverlays
+     pattern, see routes/overlay.js) ────────────────────────────── */
+  function dp2ApplyCmd(action) {
+    if (action === 'show') {
+      if (dp2BlueC) { clearTimeout(dp2BlueC.clearTimer); cancelAnimationFrame(dp2BlueC.raf); dp2BlueC.isAnimating = false; }
+      if (dp2RedC)  { clearTimeout(dp2RedC.clearTimer);  cancelAnimationFrame(dp2RedC.raf);  dp2RedC.isAnimating  = false; }
+      dp2PickQueue  = [];
+      dp2UserHidden = false;
+      var latest = dp2ActiveData && dp2DeriveActivePrediction(dp2ActiveData);
+      if (latest) {
+        dp2RenderPrediction(latest, dp2ActiveData);
+      } else if (dp2ActivePanel) {
+        dp2ShowPanel(dp2ActivePanel, true);
+        var ac = dp2GetActiveCarousel();
+        if (ac) ac.startRoulette();
+      }
+    } else if (action === 'hide') {
+      if (dp2BlueC) { clearTimeout(dp2BlueC.clearTimer); cancelAnimationFrame(dp2BlueC.raf); dp2BlueC.isAnimating = false; }
+      if (dp2RedC)  { clearTimeout(dp2RedC.clearTimer);  cancelAnimationFrame(dp2RedC.raf);  dp2RedC.isAnimating  = false; }
+      dp2PickQueue = [];
+      dp2HideAll();
+    }
+  }
+
+  /* Dashboard Edit-tab force-show (see EDIT_CONFIGS' draft_predict2 in
+     dashboard.html). */
+  window.showDraftPredict2ForEdit = function () {
+    dp2UserHidden = false;
+    var latest = dp2ActiveData && dp2DeriveActivePrediction(dp2ActiveData);
+    if (latest) { dp2RenderPrediction(latest, dp2ActiveData); return; }
+    dp2ShowPanel('blue', true);
+  };
+
+  /* ── Build panels (appended to <body>, not #scene) ────────────── */
+  function buildDraftPredict2() {
+    dp2BluePanelEl = document.createElement('div');
+    dp2BluePanelEl.id = 'dp2-blue-panel';
+    dp2BluePanelEl.className = 'dp2-panel';
+    dp2BluePanelEl.innerHTML =
+      '<div class="dp2-panel-inner">' +
+        '<div class="dp2-panel-header"><span class="dp2-header-text" id="dp2-blue-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp2-panel-body">' +
+          '<div class="dp2-carousel-viewport" id="dp2-blue-viewport"></div>' +
+          '<div class="dp2-fade-edge dp2-fade-edge-l"></div>' +
+          '<div class="dp2-fade-edge dp2-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dp2BluePanelEl);
+
+    dp2RedPanelEl = document.createElement('div');
+    dp2RedPanelEl.id = 'dp2-red-panel';
+    dp2RedPanelEl.className = 'dp2-panel';
+    dp2RedPanelEl.innerHTML =
+      '<div class="dp2-panel-inner">' +
+        '<div class="dp2-panel-header"><span class="dp2-header-text" id="dp2-red-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp2-panel-body">' +
+          '<div class="dp2-carousel-viewport" id="dp2-red-viewport"></div>' +
+          '<div class="dp2-fade-edge dp2-fade-edge-l"></div>' +
+          '<div class="dp2-fade-edge dp2-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dp2RedPanelEl);
+
+    dp2BlueHeaderTextEl = document.getElementById('dp2-blue-header-text');
+    dp2RedHeaderTextEl  = document.getElementById('dp2-red-header-text');
+    dp2BlueC = dp2CreateCarousel(document.getElementById('dp2-blue-viewport'), -1);
+    dp2RedC  = dp2CreateCarousel(document.getElementById('dp2-red-viewport'),  +1);
+
+    dp2BlueAiBtnEl = document.createElement('video');
+    dp2BlueAiBtnEl.id = 'dp2-ai-button-blue';
+    dp2BlueAiBtnEl.className = 'dp2-ai-button';
+    dp2BlueAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp2BlueAiBtnEl.loop = true;
+    dp2BlueAiBtnEl.muted = true;
+    dp2BlueAiBtnEl.playsInline = true;
+    dp2BlueAiBtnEl.preload = 'auto';
+    document.body.appendChild(dp2BlueAiBtnEl);
+
+    dp2RedAiBtnEl = document.createElement('video');
+    dp2RedAiBtnEl.id = 'dp2-ai-button-red';
+    dp2RedAiBtnEl.className = 'dp2-ai-button';
+    dp2RedAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp2RedAiBtnEl.loop = true;
+    dp2RedAiBtnEl.muted = true;
+    dp2RedAiBtnEl.playsInline = true;
+    dp2RedAiBtnEl.preload = 'auto';
+    document.body.appendChild(dp2RedAiBtnEl);
+
+    dp2BlueRationaleBubbleEl = document.createElement('div');
+    dp2BlueRationaleBubbleEl.id = 'dp2-rationale-bubble-blue';
+    dp2BlueRationaleBubbleEl.className = 'dp2-rationale-bubble';
+    dp2BlueRationaleBubbleEl.innerHTML = '<div class="dp2-rationale-bubble-inner"><span class="dp2-rationale-text" id="dp2-rationale-blue-text"></span></div>';
+    document.body.appendChild(dp2BlueRationaleBubbleEl);
+
+    dp2RedRationaleBubbleEl = document.createElement('div');
+    dp2RedRationaleBubbleEl.id = 'dp2-rationale-bubble-red';
+    dp2RedRationaleBubbleEl.className = 'dp2-rationale-bubble';
+    dp2RedRationaleBubbleEl.innerHTML = '<div class="dp2-rationale-bubble-inner"><span class="dp2-rationale-text" id="dp2-rationale-red-text"></span></div>';
+    document.body.appendChild(dp2RedRationaleBubbleEl);
+
+    dp2BlueRationaleInnerEl = dp2BlueRationaleBubbleEl.querySelector('.dp2-rationale-bubble-inner');
+    dp2RedRationaleInnerEl  = dp2RedRationaleBubbleEl.querySelector('.dp2-rationale-bubble-inner');
+    dp2BlueRationaleTextEl  = document.getElementById('dp2-rationale-blue-text');
+    dp2RedRationaleTextEl   = document.getElementById('dp2-rationale-red-text');
+  }
+  buildDraftPredict2();
+
+  /* ── Debug test button — fires a fake blue-side reveal (with
+     rationale), then a fake red-side reveal, same shape as v1's
+     __dpTestReveal, so you can see a settle + rationale bubble without
+     a real draft running. Unlike v1's placeholder "HERO 1".."HERO 10"
+     candidates, this uses REAL hero names — v2 resolves art from
+     heroName (not a hex heroId), so plain real names give real photos
+     for free, which doubles as a live check that heronames.json
+     lookup is actually working end-to-end. Wired to the button added
+     in the existing ?debugdp=1-gated block further down this file. */
+  window.__dp2TestReveal = function () {
+    var BLUE_NAMES = ['Fanny', 'Marcel', 'Hirara', 'Baxia', 'Valentina', 'Yve', 'Freya', 'Zhuxin', 'Kalea', 'Khaleed'];
+    var RED_NAMES  = ['Atlas', 'Belerick', 'Claude', 'Novaria', 'Rafaela', 'Brody', 'Moskov', 'Clint', 'Eudora', 'Ruby'];
+    var fakeCands = function (prefix, names) {
+      var arr = [];
+      for (var i = 0; i < names.length; i++) {
+        arr.push({ heroId: prefix + '_' + i, heroName: names[i], probability: 28 - i * 2.4 });
+      }
+      return arr;
+    };
+    var bluePred = {
+      slot: 1, side: 'BLUE', type: 'BAN', candidates: fakeCands('dp2blue', BLUE_NAMES),
+      rationale: 'Sample rationale for the BLUE ban (v2) — this hero has 62% presence in the current meta and has been a contested comfort pick in each of their last 3 drafts, making it a top priority to deny before it becomes their signature counter pick.',
+      rationaleEmphasis: ['62% presence in the current meta', 'a contested comfort pick', 'a top priority to deny', 'their signature counter pick']
+    };
+    var redPred = {
+      slot: 2, side: 'RED', type: 'BAN', candidates: fakeCands('dp2red', RED_NAMES),
+      rationale: 'Sample rationale for the RED ban (v2) — banned away 4 times this split with an 81% ban record, it’s their answer to a flex pick that fills multiple roles, now off the board entirely once removed.',
+      rationaleEmphasis: ['banned away 4 times this split with an 81% ban record', 'their answer to a flex pick', 'now off the board entirely']
+    };
+    /* A 3rd, permanently-undecided prediction — same reason as v1's
+       thirdPred: keeps dp2DeriveActivePrediction from concluding "draft
+       complete" the instant red settles, so the demo doesn't wipe
+       itself before the rationale bubble's own hold finishes. */
+    var thirdPred = {
+      slot: 3, side: 'BLUE', type: 'BAN', candidates: fakeCands('dp2blue3', BLUE_NAMES),
+      rationale: null
+    };
+    var fakeData = {
+      blueTeam: { name: 'BLUE' }, redTeam: { name: 'RED' },
+      predictions: [bluePred, redPred, thirdPred],
+      draftState: { blueBans: ['dp2blue_2'], redBans: ['dp2red_3'], bluePicks: [], redPicks: [] }
+    };
+
+    dp2DebugTestActive = true;
+    dp2HideRationaleBubbles(true);
+    dp2ActiveData = fakeData;
+    dp2UserHidden = false;
+
+    /* Queue both reveals up front — same "strict sequence regardless of
+       real settle timing" reasoning as v1's __dpTestReveal. */
+    dp2PickQueue = [
+      { heroId: 'dp2blue_2', side: 'blue', type: 'ban', pred: bluePred, occurrence: 0 },
+      { heroId: 'dp2red_3',  side: 'red',  type: 'ban', pred: redPred,  occurrence: 0 }
+    ];
+    dp2ProcessPickQueue(fakeData);
+
+    setTimeout(function () { dp2DebugTestActive = false; }, 10000);
+  };
+
+  /* Restore real server-side shown/hidden state on load
+     (checkOverlays.draftpredict2) — same reasoning as v1's own restore
+     fetch: pure read-only display, so it's safe to run regardless of
+     PREVIEW_ONLY (see the SSE listener block below). */
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.draftpredict2) dp2ApplyCmd('show'); })
+    .catch(function () {});
+
+  dp2FetchLive();
+  setInterval(dp2FetchLive, 3000);
 
   /* ── Build coach BPM + headset + name (home + away) ──────────── */
   var DCOACH_HEART_SVG =
@@ -5370,6 +6668,16 @@
         dpApplyCmd(d.action);
       } catch (e) {}
     });
+    /* Draft Predict v2 — same checkOverlays show/hide pattern and same
+       "not gated behind PREVIEW_ONLY" reasoning as v1's draftpredict
+       listener above (pure read-only display, nothing written to
+       shared state). */
+    sse.addEventListener('draftpredict2', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        dp2ApplyCmd(d.action);
+      } catch (e) {}
+    });
     /* Draft Stats — arm/disarm toggle (Control tab → Draft Overlay →
        Feature Toggles). Runs even in a preview instance — this only
        gates a local visual reveal, no real broadcast state gets written. */
@@ -5380,6 +6688,10 @@
         else if (d.feature === 'draftpredict_rationale') {
           dpRationaleEnabled = !!d.enabled;
           if (!dpRationaleEnabled) dpHideRationaleBubbles();
+        }
+        else if (d.feature === 'draftpredict2_rationale') {
+          dp2RationaleEnabled = !!d.enabled;
+          if (!dp2RationaleEnabled) dp2HideRationaleBubbles(true);
         }
       } catch (e) {}
     });
@@ -5430,6 +6742,9 @@
         var dpShouldShow = !!(d && d.draftpredict);
         if (dpShouldShow && dpUserHidden) dpApplyCmd('show');
         else if (!dpShouldShow && !dpUserHidden) dpApplyCmd('hide');
+        var dp2ShouldShow = !!(d && d.draftpredict2);
+        if (dp2ShouldShow && dp2UserHidden) dp2ApplyCmd('show');
+        else if (!dp2ShouldShow && !dp2UserHidden) dp2ApplyCmd('hide');
       })
       .catch(function () {});
   }, 2000);
@@ -5448,6 +6763,8 @@
       else drAnimateOut();
     } else if (event === 'draftpredict') {
       dpApplyCmd(action);
+    } else if (event === 'draftpredict2') {
+      dp2ApplyCmd(action);
     }
   };
 

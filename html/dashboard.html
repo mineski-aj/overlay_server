@@ -2122,7 +2122,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'draftpredict2', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2320,13 +2320,16 @@
       deferredPreview: true,
       photoModeToggle: true,
       draftPredictTestButton: true,
+      draftPredict2TestButton: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap', previewButton: true },
         { name: 'Draft Predict', key: 'draftpredict', previewButton: true },
+        { name: 'Draft Predict v2', key: 'draftpredict2', previewButton: true },
       ],
       featureToggles: [
         { name: 'Draft Stats', feature: 'draftstats' },
         { name: 'Draft Predict Rationale (AI text bubble)', feature: 'draftpredict_rationale' },
+        { name: 'Draft Predict v2 Rationale (AI text bubble)', feature: 'draftpredict2_rationale' },
       ],
       extraActions: [
         { label: 'Test Draft Stats (P1, both sides)', action: '/overlay/draftstats/test' },
@@ -3665,6 +3668,37 @@
           });
           row.appendChild(dptb);
         }
+
+        /* Test Draft Predict v2 — same "reach into the preview iframe's
+           own JS, no network call" approach as Test Draft Predict above,
+           just calling the 'dp2'-prefixed pipeline (window.__dp2TestReveal,
+           see html/Draft.html). */
+        if (ov.draftPredict2TestButton) {
+          var dptb2 = document.createElement('button');
+          dptb2.className = 'btn btn-action';
+          dptb2.textContent = '▶ Test Draft Predict v2';
+          dptb2.addEventListener('click', function () {
+            function fireTest2() {
+              var iw = previewIframe.contentWindow;
+              if (iw && typeof iw.__dp2TestReveal === 'function') iw.__dp2TestReveal();
+            }
+            if (draftPreviewActive) {
+              fireTest2();
+            } else {
+              var route     = ov.show || ov.hide;
+              var parts     = route.split('/');
+              var eventName = parts[parts.length - 2];
+              dpvb.click();
+              previewIframe.onload = function () {
+                previewIframe.onload = null;
+                var iw = previewIframe.contentWindow;
+                if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
+                fireTest2();
+              };
+            }
+          });
+          row.appendChild(dptb2);
+        }
       }
       body.appendChild(row);
     }
@@ -4632,6 +4666,20 @@
     { group: 'Blue Panel', id: '#dp-blue-panel',  name: 'Blue Panel' },
     { group: 'Red Panel',  id: '#dp-red-panel',   name: 'Red Panel' },
     { group: 'Text',       id: '.dp-header-text', name: 'Header Font Size' },
+  ];
+
+  /* ── Draft Predict v2 (Draft.html) — same layout shape as v1 above,
+     independent 'dp2'-prefixed selectors so moving/resizing one never
+     touches the other. */
+  var DRAFTPREDICT2_DEFAULTS = {
+    '#dp2-blue-panel':  { left: 0,    top: 644, width: 758, height: 136 },
+    '#dp2-red-panel':   { left: 1162, top: 644, width: 758, height: 136 },
+    '.dp2-header-text': { fontSize: 19 },
+  };
+  var DRAFTPREDICT2_ELEMENTS = [
+    { group: 'Blue Panel v2', id: '#dp2-blue-panel',  name: 'Blue Panel' },
+    { group: 'Red Panel v2',  id: '#dp2-red-panel',   name: 'Red Panel' },
+    { group: 'Text v2',       id: '.dp2-header-text', name: 'Header Font Size' },
   ];
 
   /* ── Draft Recap (Draft.html) — previous-game pick/ban recap, blue
@@ -5848,6 +5896,15 @@
       elements:    DRAFTPREDICT_ELEMENTS,
       defaults:    DRAFTPREDICT_DEFAULTS,
       showFn:      'showDraftPredictForEdit',
+    },
+    draft_predict2: {
+      label:       'Draft Predict v2 · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_predict2',
+      elements:    DRAFTPREDICT2_ELEMENTS,
+      defaults:    DRAFTPREDICT2_DEFAULTS,
+      showFn:      'showDraftPredict2ForEdit',
     },
     mplfs_standings: {
       label:       'Standings · mplfs',
