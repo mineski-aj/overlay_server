@@ -732,7 +732,7 @@
 
   function logoUrl(short)  { return '/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
   function mapIconUrl(name) { return '/maps/' + encodeURIComponent(name || '') + '.png'; }
-  function sideAssetUrl(side) { return '/assets/mapselect/mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
+  function sideAssetUrl(side) { return '/assets/mapselect/' + (isAnniv() ? 'anniversary/' : '') + 'mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
 
   function fitText(el, maxSize, minSize) {
     var size = maxSize;
@@ -1255,7 +1255,7 @@
     var sampleGame = {
       game: 1, tossWinner: 'home', tossSide: 'blue',
       homeSide: 'blue', awaySide: 'red',
-      map: 'Broken Walls', winner: 'home', locked: true,
+      map: 'Flying Cloud', winner: 'home', locked: true,
     };
     showGame(0, sampleGame, 1, sampleHome, sampleAway, true);
   };

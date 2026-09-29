@@ -603,7 +603,7 @@ function sbPollMatchState() {
         if (mapBoxEl) mapBoxEl.style.display = 'none';
       } else {
         if (mapBoxEl) mapBoxEl.style.display = '';
-        var mapVal     = s.map || 'Broken Walls';
+        var mapVal     = s.map || 'Flying Cloud';
         var mapNameTxt = document.querySelector('#sb-map-name .sb-map-name-text');
         var mapLogoImg = document.getElementById('sb-map-logo-img');
         if (mapNameTxt) {

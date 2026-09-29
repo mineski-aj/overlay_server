@@ -11020,6 +11020,36 @@
        toggling off) over a long broadcast. */
     let luStingerEndedHandler = null;
 
+    /* Team Line-up BLUE only: cut the idle #bg-video to transparent the
+       instant the trigger lands, so the page reads as fully transparent
+       (vMix shows whatever is underneath) instead of holding a static
+       background frame while the intro webm cold-loads. Brought back
+       LU_BG_RESTORE_AFTER_MS after the intro actually starts playing. Red
+       is triggered back-to-back after Blue, so it never touches this.
+       luBgRestore() is idempotent and also runs from luHidePhase0, so a
+       hide/switch mid-Phase-0 can never leave the background stuck hidden. */
+    const LU_BG_RESTORE_AFTER_MS = 1000;
+    const luBgVideoEl = document.getElementById('bg-video');
+    let luBgRestoreTimer = null;
+    function luBgCut() {
+      clearTimeout(luBgRestoreTimer);
+      luBgRestoreTimer = null;
+      if (luBgVideoEl) luBgVideoEl.style.opacity = '0';
+    }
+    function luBgRestore() {
+      clearTimeout(luBgRestoreTimer);
+      luBgRestoreTimer = null;
+      if (luBgVideoEl) luBgVideoEl.style.opacity = '';
+    }
+    function luBgRestoreSoon(token, side) {
+      if (luBgRestoreTimer) return; /* already scheduled by the intro's play */
+      luBgRestoreTimer = setTimeout(() => {
+        luBgRestoreTimer = null;
+        if (token !== luIntroTokens[side]) return; /* luHidePhase0 already restored */
+        luBgRestore();
+      }, LU_BG_RESTORE_AFTER_MS);
+    }
+
     function luHideIntroLayers() {
       luHideVideoLayer(luIntroVideo);
       if (luStingerEndedHandler) {
@@ -11083,6 +11113,7 @@
     async function luPlayIntroThenShow(side, token) {
       const s = LU_SIDES[side];
       const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
+      if (side === 'blue') luBgCut();
       const msPromise = luFetchMatchState();
       // Fire-and-await-later: starts immediately, resolves whenever it
       // resolves — awaited only once we actually reach the reveal point.
@@ -11105,6 +11136,7 @@
         introDurationMs = (luIntroVideo.duration || 0) * 1000;
         try { await luIntroVideo.play(); } catch (e) {}
         luFadeInVideoLayer(luIntroVideo, token, side);
+        if (side === 'blue') luBgRestoreSoon(token, side);
       }
 
       await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
@@ -11118,6 +11150,7 @@
       const stingerDurationMs = (luStingerVideo.duration || 0) * 1000;
       try { await luStingerVideo.play(); } catch (e) {}
       luFadeInVideoLayer(luStingerVideo, token, side);
+      if (side === 'blue') luBgRestoreSoon(token, side); /* no-op if the intro already scheduled it; covers a team with no intro clip */
 
       /* The stinger has taken over — the intro is done, hide it now instead
          of leaving it lingering underneath until the whole overlay comes
@@ -11156,6 +11189,7 @@
     }
     function luHidePhase0(side) {
       luIntroTokens[side]++; /* cancel any in-flight Phase 0 preload/intro/stinger for THIS side only */
+      if (side === 'blue') luBgRestore();
       luHideIntroLayers();
       /* Always run the real hide, even mid-Phase-0 (before .lub-on/.lur-on
          is ever added) — luPreloadLineup's transitionTo() call now sets

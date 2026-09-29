@@ -386,10 +386,10 @@
         <div class="meta-label">Map</div>
         <select id="map-select">
           <option value="NONE">None</option>
-          <option value="Broken Walls">Broken Walls</option>
-          <option value="Dangerous Grass">Dangerous Grass</option>
-          <option value="Expanding Rivers">Expanding Rivers</option>
           <option value="Flying Cloud">Flying Cloud</option>
+          <option value="Golden Turret">Golden Turret</option>
+          <option value="Healing Turtle">Healing Turtle</option>
+          <option value="Revealing Wisp">Revealing Wisp</option>
         </select>
       </div>
     </div>
@@ -568,7 +568,7 @@
     week:    1,
     day:     1,
     patch:   'Decisive Battle 420',
-    map:     'Broken Walls',
+    map:     'Flying Cloud',
     hosts:     ['None', 'None', 'None'],
     casters:   ['None', 'None', 'None'],
     enCasters: ['None', 'None', 'None'],
@@ -719,7 +719,7 @@
     document.getElementById('week-val').textContent   = s.week  || 1;
     document.getElementById('day-val').textContent    = s.day   || 1;
     document.getElementById('patch-input').value      = s.patch || 'Decisive Battle 420';
-    document.getElementById('map-select').value       = s.map   || 'Broken Walls';
+    document.getElementById('map-select').value       = s.map   || 'Flying Cloud';
     var hosts     = s.hosts     || ['None','None','None'];
     var casters   = s.casters   || ['None','None','None'];
     var enCasters = s.enCasters || ['None','None','None'];
