@@ -129,6 +129,28 @@
     #playoffs-empty .big { font-size: 15px; font-weight: 600; color: #667; }
     #playoffs-empty .sub { font-size: 12px; color: #444; }
 
+    /* ── Playoffs bracket controller ── */
+    #bk-wrap { display: flex; flex-direction: column; gap: 22px; overflow-x: auto; padding-bottom: 6px; }
+    .bk-row { display: flex; gap: 28px; align-items: stretch; min-width: 980px; }
+    .bk-col { display: flex; flex-direction: column; justify-content: space-around; gap: 16px; flex: 1; min-width: 210px; }
+    .bk-col.spacer { visibility: hidden; }
+    .bk-divider { border-top: 1px solid #2e2e44; min-width: 980px; }
+    .bk-match { background: #0f0f18; border: 1px solid #2a2a3a; border-radius: 8px; padding: 8px 10px; }
+    .bk-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #667; margin-bottom: 6px; }
+    .bk-head b { color: #aabbff; font-size: 11px; }
+    .bk-stage { font-size: 10px; color: #556; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
+    .bk-slot { display: grid; grid-template-columns: 26px 1fr 52px; gap: 6px; align-items: center; padding: 3px 0; }
+    .bk-slot.blue .bk-side { color: #5a8cff; }
+    .bk-slot.red  .bk-side { color: #ff5a6a; }
+    .bk-side { font-size: 9px; font-weight: 700; text-align: center; }
+    .bk-slot img { display: none; }
+    .bk-slot select, .bk-slot input[type="number"] { padding: 5px 6px; font-size: 12px; }
+    .bk-ref { font-size: 12px; color: #889; background: #14141e; border: 1px dashed #2a2a3a; border-radius: 6px; padding: 6px 8px; }
+    .bk-ref.resolved { color: #44cc88; border-style: solid; font-weight: 700; }
+    .bk-slot.win input { border-color: #1e5a36; color: #44cc88; font-weight: 700; }
+    #bk-actions { display: flex; align-items: center; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid #1e1e2e; }
+    #bk-hint { font-size: 12px; color: #556; }
+
     /* ── Toast ── */
     #saved-toast {
       position: fixed;
@@ -196,9 +218,10 @@
   <div id="tab-playoffs" class="subpage">
     <div class="panel">
       <div class="panel-title">Playoffs Bracket</div>
-      <div id="playoffs-empty">
-        <div class="big">No bracket placements yet</div>
-        <div class="sub">This tab will hold the Playoffs Bracket controls once placements are available.</div>
+      <div id="bk-wrap"></div>
+      <div id="bk-actions">
+        <button class="btn btn-sort" id="bk-reset">Reset Bracket</button>
+        <span id="bk-hint">Controller only — pick teams for the seeded slots and enter scores. "Winner/Loser of Match N" slots fill in automatically once a series is decided. Stored locally in this browser until the overlay is built.</span>
       </div>
     </div>
   </div>
@@ -263,6 +286,8 @@
     if (isEditing()) return;
     if (s && Array.isArray(s.teams) && s.teams.length) teams = s.teams;
     renderTable();
+    var a = document.activeElement;
+    if (!(a && a.closest && a.closest('#bk-wrap'))) renderBracket();
   }
 
   function isEditing() {
@@ -290,6 +315,115 @@
       if (r.status === 401) { token = ''; sessionStorage.removeItem('match_token'); showLogin(); }
     }).catch(function () { setSyncStatus(false); });
   }
+
+  /* ── PLAYOFFS BRACKET (controller only; overlay comes later) ── */
+  var BK_KEY = 'standings_bracket_v1';
+  // slot: string tricode key 'a'/'b' => team picker; {w:N} / {l:N} => winner/loser of match N
+  var BK_MATCHES = [
+    { id: 1, stage: 'Play-Ins / BO5', bo: 5, date: 'May 27', time: '3:00PM', a: 'team', b: 'team', col: 0, row: 0 },
+    { id: 2, stage: 'Play-Ins / BO5', bo: 5, date: 'May 27', time: '7:00PM', a: 'team', b: 'team', col: 0, row: 0 },
+    { id: 3, stage: 'Play-Ins / BO5', bo: 5, date: 'May 28', time: '3:00PM', a: 'team', b: { w: 1 }, col: 1, row: 0 },
+    { id: 4, stage: 'Play-Ins / BO5', bo: 5, date: 'May 28', time: '7:00PM', a: 'team', b: { w: 2 }, col: 1, row: 0 },
+    { id: 5, stage: 'Upper Bracket Finals / BO5', bo: 5, date: 'May 29', time: '3:00PM', a: { w: 3 }, b: { w: 4 }, col: 2, row: 0 },
+    { id: 8, stage: 'Grand Finals / BO7', bo: 7, date: 'May 31', time: '5:00PM', a: { w: 5 }, b: { w: 7 }, col: 3, row: 0 },
+    { id: 6, stage: 'Lower Bracket Semi-Finals / BO5', bo: 5, date: 'May 29', time: '7:00PM', a: { l: 3 }, b: { l: 4 }, col: 1, row: 1 },
+    { id: 7, stage: 'Lower Bracket Finals / BO7', bo: 7, date: 'May 30', time: '5:00PM', a: { w: 6 }, b: { l: 5 }, col: 2, row: 1 },
+  ];
+  var bk = loadBk();
+
+  function loadBk() {
+    try { var o = JSON.parse(localStorage.getItem(BK_KEY)); if (o && o.m) return o; } catch (e) {}
+    return { m: {} };
+  }
+  function saveBk() { try { localStorage.setItem(BK_KEY, JSON.stringify(bk)); } catch (e) {} }
+  function bkState(id) { return bk.m[id] || (bk.m[id] = { a: '', b: '', sa: 0, sb: 0 }); }
+
+  function bkResolve(ref, side, st) {           // -> tricode or ''
+    if (ref === 'team') return st[side] || '';
+    var id = ref.w || ref.l, res = bkOutcome(id);
+    if (!res) return '';
+    return ref.w ? res.winner : res.loser;
+  }
+  function bkMatchDef(id) { return BK_MATCHES.filter(function (m) { return m.id === id; })[0]; }
+  function bkOutcome(id) {
+    var m = bkMatchDef(id), st = bkState(id), need = Math.ceil(m.bo / 2);
+    var ta = bkResolve(m.a, 'a', st), tb = bkResolve(m.b, 'b', st);
+    if (!ta || !tb) return null;
+    if (st.sa >= need && st.sa > st.sb) return { winner: ta, loser: tb };
+    if (st.sb >= need && st.sb > st.sa) return { winner: tb, loser: ta };
+    return null;
+  }
+
+  function bkTeamOptions(sel, cur) {
+    sel.innerHTML = '';
+    var list = teams.map(function (t) { return t.tri; }).filter(Boolean);
+    if (cur && list.indexOf(cur) < 0) list.push(cur);
+    [''].concat(list).forEach(function (tri) {
+      var o = document.createElement('option');
+      o.value = tri; o.textContent = tri || '— TBD —';
+      sel.appendChild(o);
+    });
+    sel.value = cur || '';
+  }
+
+  function renderBracket() {
+    var wrap = document.getElementById('bk-wrap');
+    wrap.innerHTML = '';
+    [0, 1].forEach(function (row) {
+      if (row) { var d = document.createElement('div'); d.className = 'bk-divider'; wrap.appendChild(d); }
+      var r = document.createElement('div'); r.className = 'bk-row';
+      [0, 1, 2, 3].forEach(function (col) {
+        var c = document.createElement('div'); c.className = 'bk-col';
+        var ms = BK_MATCHES.filter(function (m) { return m.col === col && m.row === row; });
+        if (!ms.length) c.classList.add('spacer');
+        ms.forEach(function (m) { c.appendChild(bkCard(m)); });
+        r.appendChild(c);
+      });
+      wrap.appendChild(r);
+    });
+  }
+
+  function bkCard(m) {
+    var st = bkState(m.id), need = Math.ceil(m.bo / 2), out = bkOutcome(m.id);
+    var card = document.createElement('div'); card.className = 'bk-match';
+    var stage = document.createElement('div'); stage.className = 'bk-stage'; stage.textContent = m.stage;
+    var head = document.createElement('div'); head.className = 'bk-head';
+    head.innerHTML = '<b>Match ' + m.id + '</b><span>' + m.date + ' · ' + m.time + '</span>';
+    card.appendChild(stage); card.appendChild(head);
+
+    [['a', 'blue', 'sa'], ['b', 'red', 'sb']].forEach(function (s) {
+      var key = s[0], ref = m[key], tri = bkResolve(ref, key, st);
+      var slot = document.createElement('div'); slot.className = 'bk-slot ' + s[1];
+      if (out && out.winner === tri && tri) slot.classList.add('win');
+      var side = document.createElement('div'); side.className = 'bk-side'; side.textContent = s[1] === 'blue' ? 'BLUE' : 'RED';
+      slot.appendChild(side);
+      if (ref === 'team') {
+        var sel = document.createElement('select'); bkTeamOptions(sel, st[key]);
+        sel.addEventListener('change', function () { st[key] = sel.value; saveBk(); renderBracket(); });
+        slot.appendChild(sel);
+      } else {
+        var lbl = document.createElement('div');
+        lbl.className = 'bk-ref' + (tri ? ' resolved' : '');
+        lbl.textContent = tri || ((ref.w ? 'Winner' : 'Loser') + ' of Match ' + (ref.w || ref.l));
+        slot.appendChild(lbl);
+      }
+      var sc = document.createElement('input'); sc.type = 'number'; sc.min = 0; sc.max = need;
+      sc.value = st[s[2]] || 0;
+      sc.addEventListener('change', function () {
+        st[s[2]] = Math.max(0, Math.min(need, parseInt(sc.value, 10) || 0));
+        saveBk(); renderBracket();
+      });
+      slot.appendChild(sc);
+      card.appendChild(slot);
+    });
+    return card;
+  }
+
+  document.getElementById('bk-reset').addEventListener('click', function () {
+    if (!window.confirm('Reset every team pick and score in the Playoffs Bracket?')) return;
+    bk = { m: {} }; saveBk(); renderBracket();
+  });
+  renderBracket();
 
   /* ── TABLE ── */
   function logoUrl(tri) { return '/logos/' + encodeURIComponent((tri || '').toUpperCase()) + '.png'; }
