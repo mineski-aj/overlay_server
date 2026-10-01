@@ -1114,6 +1114,54 @@ router.get('/overlay/draftpredict2/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/draftpredict3/show
+// Draft Predict v3 — same checkOverlays shape as draftpredict/draftpredict2
+// above, kept as its own independent key. Architecturally identical to v2
+// (see Draft.html's 'dp3'-prefixed block) — the only difference is this is
+// a fully separate instance so it can be shown/hidden/positioned on its own.
+router.get('/overlay/draftpredict3/show', (req, res) => {
+  state.checkOverlays.draftpredict3 = true;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict3\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/draftpredict3/hide
+router.get('/overlay/draftpredict3/hide', (req, res) => {
+  state.checkOverlays.draftpredict3 = false;
+  state.overlayClients.forEach(c => { try { c.write('event: draftpredict3\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// Draft.html — Map Detail banner. One physical panel/slot, sandwiched
+// between #draft-map (the map-name badge, pushed up out of the way
+// client-side while this is visible) and the pick/ban grid. No `type`
+// param — the TEXT shown is driven entirely by whatever map Draft.html's
+// own /match/state poll already has as the currently-selected map
+// (Flying Cloud / Golden Turret / Healing Turtle / Revealing Wisp, the
+// same 4 options as Match Board's #map-select); if the selected map
+// isn't one of those 4, 'show' is a no-op client-side. So the server
+// side here is just a plain show/hide, same shape as draftrecap/
+// draftpredict above.
+
+// GET /overlay/mapdetail/show
+router.get('/overlay/mapdetail/show', (req, res) => {
+  state.mapDetail = { visible: true };
+  state.overlayClients.forEach(c => { try { c.write('event: mapdetail\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/mapdetail/hide
+router.get('/overlay/mapdetail/hide', (req, res) => {
+  state.mapDetail = { visible: false };
+  state.overlayClients.forEach(c => { try { c.write('event: mapdetail\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/mapdetail-state — restore-on-load, returns state.mapDetail as-is.
+router.get('/overlay/mapdetail-state', (req, res) => {
+  res.set({ "Cache-Control": "no-store" }).json(state.mapDetail);
+});
+
 // GET /overlay/debugoff — hide debug bars on all overlays
 router.get('/overlay/debugoff', (req, res) => {
   state.overlayClients.forEach(c => { try { c.write('event: debugoff\ndata: {}\n\n'); } catch {} });
@@ -1157,7 +1205,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale','draftpredict2_rationale'];
+const VALID_FEATURES = ['killevents','items','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','draftpredict_rationale','draftpredict2_rationale','draftpredict3_rationale'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

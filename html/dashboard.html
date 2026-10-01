@@ -2122,7 +2122,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'draftpredict2', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'draftpredict2', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2320,23 +2320,38 @@
       photoModeToggle: true,
       draftPredictTestButton: true,
       draftPredict2TestButton: true,
+      draftPredict3TestButton: true,
+      draftPredict3SlotButtons: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap', previewButton: true },
         { name: 'Draft Predict', key: 'draftpredict', previewButton: true },
         { name: 'Draft Predict v2', key: 'draftpredict2', previewButton: true },
+        { name: 'Draft Predict v3', key: 'draftpredict3', previewButton: true },
       ],
       featureToggles: [
         { name: 'Draft Stats', feature: 'draftstats' },
         { name: 'Draft Predict Rationale (AI text bubble)', feature: 'draftpredict_rationale' },
         { name: 'Draft Predict v2 Rationale (AI text bubble)', feature: 'draftpredict2_rationale' },
+        { name: 'Draft Predict v3 Rationale (AI text bubble)', feature: 'draftpredict3_rationale' },
       ],
-      extraActions: [
-        { label: 'Test Draft Stats (P1, both sides)', action: '/overlay/draftstats/test' },
-        { label: 'Test Debut Pick (P1, both sides)', action: '/overlay/draftstats/test-debut' },
-        { label: 'Test Buff Badge: Nerf', action: '/overlay/draftstats/test-buff/nerf' },
-        { label: 'Test Buff Badge: Buff', action: '/overlay/draftstats/test-buff/buff' },
-        { label: 'Test Buff Badge: Adjust', action: '/overlay/draftstats/test-buff/adjust' },
-        { label: 'Test Swap (badge only, no stats)', action: '/overlay/draftstats/test-swap/nerf' },
+      extraActionGroups: [
+        { label: 'Draft Stats Tester', actions: [
+          { label: 'Test Draft Stats (P1, both sides)', action: '/overlay/draftstats/test' },
+          { label: 'Test Debut Pick (P1, both sides)', action: '/overlay/draftstats/test-debut' },
+          { label: 'Test Buff Badge: Nerf', action: '/overlay/draftstats/test-buff/nerf' },
+          { label: 'Test Buff Badge: Buff', action: '/overlay/draftstats/test-buff/buff' },
+          { label: 'Test Buff Badge: Adjust', action: '/overlay/draftstats/test-buff/adjust' },
+          { label: 'Test Swap (badge only, no stats)', action: '/overlay/draftstats/test-swap/nerf' },
+        ] },
+        /* Map Detail banner — no per-type buttons: which text shows is
+           driven entirely by Draft.html's own currently-selected map
+           (Match Board's #map-select), so this is just a plain show/hide
+           (show is a no-op if the selected map isn't one of the 4 known
+           special-rule maps) — see routes/overlay.js's /overlay/mapdetail/*. */
+        { label: 'Map Detail', actions: [
+          { label: 'Show Map Detail', action: '/overlay/mapdetail/show' },
+          { label: 'Hide Map Detail', action: '/overlay/mapdetail/hide' },
+        ] },
       ],
     },
     {
@@ -3698,14 +3713,147 @@
           });
           row.appendChild(dptb2);
         }
+
+        /* Test Draft Predict v3 — same "reach into the preview iframe's
+           own JS, no network call" approach as v1/v2's test buttons,
+           just calling the 'dp3'-prefixed pipeline (window.__dp3TestReveal,
+           see html/Draft.html). dp3InvokePreview (declared just below,
+           once this if(ov.deferredPreview) block closes) also backs the
+           per-slot test grid right under this row. */
+        if (ov.draftPredict3TestButton) {
+          var dptb3 = document.createElement('button');
+          dptb3.className = 'btn btn-action';
+          dptb3.textContent = '▶ Test Draft Predict v3';
+          dptb3.addEventListener('click', function () {
+            dp3InvokePreview(function () {
+              var iw = previewIframe.contentWindow;
+              if (iw && typeof iw.__dp3TestReveal === 'function') iw.__dp3TestReveal();
+            });
+          });
+          row.appendChild(dptb3);
+        }
       }
       body.appendChild(row);
+
+      /* Shared by both the "▶ Test Draft Predict v3" button above and
+         the per-slot test grid below — ensures the preview iframe is
+         actually loaded/active (auto-activating it via the ◈ Preview
+         button first if it isn't) before invoking whatever dp3 function
+         the caller wants, same auto-activate chain v1/v2's test buttons
+         use inline. Declared with `var` (function-scoped, not the
+         if-block above) so both call sites can reach it regardless of
+         which one runs first. Only ever referenced when ov.deferredPreview
+         is also true (both flags are only set together, on the 'draft'
+         OVERLAYS entry), so dpvb/draftPreviewActive/previewIframe are
+         always already defined by the time this is called. */
+      var dp3InvokePreview = function (callback) {
+        if (draftPreviewActive) {
+          callback();
+        } else {
+          var route     = ov.show || ov.hide;
+          var parts     = route.split('/');
+          var eventName = parts[parts.length - 2];
+          dpvb.click();
+          previewIframe.onload = function () {
+            previewIframe.onload = null;
+            var iw = previewIframe.contentWindow;
+            if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
+            callback();
+          };
+        }
+      };
+      function dp3InvokePreviewForSlot(slotNum, action) {
+        dp3InvokePreview(function () {
+          var iw = previewIframe.contentWindow;
+          if (iw && typeof iw.__dp3TestSlot === 'function') iw.__dp3TestSlot(slotNum, action);
+        });
+      }
+
+      /* Draft Predict v3 — per-slot test grid. Unlike the fake-fixture
+         "▶ Test Draft Predict v3" button above, each row here drives a
+         real slot (1-20) using whatever REAL candidates/rationale
+         Draft.html's own live poll of /proxy/predictions currently has
+         loaded (window.__dp3TestSlot — see Draft.html for the full
+         contract). "▶ Show" = that slot just became the active one
+         picking/banning (panel appears, carousel starts spinning).
+         "✓ Settle" = force a reveal onto that slot's #1-ranked real
+         candidate, same visual pipeline as a real confirmed pick/ban.
+         Preview-iframe-only, same isolation as every other test button
+         on this page — never touches real broadcast state. */
+      if (ov.draftPredict3SlotButtons) {
+        /* Collapsed by default (20 rows is a lot of vertical space for a
+           test-only tool) — persisted in localStorage so it stays
+           collapsed/expanded across dashboard reloads instead of
+           resetting to collapsed every time buildControlBody re-renders
+           this card (e.g. switching sidebar selection and back). Purely
+           a per-viewer UI convenience, never read back by the server. */
+        var DP3_GRID_COLLAPSE_KEY = 'dp3_slot_grid_collapsed';
+        var dp3GridCollapsed = true;
+        try {
+          var storedCollapse = localStorage.getItem(DP3_GRID_COLLAPSE_KEY);
+          if (storedCollapse !== null) dp3GridCollapsed = storedCollapse === '1';
+        } catch (e) {}
+
+        var dp3GridWrap = el('div', 'btn-row');
+        dp3GridWrap.style.cssText = 'flex-direction:column; align-items:stretch; gap:4px; margin-top:6px;';
+
+        var dp3HeadingBtn = el('button', 'btn btn-action');
+        dp3HeadingBtn.style.cssText = 'font-size:11px; letter-spacing:.5px; color:#8a8fa3; justify-content:flex-start; text-align:left;';
+        var dp3Body = el('div');
+        dp3Body.style.cssText = 'flex-direction:column; gap:4px; margin-top:4px;';
+
+        function dp3ApplyCollapsed() {
+          dp3Body.style.display = dp3GridCollapsed ? 'none' : 'flex';
+          dp3HeadingBtn.textContent = (dp3GridCollapsed ? '▸ ' : '▾ ') +
+            'DRAFT PREDICT V3 — SLOT TEST CONTROLS (uses live API data, Preview only)';
+        }
+        dp3HeadingBtn.addEventListener('click', function () {
+          dp3GridCollapsed = !dp3GridCollapsed;
+          try { localStorage.setItem(DP3_GRID_COLLAPSE_KEY, dp3GridCollapsed ? '1' : '0'); } catch (e) {}
+          dp3ApplyCollapsed();
+        });
+        dp3ApplyCollapsed();
+        dp3GridWrap.appendChild(dp3HeadingBtn);
+        dp3GridWrap.appendChild(dp3Body);
+
+        DP3_SLOT_LABELS.forEach(function (s) {
+          var slotRow = el('div', 'btn-row');
+          slotRow.style.cssText = 'align-items:center; gap:8px;';
+
+          var label = el('span', null, 'Slot ' + s.slot + ' — ' + s.side + ' ' + s.type);
+          label.style.cssText = 'font-size:12px; color:#c7cad6; width:170px; flex-shrink:0;';
+          slotRow.appendChild(label);
+
+          slotRow.appendChild(btn('▶ Show', 'btn-action', function () {
+            dp3InvokePreviewForSlot(s.slot, 'show');
+          }));
+          slotRow.appendChild(btn('✓ Settle', 'btn-action', function () {
+            dp3InvokePreviewForSlot(s.slot, 'settle');
+          }));
+
+          dp3Body.appendChild(slotRow);
+        });
+        body.appendChild(dp3GridWrap);
+      }
     }
 
-    /* Extra action buttons */
-    if (ov.extraActions && ov.extraActions.length) {
+    /* Extra action buttons. renderExtraActionsRow builds the flat row of
+       fire-and-forget buttons + copy-route icons shared by every usage;
+       renderCollapsibleGroup optionally wraps that row behind a
+       collapsed-by-default, localStorage-persisted "▸ Label" header
+       (same pattern as the Draft Predict v3 slot grid below), keyed so
+       each group's collapse state is independent. Two call shapes:
+       - ov.extraActions (+ optional ov.extraActionsLabel) — a single
+         group, for every existing entry that only ever had one
+         (Consolidated Post 2 / Player H2H / MPL Player Overlay v7,
+         all unlabeled → always-visible, unchanged).
+       - ov.extraActionGroups — an array of {label, actions}, for a card
+         with more than one distinct family of test buttons (e.g. Draft
+         Overlay's Stats Tester + Map Detail, each collapsible on its
+         own). */
+    function renderExtraActionsRow(actions) {
       var arow = el('div', 'btn-row');
-      ov.extraActions.forEach(function (a) {
+      actions.forEach(function (a) {
         arow.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
         var cb = document.createElement('button');
         cb.className = 'btn btn-copy';
@@ -3715,7 +3863,50 @@
         })(a.action, a.label, cb);
         arow.appendChild(cb);
       });
-      body.appendChild(arow);
+      return arow;
+    }
+    function renderCollapsibleGroup(label, arow, storageKey) {
+      var collapsed = true;
+      try {
+        var stored = localStorage.getItem(storageKey);
+        if (stored !== null) collapsed = stored === '1';
+      } catch (e) {}
+      var wrap = el('div', 'btn-row');
+      wrap.style.cssText = 'flex-direction:column; align-items:stretch; gap:4px; margin-top:6px;';
+      var headingBtn = el('button', 'btn btn-action');
+      headingBtn.style.cssText = 'font-size:11px; letter-spacing:.5px; color:#8a8fa3; justify-content:flex-start; text-align:left;';
+      function apply() {
+        arow.style.display = collapsed ? 'none' : 'flex';
+        headingBtn.textContent = (collapsed ? '▸ ' : '▾ ') + label;
+      }
+      headingBtn.addEventListener('click', function () {
+        collapsed = !collapsed;
+        try { localStorage.setItem(storageKey, collapsed ? '1' : '0'); } catch (e) {}
+        apply();
+      });
+      apply();
+      wrap.appendChild(headingBtn);
+      wrap.appendChild(arow);
+      return wrap;
+    }
+
+    if (ov.extraActions && ov.extraActions.length) {
+      var arow = renderExtraActionsRow(ov.extraActions);
+      if (ov.extraActionsLabel) {
+        body.appendChild(renderCollapsibleGroup(ov.extraActionsLabel, arow, 'extraactions_collapsed_' + ov.id));
+      } else {
+        body.appendChild(arow);
+      }
+    }
+    if (ov.extraActionGroups && ov.extraActionGroups.length) {
+      ov.extraActionGroups.forEach(function (g, gi) {
+        var grow = renderExtraActionsRow(g.actions);
+        if (g.label) {
+          body.appendChild(renderCollapsibleGroup(g.label, grow, 'extraactiongroup_collapsed_' + ov.id + '_' + gi));
+        } else {
+          body.appendChild(grow);
+        }
+      });
     }
 
     /* Check-overlay toggles (item/emblem/gold-diff check) — a single
@@ -4679,6 +4870,42 @@
     { group: 'Blue Panel v2', id: '#dp2-blue-panel',  name: 'Blue Panel' },
     { group: 'Red Panel v2',  id: '#dp2-red-panel',   name: 'Red Panel' },
     { group: 'Text v2',       id: '.dp2-header-text', name: 'Header Font Size' },
+  ];
+
+  /* ── Draft Predict v3 (Draft.html) — same layout shape as v1/v2 above,
+     independent 'dp3'-prefixed selectors so moving/resizing one never
+     touches the others. */
+  var DRAFTPREDICT3_DEFAULTS = {
+    '#dp3-blue-panel':  { left: 0,    top: 644, width: 758, height: 136 },
+    '#dp3-red-panel':   { left: 1162, top: 644, width: 758, height: 136 },
+    '.dp3-header-text': { fontSize: 19 },
+  };
+  var DRAFTPREDICT3_ELEMENTS = [
+    { group: 'Blue Panel v3', id: '#dp3-blue-panel',  name: 'Blue Panel' },
+    { group: 'Red Panel v3',  id: '#dp3-red-panel',   name: 'Red Panel' },
+    { group: 'Text v3',       id: '.dp3-header-text', name: 'Header Font Size' },
+  ];
+
+  /* Standard MLBB tournament draft order — UI labels only for the slot
+     test grid below (Control tab → Draft Overlay → Preview → Draft
+     Predict v3). Clicking a button never trusts these labels for any
+     actual logic — it just sends the slot NUMBER to Draft.html's
+     window.__dp3TestSlot, which looks up that slot's real side/type/
+     candidates from whatever /proxy/predictions is actually returning
+     right now. If the real draft order ever differs from this list,
+     only the button's own label text would be stale — behavior stays
+     correct either way. */
+  var DP3_SLOT_LABELS = [
+    { slot: 1,  side: 'BLUE', type: 'BAN'  }, { slot: 2,  side: 'RED',  type: 'BAN'  },
+    { slot: 3,  side: 'BLUE', type: 'BAN'  }, { slot: 4,  side: 'RED',  type: 'BAN'  },
+    { slot: 5,  side: 'BLUE', type: 'BAN'  }, { slot: 6,  side: 'RED',  type: 'BAN'  },
+    { slot: 7,  side: 'BLUE', type: 'PICK' }, { slot: 8,  side: 'RED',  type: 'PICK' },
+    { slot: 9,  side: 'RED',  type: 'PICK' }, { slot: 10, side: 'BLUE', type: 'PICK' },
+    { slot: 11, side: 'BLUE', type: 'PICK' }, { slot: 12, side: 'RED',  type: 'PICK' },
+    { slot: 13, side: 'RED',  type: 'BAN'  }, { slot: 14, side: 'BLUE', type: 'BAN'  },
+    { slot: 15, side: 'RED',  type: 'BAN'  }, { slot: 16, side: 'BLUE', type: 'BAN'  },
+    { slot: 17, side: 'RED',  type: 'PICK' }, { slot: 18, side: 'BLUE', type: 'PICK' },
+    { slot: 19, side: 'BLUE', type: 'PICK' }, { slot: 20, side: 'RED',  type: 'PICK' },
   ];
 
   /* ── Draft Recap (Draft.html) — previous-game pick/ban recap, blue
@@ -5904,6 +6131,15 @@
       elements:    DRAFTPREDICT2_ELEMENTS,
       defaults:    DRAFTPREDICT2_DEFAULTS,
       showFn:      'showDraftPredict2ForEdit',
+    },
+    draft_predict3: {
+      label:       'Draft Predict v3 · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_predict3',
+      elements:    DRAFTPREDICT3_ELEMENTS,
+      defaults:    DRAFTPREDICT3_DEFAULTS,
+      showFn:      'showDraftPredict3ForEdit',
     },
     mplfs_standings: {
       label:       'Standings · mplfs',

@@ -33,9 +33,9 @@
 // and will silently never learn the new event otherwise.
 const KNOWN_EVENTS = [
   'bpmmeter', 'bpmmeter_tag', 'consolidated_post', 'consolidated_post_2', 'cp2page', 'credits', 'debugmode', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
-  'draftpredict', 'draftpredict2', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
+  'draftpredict', 'draftpredict2', 'draftpredict3', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
   'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
-  'led_fight', 'led_health', 'led_side', 'led_win', 'mapselection', 'mapselecttag',
+  'led_fight', 'led_health', 'led_side', 'led_win', 'mapdetail', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'matchcard', 'meter', 'middleboard', 'mvp', 'playerboard', 'playerh2h', 'playerui',
   'h2h_config', 'post_carry', 'post_emblems', 'post_h2h', 'post_heatmap', 'post_hearts', 'post_itemline', 'post_itemline_itemin',
   'post4key', 'post_itemline_itemout', 'post_items', 'post_richguy', 'post_stats', 'reload',

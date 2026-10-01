@@ -913,6 +913,85 @@
       background-image: url('/assets/ingame/mapbacker.png');
       background-size: 100% 100%;
       pointer-events: none;
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+    }
+    /* Pushed up by exactly the Map Detail panel's own height (94px, see
+       #mapdetail-panel below) while that panel is shown, so the two
+       never overlap — #mapdetail-panel's bottom edge (780px) is flush
+       with BAN_TOP, so #draft-map has nowhere to go but up. */
+    #draft-map.draft-map-pushed {
+      transform: translateY(-94px);
+    }
+
+    /* ── Map Detail banner — explains this match's special rule
+       (Healing Turtle / Golden Turret / Revealing Wisp / Flying Cloud —
+       whichever is the CURRENTLY SELECTED map, see mapDetailApplyCmd),
+       sandwiched between #draft-map above and the pick/ban grid below
+       (BAN_TOP = 780px). A child of #scene (not document.body, like the
+       Draft Predict panels) specifically so it shares #scene's own
+       stacking context with the ban/pick plates and #draft-map, and is
+       built (buildMapDetail(), called immediately below) BEFORE those —
+       giving it, by plain DOM order, a lower paint priority than
+       anything built later, same effect as an explicit z-index but
+       without having to out-guess every plate/badge's own z-index.
+       z-index: -1 on top of that is belt-and-suspenders: no fade here —
+       hidden state is translateY(100%) (shifted down by its own height,
+       into the ban row's own vertical space) with NO opacity change at
+       all, so if that hidden rectangle ever overlaps the grid, the
+       grid's own (higher-stacked) plates cover it outright instead of
+       it needing to visually fade away. Revealing it is then purely a
+       slide: translateY back to 0 moves it up into the clear gap above
+       the grid, with nothing else drawn there to hide behind. */
+    /* Clips the panel at y=780 (top edge of the draft container drawn by
+       #scene's own background) so the panel can never paint over it —
+       #scene's background sits UNDER its children, so z-index alone
+       can't put the panel behind it. */
+    #mapdetail-clip {
+      position: absolute;
+      left: 0; top: 0;
+      width: 1920px; height: 780px;
+      overflow: hidden;
+      z-index: -1;
+      pointer-events: none;
+    }
+    #mapdetail-panel {
+      position: absolute;
+      left: 758px;
+      top: 686px;
+      width: 403px;
+      height: 94px;
+      z-index: -1;
+      background-image: url('/assets/draft/mapdetail.png');
+      background-size: 100% 100%;
+      transform: translateY(100%);
+      transition: transform .4s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+    }
+    #mapdetail-panel.mapdetail-visible {
+      transform: translateY(0);
+    }
+    #mapdetail-textbox {
+      position: absolute;
+      left: 34px;
+      top: 10px;
+      width: 338px;
+      height: 75px;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mapdetail-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      /* 4.5pt @ 300dpi ≈ 18.75px, rounded to 19px (confirmed). */
+      font-size: 19px;
+      color: #000000;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: normal;
+      overflow-wrap: break-word;
+      word-wrap: break-word;
     }
     #draft-map-logo {
       position: absolute;
@@ -1719,6 +1798,244 @@
       -webkit-box-decoration-break: clone;
       padding: 0 2px;
     }
+
+    /* ═══════════════════════════════════════════════════════════
+       Draft Predict v3 — identical visual shape to the 'dp-'/'dp2-'
+       blocks above, 'dp3'-prefixed so it never shares a selector with
+       them (see the "#1 rule" in CLAUDE.md). Visuals are a deliberate
+       1:1 copy of v2's; what's different is the trigger/data layer
+       (see the 'dp3'-prefixed script block below): v3 has ZERO
+       dependency on the real match/game API at all — not even v1's
+       _localFallback real-draft-seat override. It trusts the Draft
+       Predict API's own draftState (and predictions[].side/type)
+       uniformly, live or test fixture, and advances purely from that
+       response's own array-length growth. ── */
+    .dp3-panel {
+      position: absolute;
+      top: 644px;
+      width: 758px;
+      height: 136px;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #dp3-blue-panel { left: 0px; }
+    #dp3-red-panel  { left: 1162px; }
+    .dp3-panel-inner {
+      width: 758px;
+      height: 136px;
+      transform: translateY(136px);
+      transition: transform .45s cubic-bezier(.4,0,.2,1);
+    }
+    #dp3-blue-panel.dp3-visible .dp3-panel-inner,
+    #dp3-red-panel.dp3-visible  .dp3-panel-inner { transform: none; }
+    #dp3-blue-panel.dp3-no-anim .dp3-panel-inner,
+    #dp3-red-panel.dp3-no-anim  .dp3-panel-inner { transition: none !important; }
+
+    .dp3-panel-header {
+      height: 26px;
+      display: flex; align-items: center;
+      padding: 0 12px;
+      position: relative; z-index: 2;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+    }
+    #dp3-blue-panel .dp3-panel-header { background: #004dd5; justify-content: flex-end; }
+    #dp3-red-panel  .dp3-panel-header { background: #f31400; justify-content: flex-start; }
+
+    .dp3-header-text {
+      font-family: 'General Sans', 'Arial Black', sans-serif;
+      font-weight: 700;
+      font-size: 19px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      white-space: nowrap;
+    }
+
+    .dp3-panel-body {
+      height: 110px;
+      background: #161616;
+      position: relative;
+      overflow: hidden;
+    }
+    .dp3-carousel-viewport { position: absolute; inset: 0; overflow: hidden; }
+
+    .dp3-fade-edge {
+      position: absolute; top: 0; bottom: 0;
+      width: 60px; z-index: 10;
+      pointer-events: none;
+      transform: translateZ(0);
+    }
+    .dp3-fade-edge-l { left: 0;  background: linear-gradient(to right, #161616, transparent); }
+    .dp3-fade-edge-r { right: 0; background: linear-gradient(to left,  #161616, transparent); }
+
+    .dp3-hero-card {
+      position: absolute; top: 0; left: 0;
+      width: 80px; height: 110px;
+      background: #fefefe;
+      will-change: transform;
+      transition: filter .35s;
+    }
+    .dp3-portrait-wrap {
+      position: relative;
+      width: 80px; height: 87px;
+      overflow: hidden;
+      background: #1c1c1c;
+    }
+    .dp3-portrait-wrap img {
+      width: 100%; height: 100%;
+      object-fit: cover; object-position: center top;
+      display: block;
+    }
+    .dp3-portrait-fallback {
+      width: 100%; height: 100%;
+      display: none; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 900; color: rgba(255,255,255,.1);
+    }
+    .dp3-portrait-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      border: 2px solid rgba(22,22,22,0.7);
+      z-index: 3;
+      pointer-events: none;
+    }
+    .dp3-rank-badge {
+      position: absolute; top: 4px; left: 4px;
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 4;
+    }
+    #dp3-blue-panel .dp3-rank-badge.dp3-rank-top { background: #004dd5; }
+    #dp3-red-panel  .dp3-rank-badge.dp3-rank-top { background: #f31400; }
+    .dp3-rank-badge.dp3-rank-low { background: #161616; }
+    .dp3-rank-num {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 12px;
+      color: #fff;
+      line-height: 1;
+    }
+    .dp3-pct-area {
+      width: 80px; height: 23px;
+      display: flex; align-items: center; justify-content: center;
+      background: #fefefe;
+    }
+    .dp3-pct-text {
+      font-family: 'Anton', 'Impact', sans-serif;
+      font-size: 15px;
+      letter-spacing: .5px;
+    }
+    #dp3-blue-panel .dp3-pct-text { color: #004dd5; }
+    #dp3-red-panel  .dp3-pct-text { color: #f31400; }
+
+    .dp3-hero-card.dp3-dimmed {
+      opacity: .18;
+      filter: grayscale(1) brightness(.4);
+    }
+    .dp3-hero-card.dp3-pressing {
+      transform: translateX(var(--dp3-tx,0px)) scale(.91) translateY(3px) !important;
+      transition: transform .07s ease-in !important;
+    }
+    .dp3-hero-card.dp3-chosen {
+      z-index: 10;
+      opacity: 1 !important; filter: none !important;
+      transform: translateX(var(--dp3-tx,0px)) scale(1.10) translateY(-4px) !important;
+      transition: transform .4s cubic-bezier(.34,1.56,.64,1) !important;
+    }
+    .dp3-hero-card.dp3-chosen .dp3-portrait-wrap::before {
+      border-color: #f0c040;
+      box-shadow: 0 0 14px rgba(240,192,64,.6), 0 0 32px rgba(240,192,64,.25);
+    }
+    .dp3-hero-card.dp3-chosen .dp3-rank-badge { transform: translateY(8px); }
+    .dp3-hero-card.dp3-chosen .dp3-pct-text { color: #161616 !important; }
+    .dp3-hero-card.dp3-chosen .dp3-portrait-wrap::after {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(105deg, transparent 30%, rgba(240,192,64,.35) 50%, transparent 70%);
+      animation: dp3-shimmer 1.5s ease infinite;
+    }
+    @keyframes dp3-shimmer {
+      0%   { transform: translateX(-120%); }
+      100% { transform: translateX(220%); }
+    }
+
+    .dp3-ai-button {
+      position: absolute;
+      /* Unlike v1/v2's dp-/dp2-ai-button (which deliberately straddle the
+         seam between the bubble above and the panel header below, per
+         those files' own comments), v3's button must never overlap the
+         red/blue header bar, OR the bubble's own rationale text — explicit
+         ask. 560px sits inside the text-free band .dp3-rationale-bubble-
+         inner's 96px bottom padding reserves (y 548-644, see that rule's
+         own comment) — 12px clear of the text above, 12px clear of the
+         panel's header bar below, regardless of bubble content height or
+         whether that side's panel is still visible underneath. */
+      top: 560px;
+      width: 153px;
+      height: 72px;
+      object-fit: contain;
+      z-index: 22;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(.35);
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1), opacity .2s ease, top .3s ease;
+    }
+    #dp3-ai-button-blue { left: 546px; }
+    #dp3-ai-button-red  { left: 1221px; }
+    .dp3-ai-button.dp3-visible { opacity: 1; transform: scale(1); }
+    .dp3-ai-button.dp3-no-panel { top: 700px; }
+
+    .dp3-rationale-bubble {
+      position: absolute;
+      /* 472px, not v1/v2's 436px — pushed up by 36px (half of the
+         .dp3-ai-button's own 72px height, per explicit ask) so the
+         bubble's own bottom edge clears the button instead of the
+         button sitting inside the bubble's padding reserve. */
+      bottom: 472px;
+      width: 725px;
+      height: 110px;
+      border-radius: 36px;
+      background-image: linear-gradient(-104deg, rgb(218,218,218) 0%, rgb(240,240,240) 49%, rgb(255,255,255) 100%);
+      box-shadow: inset 0px 0px 24px 0px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      z-index: 11;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(.06);
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease, bottom .3s ease;
+    }
+    #dp3-rationale-bubble-blue { left: 16px;   transform-origin: 83.66% 100%; }
+    #dp3-rationale-bubble-red  { left: 1179px; transform-origin: 16.34% 100%; }
+    .dp3-rationale-bubble.dp3-visible { opacity: 1; transform: scale(1); }
+    .dp3-rationale-bubble.dp3-no-panel { bottom: 343px; }
+    .dp3-rationale-bubble-inner {
+      position: absolute;
+      left: 0; right: 0; bottom: 0;
+      box-sizing: border-box;
+      /* Bottom padding of 96px (up from v1/v2's 50px) reserves a text-free
+         band at the bubble's own bottom edge (y 548-644, since this element
+         is bottom:0-anchored to the bubble, which itself is bottom-anchored
+         flush with the panel at y=644) for .dp3-ai-button (560-632px) to
+         sit in without ever touching the rationale text — v1/v2's smaller
+         50px reserve was sized only for the button's HALF that used to dip
+         into the bubble (the other half legitimately sat on the panel
+         header below); v3's button no longer overlaps the panel at all, so
+         its full 72px height needs to fit inside this padding instead. */
+      padding: 20px 34px 96px 34px;
+    }
+    .dp3-rationale-text {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 600;
+      font-size: 20px;
+      line-height: 1.35;
+      color: #161616;
+    }
+    .dp3-rationale-text strong {
+      font-weight: 1000;
+      background-color: rgba(255, 214, 0, 0.45);
+      border-radius: 4px;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
+      padding: 0 2px;
+    }
   </style>
 </head>
 <body>
@@ -2359,9 +2676,11 @@
         var mapBoxEl = document.getElementById('draft-map');
         if (s.map === 'NONE') {
           if (mapBoxEl) mapBoxEl.style.display = 'none';
+          mapDetailCurrentMap = null;
         } else {
           if (mapBoxEl) mapBoxEl.style.display = '';
           var mapVal     = s.map || 'Flying Cloud';
+          mapDetailCurrentMap = mapVal;
           var mapNameTxt = document.querySelector('#draft-map-name .draft-map-name-text');
           var mapLogoImg = document.getElementById('draft-map-logo-img');
           if (mapNameTxt) {
@@ -2455,6 +2774,88 @@
     box.appendChild(name);
     scene.appendChild(box);
   }
+
+  /* ── Map Detail banner — see CSS block above for the push/slide/
+     z-layer geometry. Keyed by the EXACT map name string Match Board's
+     own #map-select dropdown uses (see match-dashboard.html) — this is
+     the same value pollMatchState() below already reads as `s.map` and
+     mirrors into mapDetailCurrentMap, so there's no separate "type" to
+     pick: the text shown is whichever of these 4 the match's currently
+     SELECTED map happens to match. Text is plain sentence case — CSS
+     text-transform:uppercase (see .mapdetail-text) renders it all caps,
+     not baked into the string, so this stays the real/readable source. */
+  var MAPDETAIL_TEXT = {
+    'Healing Turtle':  'An allied turtle will spawn in the lane to help push.',
+    'Golden Turret':   'Turrets grant significantly more team gold when destroyed.',
+    'Revealing Wisp':  'Pick up a vision wisp to reveal nearby enemies.',
+    'Flying Cloud':    'Clouds appear at the base to speed up rotations.',
+  };
+  /* Mirrors pollMatchState()'s own s.map handling below — null when no
+     map is selected ('NONE') or not yet known, otherwise the exact
+     selected map string. */
+  var mapDetailCurrentMap = null;
+  var mapDetailPanelEl, mapDetailTextEl;
+  function buildMapDetail() {
+    mapDetailPanelEl = document.createElement('div');
+    mapDetailPanelEl.id = 'mapdetail-panel';
+    var textbox = document.createElement('div');
+    textbox.id = 'mapdetail-textbox';
+    mapDetailTextEl = document.createElement('span');
+    mapDetailTextEl.className = 'mapdetail-text';
+    textbox.appendChild(mapDetailTextEl);
+    mapDetailPanelEl.appendChild(textbox);
+    /* Appended to #scene (not document.body, unlike the Draft Predict
+       panels) — see the CSS block's own comment for why: it needs to
+       share #scene's stacking context with the ban/pick plates and
+       #draft-map, and this call runs before buildPickPlates()/
+       buildBanPlates()/buildDraftMap() (all called later, in the main
+       init sequence near the bottom of this file), so by plain DOM
+       order it's already behind everything built after it. */
+    var clip = document.createElement('div');
+    clip.id = 'mapdetail-clip';
+    clip.appendChild(mapDetailPanelEl);
+    scene.appendChild(clip);
+  }
+  buildMapDetail();
+
+  /* ── Remote control — 'mapdetail' show/hide (see routes/overlay.js).
+     'show' looks up MAPDETAIL_TEXT for whatever map is CURRENTLY
+     selected (mapDetailCurrentMap) — if the selected map isn't one of
+     the 4 known special-rule maps, this is a no-op (explicit ask: "if a
+     selected map doesn't match, it does nothing"), leaving the panel
+     exactly as it was. A 'show' while already visible just swaps the
+     text in place (no re-slide) since classList.add is a no-op when
+     the class is already present. */
+  function mapDetailApplyCmd(action) {
+    var draftMapBox = document.getElementById('draft-map');
+    if (action === 'show') {
+      var text = MAPDETAIL_TEXT[mapDetailCurrentMap];
+      if (!text) return;
+      mapDetailTextEl.textContent = text;
+      mapDetailPanelEl.classList.add('mapdetail-visible');
+      if (draftMapBox) draftMapBox.classList.add('draft-map-pushed');
+    } else if (action === 'hide') {
+      mapDetailPanelEl.classList.remove('mapdetail-visible');
+      if (draftMapBox) draftMapBox.classList.remove('draft-map-pushed');
+    }
+  }
+
+  /* Restore real server-side shown/hidden state on load
+     (state.mapDetail) — pure read-only display, nothing written to
+     shared state, so safe to run regardless of PREVIEW_ONLY (same
+     reasoning as Draft Predict's own restore fetch above). Deferred
+     500ms past the usual immediate restore-fetch pattern: this one
+     depends on mapDetailCurrentMap, which only becomes known once
+     pollMatchState()'s own first /match/state fetch resolves (started
+     separately below) — on a fresh page load there's a real race
+     between the two, and showing before the map is known would always
+     read as "no match" and silently no-op. */
+  setTimeout(function () {
+    fetch('/overlay/mapdetail-state', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (d) { if (d && d.visible) mapDetailApplyCmd('show'); })
+      .catch(function () {});
+  }, 500);
 
   /* ── Build match/game indicator ──────────────────────────────── */
   function buildDraftMatchGame() {
@@ -5220,6 +5621,1163 @@
   dp2FetchLive();
   setInterval(dp2FetchLive, 3000);
 
+  /* ═══════════════════════════════════════════════════════════
+     Draft Predict v3 — same engine as v2 above (candidate carousels +
+     rationale bubble), 'dp3'-prefixed to stay fully independent (its
+     own checkOverlays key, own routes, own Edit-tab entry) so it can
+     be shown/hidden/positioned completely separately from v1 and v2.
+     Architecturally identical to v2, not a new redesign:
+     1) Hero art is resolved from candidates[].heroName via
+        heronames.json (id -> hero/HERO_<id>_KOTAK.png) — no numeric
+        heroid anywhere, no DP_HERO_CONVERSIONS table.
+     2) "Which candidate actually got picked/banned" is read straight
+        from THIS SAME /proxy/predictions response's own draftState
+        (blueBans/redBans/bluePicks/redPicks — already the same hex
+        heroId scheme as candidates[].heroId). No real-match/game-API
+        cross-reference anywhere, even in fallback/test mode — v3
+        trusts whatever draftState the Draft Predict API itself
+        reports, live or test fixture, uniformly, and advances purely
+        from that response's own array-length growth (see
+        dp3DetectReveal below). ── */
+
+  /* heronames.json — [{ id, name }] list, loaded once. Lookup key is
+     the lowercased name (candidates[].heroName arrives upper-case,
+     e.g. "FANNY"; heronames.json stores "Fanny" — match is
+     case-insensitive per spec, punctuation/spacing must still match
+     exactly, e.g. "Yi Sun-shin" vs "YI SUN-SHIN"). */
+  var DP3_HERO_ID_BY_NAME = {};
+  fetch('/heronames.json', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (list) {
+      (list || []).forEach(function (h) {
+        if (h && h.name) DP3_HERO_ID_BY_NAME[String(h.name).trim().toLowerCase()] = h.id;
+      });
+    })
+    .catch(function (err) { console.error('Draft Predict v3: could not load heronames.json', err); });
+
+  function dp3HeroImgSrc(heroName) {
+    if (!heroName) return null;
+    var id = DP3_HERO_ID_BY_NAME[String(heroName).trim().toLowerCase()];
+    return id ? ('hero/HERO_' + id + '_KOTAK.png') : null;
+  }
+
+  var DP3_CARD_W = 85;
+  var dp3ScrollSpeed = 0.5;
+
+  function dp3FmtPct(p) { return p.toFixed(2) + '%'; }
+
+  function dp3CreateCarousel(viewportEl, direction) {
+    var c = {
+      viewport: viewportEl, direction: direction,
+      cardEls: [], cardOffsets: [], cardOpacity: [], scrollPos: 0,
+      state: 'stopped', raf: null, pickedIdx: -1,
+      clearTimer: null, onPickDone: null, isAnimating: false,
+      /* Which predictions[] slot's candidates are physically loaded
+         right now — set by every caller of c.init() (dp3RenderPrediction,
+         dp3ProcessPickQueue's re-init branch). null until first init. */
+      loadedSlot: null,
+    };
+
+    var FADE_PX = 55;
+
+    function applyPositions() {
+      var viewW = c.viewport.offsetWidth;
+      var N = c.cardEls.length;
+      if (!N) return;
+      var SET_W = N * DP3_CARD_W;
+      var inMotion = c.state === 'roulette' || c.state === 'settling';
+
+      c.cardEls.forEach(function (el, i) {
+        var x = c.cardOffsets[i] - c.scrollPos;
+        if (x + DP3_CARD_W < 0) { c.cardOffsets[i] += SET_W; x += SET_W; }
+        if (x > viewW)          { c.cardOffsets[i] -= SET_W; x -= SET_W; }
+        el.style.transform = 'translateX(' + x + 'px)';
+        if (!inMotion) el.style.setProperty('--dp3-tx', x + 'px');
+
+        if (inMotion) {
+          var t = c.direction === -1
+            ? Math.min(1, Math.max(0, (x + FADE_PX) / FADE_PX))
+            : Math.min(1, Math.max(0, (viewW - x) / FADE_PX));
+          if (c.cardOpacity[i] === undefined || Math.abs(c.cardOpacity[i] - t) > 0.004) {
+            el.style.opacity = t;
+            c.cardOpacity[i] = t;
+          }
+        } else if (c.cardOpacity[i] !== '') {
+          el.style.opacity = '';
+          c.cardOpacity[i] = '';
+        }
+      });
+    }
+
+    function tick() {
+      var viewW = c.viewport.offsetWidth;
+      if (c.state === 'roulette') {
+        c.scrollPos += c.direction * dp3ScrollSpeed;
+      } else if (c.state === 'settling') {
+        var targetX = viewW / 2 - DP3_CARD_W / 2;
+        var targetScroll = c.cardOffsets[c.pickedIdx] - targetX;
+        var diff = targetScroll - c.scrollPos;
+        c.scrollPos += diff * 0.10;
+        if (Math.abs(diff) < 0.6) {
+          c.scrollPos = targetScroll;
+          c.state = 'picked';
+          applyPositions();
+          triggerPress();
+          return;
+        }
+      }
+      applyPositions();
+      if (c.state === 'roulette' || c.state === 'settling') {
+        c.raf = requestAnimationFrame(tick);
+      }
+    }
+
+    function triggerPress() {
+      var chosen = c.cardEls[c.pickedIdx];
+      if (!chosen) return;
+      c.cardEls.forEach(function (el, i) {
+        if (i !== c.pickedIdx) el.classList.add('dp3-dimmed');
+      });
+      chosen.classList.add('dp3-pressing');
+      setTimeout(function () {
+        chosen.classList.remove('dp3-pressing');
+        chosen.classList.add('dp3-chosen');
+      }, 90);
+      c.clearTimer = setTimeout(function () {
+        c.cardEls.forEach(function (el) { el.classList.remove('dp3-dimmed', 'dp3-pressing', 'dp3-chosen'); });
+        c.isAnimating = false;
+        if (c.onPickDone) c.onPickDone();
+      }, c._clearMs || 2250);
+    }
+
+    c.init = function (candidates) {
+      viewportEl.innerHTML = '';
+      c.cardEls = [];
+      c.cardOffsets = [];
+      c.cardOpacity = [];
+      c.scrollPos = 0;
+      var viewW = viewportEl.offsetWidth;
+      var N = candidates.length;
+      candidates.forEach(function (cand, i) {
+        var src = dp3HeroImgSrc(cand.heroName);
+        var el = document.createElement('div');
+        el.className = 'dp3-hero-card';
+        el.dataset.heroId = cand.heroId;
+        el.innerHTML =
+          '<div class="dp3-portrait-wrap">' +
+          (src
+            ? '<img src="' + src + '" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+            : '') +
+          '<div class="dp3-portrait-fallback" style="' + (src ? '' : 'display:flex') + '">' + cand.heroName.charAt(0) + '</div>' +
+          '<div class="dp3-rank-badge ' + (i < 5 ? 'dp3-rank-top' : 'dp3-rank-low') + '"><span class="dp3-rank-num">' + (i + 1) + '</span></div>' +
+          '</div>' +
+          '<div class="dp3-pct-area"><span class="dp3-pct-text">' + dp3FmtPct(cand.probability) + '</span></div>';
+        viewportEl.appendChild(el);
+        c.cardEls.push(el);
+        c.cardOffsets.push(i * DP3_CARD_W);
+      });
+      var startOffset = viewW / 2 - (N * DP3_CARD_W) / 2;
+      c.cardOffsets = c.cardOffsets.map(function (o) { return o + startOffset; });
+      applyPositions();
+    };
+
+    c.startRoulette = function () {
+      cancelAnimationFrame(c.raf);
+      clearTimeout(c.clearTimer);
+      c.cardEls.forEach(function (el) {
+        el.classList.remove('dp3-dimmed', 'dp3-pressing', 'dp3-chosen');
+        el.style.opacity = '';
+      });
+      c.cardOpacity = [];
+      c.state = 'roulette';
+      c.isAnimating = false;
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.settle = function (heroId, onDone, clearMs) {
+      c._clearMs = clearMs || 4500;
+      var idx = -1;
+      for (var i = 0; i < c.cardEls.length; i++) { if (c.cardEls[i].dataset.heroId === heroId) { idx = i; break; } }
+      if (idx === -1) { c.startRoulette(); if (onDone) setTimeout(onDone, c._clearMs); return; }
+      c.pickedIdx = idx;
+      c.onPickDone = onDone || null;
+      c.isAnimating = true;
+      c.state = 'settling';
+      cancelAnimationFrame(c.raf);
+      c.raf = requestAnimationFrame(tick);
+    };
+
+    c.reset = function () {
+      clearTimeout(c.clearTimer);
+      c.startRoulette();
+    };
+
+    c.applyPositions = applyPositions;
+    return c;
+  }
+
+  /* ── App state ─────────────────────────────────────────────── */
+  var dp3BluePanelEl, dp3RedPanelEl, dp3BlueHeaderTextEl, dp3RedHeaderTextEl;
+  var dp3BlueAiBtnEl, dp3RedAiBtnEl;
+  var dp3BlueRationaleBubbleEl, dp3RedRationaleBubbleEl, dp3BlueRationaleInnerEl, dp3RedRationaleInnerEl;
+  var dp3BlueRationaleTextEl, dp3RedRationaleTextEl;
+  var dp3BlueC = null;
+  var dp3RedC  = null;
+  var dp3ActivePanel    = null;
+  var dp3PanelVisible   = false;
+  var dp3PrevData       = null;
+  var dp3ActiveData     = null;
+  var dp3DisplayedSlot  = null;
+  var dp3UserHidden     = true;
+  var dp3DisplayedDraftRef = null;
+  var dp3PickQueue      = [];
+  var dp3PrevDraftKey   = null;
+
+  var dp3RationaleTimers    = { blue: null, red: null };
+  var dp3RationaleSeqTimers = { blue: null, red: null };
+  var dp3RationaleEnabled   = true;
+  /* Per-side "a bubble is currently on screen (or mid hide-out)" flag,
+     plus a per-side FIFO of {text, emphasis} waiting their turn. A real
+     double pick/ban turn (two same-side reveals close together, e.g.
+     the Blue-Blue back-to-back picks in the standard MLBB draft
+     sequence) used to make the second reveal's dp3ShowRationaleBubble
+     call immediately overwrite the first one's still-active bubble —
+     the first rationale effectively never got seen. Now a same-side
+     request made while busy queues instead of overwriting, and
+     dp3HideRationaleSide pops the next queued one once the current
+     bubble's own natural hold + hide-out animation finishes, so every
+     qualifying rationale gets its full turn instead of some being
+     skipped. */
+  var dp3RationaleBusy  = { blue: false, red: false };
+  var dp3RationaleQueue = { blue: [], red: [] };
+  /* Set true for the duration of a __dp3TestReveal() debug run — same
+     "suspend real polling so the demo can't get clobbered mid-play"
+     guard as v1's dpDebugTestActive. Also set (and re-extended) by
+     __dp3TestSlot's per-slot test tool below, for the same reason —
+     the real feed's own poll() tick could otherwise overwrite whatever
+     a Control-tab test click just put on screen within ~3s. */
+  var dp3DebugTestActive = false;
+  var dp3DebugTestResetTimer = null;
+
+  var DP3_AI_BTN_POP_MS       = 350;
+  var DP3_BUBBLE_GROW_MS      = 400;
+  /* 150, not v1/v2's 110 — .dp3-rationale-bubble-inner's padding alone
+     (20px top + 96px bottom, reserved so .dp3-ai-button never overlaps
+     the rationale text) is already 116px, so a 110 floor would never
+     actually bind against real scrollHeight; 150 keeps this constant a
+     meaningful floor again (a touch taller than bare padding, for a
+     visible line of text even at the shortest rationale). */
+  var DP3_RATIONALE_MIN_H     = 150;
+  var DP3_RATIONALE_MAX_H     = 237;
+  var DP3_RATIONALE_HIDE_MULT = 2;
+  /* How hard to try before finally giving up on a slot's rationale that
+     hasn't backfilled yet (see dp3ProcessPickQueue's retry loop) — v1
+     only retries once after 1.5s; v3 (like v2) must not skip a real
+     rationale just because the API was briefly slow to attach it, so
+     it retries several times across a longer window before finally
+     giving up. */
+  var DP3_RATIONALE_RETRY_MS    = 1000;
+  var DP3_RATIONALE_MAX_RETRIES = 8;
+  /* How long to let the roulette visibly run for a slot whose real
+     pick isn't among its own AI-predicted top 10 at all, before sliding
+     the panel back down with nothing settled — see dp3ProcessPickQueue's
+     final idx===-1 fallback. Comparable to a real reveal's own
+     roulette-then-settle stretch, so an unpredicted pick still reads as
+     "the AI looked and had no match" instead of the panel silently
+     vanishing almost instantly. */
+  var DP3_NO_MATCH_ROULETTE_MS = 1800;
+
+  function dp3GetActiveCarousel() {
+    return dp3ActivePanel === 'blue' ? dp3BlueC : dp3ActivePanel === 'red' ? dp3RedC : null;
+  }
+
+  function dp3SyncBubblePosition(side) {
+    var panelEl  = side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+    var bubbleEl = side === 'blue' ? dp3BlueRationaleBubbleEl : dp3RedRationaleBubbleEl;
+    var btnEl    = side === 'blue' ? dp3BlueAiBtnEl : dp3RedAiBtnEl;
+    if (!panelEl || !bubbleEl || !btnEl) return;
+    var noPanel = !panelEl.classList.contains('dp3-visible');
+    bubbleEl.classList.toggle('dp3-no-panel', noPanel);
+    btnEl.classList.toggle('dp3-no-panel', noPanel);
+  }
+
+  function dp3SetPanelInstant(el) {
+    el.classList.add('dp3-no-anim');
+    el.offsetHeight;
+    el.classList.remove('dp3-no-anim');
+  }
+
+  function dp3ShowPanel(side, animated) {
+    var el = side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+    var alreadyVisible = el.classList.contains('dp3-visible');
+    var useAnim = animated === true || (animated === undefined && !alreadyVisible);
+
+    var hiddenC = side === 'blue' ? dp3RedC : dp3BlueC;
+    if (hiddenC && hiddenC.state === 'roulette') {
+      cancelAnimationFrame(hiddenC.raf); hiddenC.state = 'stopped';
+    }
+
+    if (!useAnim) {
+      dp3SetPanelInstant(dp3BluePanelEl);
+      dp3SetPanelInstant(dp3RedPanelEl);
+    }
+
+    dp3BluePanelEl.classList.toggle('dp3-visible', side === 'blue');
+    dp3RedPanelEl.classList.toggle('dp3-visible', side === 'red');
+
+    dp3SyncBubblePosition('blue');
+    dp3SyncBubblePosition('red');
+
+    dp3ActivePanel  = side;
+    dp3PanelVisible = true;
+  }
+
+  /* keepRationale: true when this hide is happening right after this
+     same entry's own rationale bubble was just shown (see
+     dp3ProcessPickQueue's advance() below) — the panels still hide
+     (draft's over, nothing left to carousel/roulette), but the bubble
+     that just appeared is left alone to run its normal 10s hold and
+     auto-hide on its own timer, instead of being wiped ~50ms after it
+     appeared. Every other caller (a real Hide command, a user-hidden
+     restore) omits this and gets the original "clear everything"
+     behavior. */
+  function dp3HideAll(keepRationale) {
+    dp3BluePanelEl.classList.remove('dp3-visible');
+    dp3RedPanelEl.classList.remove('dp3-visible');
+    dp3PanelVisible = false;
+    dp3UserHidden   = true;
+    if (keepRationale) {
+      /* Same "bubble outlived its own panel" repositioning that a
+         normal side-switch already goes through (see dp3ShowPanel) —
+         reflows it to the no-panel fallback spot instead of leaving it
+         floating with a big empty gap where the panel used to be. */
+      dp3SyncBubblePosition('blue');
+      dp3SyncBubblePosition('red');
+    } else {
+      dp3HideRationaleBubbles(true);
+    }
+  }
+
+  function dp3IsValidRationale(text) {
+    if (!text || typeof text !== 'string') return false;
+    var t = text.trim();
+    if (!t) return false;
+    var lower = t.toLowerCase();
+    return lower !== 'null' && lower !== 'undefined';
+  }
+
+  function dp3EscapeHtml(text) {
+    return text.replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function dp3BuildEmphasisRegex(phrases) {
+    if (!Array.isArray(phrases) || !phrases.length) return null;
+    var escaped = phrases
+      .filter(function (p) { return p && typeof p === 'string' && p.trim(); })
+      .slice()
+      .sort(function (a, b) { return b.length - a.length; })
+      .map(function (p) { return p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!escaped.length) return null;
+    return new RegExp(escaped.join('|'), 'g');
+  }
+
+  function dp3HighlightRationale(text, emphasis) {
+    var re = dp3BuildEmphasisRegex(emphasis);
+    if (!re) return dp3EscapeHtml(text);
+    var result = '';
+    var lastIndex = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      result += dp3EscapeHtml(text.slice(lastIndex, m.index));
+      result += '<strong>' + dp3EscapeHtml(m[0]) + '</strong>';
+      lastIndex = m.index + m[0].length;
+    }
+    result += dp3EscapeHtml(text.slice(lastIndex));
+    return result;
+  }
+
+  /* Returns true when this rationale either started showing right now
+     OR was queued to show once the current same-side bubble finishes
+     its turn — false only when it was rejected outright (disabled,
+     missing elements, or not a real rationale string). Callers that
+     need to know "will this pick's rationale be seen at all" (see
+     dp3ProcessPickQueue's decide()) should treat true as "yes,
+     eventually" regardless of which case it was. */
+  function dp3ShowRationaleBubble(side, text, emphasis) {
+    var btnEl    = side === 'blue' ? dp3BlueAiBtnEl : dp3RedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dp3BlueRationaleBubbleEl : dp3RedRationaleBubbleEl;
+    var innerEl  = side === 'blue' ? dp3BlueRationaleInnerEl : dp3RedRationaleInnerEl;
+    var textEl   = side === 'blue' ? dp3BlueRationaleTextEl : dp3RedRationaleTextEl;
+    if (!dp3RationaleEnabled || !btnEl || !bubbleEl || !innerEl || !textEl || !dp3IsValidRationale(text)) return false;
+
+    if (dp3RationaleBusy[side]) {
+      /* This side's bubble is still on screen (or mid hide-out) from an
+         earlier reveal in the same double turn — queue instead of
+         overwriting it, so the one already showing gets its full 10s
+         hold instead of being cut short. dp3HideRationaleSide pops this
+         once that one's hide-out animation actually finishes. */
+      dp3RationaleQueue[side].push({ text: text, emphasis: emphasis });
+      return true;
+    }
+    dp3RationaleBusy[side] = true;
+
+    dp3SyncBubblePosition(side);
+
+    clearTimeout(dp3RationaleTimers[side]);
+    clearTimeout(dp3RationaleSeqTimers[side]);
+
+    textEl.innerHTML = dp3HighlightRationale(text, emphasis);
+
+    var targetH = Math.max(DP3_RATIONALE_MIN_H, Math.min(DP3_RATIONALE_MAX_H, innerEl.scrollHeight));
+    bubbleEl.style.height = targetH + 'px';
+
+    btnEl.style.transitionDuration = '';
+    bubbleEl.style.transitionDuration = '';
+    btnEl.classList.remove('dp3-visible');
+    bubbleEl.classList.remove('dp3-visible');
+    void btnEl.offsetWidth;
+
+    btnEl.classList.add('dp3-visible');
+    btnEl.currentTime = 0;
+    btnEl.play().catch(function () {});
+
+    dp3RationaleSeqTimers[side] = setTimeout(function () {
+      bubbleEl.classList.add('dp3-visible');
+    }, DP3_AI_BTN_POP_MS);
+
+    dp3RationaleTimers[side] = setTimeout(function () {
+      dp3HideRationaleSide(side);
+    }, 10000);
+    return true;
+  }
+
+  /* force: true for a real "hide everything now" (dashboard Hide, a
+     new draft starting, the rationale feature toggled off) — clears
+     this side's pending queue too, since nothing queued should surface
+     after an explicit hide. Left falsy for the normal 10s-hold timeout
+     above, so a queued same-side rationale gets its own turn once this
+     one's hide-out animation completes. */
+  function dp3HideRationaleSide(side, force) {
+    var btnEl    = side === 'blue' ? dp3BlueAiBtnEl : dp3RedAiBtnEl;
+    var bubbleEl = side === 'blue' ? dp3BlueRationaleBubbleEl : dp3RedRationaleBubbleEl;
+    if (!btnEl || !bubbleEl) return;
+    clearTimeout(dp3RationaleSeqTimers[side]);
+
+    var bubbleHideMs = DP3_BUBBLE_GROW_MS / DP3_RATIONALE_HIDE_MULT;
+    var btnHideMs    = DP3_AI_BTN_POP_MS  / DP3_RATIONALE_HIDE_MULT;
+
+    bubbleEl.style.transitionDuration = bubbleHideMs + 'ms';
+    bubbleEl.classList.remove('dp3-visible');
+
+    dp3RationaleSeqTimers[side] = setTimeout(function () {
+      btnEl.style.transitionDuration = btnHideMs + 'ms';
+      btnEl.classList.remove('dp3-visible');
+      setTimeout(function () {
+        btnEl.pause();
+        dp3RationaleBusy[side] = false;
+        if (force) {
+          dp3RationaleQueue[side] = [];
+        } else if (dp3RationaleQueue[side].length) {
+          var next = dp3RationaleQueue[side].shift();
+          dp3ShowRationaleBubble(side, next.text, next.emphasis);
+        }
+      }, btnHideMs);
+    }, bubbleHideMs);
+  }
+
+  function dp3HideRationaleBubbles(force) {
+    clearTimeout(dp3RationaleTimers.blue);
+    clearTimeout(dp3RationaleTimers.red);
+    dp3HideRationaleSide('blue', force);
+    dp3HideRationaleSide('red', force);
+  }
+
+  function dp3SetHeaderText(side, teamName, type) {
+    var tricode = (teamName || side).toUpperCase();
+    if (side === 'blue') {
+      dp3BlueHeaderTextEl.textContent = 'AI DRAFT PREDICTOR — ' + tricode + ' ' + type;
+    } else {
+      dp3RedHeaderTextEl.textContent = type + ' ' + tricode + ' — AI DRAFT PREDICTOR';
+    }
+  }
+
+  function dp3RenderPrediction(pred, data) {
+    dp3DisplayedSlot = pred.slot;
+    var side     = pred.side.toLowerCase();
+    var team     = side === 'blue' ? (data.blueTeam && data.blueTeam.name) : (data.redTeam && data.redTeam.name);
+    var carousel = side === 'blue' ? dp3BlueC : dp3RedC;
+
+    dp3SetHeaderText(side, team, pred.type);
+
+    var candidates = pred.candidates.slice(0, 10);
+    carousel.init(candidates);
+    /* Tags which slot's pool is physically loaded right now — see
+       dp3ProcessPickQueue's idx search for why this matters: a same-
+       side double turn's second entry can't trust "is this heroId
+       already sitting in the carousel" alone, since a strong candidate
+       commonly appears in more than one slot's top 10. */
+    carousel.loadedSlot = pred.slot;
+    carousel.startRoulette();
+
+    dp3ActivePanel = side;
+    if (!dp3UserHidden) dp3ShowPanel(side);
+  }
+
+  /* Pick detection — walks THIS SAME response's own draftState arrays
+     (already the same hex heroId scheme as candidates[].heroId, live
+     or _localFallback) by array-length diff, same exact-position
+     reasoning as v1's dpDetectReveal — just with no real-game-feed
+     override step first, per this feature's whole reason for
+     existing. */
+  function dp3DetectReveal(newData) {
+    if (!dp3DisplayedDraftRef) return false;
+
+    var ns = newData.draftState || {};
+
+    var added = [];
+    /* Which predictions[] entry (and therefore which top-10 candidate
+       list) belongs to each newly-arrived heroId — NOT assumed from
+       array position, and NOT resolved from only THIS poll's newly-
+       arrived heroIds in isolation. A same-side double turn (e.g. slot
+       8 + slot 9 both RED PICK) lets either teammate confirm first,
+       and the two confirmations don't even have to land in the SAME
+       poll — the game does NOT guarantee draftState.redPicks appends
+       in slot-ascending order, or that both land close together in
+       time at all.
+
+       This resolves every hero decided SO FAR for a side+type (not
+       just this poll's delta) against ALL of that side+type's
+       predictions, fresh, every single time — because a hero that
+       arrives alone with more than one still-open slot can be
+       genuinely ambiguous by itself (it may legitimately appear in
+       more than one slot's own top 10), but once a LATER arrival
+       uniquely matches one of those same open slots, that resolves the
+       ambiguity for BOTH by elimination — which only works if every
+       recompute sees the whole picture, not just its own delta.
+
+       This fixes a real, confirmed cascade: slot 9 (Hirara) confirmed
+       first while slot 8 was still undecided; Hirara happened to also
+       be one of slot 8's own top-10 candidates, so the old delta-only
+       positional logic guessed slot 8 for it (a coin flip with no way
+       to know better from Hirara alone) and permanently marked slot 8
+       "consumed". When slot 8 later confirmed for real (Carmilla),
+       the old logic had already excluded slot 8 from consideration and
+       forced Carmilla to be checked against slot 9's candidates
+       instead — where it was never a candidate at all — which is
+       exactly why the panel appeared to "skip" it as unpredicted, when
+       the real cause was slot 8's bookkeeping being wrongly consumed
+       by Hirara's earlier guess. Recomputing fresh from the full
+       decided-so-far list every time means Carmilla's arrival can
+       still correctly claim slot 8 (elimination now has both heroIds
+       to work with), even though Hirara's own earlier display already
+       played out and can't be undone. */
+    function resolveSideType(fullHeroIds, side, type) {
+      var predictionsSrc = newData.predictions || (dp3PrevData && dp3PrevData.predictions) || [];
+      var sortedSameType = predictionsSrc.slice().sort(function (a, b) { return a.slot - b.slot; })
+        .filter(function (p) { return p.side === side && p.type === type; });
+
+      var assigned = fullHeroIds.map(function () { return -1; });
+      var predUsed = sortedSameType.map(function () { return false; });
+
+      var changed = true;
+      while (changed) {
+        changed = false;
+        for (var hi = 0; hi < fullHeroIds.length; hi++) {
+          if (assigned[hi] !== -1) continue;
+          var matches = [];
+          for (var pi = 0; pi < sortedSameType.length; pi++) {
+            if (predUsed[pi]) continue;
+            var cands = sortedSameType[pi].candidates || [];
+            if (cands.some(function (c) { return c.heroId === fullHeroIds[hi]; })) matches.push(pi);
+          }
+          if (matches.length === 1) {
+            assigned[hi] = matches[0];
+            predUsed[matches[0]] = true;
+            changed = true;
+          }
+        }
+      }
+
+      var nextFree = 0;
+      function nextFreeIdx() {
+        while (nextFree < predUsed.length && predUsed[nextFree]) nextFree++;
+        return nextFree < predUsed.length ? nextFree : -1;
+      }
+      for (var hi2 = 0; hi2 < fullHeroIds.length; hi2++) {
+        if (assigned[hi2] !== -1) continue;
+        var fi = nextFreeIdx();
+        if (fi !== -1) { assigned[hi2] = fi; predUsed[fi] = true; nextFree = fi + 1; }
+      }
+
+      return fullHeroIds.map(function (heroId, k) {
+        var predIdx = assigned[k];
+        return {
+          heroId: heroId,
+          pred: predIdx !== -1 ? sortedSameType[predIdx] : null,
+          occurrence: predIdx,
+        };
+      });
+    }
+    function collect(arrName, side, type) {
+      var newArr   = ns[arrName] || [];
+      var knownLen = (dp3DisplayedDraftRef[arrName] || []).length;
+      if (newArr.length <= knownLen) return;
+      resolveSideType(newArr, side, type).slice(knownLen).forEach(function (r) {
+        added.push({ heroId: r.heroId, side: side.toLowerCase(), type: type.toLowerCase(), pred: r.pred, occurrence: r.occurrence });
+      });
+    }
+    collect('bluePicks', 'BLUE', 'PICK');
+    collect('redPicks',  'RED',  'PICK');
+    collect('blueBans',  'BLUE', 'BAN');
+    collect('redBans',   'RED',  'BAN');
+    if (!added.length) return false;
+
+    dp3DisplayedDraftRef = JSON.parse(JSON.stringify(ns));
+
+    if (dp3UserHidden) return true;
+
+    added.sort(function (a, b) { return (a.pred ? a.pred.slot : 999) - (b.pred ? b.pred.slot : 999); });
+
+    var wasAnimating = (dp3BlueC && dp3BlueC.isAnimating) || (dp3RedC && dp3RedC.isAnimating);
+    var wasIdle = dp3PickQueue.length === 0 && !wasAnimating;
+
+    if (wasIdle) {
+      dp3PickQueue = added.length <= 2 ? added : [added[added.length - 1]];
+      dp3ProcessPickQueue(newData);
+    } else {
+      /* Something is already mid-processing (a carousel settling, or
+         holding on its finished glow/rationale) — append every new
+         entry behind whatever's already queued instead of keeping only
+         the newest arrival. The old code here (`[dp3PickQueue[0],
+         latest]`) silently dropped the OTHER new entry whenever a
+         same-side double turn was detected while the panel was still
+         busy with a prior turn — that entry never got its own reveal
+         at all, no animation, no rationale check, nothing. Per the
+         explicit ask: nothing queued here is ever dropped; each entry
+         always gets its own full roulette/settle/hold turn, one at a
+         time, strictly in order — dp3ProcessPickQueue's own advance()
+         only starts the next one once the current one's full animation
+         (and any rationale it showed) has actually finished. */
+      dp3PickQueue = dp3PickQueue.concat(added);
+    }
+    return true;
+  }
+
+  function dp3ProcessPickQueue(fallbackData) {
+    if (!dp3PickQueue.length) return;
+    var entry = dp3PickQueue[0];
+    var next  = dp3PickQueue[1];
+
+    var consecutive = next && next.side === entry.side && next.type === entry.type;
+    var clearMs = consecutive ? 1000 : 2250;
+
+    var targetC = entry.side === 'blue' ? dp3BlueC : dp3RedC;
+    if (!targetC) { dp3PickQueue.shift(); dp3ProcessPickQueue(fallbackData); return; }
+
+    if (!dp3UserHidden) dp3ShowPanel(entry.side);
+
+    function onDone() {
+      /* justShowedBubble: whether THIS entry's own decide() just put a
+         rationale bubble on screen — threaded through so the
+         draft-complete branch below can leave it alone instead of
+         wiping it out immediately after showing it (see dp3HideAll's
+         own comment on keepRationale). */
+      function advance(justShowedBubble) {
+        dp3PickQueue.shift();
+        var data = dp3ActiveData || fallbackData;
+        if (dp3PickQueue.length) {
+          dp3ProcessPickQueue(data);
+        } else {
+          var latest = dp3DeriveActivePrediction(data);
+          if (latest) {
+            dp3RenderPrediction(latest, data);
+          } else {
+            dp3HideAll(justShowedBubble);
+          }
+        }
+      }
+
+      function decide() {
+        var showedBubble = false;
+        if (!dp3UserHidden && entry.pred && dp3IsValidRationale(entry.pred.rationale)) {
+          var rankIdx = entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; });
+          if (rankIdx > -1 && rankIdx < 5) {
+            /* true whether it started playing right now or was queued
+               behind this side's still-active bubble (a same-side
+               double turn) — either way it will be seen, just maybe not
+               immediately, so advance() below should still protect it
+               from dp3HideAll's "clear everything" branch. */
+            showedBubble = dp3ShowRationaleBubble(entry.side, entry.pred.rationale, entry.pred.rationaleEmphasis);
+          }
+        }
+        if (showedBubble) setTimeout(function () { advance(true); }, 50);
+        else advance(false);
+      }
+
+      /* Retry loop — a top-5 settle whose rationale hasn't backfilled
+         yet keeps re-checking /proxy/predictions for THIS exact slot
+         (by side+type+occurrence, same as v1) instead of giving up
+         after one short wait, so a real rationale that lands a little
+         late still gets shown rather than silently skipped. Only a
+         top-5 settle is worth retrying for — a 6th-10th/unranked pick
+         was never going to show a bubble regardless of rationale. */
+      var rankIdxNow = entry.pred ? entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; }) : -1;
+      var isTop5 = rankIdxNow > -1 && rankIdxNow < 5;
+      if (isTop5 && entry.pred && !dp3IsValidRationale(entry.pred.rationale)) {
+        var attempts = 0;
+        (function retry() {
+          attempts++;
+          setTimeout(function () {
+            fetch('/proxy/predictions', { cache: 'no-store' }).then(function (r) { return r.json(); })
+              .then(function (fresh) {
+                var freshPred = dp3PredictionAt(fresh && fresh.predictions, entry.pred.side, entry.pred.type, entry.occurrence);
+                if (freshPred && dp3IsValidRationale(freshPred.rationale)) {
+                  entry.pred = freshPred;
+                  decide();
+                } else if (attempts < DP3_RATIONALE_MAX_RETRIES) {
+                  retry();
+                } else {
+                  decide();
+                }
+              })
+              .catch(function () { if (attempts < DP3_RATIONALE_MAX_RETRIES) retry(); else decide(); });
+          }, DP3_RATIONALE_RETRY_MS);
+        })();
+        return;
+      }
+      decide();
+    }
+
+    /* "Is entry.heroId already sitting in the carousel" is only valid
+       evidence when the carousel's CURRENTLY LOADED pool is actually
+       this entry's own slot — otherwise a same-side double turn's
+       second entry can find its hero by pure coincidence inside the
+       FIRST entry's still-loaded pool (a strong candidate very
+       commonly appears in more than one slot's top 10) and skip
+       re-initializing to its own real candidates entirely. That's
+       exactly what shipped once live: slot 18 settled on Hylos, then
+       slot 19's real winner (Gloo) happened to also be one of slot
+       18's own top 10 — so the carousel never advanced off slot 18's
+       pool and just quietly re-settled on Gloo within it (rationale
+       still came out correct, since that's driven by entry.pred, not
+       by which pool is on screen — only the visual pool was wrong). */
+    var predSlot = entry.pred ? entry.pred.slot : null;
+    var idx = -1;
+    if (predSlot != null && targetC.loadedSlot === predSlot) {
+      for (var i = 0; i < targetC.cardEls.length; i++) { if (targetC.cardEls[i].dataset.heroId === entry.heroId) { idx = i; break; } }
+    }
+
+    var realIdx = -1;
+    if (idx === -1) {
+      var data2    = dp3ActiveData || fallbackData;
+      var sidePred = entry.pred;
+      var cands    = sidePred ? sidePred.candidates.slice(0, 10) : [];
+      for (var k = 0; k < cands.length; k++) { if (cands[k].heroId === entry.heroId) { realIdx = k; break; } }
+
+      /* Load THIS slot's own real pool/header regardless of whether the
+         actual pick turns out to be in it — even a genuinely
+         unpredicted pick (realIdx still -1 below) should visibly
+         roulette this slot's real candidates before giving up, rather
+         than leaving whatever pool a previous slot left behind on
+         screen for the brief moment before hiding. */
+      if (sidePred && targetC.loadedSlot !== sidePred.slot) {
+        dp3SetHeaderText(entry.side,
+          entry.side === 'blue' ? (data2.blueTeam && data2.blueTeam.name) : (data2.redTeam && data2.redTeam.name),
+          sidePred.type);
+        targetC.init(cands);
+        targetC.loadedSlot = sidePred.slot;
+        dp3ActivePanel   = entry.side;
+        dp3DisplayedSlot = sidePred.slot;
+      }
+      if (realIdx > -1) {
+        for (var j = 0; j < targetC.cardEls.length; j++) { if (targetC.cardEls[j].dataset.heroId === entry.heroId) { idx = j; break; } }
+      }
+    }
+
+    if (idx === -1) {
+      /* The real pick isn't among this slot's AI-predicted candidates
+         at all. Previously this hid the panel almost instantly (a
+         ~460ms fade), which read as the reveal silently skipping —
+         instead, when we do have this slot's real pool loaded, let the
+         roulette visibly run for a believable stretch first (same
+         "the AI looked, found nothing" feel as any other reveal), then
+         slide the panel down without ever settling on a card. Falls
+         back to the old fast hide only when there's no real pool to
+         show at all (entry.pred itself couldn't be resolved). */
+      var hasPool = !!(entry.pred && targetC.loadedSlot === entry.pred.slot && targetC.cardEls.length);
+      if (!dp3UserHidden && hasPool) {
+        targetC.startRoulette();
+        setTimeout(function () {
+          cancelAnimationFrame(targetC.raf);
+          targetC.state = 'stopped';
+          var elSide = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+          elSide.classList.remove('dp3-visible');
+          dp3PanelVisible = false;
+          dp3SyncBubblePosition(entry.side);
+          setTimeout(onDone, 460);
+        }, DP3_NO_MATCH_ROULETTE_MS);
+      } else if (!dp3UserHidden) {
+        var elSideFast = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+        elSideFast.classList.remove('dp3-visible');
+        dp3PanelVisible = false;
+        dp3SyncBubblePosition(entry.side);
+        setTimeout(onDone, 460);
+      } else {
+        onDone();
+      }
+      return;
+    }
+
+    var wasRouletting = targetC.state === 'roulette';
+    if (!wasRouletting) targetC.startRoulette();
+    setTimeout(function () {
+      targetC.settle(entry.heroId, onDone, clearMs);
+    }, wasRouletting ? 0 : 400);
+  }
+
+  function dp3PredictionAt(predictions, side, type, occurrence) {
+    var sorted = (predictions || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var count = 0;
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      if (p.side === side && p.type === type) {
+        if (count === occurrence) return p;
+        count++;
+      }
+    }
+    return null;
+  }
+
+  function dp3DeriveActivePrediction(data) {
+    var ds     = (data && data.draftState) || {};
+    var sorted = ((data && data.predictions) || []).slice().sort(function (a, b) { return a.slot - b.slot; });
+    var counts = {
+      BLUE_BAN:  (ds.blueBans  || []).length,
+      RED_BAN:   (ds.redBans   || []).length,
+      BLUE_PICK: (ds.bluePicks || []).length,
+      RED_PICK:  (ds.redPicks  || []).length,
+    };
+    var seen = { BLUE_BAN: 0, RED_BAN: 0, BLUE_PICK: 0, RED_PICK: 0 };
+    for (var i = 0; i < sorted.length; i++) {
+      var p = sorted[i];
+      var key = p.side + '_' + p.type;
+      if (seen[key] === undefined) continue;
+      if (seen[key] >= counts[key]) return p;
+      seen[key]++;
+    }
+    return null;
+  }
+
+  function dp3DraftKey(data) {
+    if (data.battleId) return String(data.battleId);
+    var r = data.roomName || '';
+    var b = (data.blueTeam && data.blueTeam.name) || '';
+    var rd = (data.redTeam  && data.redTeam.name)  || '';
+    if (!r && !b && !rd) return null;
+    return r + '|' + b + '|' + rd;
+  }
+
+  var dp3FetchInFlight = false;
+  function dp3FetchLive() {
+    if (dp3DebugTestActive) return; /* real polling suspended during a __dp3TestReveal() run — see there */
+    if (dp3FetchInFlight) return;
+    dp3FetchInFlight = true;
+    fetch('/proxy/predictions', { cache: 'no-store', signal: AbortSignal.timeout(8000) }).then(function (res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.json();
+    }).then(function (data) {
+      /* No real-draft-feed override here (unlike v1's _localFallback
+         branch) — v3 trusts this SAME response's own draftState
+         uniformly, whether it's the live Predict API or
+         predictions_test.json's canned fixture (same as v2). */
+      var key = dp3DraftKey(data);
+      var isNewDraft = dp3PrevData && dp3PrevDraftKey && key && key !== dp3PrevDraftKey;
+
+      if (!dp3PrevData || isNewDraft) {
+        if (isNewDraft) {
+          if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
+          if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+          dp3PickQueue = [];
+          dp3HideRationaleBubbles(true);
+        }
+        dp3ApplyData(data);
+      } else {
+        var didReveal = dp3DetectReveal(data);
+        dp3ActiveData = data;
+        if (!didReveal && !(dp3BlueC && dp3BlueC.isAnimating) && !(dp3RedC && dp3RedC.isAnimating)) {
+          if (dp3PanelVisible && !dp3DeriveActivePrediction(data)) dp3HideAll();
+        }
+      }
+
+      dp3PrevDraftKey = key || dp3PrevDraftKey;
+      dp3PrevData = data;
+    }).catch(function () {})
+      .finally(function () { dp3FetchInFlight = false; });
+  }
+
+  function dp3ApplyData(data) {
+    dp3ActiveData = data;
+    dp3PrevData   = null;
+    dp3PickQueue  = [];
+    dp3DisplayedDraftRef = JSON.parse(JSON.stringify(data.draftState || {}));
+    var latest = dp3DeriveActivePrediction(data);
+    if (latest) dp3RenderPrediction(latest, data);
+  }
+
+  /* ── Remote control — 'draftpredict3' show/hide (checkOverlays
+     pattern, see routes/overlay.js) ────────────────────────────── */
+  function dp3ApplyCmd(action) {
+    if (action === 'show') {
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      dp3PickQueue  = [];
+      dp3UserHidden = false;
+      var latest = dp3ActiveData && dp3DeriveActivePrediction(dp3ActiveData);
+      if (latest) {
+        dp3RenderPrediction(latest, dp3ActiveData);
+      } else if (dp3ActivePanel) {
+        dp3ShowPanel(dp3ActivePanel, true);
+        var ac = dp3GetActiveCarousel();
+        if (ac) ac.startRoulette();
+      }
+    } else if (action === 'hide') {
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      dp3PickQueue = [];
+      dp3HideAll();
+    }
+  }
+
+  /* Dashboard Edit-tab force-show (see EDIT_CONFIGS' draft_predict3 in
+     dashboard.html). */
+  window.showDraftPredict3ForEdit = function () {
+    dp3UserHidden = false;
+    var latest = dp3ActiveData && dp3DeriveActivePrediction(dp3ActiveData);
+    if (latest) { dp3RenderPrediction(latest, dp3ActiveData); return; }
+    dp3ShowPanel('blue', true);
+  };
+
+  /* ── Build panels (appended to <body>, not #scene) ────────────── */
+  function buildDraftPredict3() {
+    dp3BluePanelEl = document.createElement('div');
+    dp3BluePanelEl.id = 'dp3-blue-panel';
+    dp3BluePanelEl.className = 'dp3-panel';
+    dp3BluePanelEl.innerHTML =
+      '<div class="dp3-panel-inner">' +
+        '<div class="dp3-panel-header"><span class="dp3-header-text" id="dp3-blue-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp3-panel-body">' +
+          '<div class="dp3-carousel-viewport" id="dp3-blue-viewport"></div>' +
+          '<div class="dp3-fade-edge dp3-fade-edge-l"></div>' +
+          '<div class="dp3-fade-edge dp3-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dp3BluePanelEl);
+
+    dp3RedPanelEl = document.createElement('div');
+    dp3RedPanelEl.id = 'dp3-red-panel';
+    dp3RedPanelEl.className = 'dp3-panel';
+    dp3RedPanelEl.innerHTML =
+      '<div class="dp3-panel-inner">' +
+        '<div class="dp3-panel-header"><span class="dp3-header-text" id="dp3-red-header-text">AI DRAFT PREDICTOR</span></div>' +
+        '<div class="dp3-panel-body">' +
+          '<div class="dp3-carousel-viewport" id="dp3-red-viewport"></div>' +
+          '<div class="dp3-fade-edge dp3-fade-edge-l"></div>' +
+          '<div class="dp3-fade-edge dp3-fade-edge-r"></div>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(dp3RedPanelEl);
+
+    dp3BlueHeaderTextEl = document.getElementById('dp3-blue-header-text');
+    dp3RedHeaderTextEl  = document.getElementById('dp3-red-header-text');
+    dp3BlueC = dp3CreateCarousel(document.getElementById('dp3-blue-viewport'), -1);
+    dp3RedC  = dp3CreateCarousel(document.getElementById('dp3-red-viewport'),  +1);
+
+    dp3BlueAiBtnEl = document.createElement('video');
+    dp3BlueAiBtnEl.id = 'dp3-ai-button-blue';
+    dp3BlueAiBtnEl.className = 'dp3-ai-button';
+    dp3BlueAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp3BlueAiBtnEl.loop = true;
+    dp3BlueAiBtnEl.muted = true;
+    dp3BlueAiBtnEl.playsInline = true;
+    dp3BlueAiBtnEl.preload = 'auto';
+    document.body.appendChild(dp3BlueAiBtnEl);
+
+    dp3RedAiBtnEl = document.createElement('video');
+    dp3RedAiBtnEl.id = 'dp3-ai-button-red';
+    dp3RedAiBtnEl.className = 'dp3-ai-button';
+    dp3RedAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp3RedAiBtnEl.loop = true;
+    dp3RedAiBtnEl.muted = true;
+    dp3RedAiBtnEl.playsInline = true;
+    dp3RedAiBtnEl.preload = 'auto';
+    document.body.appendChild(dp3RedAiBtnEl);
+
+    dp3BlueRationaleBubbleEl = document.createElement('div');
+    dp3BlueRationaleBubbleEl.id = 'dp3-rationale-bubble-blue';
+    dp3BlueRationaleBubbleEl.className = 'dp3-rationale-bubble';
+    dp3BlueRationaleBubbleEl.innerHTML = '<div class="dp3-rationale-bubble-inner"><span class="dp3-rationale-text" id="dp3-rationale-blue-text"></span></div>';
+    document.body.appendChild(dp3BlueRationaleBubbleEl);
+
+    dp3RedRationaleBubbleEl = document.createElement('div');
+    dp3RedRationaleBubbleEl.id = 'dp3-rationale-bubble-red';
+    dp3RedRationaleBubbleEl.className = 'dp3-rationale-bubble';
+    dp3RedRationaleBubbleEl.innerHTML = '<div class="dp3-rationale-bubble-inner"><span class="dp3-rationale-text" id="dp3-rationale-red-text"></span></div>';
+    document.body.appendChild(dp3RedRationaleBubbleEl);
+
+    dp3BlueRationaleInnerEl = dp3BlueRationaleBubbleEl.querySelector('.dp3-rationale-bubble-inner');
+    dp3RedRationaleInnerEl  = dp3RedRationaleBubbleEl.querySelector('.dp3-rationale-bubble-inner');
+    dp3BlueRationaleTextEl  = document.getElementById('dp3-rationale-blue-text');
+    dp3RedRationaleTextEl   = document.getElementById('dp3-rationale-red-text');
+  }
+  buildDraftPredict3();
+
+  /* ── Debug test button — fires a fake blue-side reveal (with
+     rationale), then a fake red-side reveal, same shape as v1's
+     __dpTestReveal, so you can see a settle + rationale bubble without
+     a real draft running. Unlike v1's placeholder "HERO 1".."HERO 10"
+     candidates, this uses REAL hero names — v3 (like v2) resolves art
+     from heroName (not a hex heroId), so plain real names give real
+     photos for free, which doubles as a live check that
+     heronames.json lookup is actually working end-to-end.
+     See __dp3TestSlot below for the slot-by-slot test tool, which
+     uses REAL currently-loaded Draft Predict API data instead of
+     these fake fixtures. */
+  window.__dp3TestReveal = function () {
+    var BLUE_NAMES = ['Fanny', 'Marcel', 'Hirara', 'Baxia', 'Valentina', 'Yve', 'Freya', 'Zhuxin', 'Kalea', 'Khaleed'];
+    var RED_NAMES  = ['Atlas', 'Belerick', 'Claude', 'Novaria', 'Rafaela', 'Brody', 'Moskov', 'Clint', 'Eudora', 'Ruby'];
+    var fakeCands = function (prefix, names) {
+      var arr = [];
+      for (var i = 0; i < names.length; i++) {
+        arr.push({ heroId: prefix + '_' + i, heroName: names[i], probability: 28 - i * 2.4 });
+      }
+      return arr;
+    };
+    var bluePred = {
+      slot: 1, side: 'BLUE', type: 'BAN', candidates: fakeCands('dp3blue', BLUE_NAMES),
+      rationale: 'Sample rationale for the BLUE ban (v3) — this hero has 62% presence in the current meta and has been a contested comfort pick in each of their last 3 drafts, making it a top priority to deny before it becomes their signature counter pick.',
+      rationaleEmphasis: ['62% presence in the current meta', 'a contested comfort pick', 'a top priority to deny', 'their signature counter pick']
+    };
+    var redPred = {
+      slot: 2, side: 'RED', type: 'BAN', candidates: fakeCands('dp3red', RED_NAMES),
+      rationale: 'Sample rationale for the RED ban (v3) — banned away 4 times this split with an 81% ban record, it’s their answer to a flex pick that fills multiple roles, now off the board entirely once removed.',
+      rationaleEmphasis: ['banned away 4 times this split with an 81% ban record', 'their answer to a flex pick', 'now off the board entirely']
+    };
+    /* A 3rd, permanently-undecided prediction — same reason as v1's
+       thirdPred: keeps dp3DeriveActivePrediction from concluding "draft
+       complete" the instant red settles, so the demo doesn't wipe
+       itself before the rationale bubble's own hold finishes. */
+    var thirdPred = {
+      slot: 3, side: 'BLUE', type: 'BAN', candidates: fakeCands('dp3blue3', BLUE_NAMES),
+      rationale: null
+    };
+    var fakeData = {
+      blueTeam: { name: 'BLUE' }, redTeam: { name: 'RED' },
+      predictions: [bluePred, redPred, thirdPred],
+      draftState: { blueBans: ['dp3blue_2'], redBans: ['dp3red_3'], bluePicks: [], redPicks: [] }
+    };
+
+    dp3DebugTestActive = true;
+    dp3HideRationaleBubbles(true);
+    dp3ActiveData = fakeData;
+    dp3UserHidden = false;
+
+    /* Queue both reveals up front — same "strict sequence regardless of
+       real settle timing" reasoning as v1's __dpTestReveal. */
+    dp3PickQueue = [
+      { heroId: 'dp3blue_2', side: 'blue', type: 'ban', pred: bluePred, occurrence: 0 },
+      { heroId: 'dp3red_3',  side: 'red',  type: 'ban', pred: redPred,  occurrence: 0 }
+    ];
+    dp3ProcessPickQueue(fakeData);
+
+    setTimeout(function () { dp3DebugTestActive = false; }, 10000);
+  };
+
+  /* ── Per-slot test tool — Control tab → Draft Overlay → Preview →
+     "DRAFT PREDICT V3 — SLOT TEST CONTROLS" (dashboard.html). Unlike
+     __dp3TestReveal above (hardcoded fake candidates, always the same
+     demo), this drives the panel using REAL candidates/rationale from
+     whatever /proxy/predictions is ACTUALLY returning right now
+     (dp3ActiveData, kept current by dp3FetchLive's own poll) — so you
+     can single-step through any slot of a real (or test-fixture) draft
+     on demand, without waiting for draftState to actually advance.
+
+     'show': loads that slot's real top-10 into its side's carousel and
+     starts it spinning (the "currently picking/banning" state) — same
+     as what dp3RenderPrediction does when that slot becomes active for
+     real.
+     'settle': forces a reveal onto that slot's #1-ranked real
+     candidate (the AI's own top pick) and, if it has a rationale, pops
+     the bubble — same visual pipeline dp3ProcessPickQueue uses for a
+     real confirmed pick/ban, just commanded directly instead of
+     waiting for draftState to grow.
+
+     Deliberately does NOT touch dp3DisplayedDraftRef/dp3PrevData (the
+     real auto-progression bookkeeping) — a test click only drives what's
+     visually on screen, so the real feed's own tracking isn't corrupted
+     by it. It DOES suspend real polling for a window after each click
+     (same dp3DebugTestActive guard as __dp3TestReveal) so a test result
+     has time to actually be seen before the next real poll tick (~3s)
+     could otherwise overwrite it — each click re-extends that window. */
+  window.__dp3TestSlot = function (slotNum, action) {
+    var data  = dp3ActiveData;
+    var preds = (data && data.predictions) || [];
+    var pred  = null;
+    for (var i = 0; i < preds.length; i++) { if (preds[i].slot === slotNum) { pred = preds[i]; break; } }
+    if (!pred) return; /* no live predictions[] entry for this slot yet */
+
+    clearTimeout(dp3DebugTestResetTimer);
+    dp3DebugTestActive = true;
+    dp3UserHidden = false;
+
+    var side    = pred.side.toLowerCase();
+    var targetC = side === 'blue' ? dp3BlueC : dp3RedC;
+
+    if (action === 'show') {
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      dp3PickQueue = [];
+      dp3RenderPrediction(pred, data);
+    } else if (action === 'settle') {
+      var cands = pred.candidates.slice(0, 10);
+      if (!cands.length) return;
+      var topHeroId = cands[0].heroId;
+      if (targetC.loadedSlot !== pred.slot) {
+        if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
+        if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+        dp3PickQueue = [];
+        dp3RenderPrediction(pred, data);
+      }
+      if (!dp3UserHidden) dp3ShowPanel(side);
+      var wasRouletting = targetC.state === 'roulette';
+      if (!wasRouletting) targetC.startRoulette();
+      setTimeout(function () {
+        targetC.settle(topHeroId, function () {
+          if (dp3IsValidRationale(pred.rationale)) {
+            var rankIdx = cands.findIndex(function (c) { return c.heroId === topHeroId; });
+            if (rankIdx > -1 && rankIdx < 5) dp3ShowRationaleBubble(side, pred.rationale, pred.rationaleEmphasis);
+          }
+        }, 4500);
+      }, wasRouletting ? 0 : 400);
+    }
+
+    clearTimeout(dp3DebugTestResetTimer);
+    dp3DebugTestResetTimer = setTimeout(function () { dp3DebugTestActive = false; }, 15000);
+  };
+
+  /* Restore real server-side shown/hidden state on load
+     (checkOverlays.draftpredict3) — same reasoning as v1/v2's own
+     restore fetch: pure read-only display, so it's safe to run
+     regardless of PREVIEW_ONLY (see the SSE listener block below). */
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.draftpredict3) dp3ApplyCmd('show'); })
+    .catch(function () {});
+
+  dp3FetchLive();
+  setInterval(dp3FetchLive, 3000);
+
   /* ── Build coach BPM + headset + name (home + away) ──────────── */
   var DCOACH_HEART_SVG =
     '<svg viewBox="0 0 24 22" xmlns="http://www.w3.org/2000/svg">' +
@@ -6678,6 +8236,23 @@
         dp2ApplyCmd(d.action);
       } catch (e) {}
     });
+    /* Draft Predict v3 — same checkOverlays show/hide pattern and same
+       "not gated behind PREVIEW_ONLY" reasoning as v1/v2's listeners
+       above (pure read-only display, nothing written to shared state). */
+    sse.addEventListener('draftpredict3', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        dp3ApplyCmd(d.action);
+      } catch (e) {}
+    });
+    /* Map Detail banner — pure read-only display, same "not gated
+       behind PREVIEW_ONLY" reasoning as the listeners above. */
+    sse.addEventListener('mapdetail', function(ev) {
+      try {
+        var d = JSON.parse(ev.data);
+        mapDetailApplyCmd(d.action);
+      } catch (e) {}
+    });
     /* Draft Stats — arm/disarm toggle (Control tab → Draft Overlay →
        Feature Toggles). Runs even in a preview instance — this only
        gates a local visual reveal, no real broadcast state gets written. */
@@ -6692,6 +8267,10 @@
         else if (d.feature === 'draftpredict2_rationale') {
           dp2RationaleEnabled = !!d.enabled;
           if (!dp2RationaleEnabled) dp2HideRationaleBubbles(true);
+        }
+        else if (d.feature === 'draftpredict3_rationale') {
+          dp3RationaleEnabled = !!d.enabled;
+          if (!dp3RationaleEnabled) dp3HideRationaleBubbles(true);
         }
       } catch (e) {}
     });
@@ -6745,6 +8324,9 @@
         var dp2ShouldShow = !!(d && d.draftpredict2);
         if (dp2ShouldShow && dp2UserHidden) dp2ApplyCmd('show');
         else if (!dp2ShouldShow && !dp2UserHidden) dp2ApplyCmd('hide');
+        var dp3ShouldShow = !!(d && d.draftpredict3);
+        if (dp3ShouldShow && dp3UserHidden) dp3ApplyCmd('show');
+        else if (!dp3ShouldShow && !dp3UserHidden) dp3ApplyCmd('hide');
       })
       .catch(function () {});
   }, 2000);
@@ -6765,6 +8347,8 @@
       dpApplyCmd(action);
     } else if (event === 'draftpredict2') {
       dp2ApplyCmd(action);
+    } else if (event === 'draftpredict3') {
+      dp3ApplyCmd(action);
     }
   };
 
