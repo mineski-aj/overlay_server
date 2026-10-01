@@ -673,6 +673,17 @@
       transform-origin: center center;
     }
     .bpmtag-spicy.on, .bpmtag-spicetext.on { opacity: 1; }
+    /* Explosion exit (max level hidden, or + pressed 5x at max): boom.webm plays
+       over the meter while the meter itself fades fast. mpltag-only — the v7 copy
+       keeps the plain slide-out. The video lives in #bpmtag-sizewrap (scales with
+       the Edit-tab size) but outside .bpmtag-shell, so it isn't faded with it. */
+    .bpmtag-shell, .bpmtag-spice-fx { transition: opacity 200ms ease 90ms; }
+    #bpmtag-sizewrap.bpmtag-exploding .bpmtag-shell,
+    #bpmtag-sizewrap.bpmtag-exploding .bpmtag-spice-fx { opacity: 0; }
+    .bpmtag-boom {
+      position: absolute; left: 50%; top: 50%; width: 640px; height: 384px;
+      transform: translate(-50%, -50%); display: none; pointer-events: none; z-index: 5;
+    }
 
     /* Fire behind the word text: a tiny 96x32 canvas running a heat-diffusion
        fire sim (see bpm-meter JS), upscaled by the browser. ~3k pixels at
@@ -718,6 +729,7 @@
           <img class="bpmtag-spicy" id="bpmtag-spicy" alt="">
           <img class="bpmtag-spicetext" id="bpmtag-spicetext" alt="">
         </div>
+        <video class="bpmtag-boom" id="bpmtag-boom" src="/assets/noisemeter/boom.webm" muted playsinline preload="auto"></video>
       </div>
     </div>
   </div>
@@ -2098,7 +2110,7 @@
   let fireTier = 0, fireRaf = null, fireLast = 0;
   function fireFrame(ts) {
     fireRaf = null;
-    if (!shouldShow || !fireTier) { fireHeat.fill(0); return; }
+    if ((!shouldShow && !exploding) || !fireTier) { fireHeat.fill(0); return; }
     fireRaf = requestAnimationFrame(fireFrame);
     if (ts - fireLast < 33) return;
     fireLast = ts;
@@ -2243,7 +2255,7 @@
   let idleTick = 0;
   function masterLoop(ts) {
     rafId = null;
-    if (!shouldShow) return;
+    if (!shouldShow && !exploding) return;   // keep shaking through the explosion
 
     const p = getRumble();
     let dx = 0, dy = 0, rot = 0;
@@ -2294,6 +2306,7 @@
 
   function setLevel(v) {
     level = Math.max(0, Math.min(BASE_LEVEL, v));
+    if (level !== BASE_LEVEL) maxPresses = 0;
     glowCache.clear();
     applySpice();
     applyFire();
@@ -2309,14 +2322,56 @@
     startLoop();
   }
 
-  function bpmTagPressPlus()  { if (!shouldShow) return; if (level < BASE_LEVEL) setLevel(level + 1); }
+  /* Explosion exit — see the .bpmtag-boom CSS note. `exploding` blocks
+     re-entry (a second hide, more + presses) until cleanup. */
+  const boomEl = document.getElementById('bpmtag-boom');
+  const sizewrapEl = document.getElementById('bpmtag-sizewrap');
+  const BOOM_PRESSES = 5;     // + presses while already at max that trigger it
+  let maxPresses = 0, exploding = false, boomTimer = null;
+
+  function boomCleanup() {
+    clearTimeout(boomTimer);
+    boomEl.pause();
+    boomEl.style.display = 'none';
+    sizewrapEl.classList.remove('bpmtag-exploding');
+    if (exploding) {
+      exploding = false;
+      stopLoop();
+      clip.style.display = 'none';
+      slide.classList.remove('bpmtag-in');   // hidden now, so no visible slide-out
+      bpmTagPressClear();
+    }
+  }
+  function bpmTagExplode() {
+    if (exploding) return;
+    exploding = true; shouldShow = false; maxPresses = 0;   // loops + fire keep running until cleanup
+    clearTimeout(hideTimer);
+    boomEl.style.display = 'block';
+    boomEl.currentTime = 0;
+    const p = boomEl.play(); if (p && p.catch) p.catch(boomCleanup);
+    sizewrapEl.classList.add('bpmtag-exploding');
+    boomEl.onended = boomCleanup;
+    boomTimer = setTimeout(boomCleanup, 3000); // safety net if 'ended' never fires
+  }
+
+  function bpmTagPressPlus() {
+    if (!shouldShow) return;
+    if (level < BASE_LEVEL) { setLevel(level + 1); return; }
+    if (++maxPresses >= BOOM_PRESSES) {
+      bpmTagExplode();
+      // keep the dashboard's Showing/Hidden state truthful (echo is ignored while exploding)
+      fetch('/overlay/bpmmeter_tag/hide', { cache: 'no-store' }).catch(function () {});
+    }
+  }
   function bpmTagPressMinus() { if (!shouldShow) return; setLevel(level - 1); }
   function bpmTagPressClear() { forceFullRedraw(); setLevel(0); }
 
   let hideTimer = null;
 
   function bpmTagAnimateIn() {
+    if (exploding) boomCleanup();
     shouldShow = true;
+    maxPresses = 0;
     startFire();
     clearTimeout(hideTimer);
     forceFullRedraw();
@@ -2329,6 +2384,8 @@
   }
 
   function bpmTagAnimateOut() {
+    if (exploding) return;
+    if (shouldShow && level === BASE_LEVEL) { bpmTagExplode(); return; }
     shouldShow = false;
     stopLoop();
     slide.classList.remove('bpmtag-in');
