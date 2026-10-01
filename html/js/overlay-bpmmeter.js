@@ -66,18 +66,8 @@
   function buildGlow(i, throbM) {
     const f = level / BASE_LEVEL;
     const hex = COLOR_HEX[i];
-    if (level === BASE_LEVEL) {
-      const t = throbM;
-      const px0 = (1.5 + t * 4).toFixed(1);
-      const px1 = (3 + t * 6).toFixed(1);
-      const px2 = (7 + t * 12).toFixed(1);
-      const px3 = (12 + t * 18).toFixed(1);
-      const wA  = Math.round(t * 0.70 * 255).toString(16).padStart(2,'0');
-      const a1 = Math.round((0.55 + t * 0.2) * 255).toString(16).padStart(2,'0');
-      const a2 = Math.round((0.25 + t * 0.2) * 255).toString(16).padStart(2,'0');
-      const a3 = Math.round((0.08 + t * 0.12) * 255).toString(16).padStart(2,'0');
-      return `0 0 ${px0}px 1px #ffffff${wA},0 0 ${px1}px 1px ${hex}${a1},0 0 ${px2}px 3px ${hex}${a2},0 0 ${px3}px 5px ${hex}${a3}`;
-    }
+    // Max level uses this same static glow at f=1 — the old throbbing 4-layer
+    // glow (restyled every frame) was the perf hit, so it's gone.
     const px1 = (2 + f * 5).toFixed(0);
     const px2 = (6 + f * 14).toFixed(0);
     const a2  = Math.round((0.25 + f * 0.45) * 255).toString(16).padStart(2,'0');
@@ -86,7 +76,7 @@
 
   function getGlow(i, throbM) {
     if (level === 0) return 'none';
-    const bucket = level === BASE_LEVEL ? Math.round(throbM * THROB_STEPS) : level;
+    const bucket = level;
     const key = i * 100 + bucket;
     let s = glowCache.get(key);
     if (s === undefined) { s = buildGlow(i, bucket / (level === BASE_LEVEL ? THROB_STEPS : 1)); glowCache.set(key, s); }
@@ -97,6 +87,93 @@
   const clip   = document.getElementById('bpmmeter-clip');
   const slide  = document.getElementById('bpmmeter-slide');
   const shell  = document.getElementById('bpmmeter-shell');
+  const fx     = document.getElementById('bpmmeter-spice-fx');
+  const spicyEl = document.getElementById('bpmmeter-spicy');
+  const spiceTextEl = document.getElementById('bpmmeter-spicetext');
+
+  /* Spice tier from level/BASE_LEVEL: 0-30% low (1), 30%+ medium
+     (2), 80%+ max (3). spicyN + spicetextN swap together; spicy2 is 10%
+     bigger than spicy1, spicy3 another 10% (the CSS transition overshoots,
+     so each step reads as a pop). */
+  const SPICE_AT = [0, 0.30, 0.80];
+  const SPICE_SCALE = [1, 1.1, 1.2];
+  const SPICY_SHAKE = 2.5; // rumble was tuned for the small meter box; the spicy art is much bigger
+  const fireEl = document.getElementById('bpmmeter-fire');
+  ['spicy','spicetext'].forEach(n => [1,2,3].forEach(t => { new Image().src = `/assets/noisemeter/${n}${t}.png`; }));
+  /* Heat-diffusion fire sim. Per-tier source heat + cooling set the flame
+     height/brightness. 30fps cap; stops itself when hidden or tier is off. */
+  const FW = 128, FH = 48;
+  // Fire steps: 0 off (level 0); 1-2 grow inside the low tier (levels 1, 2); 3 medium; 4 max.
+  const FIRE_STEPS = [null, { src: 165, cool: 36 }, { src: 215, cool: 24 }, { src: 240, cool: 17 }, { src: 255, cool: 12 }];
+  const fireCtx = fireEl.getContext('2d');
+  const fireImg = fireCtx.createImageData(FW, FH);
+  const fireHeat = new Uint8Array(FW * FH);
+  const FIRE_PAL = new Uint8ClampedArray(256 * 4);
+  for (let h = 0; h < 256; h++) {
+    FIRE_PAL[h*4]   = 255;
+    FIRE_PAL[h*4+1] = Math.max(0, Math.min(255, (h - 40) * 1.7));
+    FIRE_PAL[h*4+2] = Math.max(0, Math.min(255, (h - 190) * 3.5));
+    FIRE_PAL[h*4+3] = Math.min(255, h * 2.2);
+  }
+  let fireTier = 0, fireRaf = null, fireLast = 0;
+  function fireFrame(ts) {
+    fireRaf = null;
+    if (!shouldShow || !fireTier) { fireHeat.fill(0); return; }
+    fireRaf = requestAnimationFrame(fireFrame);
+    if (ts - fireLast < 33) return;
+    fireLast = ts;
+    const T = FIRE_STEPS[fireTier];
+    const last = (FH - 1) * FW;
+    for (let x = 0; x < FW; x++) {
+      const edge = x < 5 || x > FW - 6;
+      // per-column wobble so the base forms separate tongues instead of a flat wall
+      const w = 0.55 + 0.25 * Math.sin(x * 0.55 + ts * 0.006) + 0.2 * Math.sin(x * 1.3 - ts * 0.011);
+      fireHeat[last + x] = edge ? 0 : Math.max(0, T.src * w - Math.random() * 30);
+    }
+    for (let y = 0; y < FH - 1; y++) {
+      for (let x = 0; x < FW; x++) {
+        const sx = Math.max(0, Math.min(FW - 1, x + ((Math.random() * 3) | 0) - 1));
+        const below = fireHeat[(y + 1) * FW + sx];
+        const v = below - ((Math.random() * T.cool) | 0);
+        fireHeat[y * FW + x] = v > 0 ? v : 0;
+      }
+    }
+    const d = fireImg.data;
+    for (let i = 0; i < fireHeat.length; i++) {
+      const h = fireHeat[i] * 4, o = i * 4;
+      d[o] = FIRE_PAL[h]; d[o+1] = FIRE_PAL[h+1]; d[o+2] = FIRE_PAL[h+2]; d[o+3] = FIRE_PAL[h+3];
+    }
+    fireCtx.putImageData(fireImg, 0, 0);
+  }
+  function startFire() { if (!fireRaf && shouldShow && fireTier) fireRaf = requestAnimationFrame(fireFrame); }
+  function spicePop(el, base) {
+    el.style.transition = 'scale 110ms ease-out, opacity 200ms ease';
+    el.style.scale = base * 1.35;
+    setTimeout(() => { el.style.transition = ''; el.style.scale = base; }, 120);
+  }
+  let spiceTier = 0;
+  function applyFire() {
+    const step = level === 0 ? 0 : (spiceTier === 1 ? level : spiceTier + 1);
+    if (step === fireTier) return;
+    fireTier = step;
+    if (!step) { fireEl.classList.remove('on'); return; }
+    fireEl.classList.add('on'); startFire();
+  }
+  function applySpice() {
+    const f = level / BASE_LEVEL;
+    let t = 0;
+    for (let i = 0; i < SPICE_AT.length; i++) if (f >= SPICE_AT[i] - 1e-9) t = i + 1;
+    if (t === spiceTier) return;
+    spiceTier = t;
+    if (!t) { spicyEl.classList.remove('on'); spiceTextEl.classList.remove('on'); return; }
+    spicyEl.src = `/assets/noisemeter/spicy${t}.png`;
+    spiceTextEl.src = `/assets/noisemeter/spicetext${t}.png`;
+    // Individual `scale` property (not `transform`) so the tier pop and the shake don't fight.
+    // Big, obvious pop: snap up to 1.35x fast, then settle to the tier size with an overshoot.
+    spicePop(spicyEl, SPICE_SCALE[t-1]);
+    spicePop(spiceTextEl, 1);
+    spicyEl.classList.add('on'); spiceTextEl.classList.add('on');
+  }
   const trackA = document.getElementById('bpmmeter-track-a');
   const trackB = document.getElementById('bpmmeter-track-b');
   const segsA  = [], segsB  = [];
@@ -164,13 +241,13 @@
     if (level <= 4) return { tx:0.30, ty:0.20, rx:0.06, speed:0.04  };
     if (level <= 6) return { tx:0.50, ty:0.35, rx:0.10, speed:0.05  };
     if (level <= 8) return { tx:0.80, ty:0.55, rx:0.14, speed:0.075 };
-    if (level <= 9) return { tx:1.25, ty:0.88, rx:0.20, speed:0.11  };
-                    return { tx:2.00, ty:1.38, rx:0.35, speed:0.20  };
+    // Level 9 and 10 share one intensity — max spice deliberately doesn't shake harder.
+                    return { tx:1.25, ty:0.88, rx:0.20, speed:0.11  };
   }
 
   // --- render: only write to DOM when a value actually changed ---
   function updateTrack(segs, st, vis, throbM) {
-    const bucket = level === BASE_LEVEL ? Math.round(throbM * THROB_STEPS) : level;
+    const bucket = level; // throb removed with the max-level glow
     for (let i = 0; i < SEGS; i++) {
       const on = i < vis;
       const glowKey = on ? bucket : -1;
@@ -205,10 +282,10 @@
       rot = Math.sin(rumblePhase * 5.9)  * p.rx;
     }
     if (dx === 0 && dy === 0 && rot === 0) {
-      if (lastShellTransform !== 'none') { shell.style.transform = 'none'; lastShellTransform = 'none'; }
+      if (lastShellTransform !== 'none') { spicyEl.style.transform = 'none'; lastShellTransform = 'none'; }
     } else {
-      const tr = `translate(${dx.toFixed(2)}px,${dy.toFixed(2)}px) rotate(${rot.toFixed(3)}deg)`;
-      if (tr !== lastShellTransform) { shell.style.transform = tr; lastShellTransform = tr; }
+      const tr = `translate(${(dx*SPICY_SHAKE).toFixed(2)}px,${(dy*SPICY_SHAKE).toFixed(2)}px) rotate(${(rot*SPICY_SHAKE).toFixed(3)}deg)`;
+      if (tr !== lastShellTransform) { spicyEl.style.transform = tr; lastShellTransform = tr; }
     }
 
     // throb (glow pulse) — only at max level now, nothing else drives it
@@ -248,6 +325,8 @@
   function setLevel(v) {
     level = Math.max(0, Math.min(BASE_LEVEL, v));
     glowCache.clear();
+    applySpice();
+    applyFire();
     if (level === BASE_LEVEL) {
       idleTargetA = idleTargetB = displayA = displayB = SEGS;
     } else {
@@ -255,7 +334,7 @@
       throbPhase = 0; throbMult = 0;
     }
     if (!shouldShow) return; // state still tracked, just no DOM/loop cost while hidden
-    if (level === 0 && lastShellTransform !== 'none') { shell.style.transform = 'none'; lastShellTransform = 'none'; }
+    if (level === 0 && lastShellTransform !== 'none') { spicyEl.style.transform = 'none'; lastShellTransform = 'none'; }
     render(0);
     startLoop();
   }
@@ -277,6 +356,7 @@
 
   function bpmmeterAnimateIn() {
     shouldShow = true;
+    startFire();
     clearTimeout(hideTimer);
     // Sync visuals to whatever `level` already is before revealing, so
     // there's no visible pop/flash of stale state from before it was hidden.

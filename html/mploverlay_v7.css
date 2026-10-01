@@ -2923,8 +2923,6 @@
        stylesheet's own path (/html/mploverlay_v7.css), NOT the page's
        <base href="/">, so a bare 'assets/...' here would 404 as
        /html/assets/... */
-    background: url('/assets/noisemeter/noise.png') no-repeat center center;
-    background-size: cover;
   }
   .bpmmeter-area { flex: 1; display: flex; flex-direction: column; padding: 8px 10px; overflow: visible; }
   .bpmmeter-bar-track { display: flex; flex-direction: row; gap: 6px; overflow: visible; }
@@ -2932,3 +2930,33 @@
   .bpmmeter-scale-inner { display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%; }
   .bpmmeter-scale-num { font-family: sans-serif; font-weight: 500; font-size: 11px; color: #d4d4d4; line-height: 1; text-align: center; flex: 1; }
   .bpmmeter-seg { flex-shrink: 0; border-radius: 2px; overflow: visible; }
+    /* Spice skin (sponsor). Authored against the 710x136 full-size meter and
+       converted to this 508x97 native box (x 508/710 = 0.7155) — #bpmmeter-sizewrap's
+       Edit-tab scale then multiplies on top, so every instance keeps the same
+       ratio. Sits OUTSIDE .bpmmeter-shell (which is overflow:hidden) so it can
+       overhang; .bpmmeter-spice-fx mirrors the shell's shake transform from JS. */
+    .bpmmeter-spice-fx { position: absolute; left: 0; top: 0; width: 508px; height: 97px; pointer-events: none; z-index: 2; }
+    .bpmmeter-spicy {
+      position: absolute; left: -9.3px; top: -47.2px; width: 218.2px; height: 182.5px;
+      transform-origin: center center; opacity: 0;
+      transition: scale 450ms cubic-bezier(0.34,1.7,0.64,1), opacity 200ms ease;
+      will-change: transform;
+    }
+    .bpmmeter-spicetext {
+      position: absolute; right: 0; bottom: 105.6px; width: 308.4px; height: 43.4px;
+      opacity: 0; transition: opacity 200ms ease, scale 450ms cubic-bezier(0.34,1.7,0.64,1);
+      transform-origin: center center;
+    }
+    .bpmmeter-spicy.on, .bpmmeter-spicetext.on { opacity: 1; }
+
+    /* Fire behind the word text: a tiny 96x32 canvas running a heat-diffusion
+       fire sim (see bpm-meter JS), upscaled by the browser. ~3k pixels at
+       30fps = negligible CPU, one small texture upload, no filters/blur.
+       Only runs while a tier is active and the meter is shown. The bottom
+       edge sits behind the text, which hides the flame source. */
+    .bpmmeter-fire {
+      position: absolute; right: 0; bottom: 100px; width: 308.4px; height: 130px;
+      opacity: 0; transition: opacity 200ms ease; pointer-events: none;
+    }
+    .bpmmeter-fire.on { opacity: 1; }
+
