@@ -6179,9 +6179,19 @@
     }
     function collect(arrName, side, type) {
       var newArr   = ns[arrName] || [];
-      var knownLen = (dp3DisplayedDraftRef[arrName] || []).length;
-      if (newArr.length <= knownLen) return;
-      resolveSideType(newArr, side, type).slice(knownLen).forEach(function (r) {
+      var knownIds = dp3DisplayedDraftRef[arrName] || [];
+      if (newArr.length <= knownIds.length) return;
+      /* "New" = a heroId we haven't already revealed, NOT "whatever sits
+         past the old array length". The API doesn't guarantee draftState
+         arrays only ever append: when a same-side double turn confirms
+         out of slot order (slot 9's Hirara first, slot 8's pick after),
+         the later arrival can land BEFORE the earlier one in the array,
+         and a positional slice(knownLen) then re-picked the already-
+         revealed Hirara (shown again on the other slot) while the
+         genuinely new pick was skipped entirely. */
+      resolveSideType(newArr, side, type).filter(function (r) {
+        return knownIds.indexOf(r.heroId) === -1;
+      }).forEach(function (r) {
         added.push({ heroId: r.heroId, side: side.toLowerCase(), type: type.toLowerCase(), pred: r.pred, occurrence: r.occurrence });
       });
     }
