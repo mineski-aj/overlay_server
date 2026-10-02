@@ -11505,8 +11505,10 @@
        (GET /standings/state + SSE /standings/events). ST_TEAMS is only the
        fallback when the server has no standings state yet.
        move:   'up' | 'down' | 'neutral'   (rank movement arrow)
-       status: null | 'secured' | 'eliminated' | 'redzone' (playoffs chip on
-       the team box; 'redzone' is eliminated's red pulse with no caption) */
+       status: null | 'secured' | 'upperbracket' | 'eliminated' | 'redzone'
+       (playoffs chip on the team box; 'upperbracket' shares 'secured'
+       green treatment, just with its own caption/badge; 'redzone' is
+       eliminated's red pulse with no caption) */
     const ST_ASSET = '/assets/Standings/';
     /* 10th Anniversary only replaced Team_Box.png here (Indicator_*,
        mplgold/silver, Standing_Up/Down/Neutral have no anniversary
@@ -11538,7 +11540,7 @@
       const root = document.getElementById('st-rows');
       const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const moveImg   = { up: 'Standing_Up.png', down: 'Standing_Down.png', neutral: 'Standing_Neutral.png' };
-      const statusImg = { secured: 'Indicator_Secured.png', eliminated: 'Indicator_Eliminated.png' };
+      const statusImg = { secured: 'Indicator_Secured.png', upperbracket: 'Indicator_UpperBracket.svg', eliminated: 'Indicator_Eliminated.png' };
       /* 'redzone' shares eliminated's red pulse box art (same blinker,
          same medals-fade-out) but is deliberately absent from
          statusTextLabel below — no "PLAYOFFS ELIMINATED"-style caption,
@@ -11547,8 +11549,8 @@
          redzone team renders with no status badge at all under Regular
          (10th Anniversary's pulsing row background is the only
          "blinker" this codebase has). */
-      const statusBoxImg = { secured: 'Team_BoxGreen.png', eliminated: 'Team_BoxRed.png', redzone: 'Team_BoxRed.png' };
-      const statusTextLabel = { secured: 'PLAYOFFS SECURED', eliminated: 'PLAYOFFS ELIMINATED' };
+      const statusBoxImg = { secured: 'Team_BoxGreen.png', upperbracket: 'Team_BoxGreen.png', eliminated: 'Team_BoxRed.png', redzone: 'Team_BoxRed.png' };
+      const statusTextLabel = { secured: 'PLAYOFFS SECURED', upperbracket: 'UPPER BRACKET SECURED', eliminated: 'PLAYOFFS ELIMINATED' };
       root.innerHTML = stTeams.map((t, i) => {
         const status = (!isAnniv && statusImg[t.status])
           ? `<img class="str-status" src="${ST_ASSET}${statusImg[t.status]}" alt="${t.status}">` : '';
