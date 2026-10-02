@@ -89,6 +89,8 @@
   const shell  = document.getElementById('bpmmeter-shell');
   const fx     = document.getElementById('bpmmeter-spice-fx');
   const spicyEl = document.getElementById('bpmmeter-spicy');
+  const spicyPop = document.getElementById('bpmmeter-spicy-pop');
+  const spiceTextPop = document.getElementById('bpmmeter-spicetext-pop');
   const spiceTextEl = document.getElementById('bpmmeter-spicetext');
 
   /* Spice tier from level/BASE_LEVEL: 0-30% low (1), 30%+ medium
@@ -147,9 +149,9 @@
   }
   function startFire() { if (!fireRaf && shouldShow && fireTier) fireRaf = requestAnimationFrame(fireFrame); }
   function spicePop(el, base) {
-    el.style.transition = 'scale 110ms ease-out, opacity 200ms ease';
-    el.style.scale = base * 1.35;
-    setTimeout(() => { el.style.transition = ''; el.style.scale = base; }, 120);
+    el.style.transition = 'transform 110ms ease-out';
+    el.style.transform = `scale(${base * 1.35})`;
+    setTimeout(() => { el.style.transition = ''; el.style.transform = `scale(${base})`; }, 120);
   }
   let spiceTier = 0;
   function applyFire() {
@@ -170,8 +172,8 @@
     spiceTextEl.src = `/assets/noisemeter/spicetext${t}.png`;
     // Individual `scale` property (not `transform`) so the tier pop and the shake don't fight.
     // Big, obvious pop: snap up to 1.35x fast, then settle to the tier size with an overshoot.
-    spicePop(spicyEl, SPICE_SCALE[t-1]);
-    spicePop(spiceTextEl, 1);
+    spicePop(spicyPop, SPICE_SCALE[t-1]);
+    spicePop(spiceTextPop, 1);
     spicyEl.classList.add('on'); spiceTextEl.classList.add('on');
   }
   const trackA = document.getElementById('bpmmeter-track-a');

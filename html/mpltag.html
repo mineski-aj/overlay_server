@@ -661,16 +661,26 @@
        ratio. Sits OUTSIDE .bpmtag-shell (which is overflow:hidden) so it can
        overhang; .bpmtag-spice-fx mirrors the shell's shake transform from JS. */
     .bpmtag-spice-fx { position: absolute; left: 0; top: 0; width: 508px; height: 97px; pointer-events: none; z-index: 2; }
-    .bpmtag-spicy {
+    /* Pop/tier scaling lives on the *-pop wrapper as plain transform:scale()
+       (the standalone `scale` property isn't supported by older embedded
+       Chromium, e.g. some vMix builds). The img inside keeps the shake. */
+    .bpmtag-spicy-pop {
       position: absolute; left: -9.3px; top: -47.2px; width: 218.2px; height: 182.5px;
-      transform-origin: center center; opacity: 0;
-      transition: scale 450ms cubic-bezier(0.34,1.7,0.64,1), opacity 200ms ease;
-      will-change: transform;
+      transform-origin: center center; will-change: transform;
+      transition: transform 450ms cubic-bezier(0.34,1.7,0.64,1);
+    }
+    .bpmtag-spicy {
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      opacity: 0; transition: opacity 200ms ease; will-change: transform;
+    }
+    .bpmtag-spicetext-pop {
+      position: absolute; right: 0; bottom: 105.6px; width: 308.4px; height: 43.4px;
+      transform-origin: center center;
+      transition: transform 450ms cubic-bezier(0.34,1.7,0.64,1);
     }
     .bpmtag-spicetext {
-      position: absolute; right: 0; bottom: 105.6px; width: 308.4px; height: 43.4px;
-      opacity: 0; transition: opacity 200ms ease, scale 450ms cubic-bezier(0.34,1.7,0.64,1);
-      transform-origin: center center;
+      position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      opacity: 0; transition: opacity 200ms ease;
     }
     .bpmtag-spicy.on, .bpmtag-spicetext.on { opacity: 1; }
     /* Explosion exit (max level hidden, or + pressed 5x at max): boom.webm plays
@@ -726,8 +736,8 @@
         </div>
         <div class="bpmtag-spice-fx" id="bpmtag-spice-fx">
           <canvas class="bpmtag-fire" id="bpmtag-fire" width="128" height="48"></canvas>
-          <img class="bpmtag-spicy" id="bpmtag-spicy" alt="">
-          <img class="bpmtag-spicetext" id="bpmtag-spicetext" alt="">
+          <div class="bpmtag-spicy-pop" id="bpmtag-spicy-pop"><img class="bpmtag-spicy" id="bpmtag-spicy" alt=""></div>
+          <div class="bpmtag-spicetext-pop" id="bpmtag-spicetext-pop"><img class="bpmtag-spicetext" id="bpmtag-spicetext" alt=""></div>
         </div>
         <video class="bpmtag-boom" id="bpmtag-boom" src="/assets/noisemeter/boom.webm" muted playsinline preload="auto"></video>
       </div>
@@ -2081,6 +2091,8 @@
   const shell  = document.getElementById('bpmtag-shell');
   const fx     = document.getElementById('bpmtag-spice-fx');
   const spicyEl = document.getElementById('bpmtag-spicy');
+  const spicyPop = document.getElementById('bpmtag-spicy-pop');
+  const spiceTextPop = document.getElementById('bpmtag-spicetext-pop');
   const spiceTextEl = document.getElementById('bpmtag-spicetext');
 
   /* Spice tier from level/BASE_LEVEL: 0-30% low (1), 30%+ medium
@@ -2139,9 +2151,9 @@
   }
   function startFire() { if (!fireRaf && shouldShow && fireTier) fireRaf = requestAnimationFrame(fireFrame); }
   function spicePop(el, base) {
-    el.style.transition = 'scale 110ms ease-out, opacity 200ms ease';
-    el.style.scale = base * 1.35;
-    setTimeout(() => { el.style.transition = ''; el.style.scale = base; }, 120);
+    el.style.transition = 'transform 110ms ease-out';
+    el.style.transform = `scale(${base * 1.35})`;
+    setTimeout(() => { el.style.transition = ''; el.style.transform = `scale(${base})`; }, 120);
   }
   let spiceTier = 0;
   function applyFire() {
@@ -2162,8 +2174,8 @@
     spiceTextEl.src = `/assets/noisemeter/spicetext${t}.png`;
     // Individual `scale` property (not `transform`) so the tier pop and the shake don't fight.
     // Big, obvious pop: snap up to 1.35x fast, then settle to the tier size with an overshoot.
-    spicePop(spicyEl, SPICE_SCALE[t-1]);
-    spicePop(spiceTextEl, 1);
+    spicePop(spicyPop, SPICE_SCALE[t-1]);
+    spicePop(spiceTextPop, 1);
     spicyEl.classList.add('on'); spiceTextEl.classList.add('on');
   }
   const trackA = document.getElementById('bpmtag-track-a');
@@ -2326,6 +2338,9 @@
      re-entry (a second hide, more + presses) until cleanup. */
   const boomEl = document.getElementById('bpmtag-boom');
   const sizewrapEl = document.getElementById('bpmtag-sizewrap');
+  // Explosion exit is shelved for now (set true to bring it back) — hide at max
+  // uses the normal slide-out, and extra + presses at max do nothing.
+  const BOOM_ENABLED = false;
   const BOOM_PRESSES = 5;     // + presses while already at max that trigger it
   let maxPresses = 0, exploding = false, boomTimer = null;
 
@@ -2357,7 +2372,7 @@
   function bpmTagPressPlus() {
     if (!shouldShow) return;
     if (level < BASE_LEVEL) { setLevel(level + 1); return; }
-    if (++maxPresses >= BOOM_PRESSES) {
+    if (BOOM_ENABLED && ++maxPresses >= BOOM_PRESSES) {
       bpmTagExplode();
       // keep the dashboard's Showing/Hidden state truthful (echo is ignored while exploding)
       fetch('/overlay/bpmmeter_tag/hide', { cache: 'no-store' }).catch(function () {});
@@ -2385,7 +2400,7 @@
 
   function bpmTagAnimateOut() {
     if (exploding) return;
-    if (shouldShow && level === BASE_LEVEL) { bpmTagExplode(); return; }
+    if (BOOM_ENABLED && shouldShow && level === BASE_LEVEL) { bpmTagExplode(); return; }
     shouldShow = false;
     stopLoop();
     slide.classList.remove('bpmtag-in');
