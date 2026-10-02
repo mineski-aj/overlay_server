@@ -2343,14 +2343,11 @@
           { label: 'Test Buff Badge: Adjust', action: '/overlay/draftstats/test-buff/adjust' },
           { label: 'Test Swap (badge only, no stats)', action: '/overlay/draftstats/test-swap/nerf' },
         ] },
-        /* Map Detail banner — no per-type buttons: which text shows is
-           driven entirely by Draft.html's own currently-selected map
-           (Match Board's #map-select), so this is just a plain show/hide
-           (show is a no-op if the selected map isn't one of the 4 known
-           special-rule maps) — see routes/overlay.js's /overlay/mapdetail/*. */
-        { label: 'Map Detail', actions: [
-          { label: 'Show Map Detail', action: '/overlay/mapdetail/show' },
-          { label: 'Hide Map Detail', action: '/overlay/mapdetail/hide' },
+        /* Map Detail v2 — the map bug itself expands (icon grows, description
+           reveals) — see Draft.html's #mapdetail2-panel. */
+        { label: 'Map Detail v2', actions: [
+          { label: 'Show Map Detail v2', action: '/overlay/mapdetailv2/show' },
+          { label: 'Hide Map Detail v2', action: '/overlay/mapdetailv2/hide' },
         ] },
       ],
     },
@@ -4819,16 +4816,30 @@
      are absolutely positioned WITHIN #draft-map, so moving #draft-map
      carries both along; each can also be nudged on its own. */
   var DRAFT_MAP_DEFAULTS = {
-    '#draft-map':           { left: 813, top: 691, width: 294, height: 69 },
-    '#draft-map-logo':      { left: 9,   top: 9,   width: 52,  height: 52 },
-    '#draft-map-name':      { left: 102, top: 10,  width: 185, height: 50 },
-    '.draft-map-name-text': { fontSize: 26 },
+    '#draft-map':           { left: 758, top: 711, width: 403, height: 69 },
+    '#draft-map-logo':      { left: 10,  top: 0,   width: 71,  height: 71 },
+    '#draft-map-name':      { left: 165, top: 10,  width: 230, height: 50 },
+    '.draft-map-name-text': { fontSize: 36 },
   };
   var DRAFT_MAP_ELEMENTS = [
     { group: 'Background', id: '#draft-map',           name: 'Map Bug Background' },
     { group: 'Icon',       id: '#draft-map-logo',      name: 'Map Icon' },
     { group: 'Text',       id: '#draft-map-name',      name: 'Map Name Box' },
     { group: 'Text',       id: '.draft-map-name-text', name: 'Map Name Font Size' },
+  ];
+
+  /* ── Map Detail v2 (Draft.html) — expanding map bug. ── */
+  var DRAFT_MAPDETAIL2_DEFAULTS = {
+    '#mapdetail2-plate': { left: 758, top: 655, width: 403, height: 125 },
+    '#mapdetail2-desc':  { left: 165, top: 66,  width: 235, height: 52 },
+    '#draft-map-name':      { left: 165, top: 10, width: 230, height: 50 },
+    '.draft-map-name-text': { fontSize: 36 },
+  };
+  var DRAFT_MAPDETAIL2_ELEMENTS = [
+    { group: 'Map Detail v2 Plate', id: '#mapdetail2-plate', name: 'Description Plate' },
+    { group: 'Map Detail v2 Desc',  id: '#mapdetail2-desc',  name: 'Description Text Box' },
+    { group: 'Map Detail v2 Name',  id: '#draft-map-name',      name: 'Map Name Box' },
+    { group: 'Map Detail v2 Name',  id: '.draft-map-name-text', name: 'Map Name Font Size' },
   ];
 
   /* ── Match/Game indicator (Draft.html) — "MATCH 1 - GAME 1" box
@@ -6096,6 +6107,15 @@
       defaultsKey: 'sb_edit_defaults_draft_mapbug',
       elements:    DRAFT_MAP_ELEMENTS,
       defaults:    DRAFT_MAP_DEFAULTS,
+    },
+    draft_mapdetail2: {
+      label:       'Map Detail v2 · Draft',
+      file:        'Draft.html',
+      styleFile:   'Draft',
+      defaultsKey: 'sb_edit_defaults_draft_mapdetail2',
+      elements:    DRAFT_MAPDETAIL2_ELEMENTS,
+      defaults:    DRAFT_MAPDETAIL2_DEFAULTS,
+      showFn:      'showDraftMapDetail2ForEdit',
     },
     draft_matchgame: {
       label:       'Match/Game Indicator · Draft',

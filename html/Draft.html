@@ -16,6 +16,12 @@
     }
     @font-face {
       font-family: 'General Sans';
+      font-weight: 500;
+      font-display: block;
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans';
       font-weight: 700;
       font-display: block;
       src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
@@ -905,104 +911,78 @@
        (bans start at BAN_TOP = 780px) instead of the ingame position. ── */
     #draft-map {
       position: absolute;
-      left: 813px;
-      top: 691px;
-      width: 294px;
+      left: 758px;
+      top: 711px;
+      width: 403px;
       height: 69px;
       z-index: 50;
-      background-image: url('/assets/ingame/mapbacker.png');
-      background-size: 100% 100%;
       pointer-events: none;
-      transition: transform .4s cubic-bezier(.4,0,.2,1);
+      transition: transform .55s cubic-bezier(.4,0,.2,1);
     }
-    /* Pushed up by exactly the Map Detail panel's own height (94px, see
-       #mapdetail-panel below) while that panel is shown, so the two
-       never overlap — #mapdetail-panel's bottom edge (780px) is flush
-       with BAN_TOP, so #draft-map has nowhere to go but up. */
-    #draft-map.draft-map-pushed {
-      transform: translateY(-94px);
-    }
-
-    /* ── Map Detail banner — explains this match's special rule
-       (Healing Turtle / Golden Turret / Revealing Wisp / Flying Cloud —
-       whichever is the CURRENTLY SELECTED map, see mapDetailApplyCmd),
-       sandwiched between #draft-map above and the pick/ban grid below
-       (BAN_TOP = 780px). A child of #scene (not document.body, like the
-       Draft Predict panels) specifically so it shares #scene's own
-       stacking context with the ban/pick plates and #draft-map, and is
-       built (buildMapDetail(), called immediately below) BEFORE those —
-       giving it, by plain DOM order, a lower paint priority than
-       anything built later, same effect as an explicit z-index but
-       without having to out-guess every plate/badge's own z-index.
-       z-index: -1 on top of that is belt-and-suspenders: no fade here —
-       hidden state is translateY(100%) (shifted down by its own height,
-       into the ban row's own vertical space) with NO opacity change at
-       all, so if that hidden rectangle ever overlaps the grid, the
-       grid's own (higher-stacked) plates cover it outright instead of
-       it needing to visually fade away. Revealing it is then purely a
-       slide: translateY back to 0 moves it up into the clear gap above
-       the grid, with nothing else drawn there to hide behind. */
-    /* Clips the panel at y=780 (top edge of the draft container drawn by
-       #scene's own background) so the panel can never paint over it —
-       #scene's background sits UNDER its children, so z-index alone
-       can't put the panel behind it. */
-    #mapdetail-clip {
+    /* Backer art lives on a pseudo-element (z-index:-1 stays inside
+       #draft-map's own stacking context) so Map Detail v2 can fade just
+       the art out — logo/name stay — revealing the plate's own top row. */
+    #draft-map::before {
+      content: '';
       position: absolute;
-      left: 0; top: 0;
-      width: 1920px; height: 780px;
-      overflow: hidden;
+      inset: 0;
       z-index: -1;
-      pointer-events: none;
-    }
-    #mapdetail-panel {
-      position: absolute;
-      left: 758px;
-      top: 686px;
-      width: 403px;
-      height: 94px;
-      z-index: -1;
-      background-image: url('/assets/draft/mapdetail.png');
+      background-image: url('/assets/draft/mapbacker_v2.png');
       background-size: 100% 100%;
-      transform: translateY(100%);
-      transition: transform .4s cubic-bezier(.4,0,.2,1);
+      transition: opacity .45s linear;
+    }
+    /* ── Map Detail v2 — the map bug (#draft-map, art mapbacker_v2.png
+       403x62, same width as the description plate) itself expands:
+       OPEN slides the whole bug up 56px (so the stack's bottom edge lands
+       flush on BAN_TOP 780), scales the icon up, and the description plate
+       (#mapdetail2-plate, bottom row of mapdetail_v2.png) emerges from
+       behind it. Plate sits at its FINAL position; collapsed = shifted up
+       6px so it's fully hidden behind the bug. ── */
+    #mapdetail2-plate {
+      position: absolute;
+      left: 758px; top: 655px;
+      width: 403px; height: 125px;
+      z-index: 49;
+      background-image: url('/assets/draft/mapdetail_v2.png');
+      background-size: 100% 100%;
+      transform: translateY(56px);
+      clip-path: inset(0 0 56px 0);
+      transition: transform .55s cubic-bezier(.4,0,.2,1), clip-path .55s cubic-bezier(.4,0,.2,1);
       pointer-events: none;
     }
-    #mapdetail-panel.mapdetail-visible {
-      transform: translateY(0);
-    }
-    #mapdetail-textbox {
+    #mapdetail2-plate.md2-open { transform: none; clip-path: inset(0 0 0 0); }
+    #mapdetail2-desc {
       position: absolute;
-      left: 34px;
-      top: 10px;
-      width: 338px;
-      height: 75px;
-      box-sizing: border-box;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      left: 165px; top: 66px;
+      width: 235px; height: 52px;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .2s linear;
     }
-    .mapdetail-text {
+    #mapdetail2-plate.md2-open #mapdetail2-desc { opacity: 1; transition: opacity .3s linear .25s; }
+    .mapdetail2-desc-text {
       font-family: 'General Sans', sans-serif;
-      font-weight: 700;
-      /* 4.5pt @ 300dpi ≈ 18.75px, rounded to 19px (confirmed). */
-      font-size: 19px;
-      color: #000000;
+      font-weight: 500;
+      font-size: 14px;
+      line-height: 1.2;
+      color: #000;
       text-align: center;
       text-transform: uppercase;
-      white-space: normal;
-      overflow-wrap: break-word;
-      word-wrap: break-word;
     }
+    #draft-map.draft-map-v2-open { transform: translateY(-56px); }
+    #draft-map.draft-map-v2-open::before { opacity: 0; }
+    #draft-map.draft-map-v2-open #draft-map-logo { transform: translate(0, 28px) scale(1.3); }
     #draft-map-logo {
       position: absolute;
-      left: 9px;
-      top: 9px;
-      width: 52px;
-      height: 52px;
+      left: 10px;
+      top: 0;
+      width: 71px;
+      height: 71px;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      transition: transform .55s cubic-bezier(.4,0,.2,1);
     }
     #draft-map-logo-img {
       width: 100%;
@@ -1011,12 +991,11 @@
     }
     #draft-map-name {
       position: absolute;
-      left: 102px;
+      left: 165px;
       top: 10px;
-      width: 185px;
+      width: 230px;
       height: 50px;
       box-sizing: border-box;
-      padding: 0 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -2685,7 +2664,7 @@
           var mapLogoImg = document.getElementById('draft-map-logo-img');
           if (mapNameTxt) {
             mapNameTxt.textContent = mapVal.toUpperCase();
-            draftFitText(mapNameTxt, 169, 26);
+            draftFitText(mapNameTxt, 228, 36);
           }
           if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
             mapLogoImg.dataset.map = mapVal;
@@ -2775,15 +2754,10 @@
     scene.appendChild(box);
   }
 
-  /* ── Map Detail banner — see CSS block above for the push/slide/
-     z-layer geometry. Keyed by the EXACT map name string Match Board's
-     own #map-select dropdown uses (see match-dashboard.html) — this is
-     the same value pollMatchState() below already reads as `s.map` and
-     mirrors into mapDetailCurrentMap, so there's no separate "type" to
-     pick: the text shown is whichever of these 4 the match's currently
-     SELECTED map happens to match. Text is plain sentence case — CSS
-     text-transform:uppercase (see .mapdetail-text) renders it all caps,
-     not baked into the string, so this stays the real/readable source. */
+  /* ── Map Detail descriptions — keyed by the EXACT map name string Match
+     Board's own #map-select dropdown uses (the same value pollMatchState()
+     reads as `s.map` and mirrors into mapDetailCurrentMap). Text is plain
+     sentence case — CSS text-transform:uppercase renders it all caps. ── */
   var MAPDETAIL_TEXT = {
     'Healing Turtle':  'An allied turtle will spawn in the lane to help push.',
     'Golden Turret':   'Turrets grant significantly more team gold when destroyed.',
@@ -2794,66 +2768,49 @@
      map is selected ('NONE') or not yet known, otherwise the exact
      selected map string. */
   var mapDetailCurrentMap = null;
-  var mapDetailPanelEl, mapDetailTextEl;
-  function buildMapDetail() {
-    mapDetailPanelEl = document.createElement('div');
-    mapDetailPanelEl.id = 'mapdetail-panel';
-    var textbox = document.createElement('div');
-    textbox.id = 'mapdetail-textbox';
-    mapDetailTextEl = document.createElement('span');
-    mapDetailTextEl.className = 'mapdetail-text';
-    textbox.appendChild(mapDetailTextEl);
-    mapDetailPanelEl.appendChild(textbox);
-    /* Appended to #scene (not document.body, unlike the Draft Predict
-       panels) — see the CSS block's own comment for why: it needs to
-       share #scene's stacking context with the ban/pick plates and
-       #draft-map, and this call runs before buildPickPlates()/
-       buildBanPlates()/buildDraftMap() (all called later, in the main
-       init sequence near the bottom of this file), so by plain DOM
-       order it's already behind everything built after it. */
-    var clip = document.createElement('div');
-    clip.id = 'mapdetail-clip';
-    clip.appendChild(mapDetailPanelEl);
-    scene.appendChild(clip);
-  }
-  buildMapDetail();
 
-  /* ── Remote control — 'mapdetail' show/hide (see routes/overlay.js).
-     'show' looks up MAPDETAIL_TEXT for whatever map is CURRENTLY
-     selected (mapDetailCurrentMap) — if the selected map isn't one of
-     the 4 known special-rule maps, this is a no-op (explicit ask: "if a
-     selected map doesn't match, it does nothing"), leaving the panel
-     exactly as it was. A 'show' while already visible just swaps the
-     text in place (no re-slide) since classList.add is a no-op when
-     the class is already present. */
-  function mapDetailApplyCmd(action) {
-    var draftMapBox = document.getElementById('draft-map');
+  /* ── Map Detail v2 — expanding map bug (CSS block above). Reuses
+     MAPDETAIL_TEXT/mapDetailCurrentMap; show is a no-op for a map with
+     no description. The bug slides up, its backer art fades out and the
+     plate (top row + description row) is revealed beneath. ── */
+  var md2PlateEl, md2DescEl;
+  function buildMapDetail2() {
+    md2PlateEl = document.createElement('div');
+    md2PlateEl.id = 'mapdetail2-plate';
+    var desc = document.createElement('div');
+    desc.id = 'mapdetail2-desc';
+    md2DescEl = document.createElement('span');
+    md2DescEl.className = 'mapdetail2-desc-text';
+    desc.appendChild(md2DescEl);
+    md2PlateEl.appendChild(desc);
+    scene.appendChild(md2PlateEl);
+  }
+  buildMapDetail2();
+
+  function mapDetail2ApplyCmd(action) {
+    var bug = document.getElementById('draft-map');
     if (action === 'show') {
-      var text = MAPDETAIL_TEXT[mapDetailCurrentMap];
-      if (!text) return;
-      mapDetailTextEl.textContent = text;
-      mapDetailPanelEl.classList.add('mapdetail-visible');
-      if (draftMapBox) draftMapBox.classList.add('draft-map-pushed');
+      if (!MAPDETAIL_TEXT[mapDetailCurrentMap]) return;
+      md2DescEl.textContent = MAPDETAIL_TEXT[mapDetailCurrentMap];
+      md2PlateEl.classList.add('md2-open');
+      if (bug) bug.classList.add('draft-map-v2-open');
     } else if (action === 'hide') {
-      mapDetailPanelEl.classList.remove('mapdetail-visible');
-      if (draftMapBox) draftMapBox.classList.remove('draft-map-pushed');
+      md2PlateEl.classList.remove('md2-open');
+      if (bug) bug.classList.remove('draft-map-v2-open');
     }
   }
-
-  /* Restore real server-side shown/hidden state on load
-     (state.mapDetail) — pure read-only display, nothing written to
-     shared state, so safe to run regardless of PREVIEW_ONLY (same
-     reasoning as Draft Predict's own restore fetch above). Deferred
-     500ms past the usual immediate restore-fetch pattern: this one
-     depends on mapDetailCurrentMap, which only becomes known once
-     pollMatchState()'s own first /match/state fetch resolves (started
-     separately below) — on a fresh page load there's a real race
-     between the two, and showing before the map is known would always
-     read as "no match" and silently no-op. */
+  window.showDraftMapDetail2ForEdit = function () {
+    showDraftScene(true);
+    var m = MAPDETAIL_TEXT[mapDetailCurrentMap] ? mapDetailCurrentMap : 'Healing Turtle';
+    md2DescEl.textContent = MAPDETAIL_TEXT[m];
+    md2PlateEl.classList.add('md2-open');
+    var bug = document.getElementById('draft-map');
+    if (bug) bug.classList.add('draft-map-v2-open');
+  };
   setTimeout(function () {
-    fetch('/overlay/mapdetail-state', { cache: 'no-store' })
+    fetch('/overlay/mapdetailv2-state', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
-      .then(function (d) { if (d && d.visible) mapDetailApplyCmd('show'); })
+      .then(function (d) { if (d && d.visible) mapDetail2ApplyCmd('show'); })
       .catch(function () {});
   }, 500);
 
@@ -8245,12 +8202,10 @@
         dp3ApplyCmd(d.action);
       } catch (e) {}
     });
-    /* Map Detail banner — pure read-only display, same "not gated
-       behind PREVIEW_ONLY" reasoning as the listeners above. */
-    sse.addEventListener('mapdetail', function(ev) {
+    sse.addEventListener('mapdetailv2', function(ev) {
       try {
         var d = JSON.parse(ev.data);
-        mapDetailApplyCmd(d.action);
+        mapDetail2ApplyCmd(d.action);
       } catch (e) {}
     });
     /* Draft Stats — arm/disarm toggle (Control tab → Draft Overlay →

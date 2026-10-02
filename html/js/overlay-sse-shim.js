@@ -10,7 +10,7 @@
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
 // below for why this exists. Current bump: added 'matchcard'.
-const OVERLAY_WORKER_VERSION = 25; // 25: added 'mapdetail' (Draft.html Map Detail banner) to KNOWN_EVENTS
+const OVERLAY_WORKER_VERSION = 27; // 27: removed 'mapdetail' (Map Detail v1) from KNOWN_EVENTS; 26: added 'mapdetailv2' (Draft.html Map Detail v2) to KNOWN_EVENTS; 25: 'mapdetail'
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

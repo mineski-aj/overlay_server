@@ -1132,34 +1132,26 @@ router.get('/overlay/draftpredict3/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
-// Draft.html — Map Detail banner. One physical panel/slot, sandwiched
-// between #draft-map (the map-name badge, pushed up out of the way
-// client-side while this is visible) and the pick/ban grid. No `type`
-// param — the TEXT shown is driven entirely by whatever map Draft.html's
-// own /match/state poll already has as the currently-selected map
-// (Flying Cloud / Golden Turret / Healing Turtle / Revealing Wisp, the
-// same 4 options as Match Board's #map-select); if the selected map
-// isn't one of those 4, 'show' is a no-op client-side. So the server
-// side here is just a plain show/hide, same shape as draftrecap/
-// draftpredict above.
+// Draft.html — Map Detail. No `type` param — the TEXT shown is driven by
+// whatever map Draft.html's own /match/state poll has as the currently
+// selected map (Flying Cloud / Golden Turret / Healing Turtle / Revealing
+// Wisp); for any other map, 'show' is a no-op client-side. Server side is
+// just a plain show/hide.
 
-// GET /overlay/mapdetail/show
-router.get('/overlay/mapdetail/show', (req, res) => {
-  state.mapDetail = { visible: true };
-  state.overlayClients.forEach(c => { try { c.write('event: mapdetail\ndata: {"action":"show"}\n\n'); } catch {} });
+// Map Detail v2 — the map bug itself expands to reveal the description
+// (Draft.html's #mapdetail2-plate).
+router.get('/overlay/mapdetailv2/show', (req, res) => {
+  state.mapDetailV2 = { visible: true };
+  state.overlayClients.forEach(c => { try { c.write('event: mapdetailv2\ndata: {"action":"show"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
 });
-
-// GET /overlay/mapdetail/hide
-router.get('/overlay/mapdetail/hide', (req, res) => {
-  state.mapDetail = { visible: false };
-  state.overlayClients.forEach(c => { try { c.write('event: mapdetail\ndata: {"action":"hide"}\n\n'); } catch {} });
+router.get('/overlay/mapdetailv2/hide', (req, res) => {
+  state.mapDetailV2 = { visible: false };
+  state.overlayClients.forEach(c => { try { c.write('event: mapdetailv2\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
-
-// GET /overlay/mapdetail-state — restore-on-load, returns state.mapDetail as-is.
-router.get('/overlay/mapdetail-state', (req, res) => {
-  res.set({ "Cache-Control": "no-store" }).json(state.mapDetail);
+router.get('/overlay/mapdetailv2-state', (req, res) => {
+  res.set({ "Cache-Control": "no-store" }).json(state.mapDetailV2);
 });
 
 // GET /overlay/debugoff — hide debug bars on all overlays
