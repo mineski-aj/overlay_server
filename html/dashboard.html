@@ -2122,7 +2122,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict', 'draftpredict2', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2318,20 +2318,14 @@
       toggleShowHide: true,
       deferredPreview: true,
       photoModeToggle: true,
-      draftPredictTestButton: true,
-      draftPredict2TestButton: true,
       draftPredict3TestButton: true,
       draftPredict3SlotButtons: true,
       checkToggles: [
         { name: 'Draft Recap', key: 'draftrecap', previewButton: true },
-        { name: 'Draft Predict', key: 'draftpredict', previewButton: true },
-        { name: 'Draft Predict v2', key: 'draftpredict2', previewButton: true },
         { name: 'Draft Predict v3', key: 'draftpredict3', previewButton: true },
       ],
       featureToggles: [
         { name: 'Draft Stats', feature: 'draftstats' },
-        { name: 'Draft Predict Rationale (AI text bubble)', feature: 'draftpredict_rationale' },
-        { name: 'Draft Predict v2 Rationale (AI text bubble)', feature: 'draftpredict2_rationale' },
         { name: 'Draft Predict v3 Rationale (AI text bubble)', feature: 'draftpredict3_rationale' },
       ],
       extraActionGroups: [
@@ -3641,76 +3635,6 @@
         row.appendChild(dpvb);
         draftPreviewMainBtn = dpvb;
 
-        /* Test Draft Predict — fires Draft.html's own window.__dpTestReveal()
-           (a fake blue-then-red reveal, with rationale, for tuning layout —
-           see html/Draft.html) directly inside the preview iframe's
-           contentWindow, same "reach into the loaded page's own JS, no
-           network call" approach as the ◈ Preview button above. Never a
-           real /overlay/... route, so nothing here can ever touch real
-           broadcast state — it only does anything to whatever's currently
-           sitting in this Control-tab preview pane. */
-        if (ov.draftPredictTestButton) {
-          var dptb = document.createElement('button');
-          dptb.className = 'btn btn-action';
-          dptb.textContent = '▶ Test Draft Predict';
-          dptb.addEventListener('click', function () {
-            function fireTest() {
-              var iw = previewIframe.contentWindow;
-              if (iw && typeof iw.__dpTestReveal === 'function') iw.__dpTestReveal();
-            }
-            if (draftPreviewActive) {
-              fireTest();
-            } else {
-              /* Preview iframe isn't loaded yet — piggyback on the ◈
-                 Preview button's own load/activate logic, then chain our
-                 test call onto its onload instead of duplicating the
-                 load/activate bookkeeping here. */
-              var route     = ov.show || ov.hide;
-              var parts     = route.split('/');
-              var eventName = parts[parts.length - 2];
-              dpvb.click();
-              previewIframe.onload = function () {
-                previewIframe.onload = null;
-                var iw = previewIframe.contentWindow;
-                if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
-                fireTest();
-              };
-            }
-          });
-          row.appendChild(dptb);
-        }
-
-        /* Test Draft Predict v2 — same "reach into the preview iframe's
-           own JS, no network call" approach as Test Draft Predict above,
-           just calling the 'dp2'-prefixed pipeline (window.__dp2TestReveal,
-           see html/Draft.html). */
-        if (ov.draftPredict2TestButton) {
-          var dptb2 = document.createElement('button');
-          dptb2.className = 'btn btn-action';
-          dptb2.textContent = '▶ Test Draft Predict v2';
-          dptb2.addEventListener('click', function () {
-            function fireTest2() {
-              var iw = previewIframe.contentWindow;
-              if (iw && typeof iw.__dp2TestReveal === 'function') iw.__dp2TestReveal();
-            }
-            if (draftPreviewActive) {
-              fireTest2();
-            } else {
-              var route     = ov.show || ov.hide;
-              var parts     = route.split('/');
-              var eventName = parts[parts.length - 2];
-              dpvb.click();
-              previewIframe.onload = function () {
-                previewIframe.onload = null;
-                var iw = previewIframe.contentWindow;
-                if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, 'show');
-                fireTest2();
-              };
-            }
-          });
-          row.appendChild(dptb2);
-        }
-
         /* Test Draft Predict v3 — same "reach into the preview iframe's
            own JS, no network call" approach as v1/v2's test buttons,
            just calling the 'dp3'-prefixed pipeline (window.__dp3TestReveal,
@@ -4853,36 +4777,6 @@
   var DRAFT_MATCHGAME_ELEMENTS = [
     { group: 'Text', id: '#draft-match-game',      name: 'Match/Game Box' },
     { group: 'Text', id: '.draft-match-game-text', name: 'Match/Game Font Size' },
-  ];
-
-  /* ── Draft Predict (Draft.html) — AI candidate carousels, blue at
-     screen-left, red at screen-right, both sitting directly on top of
-     the draft scene (never shown at the same time as Draft Recap). Each
-     panel moves/resizes as one whole box — the cards inside are
-     generated fresh per prediction, not individually editable. */
-  var DRAFTPREDICT_DEFAULTS = {
-    '#dp-blue-panel':  { left: 0,    top: 644, width: 758, height: 136 },
-    '#dp-red-panel':   { left: 1162, top: 644, width: 758, height: 136 },
-    '.dp-header-text': { fontSize: 19 },
-  };
-  var DRAFTPREDICT_ELEMENTS = [
-    { group: 'Blue Panel', id: '#dp-blue-panel',  name: 'Blue Panel' },
-    { group: 'Red Panel',  id: '#dp-red-panel',   name: 'Red Panel' },
-    { group: 'Text',       id: '.dp-header-text', name: 'Header Font Size' },
-  ];
-
-  /* ── Draft Predict v2 (Draft.html) — same layout shape as v1 above,
-     independent 'dp2'-prefixed selectors so moving/resizing one never
-     touches the other. */
-  var DRAFTPREDICT2_DEFAULTS = {
-    '#dp2-blue-panel':  { left: 0,    top: 644, width: 758, height: 136 },
-    '#dp2-red-panel':   { left: 1162, top: 644, width: 758, height: 136 },
-    '.dp2-header-text': { fontSize: 19 },
-  };
-  var DRAFTPREDICT2_ELEMENTS = [
-    { group: 'Blue Panel v2', id: '#dp2-blue-panel',  name: 'Blue Panel' },
-    { group: 'Red Panel v2',  id: '#dp2-red-panel',   name: 'Red Panel' },
-    { group: 'Text v2',       id: '.dp2-header-text', name: 'Header Font Size' },
   ];
 
   /* ── Draft Predict v3 (Draft.html) — same layout shape as v1/v2 above,
@@ -6135,24 +6029,6 @@
       elements:    DRAFT_RECAP_ELEMENTS,
       defaults:    DRAFT_RECAP_DEFAULTS,
       showFn:      'showDraftRecapForEdit',
-    },
-    draft_predict: {
-      label:       'Draft Predict · Draft',
-      file:        'Draft.html',
-      styleFile:   'Draft',
-      defaultsKey: 'sb_edit_defaults_draft_predict',
-      elements:    DRAFTPREDICT_ELEMENTS,
-      defaults:    DRAFTPREDICT_DEFAULTS,
-      showFn:      'showDraftPredictForEdit',
-    },
-    draft_predict2: {
-      label:       'Draft Predict v2 · Draft',
-      file:        'Draft.html',
-      styleFile:   'Draft',
-      defaultsKey: 'sb_edit_defaults_draft_predict2',
-      elements:    DRAFTPREDICT2_ELEMENTS,
-      defaults:    DRAFTPREDICT2_DEFAULTS,
-      showFn:      'showDraftPredict2ForEdit',
     },
     draft_predict3: {
       label:       'Draft Predict v3 · Draft',
