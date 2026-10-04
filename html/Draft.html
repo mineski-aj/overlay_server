@@ -138,13 +138,9 @@
       pointer-events: none;
       z-index: 2;
       display: none;
+      will-change: transform;
     }
-    /* Outer glow (not a directional shadow) — colored to match each camp,
-       stacked drop-shadows (tight core + soft halo) since filter is the
-       only way to glow a clip-path shape rather than its rectangular box.
-       Symmetric, so it's unaffected by which edge the triangle sits against. */
-    .card-tri.camp1 { background: #1E64FF; filter: drop-shadow(0 0 3px #1E64FF) drop-shadow(0 0 8px #1E64FF); }
-    .card-tri.camp2 { background: #FF3232; filter: drop-shadow(0 0 3px #FF3232) drop-shadow(0 0 8px #FF3232); }
+
     .card-tri-top {
       top: 0;
       /* Matches the animation's 0%/100% keyframe exactly — otherwise, during
@@ -153,13 +149,11 @@
          inside the keyframes), so it sits uncentered until the delay ends
          and visibly snaps into place. */
       transform: translateX(-50%) translateY(-3px);
-      clip-path: polygon(0 0, 42px 0, 21px 20px); /* apex down, toward centre */
       animation: card-tri-bob-top 2.2s ease-in-out infinite;
     }
     .card-tri-bottom {
       bottom: 0;
       transform: translateX(-50%) translateY(3px);
-      clip-path: polygon(21px 0, 42px 20px, 0 20px); /* apex up, toward centre */
       animation: card-tri-bob-bottom 2.2s ease-in-out infinite;
     }
     @keyframes card-tri-bob-top {
@@ -171,36 +165,34 @@
       50%      { transform: translateX(-50%) translateY(7px); }
     }
 
-    /* 10th Anniversary — new camp colors + a 2px stroke that reads as
-       INSIDE the triangle's silhouette (a real border can't follow a
-       clip-path shape's diagonal edges). Technique: .card-tri itself
-       becomes the stroke-colored FULL-size triangle (still the same
-       clip-path from .card-tri-top/-bottom above, so glow/positioning
-       stays untouched), and ::after is a second, smaller triangle
-       (vertices pulled ~2px inward toward the centroid) in the real camp
-       color, layered exactly on top — the ~2px sliver of the outer
-       triangle left visible around its edge IS the stroke. */
-    [data-theme="10th_anniversary"] .card-tri.camp1 {
-      background: #cdc3d4;
-      filter: drop-shadow(0 0 3px #0095fd) drop-shadow(0 0 8px #0095fd);
+
+    /* Glow is baked into a tiny SVG image (rasterized once, then just a
+       cached texture riding a compositor-only transform animation). The
+       old per-element filter: drop-shadow() + clip-path forced a re-raster
+       of every triangle on every bob frame — expensive under vMix's CEF
+       off-screen renderer. ::before extends 14px past the 42x20 box so the
+       halo isn't cut off; plate-content's overflow:hidden still clips it
+       at the card edge exactly as before. */
+    .card-tri::before {
+      content: ''; position: absolute;
+      left: -14px; top: -14px; width: 70px; height: 48px;
+      background-repeat: no-repeat; background-size: 100% 100%;
+      pointer-events: none;
     }
-    [data-theme="10th_anniversary"] .card-tri.camp2 {
-      background: #cdc3d4;
-      filter: drop-shadow(0 0 3px #fe243e) drop-shadow(0 0 8px #fe243e);
-    }
-    [data-theme="10th_anniversary"] .card-tri::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-    }
-    [data-theme="10th_anniversary"] .card-tri-top::after {
-      clip-path: polygon(3px 1px, 39px 1px, 21px 18px);
-    }
-    [data-theme="10th_anniversary"] .card-tri-bottom::after {
-      clip-path: polygon(21px 2px, 39px 19px, 3px 19px);
-    }
-    [data-theme="10th_anniversary"] .card-tri.camp1::after { background: #0095fd; }
-    [data-theme="10th_anniversary"] .card-tri.camp2::after { background: #fe243e; }
+    .card-tri-top.camp1::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%231E64FF'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%231E64FF'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'14%2C14%2056%2C14%2035%2C34'%20fill%3D'%231E64FF'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"); }
+    .card-tri-bottom.camp1::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%231E64FF'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%231E64FF'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'35%2C14%2056%2C34%2014%2C34'%20fill%3D'%231E64FF'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"); }
+    .card-tri-top.camp2::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%23FF3232'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%23FF3232'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'14%2C14%2056%2C14%2035%2C34'%20fill%3D'%23FF3232'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"); }
+    .card-tri-bottom.camp2::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%23FF3232'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%23FF3232'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'35%2C14%2056%2C34%2014%2C34'%20fill%3D'%23FF3232'%20filter%3D'url(%23g)'%2F%3E%3C%2Fsvg%3E"); }
+
+    /* 10th Anniversary — new camp colors + a 2px stroke that reads as INSIDE
+       the triangle's silhouette: the SVG draws the full-size #cdc3d4 triangle
+       (with the camp-colored glow) and a second, smaller triangle (vertices
+       pulled ~2px inward) in the real camp color on top; the sliver of the
+       outer one left visible IS the stroke. */
+    [data-theme="10th_anniversary"] .card-tri-top.camp1::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%230095fd'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%230095fd'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'14%2C14%2056%2C14%2035%2C34'%20fill%3D'%23cdc3d4'%20filter%3D'url(%23g)'%2F%3E%3Cpolygon%20points%3D'17%2C15%2053%2C15%2035%2C32'%20fill%3D'%230095fd'%2F%3E%3C%2Fsvg%3E"); }
+    [data-theme="10th_anniversary"] .card-tri-bottom.camp1::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%230095fd'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%230095fd'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'35%2C14%2056%2C34%2014%2C34'%20fill%3D'%23cdc3d4'%20filter%3D'url(%23g)'%2F%3E%3Cpolygon%20points%3D'35%2C16%2053%2C33%2017%2C33'%20fill%3D'%230095fd'%2F%3E%3C%2Fsvg%3E"); }
+    [data-theme="10th_anniversary"] .card-tri-top.camp2::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%23fe243e'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%23fe243e'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'14%2C14%2056%2C14%2035%2C34'%20fill%3D'%23cdc3d4'%20filter%3D'url(%23g)'%2F%3E%3Cpolygon%20points%3D'17%2C15%2053%2C15%2035%2C32'%20fill%3D'%23fe243e'%2F%3E%3C%2Fsvg%3E"); }
+    [data-theme="10th_anniversary"] .card-tri-bottom.camp2::before { background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'48'%20viewBox%3D'0%200%2070%2048'%3E%3Cdefs%3E%3Cfilter%20id%3D'g'%20x%3D'0'%20y%3D'0'%20width%3D'100%25'%20height%3D'100%25'%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'1.5'%20result%3D'a'%2F%3E%3CfeGaussianBlur%20in%3D'SourceAlpha'%20stdDeviation%3D'4'%20result%3D'b'%2F%3E%3CfeFlood%20flood-color%3D'%23fe243e'%2F%3E%3CfeComposite%20in2%3D'a'%20operator%3D'in'%20result%3D'ca'%2F%3E%3CfeFlood%20flood-color%3D'%23fe243e'%2F%3E%3CfeComposite%20in2%3D'b'%20operator%3D'in'%20result%3D'cb'%2F%3E%3CfeMerge%3E%3CfeMergeNode%20in%3D'cb'%2F%3E%3CfeMergeNode%20in%3D'ca'%2F%3E%3CfeMergeNode%20in%3D'SourceGraphic'%2F%3E%3C%2FfeMerge%3E%3C%2Ffilter%3E%3C%2Fdefs%3E%3Cpolygon%20points%3D'35%2C14%2056%2C34%2014%2C34'%20fill%3D'%23cdc3d4'%20filter%3D'url(%23g)'%2F%3E%3Cpolygon%20points%3D'35%2C16%2053%2C33%2017%2C33'%20fill%3D'%23fe243e'%2F%3E%3C%2Fsvg%3E"); }
 
     /* ── Pick plate flex layout ────────────────────────────────── */
     .plates-camp {
@@ -575,13 +567,22 @@
       z-index: 3;
       pointer-events: none;
     }
-    @keyframes picked-glow-gold {
-      0%   { box-shadow: none; }
-      25%  { box-shadow: inset 0 0 0 3px rgba(255,215,80,1),
-                         inset 0 0 50px 20px rgba(255,200,60,0.75); }
-      100% { box-shadow: none; }
+    /* The inset glow is a STATIC box-shadow on a pseudo-element whose
+       OPACITY is animated — animating box-shadow itself repaints the layer
+       every frame (CPU raster, costly under vMix's CEF), opacity is a
+       compositor-only property. Visually the same fade in/out. */
+    .plate-glow::before {
+      content: ''; position: absolute; inset: 0;
+      opacity: 0; pointer-events: none;
+      box-shadow: inset 0 0 0 3px rgba(255,215,80,1),
+                  inset 0 0 50px 20px rgba(255,200,60,0.75);
     }
-    .plate-glow.picked { animation: picked-glow-gold 0.9s ease-out forwards; }
+    @keyframes picked-glow-gold {
+      0%   { opacity: 0; }
+      25%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    .plate-glow.picked::before { animation: picked-glow-gold 0.9s ease-out forwards; }
 
     @keyframes hero-brighten {
       0%   { filter: brightness(1); }
@@ -645,14 +646,18 @@
       pointer-events: none;
     }
 
-    /* Red glow when banning — inset only, slow pulse */
+    /* Red glow when banning — inset only, slow pulse. Static shadow +
+       animated opacity (compositor-only) instead of animating box-shadow. */
     @keyframes ban-inner {
-      0%, 100% { box-shadow: inset 0 0 0 0 rgba(255,50,50,0),
-                             inset 0 0 0 0 rgba(255,50,50,0); }
-      50%       { box-shadow: inset 0 0 0 3px rgba(255,50,50,1),
-                              inset 0 0 14px 3px rgba(255,50,50,0.55); }
+      0%, 100% { opacity: 0; }
+      50%      { opacity: 1; }
     }
-    .banplate.banning::after { animation: ban-inner 1.8s ease-in-out infinite; }
+    .banplate.banning::after {
+      box-shadow: inset 0 0 0 3px rgba(255,50,50,1),
+                  inset 0 0 14px 3px rgba(255,50,50,0.55);
+      opacity: 0;
+      animation: ban-inner 1.8s ease-in-out infinite;
+    }
 
     /* Ban hero image */
     .ban-hero {
@@ -1918,18 +1923,13 @@
         photoCanvas.className = 'photo-canvas';
         photoCanvas.width = PHOTO_W; photoCanvas.height = PHOTO_W;
         plateContent.appendChild(photoCanvas);
-        var photoCtx = photoCanvas.getContext('2d', { willReadFrequently: true });
+        var photoCtx = photoCanvas.getContext('2d');
 
-        /* Offscreen buffer — samples the matte mask at the photo's own
-           (larger) resolution so the erase aligns with the photo's size */
-        var photoMatteCanv = document.createElement('canvas');
-        photoMatteCanv.width = PHOTO_W; photoMatteCanv.height = PHOTO_W;
-        var photoMatteCtx = photoMatteCanv.getContext('2d', { willReadFrequently: true });
 
-        /* Matte video (luma-based wipe mask) — feeds updatePhotoErase()'s
-           JS pixel math unchanged (photo erase combines this mask with
-           the photo's OWN alpha via Math.min, which doesn't map onto a
-           single GPU compositing op, so it keeps the getImageData path). */
+        /* Matte video (luma-based wipe mask) — now only the TIMING driver
+           for the reveal (ended / requestVideoFrameCallback). The pixels
+           for both the hero reveal and the photo erase come from
+           heroMatteVid's baked alpha below. */
         var matteVid = document.createElement('video');
         matteVid.src = 'assets/draft/motion/s17_matte2.webm';
         matteVid.muted = true; matteVid.playsInline = true;
@@ -2064,7 +2064,7 @@
           roleImg: roleImg, nameEl: nameEl,
           triTop: triTop, triBottom: triBottom,
           photoImg: photoImg, photoCanvas: photoCanvas, photoCtx: photoCtx,
-          photoMatteCtx: photoMatteCtx, photoOrigAlpha: null, photoH: null,
+          photoH: null,
           dstatsRect: dstatsRect, dstatsText: dstatsText, dstatsPickRow: dstatsPickRow,
           dstatsContentionRow: dstatsContentionRow, dstatsWinrateRow: dstatsWinrateRow,
           dstatsPickValue: dstatsPickRow.querySelector('.dstats-pick-value'),
@@ -2494,7 +2494,8 @@
         banSlot.prevBanId = banId;
         if (banId > 0) {
           banSlot.img.style.visibility = '';
-          banSlot.img.src = 'hero/HERO_' + banId + '_KOTAK.png';
+          heroThumbFallback(banSlot.img, banId);
+          banSlot.img.src = heroThumbSrc(banId);
         } else {
           banSlot.img.removeAttribute('src');
           banSlot.img.style.visibility = 'hidden';
@@ -2674,10 +2675,22 @@
     })
     .catch(function (err) { console.error('Draft Predict v3: could not load heronames.json', err); });
 
+  /* 200x200 thumbnails of hero/HERO_<id>_KOTAK.png (those are 1000x1000,
+     ~1.3 MB each). Every use in this page displays them at <= ~90px, but
+     each carousel init / ban reveal was decoding + uploading the full
+     bitmap (4 MB of RGBA each) — a real main-thread/GPU hitch right when
+     the draft sequence is busiest. hero/thumb/ is generated from the
+     originals; onerror falls back to the full-size file so a hero added
+     without a thumb still renders. */
+  function heroThumbSrc(id) { return 'hero/thumb/HERO_' + id + '_KOTAK.png'; }
+  function heroThumbFallback(img, id) {
+    img.onerror = function () { img.onerror = null; img.src = 'hero/HERO_' + id + '_KOTAK.png'; };
+  }
+
   function dp3HeroImgSrc(heroName) {
     if (!heroName) return null;
     var id = DP3_HERO_ID_BY_NAME[String(heroName).trim().toLowerCase()];
-    return id ? ('hero/HERO_' + id + '_KOTAK.png') : null;
+    return id ? heroThumbSrc(id) : null;
   }
 
   var DP3_CARD_W = 85;
@@ -2699,8 +2712,19 @@
 
     var FADE_PX = 55;
 
+    /* offsetWidth forces a synchronous layout, and tick() runs it every
+       frame — after the previous frame's per-card transform/opacity
+       writes, so each read was a guaranteed layout flush (x2 carousels
+       when both sides roulette at once). The viewport's width never
+       changes while a carousel runs, so read it once (init /
+       startRoulette) and reuse; fall back to a live read only while it's
+       still 0 (e.g. measured while the panel was display:none). */
+    function getViewW() {
+      return c.viewW || (c.viewW = c.viewport.offsetWidth);
+    }
+
     function applyPositions() {
-      var viewW = c.viewport.offsetWidth;
+      var viewW = getViewW();
       var N = c.cardEls.length;
       if (!N) return;
       var SET_W = N * DP3_CARD_W;
@@ -2729,7 +2753,7 @@
     }
 
     function tick() {
-      var viewW = c.viewport.offsetWidth;
+      var viewW = getViewW();
       if (c.state === 'roulette') {
         c.scrollPos += c.direction * dp3ScrollSpeed;
       } else if (c.state === 'settling') {
@@ -2775,7 +2799,7 @@
       c.cardOffsets = [];
       c.cardOpacity = [];
       c.scrollPos = 0;
-      var viewW = viewportEl.offsetWidth;
+      var viewW = c.viewW = viewportEl.offsetWidth;
       var N = candidates.length;
       candidates.forEach(function (cand, i) {
         var src = dp3HeroImgSrc(cand.heroName);
@@ -2808,6 +2832,7 @@
         el.style.opacity = '';
       });
       c.cardOpacity = [];
+      c.viewW = c.viewport.offsetWidth;
       c.state = 'roulette';
       c.isAnimating = false;
       c.raf = requestAnimationFrame(tick);
@@ -4113,8 +4138,6 @@
     e.photoImg.src = '';
     e.photoCanvas.style.opacity = '0';
     e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
-    e.photoOrigAlpha = null;
-    e.photoErasePd = null;
     e.photoH = null;
     p.photoName    = undefined;
     p.photoPhase   = 'none';
@@ -4222,24 +4245,12 @@
     e.photoCanvas.width  = PHOTO_W;
     e.photoCanvas.height = Hp;
     e.photoCanvas.style.height = Hp + 'px';
-    e.photoMatteCtx.canvas.width  = PHOTO_W;
-    e.photoMatteCtx.canvas.height = Hp;
 
-    e.photoCtx.clearRect(0, 0, PHOTO_W, Hp);
-    e.photoCtx.drawImage(e.photoImg, 0, 0, PHOTO_W, Hp);
-    var pd = e.photoCtx.getImageData(0, 0, PHOTO_W, Hp);
-    var src = pd.data;
-    var orig = new Uint8ClampedArray(src.length / 4);
-    for (var i = 3, ai = 0; i < src.length; i += 4, ai++) orig[ai] = src[i];
-    e.photoOrigAlpha = orig;
-    /* Cache this same ImageData object for updatePhotoErase to mutate
-       in place every frame (see there) instead of re-reading it back
-       from the canvas each frame — its RGB pixels never change during
-       the erase, only the alpha byte, and only because we ourselves
-       write it via putImageData the frame before, so re-fetching it
-       via getImageData every frame was a fully redundant GPU/CPU
-       round trip of our own already-known data. */
-    e.photoErasePd = pd;
+    /* No readback: the erase is composited on the GPU every frame in
+       updatePhotoErase (photo drawn, then heroMatteVid's baked alpha
+       knocked out of it with destination-out), so all that's needed
+       here is to size the canvas and paint the first frame. */
+    updatePhotoErase(e, null);
     e.photoCanvas.style.opacity = '1';
     e.photoImg.style.opacity = '0';
   }
@@ -4247,20 +4258,23 @@
   /* Erases the photo using the SAME matte mask that reveals the hero video —
      resampled at the photo's own resolution so the wipe aligns with its size.
      Wherever the mask reveals the hero, the photo fades by the complement. */
-  function updatePhotoErase(e, matteVid) {
-    if (!e.photoOrigAlpha) return;
-    var Hp = e.photoH;
-
-    e.photoMatteCtx.clearRect(0, 0, PHOTO_W, Hp);
-    e.photoMatteCtx.drawImage(matteVid, 0, 0, PHOTO_W, Hp);
-    var m = e.photoMatteCtx.getImageData(0, 0, PHOTO_W, Hp).data;
-
-    var pd = e.photoErasePd;
-    var pdata = pd.data;
-    for (var i = 3, ai = 0; i < pdata.length; i += 4, ai++) {
-      pdata[i] = Math.min(e.photoOrigAlpha[ai], 255 - matteAlphaAt(m, i));
+  function updatePhotoErase(e, maskVid) {
+    if (!e.photoH) return;
+    var ctx = e.photoCtx, Hp = e.photoH;
+    ctx.clearRect(0, 0, PHOTO_W, Hp);
+    ctx.drawImage(e.photoImg, 0, 0, PHOTO_W, Hp);
+    if (maskVid) {
+      /* heroMatteVid's alpha = 255 - matteLuma, i.e. exactly the amount the
+         hero is revealed; destination-out leaves photoAlpha * (1 - reveal),
+         the same fade-by-the-complement as before, but as one GPU
+         composite instead of getImageData + a per-pixel JS loop +
+         putImageData every frame. (Only differs from the old
+         Math.min(photoAlpha, 1 - reveal) on the photo's semi-transparent
+         edge pixels, mid-erase.) */
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.drawImage(maskVid, 0, 0, PHOTO_W, Hp);
+      ctx.globalCompositeOperation = 'source-over';
     }
-    e.photoCtx.putImageData(pd, 0, 0);
   }
 
   function finishPhotoErase(e, p) {
@@ -4269,8 +4283,6 @@
     e.photoCanvas.style.opacity = '0';
     e.photoImg.style.display = 'none';
     e.photoCtx.clearRect(0, 0, e.photoCanvas.width, e.photoCanvas.height);
-    e.photoOrigAlpha = null;
-    e.photoErasePd = null;
     p.photoName  = undefined;
     p.photoPhase = 'none';
   }
@@ -4575,7 +4587,7 @@
       ctx.globalCompositeOperation = 'destination-in';
       ctx.drawImage(heroMatteVid, 0, 0, 168, H);
       ctx.globalCompositeOperation = 'source-over';
-      if (p.photoErasing) updatePhotoErase(e, matteVid);
+      if (p.photoErasing) updatePhotoErase(e, heroMatteVid);
     }
 
     function composite(H) {
@@ -4812,7 +4824,8 @@
 
     if (ban_heroid !== p.ban_heroid) {
       if (ban_heroid > 0) {
-        e.bhi.src = 'hero/HERO_' + ban_heroid + '_KOTAK.png';
+        heroThumbFallback(e.bhi, ban_heroid);
+        e.bhi.src = heroThumbSrc(ban_heroid);
         if (p.ban_heroid !== undefined) {
           revealBanHero(e.bhi);
         } else {
