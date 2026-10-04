@@ -1330,8 +1330,14 @@
       display: flex; align-items: center;
       padding: 0 12px;
       position: relative; z-index: 2;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+      /* No shadow while the panel is parked below its own clip box: the
+         blur bleeds ~10px UPWARD past the header's top edge, which sits
+         exactly at the panel's 136px clip line, so a hidden panel left a
+         faint dark line on screen. Shadow only exists once visible. */
+      box-shadow: none;
+      transition: box-shadow .2s;
     }
+    .dp3-visible .dp3-panel-header { box-shadow: 0 4px 14px rgba(0,0,0,0.45); }
     #dp3-blue-panel .dp3-panel-header { background: #004dd5; justify-content: flex-end; }
     #dp3-red-panel  .dp3-panel-header { background: #f31400; justify-content: flex-start; }
 
