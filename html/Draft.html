@@ -2383,7 +2383,10 @@
       vid.muted = true;
       vid.loop = true;
       vid.playsInline = true;
-      vid.preload = 'none';
+      /* 'auto', not 'none': the recap data is prefetched while hidden
+         (see drPrefetchTick), so the hero clips buffer ahead of Show
+         instead of starting to load only once the panel is on-air. */
+      vid.preload = 'auto';
       pick.appendChild(vid);
 
       var pickStatus = document.createElement('div');
@@ -2474,8 +2477,12 @@
         pickSlot.prevHeroid = heroid;
         if (heroid > 0) {
           pickSlot.vid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
-          pickSlot.vid.currentTime = 0;
-          pickSlot.vid.play().catch(function () {});
+          /* Prefetch while hidden only buffers the clip; playback
+             starts in drAnimateIn so a hidden recap costs no decode. */
+          if (drShouldShow) {
+            pickSlot.vid.currentTime = 0;
+            pickSlot.vid.play().catch(function () {});
+          }
         } else {
           pickSlot.vid.removeAttribute('src');
           pickSlot.vid.load();
@@ -2555,7 +2562,17 @@
        why the extra frame matters. */
     requestAnimationFrame(function () {
       requestAnimationFrame(function () {
-        if (drShouldShow) draftRecapPage.classList.add('draftrecap-visible');
+        if (!drShouldShow) return;
+        draftRecapPage.classList.add('draftrecap-visible');
+        /* Start the clips that were prefetched/buffered while hidden. */
+        [drBlue, drRed].forEach(function (card) {
+          card.picks.forEach(function (slot) {
+            if (slot.vid.getAttribute('src')) {
+              slot.vid.currentTime = 0;
+              slot.vid.play().catch(function () {});
+            }
+          });
+        });
       });
     });
 
@@ -2577,7 +2594,30 @@
     clearTimeout(drOutTimer);
     drOutTimer = setTimeout(function () {
       draftRecapPage.style.display = 'none';
+      /* Stop decoding once off-screen (same defer-past-the-fade idiom
+         as hideSceneVideo); drAnimateIn restarts them on next Show. */
+      [drBlue, drRed].forEach(function (card) {
+        card.picks.forEach(function (slot) { slot.vid.pause(); });
+      });
     }, 460); /* matches .dr-bg's 0.45s "out" transition above */
+  }
+
+  /* Prefetch: while the recap is hidden, quietly refresh its data on a
+     slow timer so Show applies already-loaded data instead of waiting
+     on the (sometimes slow) scorekeeping API. drFetchAndApply's own
+     in-flight guard + 8s timeout cover a hung request; Show still does
+     its own fresh fetch + 3s polling on top, so a stale prefetch is
+     corrected immediately. Skipped in ?preview=1 (deferredPreview
+     exists specifically to keep the preview instance idle). */
+  function drPrefetchTick() {
+    if (drShouldShow || PREVIEW_ONLY) return;
+    drFetchAndApply().catch(function () {});
+  }
+  if (!PREVIEW_ONLY) {
+    /* First tick delayed so /api/draft-recap-url (fetched async near
+       the top of the script) has replaced the default URL. */
+    setTimeout(drPrefetchTick, 1500);
+    setInterval(drPrefetchTick, 10000);
   }
 
   /* Dashboard Edit-tab force-show (see EDIT_CONFIGS' draft_recap in
