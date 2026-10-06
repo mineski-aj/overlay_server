@@ -1592,6 +1592,15 @@
     epic: 'EPIC RIVALRY', international: 'INTERNATIONAL RIVALRY',
     golden: 'GOLDEN RIVALRY', clash: 'CLASH OF TITANS', enduring: 'ENDURING LEGACY',
   };
+  /* 10th Anniversary's golden/clash art is hyphen-named on disk
+     (draftbg_GOLDEN-RIVALRY.png); Regular keeps the spaced convention. */
+  var STAR_MATCH_SUFFIX_ANNIV = {
+    golden: 'GOLDEN-RIVALRY', clash: 'CLASH-OF-TITANS',
+  };
+  function starSuffixFor(matchType) {
+    if (isAnniversaryTheme() && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
+    return STAR_MATCH_SUFFIX[matchType];
+  }
   function setBgWithFallback(el, primaryUrl, fallbackUrl) {
     if (!el) return;
     if (primaryUrl === fallbackUrl) { el.style.backgroundImage = "url('" + fallbackUrl + "')"; return; }
@@ -2203,7 +2212,7 @@
         var isEnduring = curMatch && curMatch.matchType === 'enduring';
         var draftBase  = 'assets/draft/' + (isAnniversaryTheme() ? 'anniversary/' : '');
         var draftPlain = draftBase + 'draftbg.png';
-        var starSuffix = curMatch && STAR_MATCH_SUFFIX[curMatch.matchType];
+        var starSuffix = curMatch && starSuffixFor(curMatch.matchType);
         var draftStar  = starSuffix ? draftBase + 'draftbg_' + starSuffix + '.png' : draftPlain;
         setBgWithFallback(scene, draftStar, draftPlain);
 

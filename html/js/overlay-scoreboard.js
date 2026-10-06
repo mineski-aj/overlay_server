@@ -14,6 +14,16 @@ var STAR_MATCH_SUFFIX = {
   epic: 'EPIC RIVALRY', international: 'INTERNATIONAL RIVALRY',
   golden: 'GOLDEN RIVALRY', clash: 'CLASH OF TITANS', enduring: 'ENDURING LEGACY',
 };
+/* 10th Anniversary's golden/clash art is hyphen-named on disk
+   (ingamepng2_GOLDEN-RIVALRY.png); Regular keeps the spaced convention. */
+var STAR_MATCH_SUFFIX_ANNIV = {
+  golden: 'GOLDEN-RIVALRY', clash: 'CLASH-OF-TITANS',
+};
+function sbStarSuffixFor(matchType) {
+  var isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  if (isAnniv && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
+  return STAR_MATCH_SUFFIX[matchType];
+}
 function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
   if (!imgEl) return;
   if (primarySrc === fallbackSrc) { imgEl.onerror = null; imgEl.src = fallbackSrc; return; }
@@ -628,7 +638,7 @@ function sbPollMatchState() {
       var isAnniv     = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       var ingameBase  = 'assets/ingame/' + (isAnniv ? 'anniversary/' : '');
       var ingamePlain = ingameBase + 'ingamepng2.png';
-      var starSuffix  = curMatch && STAR_MATCH_SUFFIX[curMatch.matchType];
+      var starSuffix  = curMatch && sbStarSuffixFor(curMatch.matchType);
       var ingameStar  = starSuffix ? ingameBase + 'ingamepng2_' + starSuffix + '.png' : ingamePlain;
       sbSetImgWithFallback(document.getElementById('scoreboard-bg'), ingameStar, ingamePlain);
 
