@@ -4555,6 +4555,7 @@
     }
     /* Bracket header (S18_Header_bracket.png, same 1028x150 box Waiting TVC's header uses): "THE PLAYOFFS"
        sits in the gold part of the strip. Separate elements so each is editable. */
+    #br-header, #br-week-label { transition: opacity 500ms ease; } /* fades with the trophy off the base pose */
     #br-header { position: absolute; left: 40px; top: 80px; width: 1028px; height: 150px; display: block; }
     #br-week-label {
       position: absolute; left: 679px; top: 196px; width: 253px; height: 34px;
@@ -10346,6 +10347,8 @@
     const brPage      = document.getElementById('bracket-page');
     const brContainer = document.getElementById('bracket-container');
     const brTrophy    = document.getElementById('br-trophy');
+    const brHeader    = document.getElementById('br-header');
+    const brWeekLabel = document.getElementById('br-week-label');
 
     /* Base pose = the one the scene fades in at. The trophy only shows there. */
     let brBase = null;
@@ -10356,7 +10359,10 @@
 
     function brApplyPose(p, durMs) {
       if (!p) return;
-      brTrophy.style.opacity = brIsBase(p) ? '1' : '0';
+      const baseOp = brIsBase(p) ? '1' : '0';
+      brTrophy.style.opacity = baseOp;
+      brHeader.style.opacity = baseOp;
+      brWeekLabel.style.opacity = baseOp;
       brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
       brContainer.style.transform =
         `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
