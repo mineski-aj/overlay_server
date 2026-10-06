@@ -138,6 +138,8 @@
     .bk-match { background: #0f0f18; border: 1px solid #2a2a3a; border-radius: 8px; padding: 8px 10px; }
     .bk-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: #667; margin-bottom: 6px; }
     .bk-head b { color: #aabbff; font-size: 11px; }
+    .bk-when { display: flex; gap: 4px; }
+    .bk-when input { width: 74px; padding: 2px 5px; font-size: 11px; }
     .bk-stage { font-size: 10px; color: #556; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .08em; }
     .bk-slot { display: grid; grid-template-columns: 26px 1fr 52px; gap: 6px; align-items: center; padding: 3px 0; }
     .bk-slot.blue .bk-side { color: #5a8cff; }
@@ -221,7 +223,7 @@
       <div id="bk-wrap"></div>
       <div id="bk-actions">
         <button class="btn btn-sort" id="bk-reset">Reset Bracket</button>
-        <span id="bk-hint">Controller only — pick teams for the seeded slots and enter scores. "Winner/Loser of Match N" slots fill in automatically once a series is decided. Stored locally in this browser until the overlay is built.</span>
+        <span id="bk-hint">Pick teams for the seeded slots and enter scores. "Winner/Loser of Match N" slots fill in automatically once a series is decided. Saved to the server — the Bracket overlay updates live.</span>
       </div>
     </div>
   </div>
@@ -335,7 +337,41 @@
     try { var o = JSON.parse(localStorage.getItem(BK_KEY)); if (o && o.m) return o; } catch (e) {}
     return { m: {} };
   }
-  function saveBk() { try { localStorage.setItem(BK_KEY, JSON.stringify(bk)); } catch (e) {} }
+  function saveBk() {
+    try { localStorage.setItem(BK_KEY, JSON.stringify(bk)); } catch (e) {}
+    pushBk();
+  }
+  /* Server copy (bracket_data.json) is what the Bracket overlay reads. The
+     overlay gets tricodes already resolved, so it never re-implements the
+     winner/loser-of-match logic. localStorage stays only as a cache. */
+  function pushBk() {
+    if (!token) return;
+    var resolved = {};
+    BK_MATCHES.forEach(function (m) {
+      var st = bkState(m.id);
+      var lbl = function (ref) { return ref === 'team' ? '' : (ref.w ? 'Winner' : 'Loser') + ' of Match ' + (ref.w || ref.l); };
+      resolved[m.id] = { a: bkResolve(m.a, 'a', st), b: bkResolve(m.b, 'b', st), sa: st.sa || 0, sb: st.sb || 0,
+                         date: st.date !== undefined ? st.date : m.date, time: st.time !== undefined ? st.time : m.time,
+                         title: m.id === 8 ? 'Best of ' + m.bo + ' Series' : m.stage,
+                         la: lbl(m.a), lb: lbl(m.b) }; /* la/lb: placeholder text while the slot is undecided */
+    });
+    fetch('/api/bracket-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: token, m: bk.m, resolved: resolved }),
+    }).catch(function () {});
+  }
+  function loadBkFromServer() {
+    fetch('/api/bracket-data', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      if (d && d.m && Object.keys(d.m).length) {
+        bk = { m: d.m };
+        try { localStorage.setItem(BK_KEY, JSON.stringify(bk)); } catch (e) {}
+        var a = document.activeElement;
+        if (!(a && a.closest && a.closest('#bk-wrap'))) renderBracket();
+        pushBk(); /* refresh the resolved copy (adds placeholder labels) */
+      } else if (Object.keys(bk.m).length) pushBk(); /* migrate old local-only data */
+    }).catch(function () {});
+  }
   function bkState(id) { return bk.m[id] || (bk.m[id] = { a: '', b: '', sa: 0, sb: 0 }); }
 
   function bkResolve(ref, side, st) {           // -> tricode or ''
@@ -388,7 +424,16 @@
     var card = document.createElement('div'); card.className = 'bk-match';
     var stage = document.createElement('div'); stage.className = 'bk-stage'; stage.textContent = m.stage;
     var head = document.createElement('div'); head.className = 'bk-head';
-    head.innerHTML = '<b>Match ' + m.id + '</b><span>' + m.date + ' · ' + m.time + '</span>';
+    head.innerHTML = '<b>Match ' + m.id + '</b>';
+    /* Date / time are editable and feed the overlay's info strip above the blue cell. */
+    var when = document.createElement('span'); when.className = 'bk-when';
+    [['date', 'Date', 'Oct. 21'], ['time', 'Time (PHT)', '16:00']].forEach(function (f) {
+      var inp = document.createElement('input'); inp.type = 'text'; inp.title = f[1]; inp.placeholder = f[2];
+      inp.value = st[f[0]] !== undefined ? st[f[0]] : m[f[0]];
+      inp.addEventListener('change', function () { st[f[0]] = inp.value.trim(); saveBk(); });
+      when.appendChild(inp);
+    });
+    head.appendChild(when);
     card.appendChild(stage); card.appendChild(head);
 
     [['a', 'blue', 'sa'], ['b', 'red', 'sb']].forEach(function (s) {
@@ -424,6 +469,7 @@
     bk = { m: {} }; saveBk(); renderBracket();
   });
   renderBracket();
+  loadBkFromServer();
 
   /* ── TABLE ── */
   function logoUrl(tri) { return '/logos/' + encodeURIComponent((tri || '').toUpperCase()) + '.png'; }

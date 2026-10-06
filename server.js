@@ -193,6 +193,7 @@ app.use(express.static(path.join(__dirname), {
 // Routes
 app.use(require('./routes/feed'));
 app.use(require('./routes/overlay'));
+app.use(require('./routes/bracket'));
 app.use(require('./routes/led'));
 app.use(require('./routes/fights'));
 app.use(require('./routes/positions'));

@@ -4515,6 +4515,79 @@
     @keyframes mb-in  { from { opacity:0; transform:translateY(-14px); } to { opacity:1; transform:translateY(0); } }
     @keyframes mb-out { from { opacity:1; transform:translateY(0); }     to { opacity:0; transform:translateY(-14px); } }
 
+    /* ── BRACKET PAGE — one full-canvas plane (#bracket-container) that
+       the dashboard Control tab tilts/scales in 3D (rotateX/Y/Z, scale,
+       offset, perspective) and animates between banked poses. Same under
+       every theme. The transform is set from JS (brApplyPose); this
+       rule is just the neutral starting pose. */
+    #bracket-page {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0;
+      transition: opacity 400ms ease;
+    }
+    #bracket-page.br-on { display: block; }
+    #bracket-page.br-visible { opacity: 1; }
+    #bracket-container {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      transform-origin: 50% 50%;
+      will-change: transform;
+    }
+    #bracket-img {
+      position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
+      display: block;
+    }
+    /* Match cells. Positions per element id are generated into
+       #br-default-style by brBuild() (guide: assets/bracket/po_guide.png);
+       Edit-tab overrides layer on top as usual. 12.5pt @ 300dpi = 52px. */
+    /* Grand Finals trophy loop (alpha WebM), first child so it sits behind the lines/cells/text.
+       The mask hides the bottom half and feathers the cut around the midpoint. */
+    #br-trophy {
+      transition: opacity 500ms ease; /* fades out off the base pose (skewed looks wrong), back in on return */
+      position: absolute; left: 1334px; top: 228px; width: 638px; height: 638px; display: block;
+      /* feather in px (not %) so it stays at the same spot on the canvas (y 504-599) when the size changes */
+      -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
+              mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
+    }
+    /* Bracket header (S18_Header_bracket.png, same 1028x150 box Waiting TVC's header uses): "THE PLAYOFFS"
+       sits in the gold part of the strip. Separate elements so each is editable. */
+    #br-header { position: absolute; left: 40px; top: 80px; width: 1028px; height: 150px; display: block; }
+    #br-week-label {
+      position: absolute; left: 679px; top: 196px; width: 253px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 24px;
+      color: #000; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
+    }
+    #br-grandfinals { position: absolute; left: 1499px; top: 718px; width: 306px; height: 47px; display: block; }
+    .br-cell  { position: absolute; width: 377px; height: 70px; display: block; }
+    .br-logo  { position: absolute; width: 53px; height: 53px; object-fit: contain; display: block; }
+    .br-name, .br-score {
+      position: absolute; display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 52px; line-height: 1;
+      text-align: center; white-space: nowrap; overflow: hidden;
+    }
+    /* Info strip over each blue cell: "MATCH 1 - 16:00 PHT" left, "OCT. 21" right.
+       4.85pt @ 300dpi = 20.2px. */
+    .br-info {
+      position: absolute; width: 377px; height: 29px;
+      display: flex; align-items: center; justify-content: space-between;
+      font-family: 'General Sans', sans-serif; font-size: 20.2px; line-height: 1;
+      color: #000; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    }
+    .br-info b { font-weight: 700; }
+    /* Stage title above a column of matches ("PLAY INS / BO5"). Same type as the info strip, centered. */
+    .br-title {
+      position: absolute; height: 29px; display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 20.2px; line-height: 1;
+      color: #000; text-transform: uppercase; text-align: center; white-space: nowrap; overflow: hidden;
+    }
+    .br-name  { color: #fff; }
+    .br-score { color: #000; }
+
     /* ── CREDIT REEL PAGE — continuous upward scroll (sponsor logos +
        titles, then cast/crew text). Content lives in CREDIT_REEL_ITEMS
        in the script below, not in this markup — edit that array to
@@ -5431,6 +5504,15 @@
       </div>
     </div>
 
+    <div class="feature-card">
+      <div class="feature-card-label">Bracket</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showBracketScene()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hideBracketScene()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-bracket" onclick="toggleLocalPreview('bracket', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+
     <!-- FINAL TEAM -->
     <div class="feature-card">
       <div class="feature-card-label">Final Team</div>
@@ -6303,6 +6385,16 @@
         <div id="credits-scroll"></div>
       </div>
     </div>
+    <div id="bracket-page">
+      <div id="bracket-container">
+        <video id="br-trophy" src="/assets/bracket/trophybrack_loop.webm" muted loop playsinline preload="auto"></video>
+        <img id="bracket-img" src="/assets/bracket/bracket_lines.png" alt="">
+        <img id="br-header" src="/assets/bracket/S18_Header_bracket.png" alt="MPL Philippines — Playoffs Bracket">
+        <div id="br-week-label">THE PLAYOFFS</div>
+        <img id="br-grandfinals" src="/assets/bracket/grandfinals_brack.png" alt="">
+        <!-- 8 matches x 2 slots x (cell, logo, name, score) are built by brBuild() — each its own id (#br-m1a-cell ...), absolutely positioned on this 1920x1080 plane -->
+      </div>
+    </div>
     <div id="item-timeline-page"></div>
     <div id="post-emblems-page"></div>
     <div id="match-board">
@@ -6834,6 +6926,24 @@
         if (msg.action === 'show') {
           document.getElementById('config-bar').classList.remove('debug-open');
           setTimeout(showMvpScene, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('bracket', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          if (msg.advance && activeFeature === 'bracket') {
+            if (msg.step === 0) brBase = msg.pose; /* wrapped back to base */
+            brApplyPose(msg.pose, msg.duration); /* Show pressed again: next banked pose */
+          } else {
+            document.getElementById('config-bar').classList.remove('debug-open');
+            setTimeout(showBracketScene, 100);
+          }
+        } else if (msg.action === 'data') {
+          brLoadData().then(brApplyDataRefit); /* Standings-tab bracket edit — update in place */
+        } else if (msg.action === 'pose') {
+          if (msg.step === 0) brBase = msg.pose; /* Go-to base: this IS the base pose */
+          if (activeFeature === 'bracket') brApplyPose(msg.pose, msg.duration || 0); /* live slider edit / Go-to */
         } else if (msg.action === 'hide') hideActiveFeature();
       });
 
@@ -7736,6 +7846,7 @@
       highlights: '/assets/bgloopwaves2.webm',
       mvp:        '/assets/bgloopwaves2.webm',
       credits:    '/assets/bgloopwaves2.webm',
+      bracket:    '/assets/bgloopwaves2.webm', /* all themes — no SCENE_VIDEO_SRC_BY_THEME entry */
       consolidated_post: '/assets/bgloopwaves2.webm',
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
@@ -10227,6 +10338,212 @@
     }
 
     /* ════════════════════════════════════════════════
+       BRACKET — full-canvas plane tilted in 3D by the dashboard
+       (routes/bracket.js). Pose = { rx, ry, rz, scale, x, y, persp }.
+       One transform function list on the container, so every change
+       (live slider edit, Show-again step) interpolates smoothly.
+    ════════════════════════════════════════════════ */
+    const brPage      = document.getElementById('bracket-page');
+    const brContainer = document.getElementById('bracket-container');
+    const brTrophy    = document.getElementById('br-trophy');
+
+    /* Base pose = the one the scene fades in at. The trophy only shows there. */
+    let brBase = null;
+    const BR_POSE_KEYS = ['rx', 'ry', 'rz', 'scale', 'x', 'y', 'persp'];
+    function brIsBase(p) {
+      return !!brBase && BR_POSE_KEYS.every(k => Math.abs((+p[k]) - (+brBase[k])) < 0.001);
+    }
+
+    function brApplyPose(p, durMs) {
+      if (!p) return;
+      brTrophy.style.opacity = brIsBase(p) ? '1' : '0';
+      brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
+      brContainer.style.transform =
+        `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
+        `rotateX(${p.rx}deg) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) scale(${p.scale})`;
+    }
+
+    async function brFetchConfig() {
+      try {
+        const r = await fetch('/api/bracket-config', { cache: 'no-store' });
+        return await r.json();
+      } catch (e) { return null; }
+    }
+
+
+    /* Bracket cells — data comes from the Standings dashboard's Playoffs
+       Bracket tab via /api/bracket-data ('resolved' = tricodes + scores per
+       match id). Blue slot = 'a' (top cell), red slot = 'b'. The higher
+       score gets the *_win cell art; a tie / no score keeps *_clean. */
+    const BR_CELLS = { /* match id -> [blue [left, top], red [left, top]] */
+      1: [[48, 380],   [48, 466]],
+      2: [[48, 613],   [48, 699]],
+      3: [[513, 380],  [513, 466]],
+      4: [[513, 613],  [513, 699]],
+      5: [[985, 497],  [985, 583]],
+      6: [[513, 885],  [513, 971]],
+      7: [[987, 886],  [987, 972]],
+      8: [[1464, 634], [1464, 781]],
+    };
+    const BR_FALLBACK_LOGO = '/assets/mpl2026logo.png';
+    /* match id whose stage text it shows -> [left, top, width] */
+    const BR_TITLES = { 1: [152, 290, 207], 3: [558, 290, 288], 6: [562, 813, 288],
+                        5: [1040, 394, 288], 7: [1041, 813, 288], 8: [1504, 858, 288] };
+    function brBuild() {
+      let css = '';
+      Object.keys(BR_TITLES).forEach(id => {
+        const [L, T, W] = BR_TITLES[id];
+        const t = document.createElement('div');
+        t.id = `br-title-${id}`; t.className = 'br-title';
+        brContainer.appendChild(t);
+        css += `#br-title-${id}{left:${L}px;top:${T}px;width:${W}px}`;
+      });
+      Object.keys(BR_CELLS).forEach(id => {
+        ['a', 'b'].forEach((side, i) => {
+          const [L, T] = BR_CELLS[id][i];
+          const pre = `br-m${id}${side}`;
+          const mk = (tag, suffix, cls) => {
+            const e = document.createElement(tag);
+            e.id = `${pre}-${suffix}`; e.className = cls;
+            brContainer.appendChild(e);
+            return e;
+          };
+          const cell = mk('img', 'cell', 'br-cell'); cell.alt = '';
+          cell.src = `/assets/bracket/${side === 'a' ? 'blue' : 'red'}brack_clean.png`;
+          const logo = mk('img', 'logo', 'br-logo'); logo.alt = ''; logo.src = BR_FALLBACK_LOGO;
+          mk('div', 'name', 'br-name');
+          mk('div', 'score', 'br-score');
+          if (side === 'a') { /* info strip sits 37px above the blue cell */
+            const info = document.createElement('div');
+            info.id = `br-m${id}-info`; info.className = 'br-info';
+            info.innerHTML = '<span class="br-info-l"></span><b class="br-info-r"></b>';
+            brContainer.appendChild(info);
+            css += `#br-m${id}-info{left:${L}px;top:${T - 37}px}`;
+          }
+          css += `#${pre}-cell{left:${L}px;top:${T}px}` +
+                 `#${pre}-logo{left:${L + 19}px;top:${T + 9}px}` +
+                 `#${pre}-name{left:${L + 102}px;top:${T + 3}px;width:166px;height:64px}` +
+                 `#${pre}-score{left:${L + 299}px;top:${T + 3}px;width:71px;height:64px}`;
+        });
+      });
+      const st = document.createElement('style');
+      st.id = 'br-default-style'; st.textContent = css;
+      document.head.appendChild(st);
+    }
+    brBuild();
+
+    /* Shrink-to-fit via canvas measureText — never DOM layout, since this runs
+       while the scene is still display:none (see CLAUDE.md). */
+    let _brMeasureCtx = null;
+    function brFitText(el) {
+      el.style.fontSize = '';
+      const cs = getComputedStyle(el);
+      const base = parseFloat(cs.fontSize), box = parseFloat(cs.width);
+      if (!el.textContent || !(box > 0)) return;
+      if (!_brMeasureCtx) _brMeasureCtx = document.createElement('canvas').getContext('2d');
+      _brMeasureCtx.font = `${base}px Anton`;
+      const w = _brMeasureCtx.measureText(el.textContent).width;
+      if (w > box) el.style.fontSize = (base * box / w) + 'px';
+    }
+
+    /* "3:00PM" / "15:00" -> "15:00"; "May 27" -> "MAY 27", "Oct 21" -> "OCT. 21" (AP-style months). */
+    function brFmtTime(t) {
+      t = String(t || '').trim();
+      const m = t.match(/^(\d{1,2})(?::(\d{2}))?\s*([ap]m)?$/i);
+      if (!m) return t;
+      let h = parseInt(m[1], 10); const min = m[2] || '00';
+      if (m[3]) { const pm = m[3].toLowerCase() === 'pm'; if (pm && h < 12) h += 12; if (!pm && h === 12) h = 0; }
+      return String(h).padStart(2, '0') + ':' + min;
+    }
+    const BR_MONTHS = { jan: 'Jan.', feb: 'Feb.', mar: 'March', apr: 'April', may: 'May', jun: 'June', jul: 'July',
+                        aug: 'Aug.', sep: 'Sept.', oct: 'Oct.', nov: 'Nov.', dec: 'Dec.' };
+    function brFmtDate(d) {
+      const m = String(d || '').trim().match(/^([A-Za-z]+)\.?\s*(\d{1,2})$/);
+      if (!m) return String(d || '').trim();
+      return (BR_MONTHS[m[1].slice(0, 3).toLowerCase()] || m[1]) + ' ' + m[2];
+    }
+
+    function brApplyData(data) {
+      const res = (data && data.resolved) || {};
+      Object.keys(BR_TITLES).forEach(id => {
+        const t = document.getElementById(`br-title-${id}`);
+        t.textContent = String((res[id] && res[id].title) || '').replace(/play-ins/i, 'Play Ins')
+          .replace(/lower bracket/ig, 'LB').replace(/upper bracket/ig, 'UB').toUpperCase();
+        brFitText(t);
+      });
+      Object.keys(BR_CELLS).forEach(id => {
+        const m = res[id] || {};
+        const sa = Number(m.sa) || 0, sb = Number(m.sb) || 0;
+        const time = brFmtTime(m.time);
+        const info = document.getElementById(`br-m${id}-info`);
+        info.querySelector('.br-info-l').innerHTML = `<b>Match ${id}</b>` + (time ? ` - ${time} PHT` : '');
+        info.querySelector('.br-info-r').textContent = brFmtDate(m.date);
+        ['a', 'b'].forEach(side => {
+          const pre = `br-m${id}${side}`;
+          const tri = m[side] || '';
+          const mine = side === 'a' ? sa : sb, other = side === 'a' ? sb : sa;
+          const win = !!tri && mine > other;
+          document.getElementById(`${pre}-cell`).src =
+            `/assets/bracket/${side === 'a' ? 'blue' : 'red'}brack_${win ? 'win' : 'clean'}.png`;
+          const logo = document.getElementById(`${pre}-logo`);
+          /* TBD / no team yet / missing logo file -> MPL logo */
+          logo.onerror = () => { logo.onerror = null; logo.src = BR_FALLBACK_LOGO; };
+          logo.src = tri ? `/logos/${encodeURIComponent(tri.toUpperCase())}.png` : BR_FALLBACK_LOGO;
+          const name = document.getElementById(`${pre}-name`);
+          /* undecided slot: show its placeholder ("Winner of Match 1"), else TBD */
+          name.textContent = tri || (m['l' + side] || 'TBD').toUpperCase();
+          brFitText(name);
+          const score = document.getElementById(`${pre}-score`);
+          score.textContent = String(mine); /* always show, 0 included — even for an undecided slot */
+          brFitText(score);
+        });
+      });
+    }
+
+    async function brLoadData() {
+      try {
+        const r = await fetch('/api/bracket-data', { cache: 'no-store' });
+        brApplyData(await r.json());
+        return true;
+      } catch (e) { return false; }
+    }
+
+    async function showBracketScene() {
+      const cfgPromise = brFetchConfig();
+      const dataPromise = Promise.all([document.fonts.load("52px Anton"), brLoadData()]);
+      await transitionTo('bracket');
+      const cfg = await cfgPromise;
+      await dataPromise;
+      if (activeFeature === 'bracket') brApplyDataRefit();
+      if (activeFeature !== 'bracket') return; /* superseded while awaiting */
+      if (cfg && cfg.base) brBase = cfg.base;
+      brApplyPose(cfg ? cfg.pose : { rx: 0, ry: 0, rz: 0, scale: 1, x: 0, y: 0, persp: 1500 }, 0);
+      await preloadMedia(brPage.querySelectorAll('img'), 1500);
+      if (activeFeature !== 'bracket') return; /* superseded while preloading */
+      showSceneVideo('bracket');
+      brTrophy.currentTime = 0; brTrophy.play().catch(() => {});
+      brPage.classList.add('br-on');
+      void brPage.offsetWidth; /* force reflow so the opacity transition runs */
+      brPage.classList.add('br-visible');
+    }
+
+    /* Anton may not have been loaded when the data was first applied — refit once it is. */
+    function brApplyDataRefit() { brPage.querySelectorAll('.br-name, .br-score, .br-title').forEach(brFitText); }
+
+    function hideBracketScene() {
+      activeFeature = null;
+      brPage.classList.remove('br-visible');
+      return new Promise(resolve => {
+        setTimeout(() => {
+          brPage.classList.remove('br-on');
+          if (!brPage.classList.contains('br-visible')) brTrophy.pause(); /* skip if re-shown during fade */
+          hideSceneVideo();
+          resolve();
+        }, 420);
+      });
+    }
+
+    /* ════════════════════════════════════════════════
        FINAL TEAM — fullscreen lineup card wall
     ════════════════════════════════════════════════ */
     const ftPage = document.getElementById('final-team-page');
@@ -11938,6 +12255,7 @@
       if (prev === 'highlights') return hideHighlights();
       if (prev === 'mvp')       return hideMvpScene();
       if (prev === 'credits')   return hideCreditsScene();
+      if (prev === 'bracket')   return hideBracketScene();
       if (prev === 'finalteam') return hideFinalTeam();
       if (prev === 'lineupblue') return hideTeamLineupBlue();
       if (prev === 'lineupred') return hideTeamLineupRed();
@@ -16104,6 +16422,7 @@
           else if (scene.activeFeature === 'highlights') showHighlights();
           else if (scene.activeFeature === 'mvp')        showMvpScene();
           else if (scene.activeFeature === 'credits')    showCreditsScene();
+          else if (scene.activeFeature === 'bracket')    showBracketScene();
           else if (scene.activeFeature === 'finalteam') showFinalTeam();
           else if (scene.activeFeature === 'lineupblue') showTeamLineupBlue();
           else if (scene.activeFeature === 'lineupred') showTeamLineupRed();
@@ -16151,6 +16470,7 @@
         if (feature === 'highlights') showHighlights();
         if (feature === 'mvp')        showMvpScene();
         if (feature === 'credits')    showCreditsScene();
+        if (feature === 'bracket')    showBracketScene();
         if (feature === 'finalteam') showFinalTeam();
         if (feature === 'lineupblue') showTeamLineupBlue();
         if (feature === 'lineupred') showTeamLineupRed();
@@ -16171,7 +16491,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h', post_carry: 'preview-post_carry' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h', post_carry: 'preview-post_carry', bracket: 'preview-bracket' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -16198,6 +16518,7 @@
         if (event === 'post_h2h')      showPostH2H();
         if (event === 'post_carry')    showPostCarry();
         if (event === 'credits')       showCreditsScene();
+        if (event === 'bracket')       showBracketScene();
         if (event === 'consolidated_post')   showConsolidatedPost();
         if (event === 'consolidated_post_2') showConsolidatedPost2();
         if (event === 'matchboard')    showMatchBoard();

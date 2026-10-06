@@ -1872,6 +1872,7 @@
     post4key:       'post4key',
     post_heatmap:   'heatmap',
     post_carry:     'post_carry',
+    bracket:        'bracket',
   };
   /* Display names for the "is anything live" indicator below — same
      activeFeature values as MPLFS_ACTIVE_FEATURE_MAP, keyed the other
@@ -1886,7 +1887,7 @@
     lineupblue: 'Team Line-Up — Blue', lineupred: 'Team Line-Up — Red',
     consolidated_post: 'Consolidated Post', consolidated_post_2: 'Consolidated Post 2',
     post4key: 'Post 4 Key', heatmap: 'Post Heatmap', post_h2h: 'Post H2H',
-    post_carry: 'Post Carry',
+    post_carry: 'Post Carry', bracket: 'Bracket',
   };
 
   var mplfsLiveBadge = null;
@@ -2185,7 +2186,14 @@
      authoritative /overlay/mplfs-scene snapshot whenever any
      scene-changing event fires. */
   Object.keys(MPLFS_ACTIVE_FEATURE_MAP).concat(MPLFS_BOOL_KEYS, ['fs_hide']).forEach(function (name) {
+    if (name === 'bracket') return; /* own listener below — 'pose' events fire per slider tick */
     dashboardSSE.addEventListener(name, loadMplfsScene);
+  });
+  dashboardSSE.addEventListener('bracket', function (e) {
+    var d = {};
+    try { d = JSON.parse(e.data); } catch (err) {}
+    if (d.action === 'show' || d.action === 'hide') loadMplfsScene();
+    if (bracketPanelRefresh && d.action !== 'pose') bracketPanelRefresh();
   });
 
   dashboardSSE.addEventListener('mapselecttag', function (e) {
@@ -2376,6 +2384,7 @@
       mplfsLiveIndicator: true,
       heatmapControls: true,
       h2hControls: true,
+      bracketControls: true,
       features: [
         { name: 'Matchboard',    show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
         { name: 'Middleboard',   show: '/overlay/middleboard/show',   hide: '/overlay/middleboard/hide'   },
@@ -2415,6 +2424,9 @@
             { label: 'Photo', selector: '#mv-photo',    fallback: 953, topFallback: 74 },
           ] },
         { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
+        /* realButtons: pressing Show again while live steps through the
+           banked poses (see routes/bracket.js + buildBracketControls). */
+        { name: 'Bracket', show: '/overlay/bracket/show', hide: '/overlay/bracket/hide', realButtons: true },
         { name: 'Final Team', show: '/overlay/final_team/show', hide: '/overlay/final_team/hide',
           /* Quick per-photo Crop X nudge — same #ft-photo-0..9 selectors
              as FT_ELEMENTS/FT_DEFAULTS in the Edit tab, fallback matches
@@ -3390,6 +3402,177 @@
     });
   }
 
+  /* ── Bracket Controls — 3D tilt/scale sliders (live), plus a bank of
+     saved poses. Sliders POST /api/bracket-live (throttled), which every
+     mplfs.html showing the Bracket scene applies immediately. "Save as
+     Base" sets the pose the scene fades in at; "+ Bank" appends the
+     current pose as the next position (A, B, C...). Pressing the Bracket
+     Show button again while live steps base -> A -> B -> C -> base
+     (routes/bracket.js). ──────────────── */
+  var BRACKET_AXES = [
+    { key: 'rx',    label: 'Tilt X',      min: -90,   max: 90,   step: 0.5,  unit: '°' },
+    { key: 'ry',    label: 'Tilt Y',      min: -90,   max: 90,   step: 0.5,  unit: '°' },
+    { key: 'rz',    label: 'Roll Z',      min: -180,  max: 180,  step: 0.5,  unit: '°' },
+    { key: 'scale', label: 'Scale',       min: 0.2,   max: 3,    step: 0.01, unit: '×' },
+    { key: 'x',     label: 'Offset X',    min: -1500, max: 1500, step: 1,    unit: 'px' },
+    { key: 'y',     label: 'Offset Y',    min: -1000, max: 1000, step: 1,    unit: 'px' },
+    { key: 'persp', label: 'Perspective', min: 300,   max: 5000, step: 10,   unit: 'px' },
+  ];
+  var BRACKET_DEFAULT_POSE = { rx: 0, ry: 0, rz: 0, scale: 1, x: 0, y: 0, persp: 1500 };
+  var bracketPanelRefresh = null;
+
+  function buildBracketControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Bracket Controls'));
+
+    var cur = Object.assign({}, BRACKET_DEFAULT_POSE);
+    var cfg = { base: Object.assign({}, BRACKET_DEFAULT_POSE), keyframes: [], duration: 1200, step: 0 };
+    var inputs = {};
+    var liveTimer = null;
+
+    function sendLive() {
+      if (liveTimer) return;
+      liveTimer = setTimeout(function () {
+        liveTimer = null;
+        fetch('/api/bracket-live', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pose: cur }),
+        }).catch(function () {});
+      }, 40);
+    }
+    function setCur(pose, push) {
+      cur = Object.assign({}, BRACKET_DEFAULT_POSE, pose);
+      BRACKET_AXES.forEach(function (a) {
+        inputs[a.key].range.value = cur[a.key];
+        inputs[a.key].num.value = cur[a.key];
+      });
+      if (push) sendLive();
+    }
+    function saveCfg(patch) {
+      return fetch('/api/bracket-config', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        cfg = Object.assign(cfg, d);
+        renderBank();
+        body.classList.remove('flash-ok'); void body.offsetWidth; body.classList.add('flash-ok');
+      }).catch(function () { statusEl.textContent = 'Save failed'; });
+    }
+
+    BRACKET_AXES.forEach(function (a) {
+      var row = el('div', 'pdebug-row');
+      var lab = el('label', '', a.label);
+      lab.style.cssText = 'width:78px;flex:0 0 78px;';
+      row.appendChild(lab);
+      var range = document.createElement('input');
+      range.type = 'range'; range.min = a.min; range.max = a.max; range.step = a.step;
+      range.style.cssText = 'flex:1;min-width:0;';
+      var num = document.createElement('input');
+      num.type = 'number'; num.min = a.min; num.max = a.max; num.step = a.step;
+      num.className = 'pdebug-select';
+      num.style.cssText = 'width:64px;flex:0 0 64px;';
+      function onChange(src) {
+        var v = parseFloat(src.value);
+        if (!isFinite(v)) return;
+        cur[a.key] = v;
+        range.value = v; num.value = v;
+        sendLive();
+      }
+      range.addEventListener('input', function () { onChange(range); });
+      num.addEventListener('input', function () { onChange(num); });
+      row.appendChild(range); row.appendChild(num); row.appendChild(el('span', '', a.unit));
+      inputs[a.key] = { range: range, num: num };
+      body.appendChild(row);
+    });
+
+    var actRow = el('div', 'pdebug-row');
+    var resetBtn = el('button', 'pdebug-trigger', '↺ Flat');
+    var baseBtn  = el('button', 'pdebug-trigger', '★ Save as Base');
+    var bankBtn  = el('button', 'pdebug-trigger', '+ Bank Position');
+    actRow.appendChild(resetBtn); actRow.appendChild(baseBtn); actRow.appendChild(bankBtn);
+    body.appendChild(actRow);
+
+    var durRow = el('div', 'pdebug-row');
+    durRow.appendChild(el('label', '', 'Transition'));
+    var durInput = document.createElement('input');
+    durInput.type = 'number'; durInput.min = '0'; durInput.max = '10000'; durInput.step = '100';
+    durInput.className = 'pdebug-select';
+    durInput.style.cssText = 'width:80px;flex:0 0 80px;';
+    durRow.appendChild(durInput); durRow.appendChild(el('span', '', 'ms'));
+    body.appendChild(durRow);
+
+    var bankEl = el('div', '');
+    bankEl.style.cssText = 'margin-top:6px;display:flex;flex-direction:column;gap:3px;';
+    body.appendChild(bankEl);
+    var statusEl = el('div', '', 'Loading…');
+    statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
+    body.appendChild(statusEl);
+
+    function bankRow(label, idx, canEdit) {
+      var r = el('div', 'pdebug-row');
+      var active = cfg.step === idx;
+      var lab = el('label', '', (active ? '▶ ' : '') + label);
+      lab.style.cssText = 'width:64px;flex:0 0 64px;' + (active ? 'color:#44cc88;' : '');
+      r.appendChild(lab);
+      var go = el('button', 'pdebug-trigger', 'Go');
+      go.title = 'Animate the live scene to this position';
+      go.addEventListener('click', function () { fetch('/overlay/bracket/goto/' + idx).catch(function () {}); });
+      var load = el('button', 'pdebug-trigger', 'Load');
+      load.title = 'Load this position into the sliders (live)';
+      load.addEventListener('click', function () { setCur(idx === 0 ? cfg.base : cfg.keyframes[idx - 1], true); });
+      r.appendChild(go); r.appendChild(load);
+      if (canEdit) {
+        var upd = el('button', 'pdebug-trigger', 'Update');
+        upd.title = 'Overwrite this position with the current sliders';
+        upd.addEventListener('click', function () {
+          var kf = cfg.keyframes.slice(); kf[idx - 1] = Object.assign({}, cur);
+          saveCfg({ keyframes: kf });
+        });
+        var del = el('button', 'pdebug-trigger', '✕');
+        del.title = 'Delete this position';
+        del.addEventListener('click', function () {
+          var kf = cfg.keyframes.slice(); kf.splice(idx - 1, 1);
+          saveCfg({ keyframes: kf });
+        });
+        r.appendChild(upd); r.appendChild(del);
+      }
+      return r;
+    }
+    function renderBank() {
+      bankEl.innerHTML = '';
+      bankEl.appendChild(bankRow('Base', 0, false));
+      cfg.keyframes.forEach(function (kf, i) {
+        bankEl.appendChild(bankRow('Pos ' + String.fromCharCode(65 + i), i + 1, true));
+      });
+      durInput.value = cfg.duration;
+      var names = ['Base'].concat(cfg.keyframes.map(function (k, i) { return 'Pos ' + String.fromCharCode(65 + i); }));
+      statusEl.textContent = 'Live step: ' + (names[cfg.step] || 'Base') +
+        ' · Show again → ' + (names[(cfg.step + 1) % names.length] || 'Base');
+    }
+
+    resetBtn.addEventListener('click', function () { setCur(BRACKET_DEFAULT_POSE, true); });
+    baseBtn.addEventListener('click', function () { saveCfg({ base: Object.assign({}, cur) }); });
+    bankBtn.addEventListener('click', function () {
+      if (cfg.keyframes.length >= 26) return;
+      saveCfg({ keyframes: cfg.keyframes.concat([Object.assign({}, cur)]) });
+    });
+    durInput.addEventListener('change', function () { saveCfg({ duration: Number(durInput.value) || 0 }); });
+
+    // Read live server state on open instead of assuming defaults
+    // (memory: feedback_feature_toggle_state.md).
+    function load(first) {
+      return fetch('/api/bracket-config', { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          cfg = Object.assign(cfg, d);
+          if (first) setCur(d.pose, false);
+          renderBank();
+        }).catch(function () { statusEl.textContent = ''; });
+    }
+    load(true);
+    bracketPanelRefresh = function () { load(false); };
+  }
+
   function buildH2HControls(body) {
     if (body.children.length) body.appendChild(el('div', 'divider'));
     body.appendChild(el('div', 'features-label', 'Post H2H Controls'));
@@ -3517,6 +3700,7 @@
     previewToggleRegistry = {};
     draftPreviewMainBtn = null; // same reason — the button element itself is gone
     draftSubPreviewResets = [];
+    bracketPanelRefresh = null; // its panel DOM was just wiped
 
     if (ov.ingameControls)    { buildIngameControls(body);    return; }
     if (ov.ingameHrmControls) { buildIngameHrmControls(body, ov.ingameHrmControls); return; }
@@ -4104,6 +4288,11 @@
        pattern as buildHeatmapControls above. */
     if (ov.h2hControls) {
       buildH2HControls(body);
+    }
+
+    /* Bracket Controls — live 3D pose sliders + banked positions. */
+    if (ov.bracketControls) {
+      buildBracketControls(body);
     }
 
     /* Stolen Gold banner — display-duration tuning for the auto pop-up
@@ -5183,6 +5372,52 @@
      Positions follow assets/mvp/mvpfsguide.png; the plaque row (team
      logo / role icon / name / KDA / GPM / KP%) sits on top of
      mvpfsblue.png/mvpfsred.png. */
+  /* Bracket cells — mirrors BR_CELLS in mplfs.html (cell art 377x70; logo/name/score
+     offsets from the design export). Selectors are the ids brBuild() creates. */
+  var BR_CELL_POS = {
+    1: [[48, 380],   [48, 466]],  2: [[48, 613],   [48, 699]],
+    3: [[513, 380],  [513, 466]], 4: [[513, 613],  [513, 699]],
+    5: [[985, 497],  [985, 583]], 6: [[513, 885],  [513, 971]],
+    7: [[987, 886],  [987, 972]], 8: [[1464, 634], [1464, 781]],
+  };
+  var BR_MATCH_LABEL = { 1: 'Play-Ins 1', 2: 'Play-Ins 2', 3: 'Play-Ins 3', 4: 'Play-Ins 4',
+                         5: 'Upper Finals', 6: 'Lower Semis', 7: 'Lower Finals', 8: 'Grand Finals' };
+  var BRACKET_DEFAULTS = { '#bracket-img': { left: 0, top: 0, width: 1920, height: 1080 } };
+  var BRACKET_ELEMENTS = [{ group: 'Bracket Lines', id: '#bracket-img', name: 'Bracket Lines' }];
+  BRACKET_DEFAULTS['#br-trophy'] = { left: 1334, top: 228, width: 638, height: 638 };
+  BRACKET_ELEMENTS.push({ group: 'Trophy', id: '#br-trophy', name: 'Grand Finals Trophy (video)' });
+  BRACKET_DEFAULTS['#br-header']     = { left: 40,  top: 80,  width: 1028, height: 150 };
+  BRACKET_DEFAULTS['#br-week-label'] = { left: 679, top: 196, width: 253,  height: 34, fontSize: 24 };
+  BRACKET_ELEMENTS.push({ group: 'Header Image', id: '#br-header',     name: 'Header (Playoffs Bracket)' });
+  BRACKET_ELEMENTS.push({ group: 'Header Week',  id: '#br-week-label', name: 'Header Gold Text (THE PLAYOFFS)' });
+  BRACKET_DEFAULTS['#br-grandfinals'] = { left: 1499, top: 718, width: 306, height: 47 };
+  BRACKET_ELEMENTS.push({ group: 'Grand Finals Label', id: '#br-grandfinals', name: 'Grand Finals Label' });
+  var BR_TITLE_POS = { 1: [152, 290, 207], 3: [558, 290, 288], 6: [562, 813, 288],
+                       5: [1040, 394, 288], 7: [1041, 813, 288], 8: [1504, 858, 288] };
+  Object.keys(BR_TITLE_POS).forEach(function (id) {
+    var p = BR_TITLE_POS[id];
+    BRACKET_DEFAULTS['#br-title-' + id] = { left: p[0], top: p[1], width: p[2], height: 29, fontSize: 20.2 };
+    BRACKET_ELEMENTS.push({ group: 'Title · ' + BR_MATCH_LABEL[id], id: '#br-title-' + id, name: 'Title · ' + BR_MATCH_LABEL[id] });
+  });
+  Object.keys(BR_CELL_POS).forEach(function (id) {
+    ['a', 'b'].forEach(function (side, i) {
+      var L = BR_CELL_POS[id][i][0], T = BR_CELL_POS[id][i][1], pre = '#br-m' + id + side;
+      var grp = 'M' + id + ' ' + BR_MATCH_LABEL[id] + (side === 'a' ? ' · Blue' : ' · Red');
+      BRACKET_DEFAULTS[pre + '-cell']  = { left: L,       top: T,     width: 377, height: 70 };
+      BRACKET_DEFAULTS[pre + '-logo']  = { left: L + 19,  top: T + 9, width: 53,  height: 53 };
+      BRACKET_DEFAULTS[pre + '-name']  = { left: L + 102, top: T + 3, width: 166, height: 64, fontSize: 52 };
+      BRACKET_DEFAULTS[pre + '-score'] = { left: L + 299, top: T + 3, width: 71,  height: 64, fontSize: 52 };
+      if (side === 'a') {
+        BRACKET_DEFAULTS['#br-m' + id + '-info'] = { left: L, top: T - 37, width: 377, height: 29, fontSize: 20.2 };
+        BRACKET_ELEMENTS.push({ group: grp, id: '#br-m' + id + '-info', name: 'M' + id + ' Info (Match · Time · Date)' });
+      }
+      BRACKET_ELEMENTS.push({ group: grp, id: pre + '-cell',  name: 'M' + id + (side === 'a' ? ' Blue' : ' Red') + ' Cell' });
+      BRACKET_ELEMENTS.push({ group: grp, id: pre + '-logo',  name: 'M' + id + (side === 'a' ? ' Blue' : ' Red') + ' Logo' });
+      BRACKET_ELEMENTS.push({ group: grp, id: pre + '-name',  name: 'M' + id + (side === 'a' ? ' Blue' : ' Red') + ' Team' });
+      BRACKET_ELEMENTS.push({ group: grp, id: pre + '-score', name: 'M' + id + (side === 'a' ? ' Blue' : ' Red') + ' Score' });
+    });
+  });
+
   var MV_DEFAULTS = {
     '#mv-box-bg':       { left: 953,  top: 74,  width: 867,  height: 470 },
     '#mv-hero-img':     { left: 953,  top: 74,  width: 867,  height: 470, feather: 130, featherIntensity: 0 },
@@ -5833,6 +6068,15 @@
       elements:    P2H_ELEMENTS,
       defaults:    P2H_DEFAULTS,
       showFn:      'showPostH2H',
+    },
+    mplfs_bracket: {
+      label:       'Bracket · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_bracket',
+      elements:    BRACKET_ELEMENTS,
+      defaults:    BRACKET_DEFAULTS,
+      showFn:      'showBracketScene',
     },
     mplfs_mvp: {
       label:       'MVP Scene · mplfs',
