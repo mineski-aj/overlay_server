@@ -3508,12 +3508,26 @@
     statusEl.style.cssText = 'font-size:11px;color:#666;margin-top:2px;';
     body.appendChild(statusEl);
 
+    function posLabel(i) {
+      return (cfg.keyframes[i] && cfg.keyframes[i].name) || ('Pos ' + String.fromCharCode(65 + i));
+    }
     function bankRow(label, idx, canEdit) {
       var r = el('div', 'pdebug-row');
       var active = cfg.step === idx;
       var lab = el('label', '', (active ? '▶ ' : '') + label);
-      lab.style.cssText = 'width:64px;flex:0 0 64px;' + (active ? 'color:#44cc88;' : '');
+      lab.style.cssText = 'width:90px;flex:0 0 90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;' + (active ? 'color:#44cc88;' : '');
       r.appendChild(lab);
+      if (canEdit) {
+        lab.style.cursor = 'pointer';
+        lab.title = 'Click to rename (leave blank to reset)';
+        lab.addEventListener('click', function () {
+          var n = window.prompt('Rename this position:', cfg.keyframes[idx - 1].name || '');
+          if (n === null) return;
+          var kf = cfg.keyframes.map(function (k) { return Object.assign({}, k); });
+          kf[idx - 1].name = n.trim().slice(0, 24);
+          saveCfg({ keyframes: kf });
+        });
+      }
       var go = el('button', 'pdebug-trigger', 'Go');
       go.title = 'Animate the live scene to this position';
       go.addEventListener('click', function () { fetch('/overlay/bracket/goto/' + idx).catch(function () {}); });
@@ -3525,12 +3539,17 @@
         var upd = el('button', 'pdebug-trigger', 'Update');
         upd.title = 'Overwrite this position with the current sliders';
         upd.addEventListener('click', function () {
-          var kf = cfg.keyframes.slice(); kf[idx - 1] = Object.assign({}, cur);
+          if (!window.confirm('Overwrite "' + posLabel(idx - 1) + '" with the current slider values?')) return;
+          var kf = cfg.keyframes.slice();
+          var upPose = Object.assign({}, cur);
+          if (kf[idx - 1].name) upPose.name = kf[idx - 1].name;
+          kf[idx - 1] = upPose;
           saveCfg({ keyframes: kf });
         });
         var del = el('button', 'pdebug-trigger', '✕');
         del.title = 'Delete this position';
         del.addEventListener('click', function () {
+          if (!window.confirm('Delete "' + posLabel(idx - 1) + '"? This cannot be undone.')) return;
           var kf = cfg.keyframes.slice(); kf.splice(idx - 1, 1);
           saveCfg({ keyframes: kf });
         });
@@ -3542,10 +3561,10 @@
       bankEl.innerHTML = '';
       bankEl.appendChild(bankRow('Base', 0, false));
       cfg.keyframes.forEach(function (kf, i) {
-        bankEl.appendChild(bankRow('Pos ' + String.fromCharCode(65 + i), i + 1, true));
+        bankEl.appendChild(bankRow(posLabel(i), i + 1, true));
       });
       durInput.value = cfg.duration;
-      var names = ['Base'].concat(cfg.keyframes.map(function (k, i) { return 'Pos ' + String.fromCharCode(65 + i); }));
+      var names = ['Base'].concat(cfg.keyframes.map(function (k, i) { return posLabel(i); }));
       statusEl.textContent = 'Live step: ' + (names[cfg.step] || 'Base') +
         ' · Show again → ' + (names[(cfg.step + 1) % names.length] || 'Base');
     }

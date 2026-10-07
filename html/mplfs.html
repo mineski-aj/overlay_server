@@ -10469,6 +10469,7 @@
       return (BR_MONTHS[m[1].slice(0, 3).toLowerCase()] || m[1]) + ' ' + m[2];
     }
 
+    const BR_PLAYIN_SEEDS = { 1: { a: '3rd Seed', b: '6th Seed' }, 2: { a: '4th Seed', b: '5th Seed' } };
     function brApplyData(data) {
       const res = (data && data.resolved) || {};
       Object.keys(BR_TITLES).forEach(id => {
@@ -10497,7 +10498,10 @@
           logo.src = tri ? `/logos/${encodeURIComponent(tri.toUpperCase())}.png` : BR_FALLBACK_LOGO;
           const name = document.getElementById(`${pre}-name`);
           /* undecided slot: show its placeholder ("Winner of Match 1"), else TBD */
-          name.textContent = tri || (m['l' + side] || 'TBD').toUpperCase();
+          /* Play-ins M1/M2 are fixed seed pairings — show the seed while undecided */
+          const seed = BR_PLAYIN_SEEDS[id] && BR_PLAYIN_SEEDS[id][side];
+          const undecided = !tri || tri.toUpperCase() === 'TBD';
+          name.textContent = (undecided && seed) ? seed : (tri || (m['l' + side] || 'TBD').toUpperCase());
           brFitText(name);
           const score = document.getElementById(`${pre}-score`);
           score.textContent = String(mine); /* always show, 0 included — even for an undecided slot */

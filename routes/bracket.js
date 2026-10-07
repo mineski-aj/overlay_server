@@ -54,12 +54,19 @@ function cleanPose(p) {
     persp: num(p.persp, 200, 10000, 1500),
   };
 }
+// Banked poses carry an optional user-given display name ('' = default "Pos A").
+function cleanKeyframe(p) {
+  const kf = cleanPose(p);
+  const name = String((p && p.name) || '').trim().slice(0, 24);
+  if (name) kf.name = name;
+  return kf;
+}
 function readConfig() {
   try {
     const c = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8'));
     return {
       base: cleanPose(c.base),
-      keyframes: Array.isArray(c.keyframes) ? c.keyframes.slice(0, 26).map(cleanPose) : [],
+      keyframes: Array.isArray(c.keyframes) ? c.keyframes.slice(0, 26).map(cleanKeyframe) : [],
       duration: num(c.duration, 0, 10000, 1200),
     };
   } catch (e) {
@@ -67,7 +74,7 @@ function readConfig() {
   }
 }
 function poseForStep(cfg, s) {
-  return s > 0 && cfg.keyframes[s - 1] ? cfg.keyframes[s - 1] : cfg.base;
+  return s > 0 && cfg.keyframes[s - 1] ? cleanPose(cfg.keyframes[s - 1]) : cfg.base;
 }
 function broadcast(payload) {
   const msg = 'event: bracket\ndata: ' + JSON.stringify(payload) + '\n\n';
@@ -104,7 +111,7 @@ router.post('/api/bracket-config', (req, res) => {
   const b = req.body || {};
   const cfg = readConfig();
   if (b.base) cfg.base = cleanPose(b.base);
-  if (Array.isArray(b.keyframes)) cfg.keyframes = b.keyframes.slice(0, 26).map(cleanPose);
+  if (Array.isArray(b.keyframes)) cfg.keyframes = b.keyframes.slice(0, 26).map(cleanKeyframe);
   if (b.duration !== undefined) cfg.duration = num(b.duration, 0, 10000, 1200);
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2));
   if (step > cfg.keyframes.length) step = 0;
