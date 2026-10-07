@@ -1,5 +1,39 @@
 {
   "home": {
+    "teamId": "10975",
+    "name": "Twisted Minds PH",
+    "short": "TWIS",
+    "score": 0,
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Lansu",
+        "id": "1653526784"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "Kayn",
+        "id": "local1788419747582785"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Sionnn",
+        "id": "1653526988"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Tracyyy",
+        "id": "2093991517"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "Bennyqt",
+        "id": "1271650167"
+      }
+    ],
+    "coach": "Lyrick"
+  },
+  "away": {
     "teamId": "10763",
     "name": "Team Liquid PH",
     "short": "TLPH",
@@ -32,40 +66,6 @@
       }
     ],
     "coach": "Aeon"
-  },
-  "away": {
-    "teamId": "11149",
-    "name": "AP.BREN",
-    "short": "APBR",
-    "score": 0,
-    "lineup": [
-      {
-        "role": "EXP LANER",
-        "ign": "JMPINKMAN",
-        "id": "1478121287"
-      },
-      {
-        "role": "JUNGLER",
-        "ign": "JamesPangks",
-        "id": "1475950942"
-      },
-      {
-        "role": "MID LANER",
-        "ign": "LanceCy",
-        "id": "1271650145"
-      },
-      {
-        "role": "ROAMER",
-        "ign": "SpiderMilez",
-        "id": "local1789738101051476"
-      },
-      {
-        "role": "GOLD LANER",
-        "ign": "Shizou",
-        "id": "1373808356"
-      }
-    ],
-    "coach": "Bitoy"
   },
   "series": "BO3",
   "game": 1,
@@ -144,9 +144,9 @@
   ],
   "tomorrowMatches": [
     {
-      "team1Id": "10975",
-      "team1Name": "Twisted Minds PH",
-      "team1Short": "TWIS",
+      "team1Id": "11149",
+      "team1Name": "AP.BREN",
+      "team1Short": "APBR",
       "team2Id": "11150",
       "team2Name": "Smart Omega",
       "team2Short": "OMG",
@@ -156,24 +156,24 @@
       "matchType": "regular"
     },
     {
-      "team1Id": "10975",
-      "team1Name": "Twisted Minds PH",
-      "team1Short": "TWIS",
-      "team2Id": "10763",
-      "team2Name": "Team Liquid PH",
-      "team2Short": "TLPH",
+      "team1Id": "10765",
+      "team1Name": "TNC Pro Team PH",
+      "team1Short": "TNC",
+      "team2Id": "10973",
+      "team2Name": "Team Falcons",
+      "team2Short": "FLCN",
       "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
     {
-      "team1Id": "10764",
-      "team1Name": "ONIC PH",
-      "team1Short": "ONIC",
-      "team2Id": "10765",
-      "team2Name": "TNC Pro Team PH",
-      "team2Short": "TNC",
+      "team1Id": "10763",
+      "team1Name": "Team Liquid PH",
+      "team1Short": "TLPH",
+      "team2Id": "10764",
+      "team2Name": "ONIC PH",
+      "team2Short": "ONIC",
       "vsDisplay": "VS",
       "time": "7:30 PM",
       "star": false,
