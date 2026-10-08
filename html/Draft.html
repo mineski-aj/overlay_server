@@ -1363,6 +1363,10 @@
       overflow: hidden;
     }
     .dp3-carousel-viewport { position: absolute; inset: 0; overflow: hidden; }
+    /* One moving layer per carousel — the spin is a compositor animation of
+       this single element (see dp3CreateCarousel); the cards inside sit at
+       fixed offsets and no longer need a layer each. */
+    .dp3-strip { position: absolute; left: 0; top: 0; width: 0; height: 110px; will-change: transform; }
 
     .dp3-fade-edge {
       position: absolute; top: 0; bottom: 0;
@@ -1377,7 +1381,6 @@
       position: absolute; top: 0; left: 0;
       width: 80px; height: 110px;
       background: #fefefe;
-      will-change: transform;
       transition: filter .35s;
     }
     .dp3-portrait-wrap {
@@ -2710,8 +2713,13 @@
   function dp3CreateCarousel(viewportEl, direction) {
     var c = {
       viewport: viewportEl, direction: direction,
-      cardEls: [], cardOffsets: [], cardOpacity: [], scrollPos: 0,
-      state: 'stopped', raf: null, pickedIdx: -1,
+      /* cardEls/cardOffsets = the PRIMARY set only (one card per
+         candidate) — every lookup by heroId / pool-loaded check works on
+         this. The strip also holds extra copies of that set so the
+         wrap-around is seamless; those live in c.copies. */
+      cardEls: [], cardOffsets: [], copies: [],
+      strip: null, anim: null, S: 0, setW: 0, viewW: 0, kMin: 0,
+      state: 'stopped', pickedIdx: -1, chosenEl: null,
       clearTimer: null, onPickDone: null, isAnimating: false,
       /* Which predictions[] slot's candidates are physically loaded
          right now — set by every caller of c.init() (dp3RenderPrediction,
@@ -2719,76 +2727,61 @@
       loadedSlot: null,
     };
 
-    var FADE_PX = 55;
+    /* How the wheel is driven (this used to be a per-frame JS
+       requestAnimationFrame loop writing transform+opacity on every
+       card): all cards now sit in ONE strip element, and the spin is a
+       Web Animations translateX of that single element — compositor
+       work, independent of the main thread, and TIME-based instead of
+       "N px per frame" (a browser source rendering at 30fps or hitching
+       no longer slows the wheel). The strip holds several copies of the
+       candidate set; the loop translates it by exactly one set-width, so
+       the start and end frames are pixel-identical and the repeat is
+       seamless. The old per-card edge fade is covered by the existing
+       .dp3-fade-edge gradient overlays (same #161616 as the panel body). */
 
-    /* offsetWidth forces a synchronous layout, and tick() runs it every
-       frame — after the previous frame's per-card transform/opacity
-       writes, so each read was a guaranteed layout flush (x2 carousels
-       when both sides roulette at once). The viewport's width never
-       changes while a carousel runs, so read it once (init /
-       startRoulette) and reuse; fall back to a live read only while it's
-       still 0 (e.g. measured while the panel was display:none). */
-    function getViewW() {
-      return c.viewW || (c.viewW = c.viewport.offsetWidth);
+    function mod(a, n) { return ((a % n) + n) % n; }
+
+    function readS() {
+      if (!c.strip) return 0;
+      var t = getComputedStyle(c.strip).transform;
+      if (!t || t === 'none') return c.S;
+      return new DOMMatrixReadOnly(t).m41;
     }
 
-    function applyPositions() {
-      var viewW = getViewW();
-      var N = c.cardEls.length;
-      if (!N) return;
-      var SET_W = N * DP3_CARD_W;
-      var inMotion = c.state === 'roulette' || c.state === 'settling';
-
-      c.cardEls.forEach(function (el, i) {
-        var x = c.cardOffsets[i] - c.scrollPos;
-        if (x + DP3_CARD_W < 0) { c.cardOffsets[i] += SET_W; x += SET_W; }
-        if (x > viewW)          { c.cardOffsets[i] -= SET_W; x -= SET_W; }
-        el.style.transform = 'translateX(' + x + 'px)';
-        if (!inMotion) el.style.setProperty('--dp3-tx', x + 'px');
-
-        if (inMotion) {
-          var t = c.direction === -1
-            ? Math.min(1, Math.max(0, (x + FADE_PX) / FADE_PX))
-            : Math.min(1, Math.max(0, (viewW - x) / FADE_PX));
-          if (c.cardOpacity[i] === undefined || Math.abs(c.cardOpacity[i] - t) > 0.004) {
-            el.style.opacity = t;
-            c.cardOpacity[i] = t;
-          }
-        } else if (c.cardOpacity[i] !== '') {
-          el.style.opacity = '';
-          c.cardOpacity[i] = '';
-        }
-      });
+    function setS(v) {
+      c.S = v;
+      if (c.strip) c.strip.style.transform = 'translateX(' + v + 'px)';
     }
 
-    function tick() {
-      var viewW = getViewW();
-      if (c.state === 'roulette') {
-        c.scrollPos += c.direction * dp3ScrollSpeed;
-      } else if (c.state === 'settling') {
-        var targetX = viewW / 2 - DP3_CARD_W / 2;
-        var targetScroll = c.cardOffsets[c.pickedIdx] - targetX;
-        var diff = targetScroll - c.scrollPos;
-        c.scrollPos += diff * 0.10;
-        if (Math.abs(diff) < 0.6) {
-          c.scrollPos = targetScroll;
-          c.state = 'picked';
-          applyPositions();
-          triggerPress();
-          return;
-        }
-      }
-      applyPositions();
-      if (c.state === 'roulette' || c.state === 'settling') {
-        c.raf = requestAnimationFrame(tick);
-      }
+    function cancelAnim() {
+      if (c.anim) { c.anim.onfinish = null; c.anim.cancel(); c.anim = null; }
     }
+
+    function clearMarks() {
+      if (!c.strip) return;
+      var marked = c.strip.querySelectorAll('.dp3-dimmed, .dp3-pressing, .dp3-chosen');
+      for (var i = 0; i < marked.length; i++) marked[i].classList.remove('dp3-dimmed', 'dp3-pressing', 'dp3-chosen');
+    }
+
+    /* Freeze wherever the wheel currently is (what cancelAnimationFrame
+       on the old rAF handle used to do for external callers). */
+    c.halt = function () {
+      if (!c.anim) return;
+      var s = readS();
+      cancelAnim();
+      setS(s);
+    };
 
     function triggerPress() {
-      var chosen = c.cardEls[c.pickedIdx];
+      var chosen = c.chosenEl;
       if (!chosen) return;
-      c.cardEls.forEach(function (el, i) {
-        if (i !== c.pickedIdx) el.classList.add('dp3-dimmed');
+      var S = c.S, viewW = c.viewW;
+      c.copies.forEach(function (set) {
+        set.forEach(function (el) {
+          if (el === chosen) return;
+          var x = el._off + S;
+          if (x + DP3_CARD_W > 0 && x < viewW) el.classList.add('dp3-dimmed');
+        });
       });
       chosen.classList.add('dp3-pressing');
       setTimeout(function () {
@@ -2796,20 +2789,28 @@
         chosen.classList.add('dp3-chosen');
       }, 90);
       c.clearTimer = setTimeout(function () {
-        c.cardEls.forEach(function (el) { el.classList.remove('dp3-dimmed', 'dp3-pressing', 'dp3-chosen'); });
+        clearMarks();
+        c.chosenEl = null;
         c.isAnimating = false;
         if (c.onPickDone) c.onPickDone();
       }, c._clearMs || 2250);
     }
 
     c.init = function (candidates) {
+      cancelAnim();
+      clearTimeout(c.clearTimer);
       viewportEl.innerHTML = '';
       c.cardEls = [];
       c.cardOffsets = [];
-      c.cardOpacity = [];
-      c.scrollPos = 0;
+      c.copies = [];
+      c.chosenEl = null;
       var viewW = c.viewW = viewportEl.offsetWidth;
       var N = candidates.length;
+      var W = c.setW = N * DP3_CARD_W;
+      var startOffset = viewW / 2 - W / 2;
+
+      /* Primary set */
+      var primary = document.createElement('div');
       candidates.forEach(function (cand, i) {
         var src = dp3HeroImgSrc(cand.heroName);
         var el = document.createElement('div');
@@ -2824,27 +2825,62 @@
           '<div class="dp3-rank-badge ' + (i < 5 ? 'dp3-rank-top' : 'dp3-rank-low') + '"><span class="dp3-rank-num">' + (i + 1) + '</span></div>' +
           '</div>' +
           '<div class="dp3-pct-area"><span class="dp3-pct-text">' + dp3FmtPct(cand.probability) + '</span></div>';
-        viewportEl.appendChild(el);
-        c.cardEls.push(el);
-        c.cardOffsets.push(i * DP3_CARD_W);
+        primary.appendChild(el);
       });
-      var startOffset = viewW / 2 - (N * DP3_CARD_W) / 2;
-      c.cardOffsets = c.cardOffsets.map(function (o) { return o + startOffset; });
-      applyPositions();
+      var protos = Array.prototype.slice.call(primary.children);
+
+      /* The wheel only ever rests inside S in [-W, W] (spin range, and
+         settle() picks the copy that keeps it there), so the visible
+         window [-S-card, viewW-S] needs cards from -card-W to viewW+W. */
+      var kMin = c.kMin = Math.floor((-DP3_CARD_W - W - startOffset) / W);
+      var kMax = Math.ceil((viewW + W - startOffset) / W) - 1;
+
+      var strip = document.createElement('div');
+      strip.className = 'dp3-strip';
+      for (var k = kMin; k <= kMax; k++) {
+        var set = [];
+        for (var i = 0; i < N; i++) {
+          var el = (k === 0) ? protos[i] : protos[i].cloneNode(true);
+          var off = startOffset + i * DP3_CARD_W + k * W;
+          el._off = off;
+          /* Static position inside the strip. --dp3-tx mirrors it so the
+             .dp3-pressing/.dp3-chosen transforms (which restate
+             translateX) keep the card exactly where it is. */
+          el.style.transform = 'translateX(' + off + 'px)';
+          el.style.setProperty('--dp3-tx', off + 'px');
+          strip.appendChild(el);
+          set.push(el);
+          if (k === 0) { c.cardEls.push(el); c.cardOffsets.push(off); }
+        }
+        c.copies.push(set);
+      }
+      viewportEl.appendChild(strip);
+      c.strip = strip;
+      setS(0);
+      c.state = 'stopped';
     };
 
     c.startRoulette = function () {
-      cancelAnimationFrame(c.raf);
       clearTimeout(c.clearTimer);
-      c.cardEls.forEach(function (el) {
-        el.classList.remove('dp3-dimmed', 'dp3-pressing', 'dp3-chosen');
-        el.style.opacity = '';
-      });
-      c.cardOpacity = [];
-      c.viewW = c.viewport.offsetWidth;
+      clearMarks();
+      c.chosenEl = null;
+      var W = c.setW;
+      if (!c.strip || !W) { c.state = 'roulette'; c.isAnimating = false; return; }
+      var S = readS();
+      cancelAnim();
+      /* Re-base by whole set-widths (visually identical, the sets repeat)
+         so S stays inside the range the strip has cards for. */
+      var from, to;
+      if (c.direction === 1) { from = mod(S, W);     to = from - W; }
+      else                   { from = mod(S, W) - W; to = from + W; }
+      setS(from);
+      var pxPerSec = dp3ScrollSpeed * 60;
+      c.anim = c.strip.animate(
+        [{ transform: 'translateX(' + from + 'px)' }, { transform: 'translateX(' + to + 'px)' }],
+        { duration: W / pxPerSec * 1000, iterations: Infinity, easing: 'linear' }
+      );
       c.state = 'roulette';
       c.isAnimating = false;
-      c.raf = requestAnimationFrame(tick);
     };
 
     c.settle = function (heroId, onDone, clearMs) {
@@ -2852,12 +2888,47 @@
       var idx = -1;
       for (var i = 0; i < c.cardEls.length; i++) { if (c.cardEls[i].dataset.heroId === heroId) { idx = i; break; } }
       if (idx === -1) { c.startRoulette(); if (onDone) setTimeout(onDone, c._clearMs); return; }
+      clearTimeout(c.clearTimer);
       c.pickedIdx = idx;
       c.onPickDone = onDone || null;
       c.isAnimating = true;
       c.state = 'settling';
-      cancelAnimationFrame(c.raf);
-      c.raf = requestAnimationFrame(tick);
+
+      var W = c.setW, S = readS();
+      cancelAnim();
+      setS(S);
+
+      /* Pick the copy of the target card whose centred resting position
+         is nearest the current one, but keep the resting S inside
+         [-W, W] (the range the strip has cards for). */
+      var targetX = c.viewW / 2 - DP3_CARD_W / 2;
+      var base = targetX - c.cardOffsets[idx];          /* S that centres copy k=0 */
+      var best = null, bestK = 0;
+      for (var k = c.kMin; k < c.kMin + c.copies.length; k++) {
+        var Sk = base - k * W;
+        if (Sk < -W || Sk > W) continue;
+        if (best === null || Math.abs(Sk - S) < Math.abs(best - S)) { best = Sk; bestK = k; }
+      }
+      if (best === null) { best = base; bestK = 0; }
+      c.chosenEl = c.copies[bestK - c.kMin][idx];
+
+      var d = best - S;
+      function done() {
+        cancelAnim();
+        setS(best);
+        c.state = 'picked';
+        triggerPress();
+      }
+      if (Math.abs(d) < 0.6) { done(); return; }
+      /* Same feel as the old per-frame "close 10% of the gap" ease: that
+         decays exponentially and stops under 0.6px, i.e. ln(|d|/0.6)/
+         -ln(0.9) frames at 60fps. */
+      var ms = Math.max(250, Math.log(Math.abs(d) / 0.6) / -Math.log(0.9) / 60 * 1000);
+      c.anim = c.strip.animate(
+        [{ transform: 'translateX(' + S + 'px)' }, { transform: 'translateX(' + best + 'px)' }],
+        { duration: ms, easing: 'cubic-bezier(0.2, 0.7, 0.35, 1)', fill: 'forwards' }
+      );
+      c.anim.onfinish = done;
     };
 
     c.reset = function () {
@@ -2865,7 +2936,6 @@
       c.startRoulette();
     };
 
-    c.applyPositions = applyPositions;
     return c;
   }
 
@@ -2967,7 +3037,7 @@
 
     var hiddenC = side === 'blue' ? dp3RedC : dp3BlueC;
     if (hiddenC && hiddenC.state === 'roulette') {
-      cancelAnimationFrame(hiddenC.raf); hiddenC.state = 'stopped';
+      hiddenC.halt(); hiddenC.state = 'stopped';
     }
 
     if (!useAnim) {
@@ -3178,6 +3248,63 @@
     if (!dp3UserHidden) dp3ShowPanel(side);
   }
 
+  /* ── Rationale ↔ pick verification ───────────────────────────
+     A prediction's rationale is written about the hero that was ACTUALLY
+     picked in that slot, and always opens with that hero's name
+     ("Marcel is a proven comfort pick for ...", "Clint is ..."). That makes
+     it a reliable key for which hero belongs to which slot — which matters
+     because a same-side double turn confirming together (slots 18 + 19)
+     can't always be told apart from draftState alone (a hero is often in
+     BOTH slots' top 10, and the array order isn't guaranteed), and a wrong
+     guess here showed the OTHER slot's rationale — about a different hero —
+     under the pick that had just settled. */
+  function dp3HeroNames(preds) {
+    var map = {};
+    (preds || []).forEach(function (p) {
+      (p.candidates || []).forEach(function (c) { if (c.heroId && c.heroName) map[c.heroId] = String(c.heroName).trim().toLowerCase(); });
+    });
+    return map;
+  }
+
+  /* heroId of the hero a rationale is about (the longest known hero name it
+     opens with), or null when it opens with no known hero name — e.g.
+     "FLCN removed ..." — in which case it can't be verified either way. */
+  function dp3RationaleSubject(rationale, names) {
+    if (!dp3IsValidRationale(rationale)) return null;
+    var t = rationale.trim().toLowerCase();
+    var best = null, bestLen = 0;
+    Object.keys(names).forEach(function (id) {
+      var n = names[id];
+      if (n.length <= bestLen || t.indexOf(n) !== 0) return;
+      var next = t.charAt(n.length);
+      if (next && /[a-z0-9]/.test(next)) return;  /* "ling" must not match "lingwen" */
+      best = id; bestLen = n.length;
+    });
+    return best;
+  }
+
+  /* The prediction whose rationale should be shown for entry's pick, or
+     null when there's nothing trustworthy to show (yet). Prefers entry's
+     own slot; if that slot's rationale is about a DIFFERENT hero, looks for
+     the same-side/type sibling whose rationale is about this one; a
+     rationale that opens with no known hero name can't be checked and is
+     trusted as before. */
+  function dp3RationaleFor(entry, preds) {
+    var cur = entry.pred;
+    var names = dp3HeroNames(preds);
+    var curOk = !!(cur && dp3IsValidRationale(cur.rationale));
+    var curSubject = curOk ? dp3RationaleSubject(cur.rationale, names) : null;
+    if (curOk && (!curSubject || curSubject === entry.heroId)) return cur;
+    var side = cur ? cur.side : null, type = cur ? cur.type : null;
+    var siblings = (preds || []).filter(function (p) {
+      return p !== cur && (!side || p.side === side) && (!type || p.type === type);
+    });
+    for (var i = 0; i < siblings.length; i++) {
+      if (dp3RationaleSubject(siblings[i].rationale, names) === entry.heroId) return siblings[i];
+    }
+    return null;
+  }
+
   /* Pick detection — walks THIS SAME response's own draftState arrays
      (already the same hex heroId scheme as candidates[].heroId, live
      or _localFallback) by array-length diff, same exact-position
@@ -3233,6 +3360,19 @@
 
       var assigned = fullHeroIds.map(function () { return -1; });
       var predUsed = sortedSameType.map(function () { return false; });
+
+      /* Strongest evidence first: a slot whose (already backfilled)
+         rationale is about this exact hero IS this hero's slot, however
+         many top-10 lists the hero appears in. */
+      var rNames = dp3HeroNames(predictionsSrc);
+      for (var rh = 0; rh < fullHeroIds.length; rh++) {
+        for (var rp = 0; rp < sortedSameType.length; rp++) {
+          if (predUsed[rp]) continue;
+          if (dp3RationaleSubject(sortedSameType[rp].rationale, rNames) === fullHeroIds[rh]) {
+            assigned[rh] = rp; predUsed[rp] = true; break;
+          }
+        }
+      }
 
       var changed = true;
       while (changed) {
@@ -3364,7 +3504,13 @@
 
       function decide() {
         var showedBubble = false;
-        if (!dp3UserHidden && entry.pred && dp3IsValidRationale(entry.pred.rationale)) {
+        /* Re-verify against the freshest data at the moment of showing: the
+           rationale must be ABOUT this pick (see dp3RationaleFor); a
+           mismatch is swapped for the sibling slot's, or dropped — never
+           shown under the wrong hero. */
+        var verified = dp3RationaleFor(entry, ((dp3ActiveData || fallbackData) || {}).predictions);
+        if (verified) entry.pred = verified;
+        if (!dp3UserHidden && verified) {
           var rankIdx = entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; });
           if (rankIdx > -1 && rankIdx < 5) {
             /* true whether it started playing right now or was queued
@@ -3388,16 +3534,18 @@
          was never going to show a bubble regardless of rationale. */
       var rankIdxNow = entry.pred ? entry.pred.candidates.findIndex(function (c) { return c.heroId === entry.heroId; }) : -1;
       var isTop5 = rankIdxNow > -1 && rankIdxNow < 5;
-      if (isTop5 && entry.pred && !dp3IsValidRationale(entry.pred.rationale)) {
+      if (isTop5 && entry.pred && !dp3RationaleFor(entry, ((dp3ActiveData || fallbackData) || {}).predictions)) {
         var attempts = 0;
         (function retry() {
           attempts++;
           setTimeout(function () {
             fetch('/proxy/predictions', { cache: 'no-store' }).then(function (r) { return r.json(); })
               .then(function (fresh) {
-                var freshPred = dp3PredictionAt(fresh && fresh.predictions, entry.pred.side, entry.pred.type, entry.occurrence);
-                if (freshPred && dp3IsValidRationale(freshPred.rationale)) {
-                  entry.pred = freshPred;
+                var freshPreds = fresh && fresh.predictions;
+                var freshPred = dp3PredictionAt(freshPreds, entry.pred.side, entry.pred.type, entry.occurrence) || entry.pred;
+                var verifiedFresh = dp3RationaleFor({ heroId: entry.heroId, pred: freshPred }, freshPreds);
+                if (verifiedFresh) {
+                  entry.pred = verifiedFresh;
                   decide();
                 } else if (attempts < DP3_RATIONALE_MAX_RETRIES) {
                   retry();
@@ -3473,7 +3621,7 @@
       if (!dp3UserHidden && hasPool) {
         targetC.startRoulette();
         setTimeout(function () {
-          cancelAnimationFrame(targetC.raf);
+          targetC.halt();
           targetC.state = 'stopped';
           var elSide = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
           elSide.classList.remove('dp3-visible');
@@ -3560,8 +3708,8 @@
 
       if (!dp3PrevData || isNewDraft) {
         if (isNewDraft) {
-          if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
-          if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+          if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); dp3BlueC.halt(); dp3BlueC.isAnimating = false; }
+          if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  dp3RedC.halt();  dp3RedC.isAnimating  = false; }
           dp3PickQueue = [];
           dp3HideRationaleBubbles(true);
         }
@@ -3593,8 +3741,8 @@
      pattern, see routes/overlay.js) ────────────────────────────── */
   function dp3ApplyCmd(action) {
     if (action === 'show') {
-      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
-      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); dp3BlueC.halt(); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  dp3RedC.halt();  dp3RedC.isAnimating  = false; }
       dp3PickQueue  = [];
       dp3UserHidden = false;
       var latest = dp3ActiveData && dp3DeriveActivePrediction(dp3ActiveData);
@@ -3606,8 +3754,8 @@
         if (ac) ac.startRoulette();
       }
     } else if (action === 'hide') {
-      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
-      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); dp3BlueC.halt(); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  dp3RedC.halt();  dp3RedC.isAnimating  = false; }
       dp3PickQueue = [];
       dp3HideAll();
     }
@@ -3810,8 +3958,8 @@
     var targetC = side === 'blue' ? dp3BlueC : dp3RedC;
 
     if (action === 'show') {
-      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
-      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+      if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); dp3BlueC.halt(); dp3BlueC.isAnimating = false; }
+      if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  dp3RedC.halt();  dp3RedC.isAnimating  = false; }
       dp3PickQueue = [];
       dp3RenderPrediction(pred, data);
     } else if (action === 'settle') {
@@ -3819,8 +3967,8 @@
       if (!cands.length) return;
       var topHeroId = cands[0].heroId;
       if (targetC.loadedSlot !== pred.slot) {
-        if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); cancelAnimationFrame(dp3BlueC.raf); dp3BlueC.isAnimating = false; }
-        if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  cancelAnimationFrame(dp3RedC.raf);  dp3RedC.isAnimating  = false; }
+        if (dp3BlueC) { clearTimeout(dp3BlueC.clearTimer); dp3BlueC.halt(); dp3BlueC.isAnimating = false; }
+        if (dp3RedC)  { clearTimeout(dp3RedC.clearTimer);  dp3RedC.halt();  dp3RedC.isAnimating  = false; }
         dp3PickQueue = [];
         dp3RenderPrediction(pred, data);
       }
