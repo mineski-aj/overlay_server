@@ -4580,7 +4580,7 @@
       color: #000; text-transform: uppercase; white-space: nowrap; overflow: hidden;
     }
     .br-info b { font-weight: 700; }
-    /* Stage title above a column of matches ("PLAY INS / BO5"). Same type as the info strip, centered. */
+    /* Stage title above a column of matches ("PLAY-INS / BO5"). Same type as the info strip, centered. */
     .br-title {
       position: absolute; height: 29px; display: flex; align-items: center; justify-content: center;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 20.2px; line-height: 1;
@@ -8638,6 +8638,9 @@
        means there's no play the next calendar day (next games are next
        week), any other day means play resumes tomorrow. */
     function twTitleText(state) {
+      /* Match Board's Goodbye label dropdown can override the day-based
+         line with "See You On Sunday" (goodbyeLabel === 'SEE YOU ON SUNDAY'). */
+      if (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY') return 'See You On Sunday';
       return (state && state.day === 3) ? 'See You Next Week' : 'See You Tomorrow';
     }
     function applyTwTitle(state) {
@@ -8649,7 +8652,9 @@
          (see [data-theme="10th_anniversary"] #tw-title-bg CSS). Gated so
          Regular theme never fetches this asset. */
       if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
-        document.getElementById('tw-title-bg').src = (state && state.day === 3)
+        document.getElementById('tw-title-bg').src = (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY')
+          ? "/assets/Today's Schedule/anniversary/annivsunday.png"
+          : (state && state.day === 3)
           ? "/assets/Today's Schedule/anniversary/annivnextweek.png"
           : "/assets/Today's Schedule/anniversary/annivtomorrow.png";
       }
@@ -10474,7 +10479,9 @@
       const res = (data && data.resolved) || {};
       Object.keys(BR_TITLES).forEach(id => {
         const t = document.getElementById(`br-title-${id}`);
-        t.textContent = String((res[id] && res[id].title) || '').replace(/play-ins/i, 'Play Ins')
+        /* M3/M4 column (title 3) is the UB Semi Finals, even though its stage data says Play-Ins */
+        t.textContent = String((res[id] && res[id].title) || '')
+          .replace(/play[- ]ins/i, String(id) === '3' ? 'UB Semi Finals' : 'Play-Ins')
           .replace(/lower bracket/ig, 'LB').replace(/upper bracket/ig, 'UB').toUpperCase();
         brFitText(t);
       });

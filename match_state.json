@@ -78,25 +78,25 @@
   "map": "Healing Turtle",
   "hosts": [
     "Denisse",
-    "Thea",
-    "None"
+    "None",
+    "Odin"
   ],
   "casters": [
-    "Renmar",
-    "Burrito",
-    "Wolf"
+    "Hans",
+    "Athena",
+    "Joshycakes"
   ],
   "enCasters": [
-    "Hans",
     "Naisou",
-    "Leo"
+    "Brigida",
+    "Wolf"
   ],
   "countdownLabel": "SHOW STARTS IN",
-  "goodbyeLabel": "SEE YOU TOMORROW",
+  "goodbyeLabel": "SEE YOU ON SUNDAY",
   "timer": {
     "running": true,
-    "endAt": 1791461422257,
-    "remaining": 7200
+    "endAt": 1791526201157,
+    "remaining": 11045
   },
   "todayMatches": [
     {
@@ -109,7 +109,7 @@
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
-      "time": "5:00 PM",
+      "time": "2:30 PM",
       "star": false,
       "matchType": "regular"
     },
@@ -123,7 +123,7 @@
       "score1": 0,
       "score2": 0,
       "vsDisplay": "VS",
-      "time": "7:30 PM",
+      "time": "5:00 PM",
       "star": false,
       "matchType": "regular"
     },
@@ -139,7 +139,7 @@
       "vsDisplay": "VS",
       "time": "7:30 PM",
       "star": true,
-      "matchType": "international"
+      "matchType": "golden"
     }
   ],
   "tomorrowMatches": [
@@ -176,8 +176,8 @@
       "team2Short": "TLPH",
       "vsDisplay": "VS",
       "time": "7:30 PM",
-      "star": false,
-      "matchType": "regular"
+      "star": true,
+      "matchType": "clash"
     }
   ]
 }

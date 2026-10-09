@@ -474,7 +474,10 @@
       <div class="match-slots" id="tomorrow-matches-list"></div>
       <div class="show-label-wrap">
         <span class="show-label-key">Goodbye label</span>
-        <input type="text" class="show-label-val" id="goodbye-label-val" readonly value="SEE YOU TOMORROW">
+        <select class="show-label-val" id="goodbye-label-val" style="cursor:pointer">
+          <option value="auto">SEE YOU TOMORROW</option>
+          <option value="SEE YOU ON SUNDAY">SEE YOU ON SUNDAY</option>
+        </select>
       </div>
     </div>
   </div>
@@ -738,8 +741,7 @@
     updateMatchPicker();
     var mp = document.getElementById('match-picker');
     if (mp) mp.value = String((s.match || 1) - 1);
-    var goodbyeEl = document.getElementById('goodbye-label-val');
-    if (goodbyeEl) goodbyeEl.value = s.goodbyeLabel || computeGoodbye(s.day || 1);
+    syncGoodbyeSelect();
   }
 
   function updateBadges(swapped) {
@@ -1141,8 +1143,9 @@
     document.getElementById('day-val').textContent = localState.day;
     updatePreview();
     updateMatchPicker();
-    localState.goodbyeLabel = computeGoodbye(localState.day);
+    if (localState.goodbyeLabel !== GOODBYE_SUNDAY) localState.goodbyeLabel = computeGoodbye(localState.day);
     push({ day: localState.day, goodbyeLabel: localState.goodbyeLabel });
+    syncGoodbyeSelect();
     renderTodayMatches(); renderTomorrowMatches();
   });
   document.getElementById('day-plus').addEventListener('click', function () {
@@ -1150,8 +1153,9 @@
     document.getElementById('day-val').textContent = localState.day;
     updatePreview();
     updateMatchPicker();
-    localState.goodbyeLabel = computeGoodbye(localState.day);
+    if (localState.goodbyeLabel !== GOODBYE_SUNDAY) localState.goodbyeLabel = computeGoodbye(localState.day);
     push({ day: localState.day, goodbyeLabel: localState.goodbyeLabel });
+    syncGoodbyeSelect();
     renderTodayMatches(); renderTomorrowMatches();
   });
 
@@ -1378,6 +1382,22 @@
     return (day === 3) ? 'SEE YOU NEXT WEEK' : 'SEE YOU TOMORROW';
   }
 
+  /* Goodbye label dropdown — "auto" follows the day (TOMORROW / NEXT
+     WEEK via computeGoodbye); "SEE YOU ON SUNDAY" is a manual override
+     that sticks across day changes until switched back. mplfs.html's
+     Tomorrow's Schedule title reads goodbyeLabel to pick its text/art. */
+  var GOODBYE_SUNDAY = 'SEE YOU ON SUNDAY';
+  function syncGoodbyeSelect() {
+    var sel = document.getElementById('goodbye-label-val');
+    if (!sel) return;
+    sel.options[0].textContent = computeGoodbye(localState.day || 1);
+    sel.value = localState.goodbyeLabel === GOODBYE_SUNDAY ? GOODBYE_SUNDAY : 'auto';
+  }
+  document.getElementById('goodbye-label-val').addEventListener('change', function () {
+    localState.goodbyeLabel = this.value === 'auto' ? computeGoodbye(localState.day || 1) : this.value;
+    push({ goodbyeLabel: localState.goodbyeLabel });
+  });
+
   /* Countdown label is fully automatic: Match 1 is the day's first show,
      everything after is a resume off intermission. */
   function computeAutoShowLabel() {
@@ -1493,8 +1513,7 @@
     });
 
     /* goodbye label */
-    var lbl = document.getElementById('goodbye-label-val');
-    if (lbl) lbl.value = localState.goodbyeLabel || computeGoodbye(today);
+    syncGoodbyeSelect();
   }
 
   /* ── HOSTS & CASTERS ──
