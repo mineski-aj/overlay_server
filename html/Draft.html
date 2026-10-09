@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>Draft Overlay</title>
   <style>
@@ -3425,10 +3426,13 @@
          and a positional slice(knownLen) then re-picked the already-
          revealed Hirara (shown again on the other slot) while the
          genuinely new pick was skipped entirely. */
+      var newCount = 0;
       resolveSideType(newArr, side, type).filter(function (r) {
         return knownIds.indexOf(r.heroId) === -1;
       }).forEach(function (r) {
-        added.push({ heroId: r.heroId, side: side.toLowerCase(), type: type.toLowerCase(), pred: r.pred, occurrence: r.occurrence });
+        newCount++;
+        added.push({ heroId: r.heroId, side: side.toLowerCase(), type: type.toLowerCase(), pred: r.pred, occurrence: r.occurrence,
+                     platesNeeded: knownIds.length + newCount });
       });
     }
     collect('bluePicks', 'BLUE', 'PICK');
@@ -3466,6 +3470,59 @@
       dp3PickQueue = dp3PickQueue.concat(added);
     }
     return true;
+  }
+
+  /* ── Plate gate — the draft overlay reveals a pick/ban BEFORE the
+     predictor locks in on it ───────────────────────────────────────
+     The plates and the predictor read two independent feeds (plates: the
+     game's draft feed, polled every 1s; predictor: the Draft Predict API
+     via /proxy/predictions, every 3s), so the predictor used to settle
+     first whenever its feed happened to hear about a lock-in sooner. Now
+     a detected reveal keeps the wheel spinning on its slot's pool and
+     only settles once that side's plates have FINISHED revealing at
+     least entry.platesNeeded heroes of that type (pick: hero set and its
+     matte reveal done; ban: hero set and its 0.95s ban-reveal done).
+     Matched by count, not hero id — the two feeds use different id
+     schemes, and a count also covers picks the AI never predicted.
+     DP3_PLATE_GATE_MAX_MS is a safety net so a stalled/misconfigured
+     plate feed can never hold the predictor forever. The rationale
+     bubble only ever appears after the settle, so it follows too. */
+  var DP3_PLATE_GATE_MAX_MS  = 6000;
+  var DP3_PLATE_GATE_POLL_MS = 100;
+
+  function dp3PlatesShown(side, type) {
+    var campid = side === 'blue' ? 1 : 2;
+    var now = Date.now();
+    var n = 0;
+    for (var i = 0; i < 5; i++) {
+      var key = campid + '_' + i;
+      if (type === 'pick') {
+        var pp = prevPick[key];
+        if (pp && pp.heroid > 0 && !pp.matteActive) n++;
+      } else {
+        var pb = prevBan[key];
+        if (pb && pb.ban_heroid > 0 && !(pb.revealDoneAt > now)) n++;
+      }
+    }
+    return n;
+  }
+
+  function dp3WhenPlatesShow(entry, targetC, proceed) {
+    /* Entries that didn't come from a real detected reveal (debug test
+       tools) have no plate count to wait for. */
+    if (!entry.platesNeeded) { proceed(); return; }
+    var startedAt = Date.now();
+    (function check() {
+      if (dp3PickQueue[0] !== entry) return; /* queue was reset (new draft / hide) mid-wait */
+      if (dp3PlatesShown(entry.side, entry.type) >= entry.platesNeeded ||
+          Date.now() - startedAt >= DP3_PLATE_GATE_MAX_MS) {
+        proceed();
+        return;
+      }
+      /* Keep the wheel visibly spinning while it waits. */
+      if (!dp3UserHidden && targetC.state !== 'roulette' && targetC.cardEls.length) targetC.startRoulette();
+      setTimeout(check, DP3_PLATE_GATE_POLL_MS);
+    })();
   }
 
   function dp3ProcessPickQueue(fallbackData) {
@@ -3607,45 +3664,47 @@
       }
     }
 
-    if (idx === -1) {
-      /* The real pick isn't among this slot's AI-predicted candidates
-         at all. Previously this hid the panel almost instantly (a
-         ~460ms fade), which read as the reveal silently skipping —
-         instead, when we do have this slot's real pool loaded, let the
-         roulette visibly run for a believable stretch first (same
-         "the AI looked, found nothing" feel as any other reveal), then
-         slide the panel down without ever settling on a card. Falls
-         back to the old fast hide only when there's no real pool to
-         show at all (entry.pred itself couldn't be resolved). */
-      var hasPool = !!(entry.pred && targetC.loadedSlot === entry.pred.slot && targetC.cardEls.length);
-      if (!dp3UserHidden && hasPool) {
-        targetC.startRoulette();
-        setTimeout(function () {
-          targetC.halt();
-          targetC.state = 'stopped';
-          var elSide = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
-          elSide.classList.remove('dp3-visible');
+    dp3WhenPlatesShow(entry, targetC, function () {
+      if (idx === -1) {
+        /* The real pick isn't among this slot's AI-predicted candidates
+           at all. Previously this hid the panel almost instantly (a
+           ~460ms fade), which read as the reveal silently skipping —
+           instead, when we do have this slot's real pool loaded, let the
+           roulette visibly run for a believable stretch first (same
+           "the AI looked, found nothing" feel as any other reveal), then
+           slide the panel down without ever settling on a card. Falls
+           back to the old fast hide only when there's no real pool to
+           show at all (entry.pred itself couldn't be resolved). */
+        var hasPool = !!(entry.pred && targetC.loadedSlot === entry.pred.slot && targetC.cardEls.length);
+        if (!dp3UserHidden && hasPool) {
+          targetC.startRoulette();
+          setTimeout(function () {
+            targetC.halt();
+            targetC.state = 'stopped';
+            var elSide = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+            elSide.classList.remove('dp3-visible');
+            dp3PanelVisible = false;
+            dp3SyncBubblePosition(entry.side);
+            setTimeout(onDone, 460);
+          }, DP3_NO_MATCH_ROULETTE_MS);
+        } else if (!dp3UserHidden) {
+          var elSideFast = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
+          elSideFast.classList.remove('dp3-visible');
           dp3PanelVisible = false;
           dp3SyncBubblePosition(entry.side);
           setTimeout(onDone, 460);
-        }, DP3_NO_MATCH_ROULETTE_MS);
-      } else if (!dp3UserHidden) {
-        var elSideFast = entry.side === 'blue' ? dp3BluePanelEl : dp3RedPanelEl;
-        elSideFast.classList.remove('dp3-visible');
-        dp3PanelVisible = false;
-        dp3SyncBubblePosition(entry.side);
-        setTimeout(onDone, 460);
-      } else {
-        onDone();
+        } else {
+          onDone();
+        }
+        return;
       }
-      return;
-    }
 
-    var wasRouletting = targetC.state === 'roulette';
-    if (!wasRouletting) targetC.startRoulette();
-    setTimeout(function () {
-      targetC.settle(entry.heroId, onDone, clearMs);
-    }, wasRouletting ? 0 : 400);
+      var wasRouletting = targetC.state === 'roulette';
+      if (!wasRouletting) targetC.startRoulette();
+      setTimeout(function () {
+        targetC.settle(entry.heroId, onDone, clearMs);
+      }, wasRouletting ? 0 : 400);
+    });
   }
 
   function dp3PredictionAt(predictions, side, type, occurrence) {
@@ -4985,6 +5044,7 @@
         e.bhi.src = heroThumbSrc(ban_heroid);
         if (p.ban_heroid !== undefined) {
           revealBanHero(e.bhi);
+          p.revealDoneAt = Date.now() + 950; /* ban-reveal's own length, see revealBanHero */
         } else {
           /* First load: show already-banned hero silently */
           e.bhi.style.opacity   = '1';

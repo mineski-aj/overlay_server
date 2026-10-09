@@ -1353,6 +1353,12 @@ goes unnoticed longest.
     entry via `dashboard.html`'s generic renderer. Do not hand-write any
     of those; if one is missing, the feature entry is malformed, not
     missing a manual step.
+10b. **Event log verdict** — add the scene to `olScenes` at the bottom of
+    `mplfs.html`'s main script (same event key as step 10, plus its
+    internal `active` name). Skip it and the scene still works, but never
+    gets a 🟢/🟡/🔴 line in the dashboard's Logs tab or a load status next
+    to its Control-tab button — silent, like every other miss here. See
+    "Event log" below.
 11. New named SSE event → add it to `KNOWN_EVENTS` in
     `html/js/overlay-shared-worker.js` AND bump `OVERLAY_WORKER_VERSION`
     in `html/js/overlay-sse-shim.js` in the same change (see "Dashboard
@@ -1414,7 +1420,11 @@ the 6-layer SSE wiring:
    event name, and set `previewButton: true` on its `OVERLAYS` entry if
    you want a "◈ Preview" button at all (optional for tags — many don't
    need cross-tab preview since they're small and quick to check live).
-   **`mpltag.html` has no preview-mode isolation flag at all** (unlike
+   Player H2H's previews are per-role (`preview: { event, action, group }`
+   on its `extraActions` entries → `buildPreviewToggleBtn(event,
+   { showAction, group })`), and Player H2H alone has an isolation flag
+   (`PH2H_PREVIEW_ONLY`: a `?preview=1` copy skips its restore + real SSE).
+   **The rest of `mpltag.html` has no preview-mode isolation flag** (unlike
    `mplfs.html`'s `isPreviewFrame` / `Draft.html`'s `PREVIEW_ONLY`) — if
    your new tag's show/hide logic does anything beyond local DOM/CSS
    changes (a `fetch()`, writing shared state, anything like
@@ -1475,6 +1485,38 @@ checklists, and guessing wrong wastes the whole implementation):
   from a real poll tick, not just the debug button).
 
 In both cases: syntax-check + live-verify as in section A, steps 13–14.
+
+## Event log — dashboard Logs tab + Control-tab load status
+
+`lib/eventLog.js` (store: in-memory ring of 2000 + daily
+`logs/events-YYYY-MM-DD.jsonl`, gitignored) and `routes/eventLog.js`
+(`POST /api/event-log` batches from pages, `GET /api/event-log?since=<id>`
+for the dashboard, `/days` + `/download?day=` for saved days). Line format
+everywhere: `🟢 [14:32:05 - 2026-10-09] - <source> · <text>`, green /
+yellow / red = success / warning / crucial.
+
+- **Server side:** upstream pollers (`lib/pollers.js`, `lib/hrmPoller.js`)
+  call `eventLog.health(key, label, 'ok'|'slow'|'down', info)`, which logs
+  only on state CHANGES (needs 2 consecutive failures / 3 slow ticks) —
+  never per tick. The route also logs every `/overlay/<key>/show|hide`
+  hit and every `/overlay/events` connect/disconnect (one per browser,
+  thanks to the SharedWorker).
+- **Pages:** `html/js/event-log-client.js`, included right after
+  `theme-apply.js` on mplfs/ENTVC/mpltag/Draft/DraftIndex/mploverlay_v7 and
+  the dashboard. Automatically reports failed/slow (>2s) `fetch`es, broken
+  images/videos, JS errors. `OverlayLog.warn(msg)`/`.critical(msg)` for
+  explicit lines. `OverlayLog.wrapScenes({...})` (only mplfs.html's
+  `olScenes` today) times each show function and logs ONE verdict per show,
+  folding in any problems that happened while it loaded; boards are
+  `child: true` so a Post scene's verdict waits for and includes them; a
+  scene not done within 15s is 🔴 with the requests still in flight listed.
+- **Must stay zero-cost:** nothing ever awaits logging, wrappers pass
+  return values/errors through untouched, batches flush at most every 2s
+  on idle, and a missing route/unreachable server just drops entries. Keep
+  it that way — never make a scene wait on, or branch on, the logger.
+- Pages loaded with `?preview=1` report as `preview` (Control/Edit
+  iframes); the Control-tab status shows Live and Preview separately so a
+  preview click never looks like the real broadcast.
 
 ## Verifying changes with a real browser, without a Playwright/puppeteer dependency
 

@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPL Tags Overlay</title>
   <style>
@@ -1768,8 +1769,14 @@
     outTimer = setTimeout(function () { CLIP.style.display = 'none'; }, 350);
   }
 
-  /* ── Restore-on-load + SSE ── */
+  /* ── Restore-on-load + SSE ──
+     A Control-tab preview copy (?preview=1) must not mirror the real
+     broadcast (CLAUDE.md "Control-tab Preview") — there, Player H2H is
+     driven ONLY by window.previewTrigger below, so skip restore + the real
+     show/hide events. */
+  var PH2H_PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search);
   function restore() {
+    if (PH2H_PREVIEW_ONLY) return;
     fetch('/overlay/playerh2h-state', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
       if (d && d.role) ph2hShow(d.role);
     }).catch(function () {});
@@ -1783,6 +1790,7 @@
   };
   es.onerror = function () { wasDisconnected = true; };
   es.addEventListener('playerh2h', function (e) {
+    if (PH2H_PREVIEW_ONLY) return;
     var msg = JSON.parse(e.data);
     if (msg.action === 'show') ph2hShow(msg.role);
     else if (msg.action === 'hide') ph2hHide();
