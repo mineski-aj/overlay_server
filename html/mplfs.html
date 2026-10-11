@@ -443,7 +443,7 @@
        10-row/mirroring convention but a taller 730×154 background.
        Mirroring rule is identical: x' = 730 - x - width per child.
 
-       Two pages, same row, toggled scene-wide by .cp2-page2 (see
+       Three pages, same row, toggled scene-wide by .cp2-page2/.cp2-page3 (see
        setCp2Page()/showConsolidatedPost2() below, driven by the
        'cp2page' SSE event):
        - Page 1 (default) — consoblue3.png/consored3.png. KDA/Gold
@@ -456,7 +456,9 @@
          page 2 becomes active — the Damage bars are 497px wide and span
          that whole horizontal band, by design, so the two states read
          as one
-         crossfade rather than two independently-positioned layouts. */
+         crossfade rather than two independently-positioned layouts.
+       - Page 3 — page 1's background and KDA/Gold, with Runes/Items
+         swapped for Average/Peak/Clash BPM (.cp2-bpm-*, see below). */
     .cp2-row {
       position: absolute;
       width: 730px; height: 154px;
@@ -662,6 +664,50 @@
     .cp2-row.cp2-page2 .cp2-dmg-label,
     .cp2-row.cp2-page2 .cp2-dmg-taken,
     .cp2-row.cp2-page2 .cp2-dmg-dealt { opacity: 1; }
+
+    /* Page 3 — page 1's layout and background (KDA/Gold stay), with
+       Runes/Items swapped for Average/Peak/Clash BPM. Each column is
+       three independently-editable pieces (heart icon, label, value),
+       same art/labels/colors as Post Hearts. Column 0 (Average) sits in
+       the runes panel, columns 1-2 (Peak/Clash) in the items panel. */
+    .cp2-bpm-heart-0, .cp2-bpm-heart-1, .cp2-bpm-heart-2,
+    .cp2-bpm-label-0, .cp2-bpm-label-1, .cp2-bpm-label-2,
+    .cp2-bpm-value-0, .cp2-bpm-value-1, .cp2-bpm-value-2 {
+      position: absolute; opacity: 0; transition: opacity 300ms ease;
+    }
+    .cp2-bpm-heart-0, .cp2-bpm-heart-1, .cp2-bpm-heart-2 {
+      display: block; top: 24px; width: 42px; height: 25px;
+      object-fit: contain; object-position: right center;
+    }
+    .cp2-bpm-label-0, .cp2-bpm-label-1, .cp2-bpm-label-2 {
+      top: 20px; width: 54px; height: 32px;
+      display: flex; flex-direction: column; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 14.94px; line-height: 1; color: #000;
+      white-space: nowrap;
+    }
+    .cp2-bpm-value-0, .cp2-bpm-value-1, .cp2-bpm-value-2 {
+      top: 62px; width: 100px; height: 66px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 56px; line-height: 1; color: #000;
+      white-space: nowrap; overflow: hidden;
+    }
+    .cp2-bpm-heart-0 { left: 390px; } .cp2-bpm-label-0 { left: 434px; } .cp2-bpm-value-0 { left: 388px; }
+    .cp2-bpm-heart-1 { left: 526px; } .cp2-bpm-label-1 { left: 570px; } .cp2-bpm-value-1 { left: 524px; }
+    .cp2-bpm-heart-2 { left: 628px; } .cp2-bpm-label-2 { left: 672px; } .cp2-bpm-value-2 { left: 626px; }
+    /* mirrored — column boxes follow x' = 730 - x - 100, but heart stays
+       left of its label inside each column so it still reads normally */
+    .cp2-mirrored .cp2-bpm-heart-0 { left: 244px; } .cp2-mirrored .cp2-bpm-label-0 { left: 288px; } .cp2-mirrored .cp2-bpm-value-0 { left: 242px; }
+    .cp2-mirrored .cp2-bpm-heart-1 { left: 108px; } .cp2-mirrored .cp2-bpm-label-1 { left: 152px; } .cp2-mirrored .cp2-bpm-value-1 { left: 106px; }
+    .cp2-mirrored .cp2-bpm-heart-2 { left: 6px;   } .cp2-mirrored .cp2-bpm-label-2 { left: 50px;  } .cp2-mirrored .cp2-bpm-value-2 { left: 4px;   }
+
+    .cp2-row.cp2-page3 .cp2-rune-main,
+    .cp2-row.cp2-page3 .cp2-rune-1,
+    .cp2-row.cp2-page3 .cp2-rune-2,
+    .cp2-row.cp2-page3 .cp2-rune-3,
+    .cp2-row.cp2-page3 .cp2-item { opacity: 0; }
+    .cp2-row.cp2-page3 .cp2-bpm-heart-0, .cp2-row.cp2-page3 .cp2-bpm-heart-1, .cp2-row.cp2-page3 .cp2-bpm-heart-2,
+    .cp2-row.cp2-page3 .cp2-bpm-label-0, .cp2-row.cp2-page3 .cp2-bpm-label-1, .cp2-row.cp2-page3 .cp2-bpm-label-2,
+    .cp2-row.cp2-page3 .cp2-bpm-value-0, .cp2-row.cp2-page3 .cp2-bpm-value-1, .cp2-row.cp2-page3 .cp2-bpm-value-2 { opacity: 1; }
 
     /* mirrored (red side) — x' = 730 - x - width per element */
     .cp2-mirrored .cp2-hero  { left: 661px; }
@@ -7078,7 +7124,7 @@
     }
 
     function applyPostHearts(data) {
-      CONTAINERS.forEach(({ cls, side, idx }) => {
+      CONTAINERS.forEach(({ cls, side, idx }, n) => {
         const sideData = data[side] || data[side === 'home' ? 'camp1' : 'camp2'];
         if (!sideData || !sideData.players) return;
         const playerObj = sideData.players[idx];
@@ -7088,6 +7134,10 @@
         setVal(`${cls}-v0`, p.avg_bpm);
         setVal(`${cls}-v1`, p.peak_bpm);
         setVal(`${cls}-v2`, p.avg_clash_bpm);
+        /* Consolidated Post 2's page 3 — same 10 slots, same order */
+        setVal(`cp2-${n + 1}-bpm-0`, p.avg_bpm);
+        setVal(`cp2-${n + 1}-bpm-1`, p.peak_bpm);
+        setVal(`cp2-${n + 1}-bpm-2`, p.avg_clash_bpm);
       });
     }
 
@@ -13969,6 +14019,12 @@
     function buildCp2RowHTML(id) {
       const itemSlots = [0,1,2,3,4,5]
         .map(i => `<img class="cp2-item cp2-item-${i}" id="${id}-item-${i}" src="" alt="">`).join('');
+      /* Page 3's Average/Peak/Clash BPM — same HEARTS/LABELS art as Post
+         Hearts; values filled by applyPostHearts()'s 3s /postgame poll. */
+      const bpmCols = [0,1,2].map(i => `
+        <img class="cp2-bpm-heart-${i}" src="${HEARTS[i]}" alt="">
+        <div class="cp2-bpm-label-${i}"><span>${LABELS[i][0]}</span><span>${LABELS[i][1]}</span></div>
+        <div class="cp2-bpm-value-${i}" id="${id}-bpm-${i}">--</div>`).join('');
       return `
         <img class="cp2-hero" id="${id}-hero" src="" alt="">
         <div class="cp2-photo-frame"><img class="cp2-photo" id="${id}-photo" src="" alt=""></div>
@@ -13997,6 +14053,7 @@
           <div class="cp2-dmg-num-light" id="${id}-taken-numL">0</div>
         </div>
         ${itemSlots}
+        ${bpmCols}
       `;
     }
 
@@ -14012,7 +14069,7 @@
 
     let cp2Visible = false;
     let cp2Data    = [];
-    // Which of Consolidated Post 2's two pages is currently shown — scene-
+    // Which of Consolidated Post 2's three pages is currently shown — scene-
     // wide (all 10 rows flip together), driven by the 'cp2page' SSE event
     // (see connectSSE() and routes/overlay.js's /overlay/cp2page/:page).
     // Every showConsolidatedPost2() forces this back to 1 (see below) —
@@ -14027,11 +14084,14 @@
        scene show (that reveal already schedules its own first bar
        animation only if page 2 turns out to be the current page). */
     function applyCp2Page(page, animateBars) {
-      cp2Page = page === 2 ? 2 : 1;
+      cp2Page = page === 2 || page === 3 ? page : 1;
       const isPage2 = cp2Page === 2;
       CP2_ROW_CLASSES.forEach((cls, i) => {
         const el = document.getElementById(`cp2-row-el-${i + 1}`);
-        if (el) el.classList.toggle('cp2-page2', isPage2);
+        if (el) {
+          el.classList.toggle('cp2-page2', isPage2);
+          el.classList.toggle('cp2-page3', cp2Page === 3);
+        }
       });
       if (isPage2 && animateBars) {
         cp2Data.forEach((d, i) => {

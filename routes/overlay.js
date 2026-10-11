@@ -1041,16 +1041,17 @@ router.get('/overlay/consolidated_post_2/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
-// GET /overlay/cp2-page — current page (1 or 2) for restore-on-load, same
+// GET /overlay/cp2-page — current page (1, 2 or 3) for restore-on-load, same
 // idea as /overlay/check-overlays.
 router.get('/overlay/cp2-page', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ page: state.cp2Page });
 });
 
-// GET /overlay/cp2page/1 and /2 — flip Consolidated Post 2's Runes/Items
-// <-> Damage Dealt/Taken page, scene-wide across all 10 rows.
+// GET /overlay/cp2page/1, /2 and /3 — flip Consolidated Post 2 between
+// Runes/Items (1), Damage Dealt/Taken (2) and Average/Peak/Clash BPM (3),
+// scene-wide across all 10 rows.
 router.get('/overlay/cp2page/:page', (req, res) => {
-  const page = req.params.page === '2' ? 2 : 1;
+  const page = req.params.page === '2' ? 2 : req.params.page === '3' ? 3 : 1;
   state.cp2Page = page;
   state.overlayClients.forEach(c => { try { c.write(`event: cp2page\ndata: {"page":${page}}\n\n`); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, page });
