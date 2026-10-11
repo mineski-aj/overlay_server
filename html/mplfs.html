@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPLFS Overlay</title>
   <style>
@@ -177,6 +178,9 @@
       pointer-events: none;
     }
     #scene-video-0.sv-visible, #scene-video-1.sv-visible { opacity: 1; }
+    /* Instant (non-animated) opacity change — used on whichever layer is
+       UNDERNEATH during a crossfade, see showSceneVideo. */
+    #scene-video-0.sv-instant, #scene-video-1.sv-instant { transition: none; }
 
     /* ── POST EMBLEMS PAGE ── */
     #post-emblems-page {
@@ -4769,7 +4773,7 @@
       color: #000; text-transform: uppercase; white-space: nowrap; overflow: hidden;
     }
     .br-info b { font-weight: 700; }
-    /* Stage title above a column of matches ("PLAY INS / BO5"). Same type as the info strip, centered. */
+    /* Stage title above a column of matches ("PLAY-INS / BO5"). Same type as the info strip, centered. */
     .br-title {
       position: absolute; height: 29px; display: flex; align-items: center; justify-content: center;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 20.2px; line-height: 1;
@@ -8159,6 +8163,42 @@
     let currentSceneVideoSrc = null;
     let sceneVideoLayer = 0;   // which of sceneVideoEls is the active/on-top layer
     let sceneVideoVisible = false;
+    /* Bumped by every crossfade start and every hideSceneVideo — a pending
+       crossfade step (waiting on the new loop's first frame, or on the
+       fade to finish) checks it and bails if it's been superseded. */
+    let sceneVideoSwapToken = 0;
+    /* True only while transitionToImpl is tearing down the outgoing scene
+       on its way to an incoming scene that has its own background loop.
+       The outgoing scene's hide function still calls hideSceneVideo() as
+       usual, but it's a no-op during that window, so the old loop stays
+       up and playing and the incoming scene's showSceneVideo() hands off
+       directly from it — instead of the old loop fading out to the idle
+       #bg-video first and the new one fading in afterwards. */
+    let sceneVideoHandoff = false;
+
+    function svSetVisible(el, visible, animate) {
+      el.classList.toggle('sv-instant', !animate);
+      el.classList.toggle('sv-visible', visible);
+    }
+
+    /* Resolves once the video has actually started playing (first frame
+       decoded), so a crossfade never fades in a layer with nothing to show
+       yet. maxWaitMs caps it in case 'playing' never fires (error/stall). */
+    function svWhenPlaying(el, maxWaitMs) {
+      return new Promise(resolve => {
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          el.removeEventListener('playing', finish);
+          el.removeEventListener('error', finish);
+          resolve();
+        };
+        el.addEventListener('playing', finish);
+        el.addEventListener('error', finish);
+        setTimeout(finish, maxWaitMs);
+      });
+    }
 
     function showSceneVideo(feature) {
       const src = getSceneVideoSrc(feature);
@@ -8166,49 +8206,76 @@
       if (src === currentSceneVideoSrc) {
         if (!sceneVideoVisible) {
           const el = sceneVideoEls[sceneVideoLayer];
-          el.classList.add('sv-visible'); // same file after a gap — just reveal it again
-          el.play().catch(() => {});      // ...and resume decoding (hideSceneVideo paused it)
+          svSetVisible(el, true, true); // same file after a gap — just reveal it again
+          el.play().catch(() => {});    // ...and resume decoding (hideSceneVideo paused it)
         }
         sceneVideoVisible = true;
         return;
       }
 
+      /* Different file — crossfade. Measured problems with the old version
+         (MVP Scene -> MVP Highlights under 10th Anniversary): the outgoing
+         loop was paused the instant the crossfade began, so it sat frozen
+         on screen for its whole 400ms fade-out (the visible "stutter");
+         the incoming layer started fading in before it had decoded a
+         frame; and fading both layers at once dipped the combined
+         background to ~75%, letting the paused #bg-video show through.
+         Now: wait for the new loop's first frame, then only the TOP layer
+         animates while the bottom one stays fully opaque (100% coverage
+         throughout), and the old loop keeps playing until it's completely
+         covered — only then is it paused (still saves the GPU, just ~400ms
+         later than before). */
+      const token = ++sceneVideoSwapToken;
       const nextLayer = 1 - sceneVideoLayer;
       const curEl  = sceneVideoEls[sceneVideoLayer];
       const nextEl = sceneVideoEls[nextLayer];
+      const handingOff = sceneVideoVisible && curEl.classList.contains('sv-visible');
+      svSetVisible(nextEl, false, false);
       nextEl.src = src;
       nextEl.currentTime = 0;
       nextEl.play().catch(() => {});
-      nextEl.classList.add('sv-visible');   // crossfade new layer in...
-      curEl.classList.remove('sv-visible'); // ...old layer out, at the same time
-      curEl.pause(); /* GPU-saving: stop decoding the layer that's fading out —
-        immediate rather than deferred past its 400ms opacity transition, since
-        it's an ambient full-screen background losing opacity anyway (freezing
-        its last frame for that final fraction of a second reads as
-        imperceptible), and an immediate pause avoids the layer being reused by
-        another quick scene switch before a deferred pause would have fired. */
 
       sceneVideoLayer = nextLayer;
       currentSceneVideoSrc = src;
       sceneVideoVisible = true;
+
+      svWhenPlaying(nextEl, 1000).then(() => {
+        if (token !== sceneVideoSwapToken) return;
+        if (!handingOff) { svSetVisible(nextEl, true, true); return; } // nothing on screen to hand off from — plain fade in
+        if (nextLayer === 1) {
+          svSetVisible(nextEl, true, true);  // new loop is on top: fade it in over the still-playing old one
+        } else {
+          svSetVisible(nextEl, true, false); // new loop is underneath: show it instantly...
+          svSetVisible(curEl, false, true);  // ...and fade the still-playing old one out on top of it
+        }
+        setTimeout(() => {
+          if (token !== sceneVideoSwapToken) return;
+          svSetVisible(curEl, false, false); // fully covered/faded by now
+          curEl.pause();
+        }, 420);
+      });
     }
 
     function hideSceneVideo() {
-      const el = sceneVideoEls[sceneVideoLayer];
-      el.classList.remove('sv-visible');
+      if (sceneVideoHandoff) return; /* incoming scene's showSceneVideo takes over — see sceneVideoHandoff */
+      ++sceneVideoSwapToken; /* cancel any crossfade still in progress */
       sceneVideoVisible = false;
-      /* Deferred so the 400ms opacity fade-out plays fully animated instead
-         of freezing on its last frame the instant hide is called (same
-         setTimeout-after-transition idiom used elsewhere in this codebase,
-         e.g. Draft.html's hideDraftScene). Guarded on the captured element's
-         OWN class, not the shared sceneVideoVisible flag — a fast re-show of
-         the SAME file re-adds 'sv-visible' to this exact element (see
-         showSceneVideo's same-src branch) before this fires, so skip pausing
-         a video that's actively being shown again. */
-      setTimeout(() => {
-        if (el.classList.contains('sv-visible')) return;
-        el.pause();
-      }, 400);
+      sceneVideoEls.forEach(el => {
+        if (!el.classList.contains('sv-visible')) { el.pause(); return; } // e.g. a crossfade target that never got shown
+        svSetVisible(el, false, true);
+        /* Deferred so the 400ms opacity fade-out plays fully animated instead
+           of freezing on its last frame the instant hide is called (same
+           setTimeout-after-transition idiom used elsewhere in this codebase,
+           e.g. Draft.html's hideDraftScene). Guarded on the element's OWN
+           class, not the shared sceneVideoVisible flag — a fast re-show of
+           the SAME file re-adds 'sv-visible' to this exact element (see
+           showSceneVideo's same-src branch) before this fires, so skip
+           pausing a video that's actively being shown again. */
+        setTimeout(() => {
+          if (el.classList.contains('sv-visible')) return;
+          el.pause();
+        }, 400);
+      });
     }
 
     /* ════════════════════════════════════════════════
@@ -8913,6 +8980,9 @@
        means there's no play the next calendar day (next games are next
        week), any other day means play resumes tomorrow. */
     function twTitleText(state) {
+      /* Match Board's Goodbye label dropdown can override the day-based
+         line with "See You On Sunday" (goodbyeLabel === 'SEE YOU ON SUNDAY'). */
+      if (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY') return 'See You On Sunday';
       return (state && state.day === 3) ? 'See You Next Week' : 'See You Tomorrow';
     }
     function applyTwTitle(state) {
@@ -8924,7 +8994,9 @@
          (see [data-theme="10th_anniversary"] #tw-title-bg CSS). Gated so
          Regular theme never fetches this asset. */
       if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
-        document.getElementById('tw-title-bg').src = (state && state.day === 3)
+        document.getElementById('tw-title-bg').src = (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY')
+          ? "/assets/Today's Schedule/anniversary/annivsunday.png"
+          : (state && state.day === 3)
           ? "/assets/Today's Schedule/anniversary/annivnextweek.png"
           : "/assets/Today's Schedule/anniversary/annivtomorrow.png";
       }
@@ -9951,12 +10023,34 @@
       }
     }
 
+    /* The game-mvp/view upstream intermittently stalls (measured: ~1 in 15
+       requests hung for the server's full 5s timeout and came back 502,
+       others spiked to 1.6s, the rest ~30ms) — and MVP Scene/Highlights
+       can't appear until this resolves, then showed an EMPTY card on
+       failure. So: abandon a stalled attempt early and retry once (a
+       retry almost always lands in ~30ms), and if both fail, reuse the
+       last good payload if it's very recent — in the normal rundown
+       that's MVP Scene's fetch of this same game seconds earlier, and a
+       2-minute window is far too short for a new game to have finished. */
+    const HL_FETCH_TIMEOUTS_MS = [1500, 3000];
+    const HL_LAST_GOOD_MAX_AGE_MS = 120000;
+    let hlLastGood = null; /* { payload, at } */
     async function hlFetchMvp() {
-      try {
-        const r = await fetch(buildUrl('/api/highlights-data'), { cache: 'no-store' });
-        if (!r.ok) return null;
-        return await r.json();
-      } catch (e) { return null; }
+      for (const timeoutMs of HL_FETCH_TIMEOUTS_MS) {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+        try {
+          const r = await fetch(buildUrl('/api/highlights-data'), { cache: 'no-store', signal: ctrl.signal });
+          if (r.ok) {
+            const payload = await r.json();
+            hlLastGood = { payload, at: Date.now() };
+            return payload;
+          }
+        } catch (e) { /* timed out / network error — try again */ }
+        finally { clearTimeout(timer); }
+      }
+      if (hlLastGood && Date.now() - hlLastGood.at < HL_LAST_GOOD_MAX_AGE_MS) return hlLastGood.payload;
+      return null;
     }
 
     /* API shape: { data: { camp_list: [ { player_list: [ <mvp player> ] } ] } }
@@ -10031,9 +10125,11 @@
       heroImg.src = hlHeroImg(player && player.heroid);
       heroName.textContent = (player && player.hero_name && player.hero_name[0]) || '';
 
-      photoEl.onerror = () => { photoEl.style.display = 'none'; };
-      photoEl.style.display = '';
-      photoEl.src = hlPhotoUrl(player && player.name);
+      /* Lightweight WebP copy first, original PNG as fallback — same as
+         MVP Scene's #mv-photo (see mvSetImgWithFallback). Also means
+         MVP Scene -> Highlights reuses the exact file MVP just loaded. */
+      const photoUrl = hlPhotoUrl(player && player.name);
+      mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
 
       /* Stats backer below the hero image — same fields/API as MVP
          Scene's own KDA/GPM(or-whatever-mvp_title-says)/KP% (see
@@ -10049,12 +10145,26 @@
 
     async function showHighlights() {
       const dataPromise = hlFetchMvp();
+      /* Fill in + preload #highlights-page WHILE the outgoing scene is
+         still fading out (transitionTo awaits its ~420ms hide), instead of
+         only starting after — the page is its own display:none layer, so
+         writing into it early is invisible. Skipped when Highlights itself
+         is still on screen (hl-on is only removed once its fade-out ends,
+         so this also covers a quick Hide -> Show): swapping its content
+         mid-fade would be visible, so that case keeps the old order. */
+      const prepEarly = !hlPage.classList.contains('hl-on');
+      const prep = payload => {
+        hlApply(hlExtractPlayer(payload));
+        return preloadMedia(hlPage.querySelectorAll('img'), 1500);
+      };
+      const prepPromise = prepEarly ? dataPromise.then(prep) : null;
       await transitionTo('highlights');
-      const payload = await dataPromise;
-      if (activeFeature !== 'highlights') return; /* superseded while awaiting data */
-      hlApply(hlExtractPlayer(payload));
-      await preloadMedia(hlPage.querySelectorAll('img'), 1500);
-      if (activeFeature !== 'highlights') return; /* superseded while preloading */
+      if (prepPromise) await prepPromise;
+      if (activeFeature !== 'highlights') return; /* superseded while awaiting data / transition */
+      if (!prepPromise) {
+        await prep(await dataPromise);
+        if (activeFeature !== 'highlights') return; /* superseded while preloading */
+      }
       showSceneVideo('highlights');
       hlPage.classList.add('hl-on');
       void hlPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -10099,6 +10209,37 @@
     function mvHeroImgUrl(heroid) {
       if (!heroid) return '';
       return '/heromvp/MVP_' + heroid + '.png';
+    }
+
+    /* MVP Scene loads lightweight WebP copies of the hero art / signature
+       photo first (heromvp_web/, hires/SIGNATURE_web/ — generated by
+       Tools/optimize-images.js; the originals are never modified). The raw
+       PNGs averaged ~3MB and peaked at 42MB (8000x4501) for an 867x470 box,
+       which is what made MVP Scene slow to appear on a cold cache. If a
+       copy is missing (e.g. new hero art added but the tool not re-run
+       yet), falls back to the original PNG; only hides if that fails too. */
+    function mvWebUrl(originalUrl, origDir, webDir) {
+      if (!originalUrl || !originalUrl.startsWith(origDir)) return '';
+      return webDir + originalUrl.slice(origDir.length).replace(/\.png$/i, '.webp');
+    }
+    function mvSetImgWithFallback(el, originalUrl, webUrl, onFallbackLoad) {
+      el.style.display = '';
+      /* A flag, not a src comparison — cache-bust.js rewrites every <img>
+         src to append ?v=<pageload>, so the attribute never equals webUrl. */
+      let onWebCopy = !!webUrl;
+      el.onerror = () => {
+        if (onWebCopy) {
+          onWebCopy = false;
+          /* preloadMedia already resolved on the copy's error, so the
+             original may land after the scene is revealed — let the
+             caller redo anything that measured the image (hero feather). */
+          if (onFallbackLoad) el.addEventListener('load', onFallbackLoad, { once: true });
+          el.src = originalUrl;
+          return;
+        }
+        el.style.display = 'none';
+      };
+      el.src = webUrl || originalUrl;
     }
 
     /* #mv-hero-img is object-fit:contain + object-position:50% 100%, so
@@ -10367,17 +10508,16 @@
          length. Fit again once the page is actually laid out instead. */
 
       const heroImg = document.getElementById('mv-hero-img');
-      heroImg.onerror = () => { heroImg.style.display = 'none'; };
-      heroImg.style.display = '';
-      heroImg.src = mvHeroImgUrl(player && player.heroid);
+      const heroUrl = mvHeroImgUrl(player && player.heroid);
+      mvSetImgWithFallback(heroImg, heroUrl, mvWebUrl(heroUrl, '/heromvp/', '/heromvp_web/'),
+        () => { if (mvPage.classList.contains('mv-on')) mvFeatherHeroImg(heroImg); });
       /* Feathering needs the box's real laid-out size, but #mvp-page is
          still display:none here (see the mv-name comment above) — done
          later in showMvpScene once .mv-on is applied, same as mvFitName. */
 
       const photoEl = document.getElementById('mv-photo');
-      photoEl.onerror = () => { photoEl.style.display = 'none'; };
-      photoEl.style.display = '';
-      photoEl.src = hlPhotoUrl(player && player.name);
+      const photoUrl = hlPhotoUrl(player && player.name);
+      mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
 
       const spellEl = document.getElementById('mv-spell');
       spellEl.onerror = () => { spellEl.style.visibility = 'hidden'; };
@@ -10760,7 +10900,9 @@
       const res = (data && data.resolved) || {};
       Object.keys(BR_TITLES).forEach(id => {
         const t = document.getElementById(`br-title-${id}`);
-        t.textContent = String((res[id] && res[id].title) || '').replace(/play-ins/i, 'Play Ins')
+        /* M3/M4 column (title 3) is the UB Semi Finals, even though its stage data says Play-Ins */
+        t.textContent = String((res[id] && res[id].title) || '')
+          .replace(/play[- ]ins/i, String(id) === '3' ? 'UB Semi Finals' : 'Play-Ins')
           .replace(/lower bracket/ig, 'LB').replace(/upper bracket/ig, 'UB').toUpperCase();
         brFitText(t);
       });
@@ -12471,6 +12613,19 @@
     }
 
     async function transitionToImpl(newFeature) {
+      /* If the incoming scene starts its own background loop below, keep
+         the outgoing scene's loop up through its teardown so the two hand
+         off directly (see sceneVideoHandoff). try/finally so the flag can
+         never get stuck on — that would make every later hideSceneVideo a
+         no-op. */
+      const startsOwnBg = !!SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature);
+      sceneVideoHandoff = startsOwnBg;
+      try { await transitionTeardown(newFeature); } finally { sceneVideoHandoff = false; }
+      if (startsOwnBg) showSceneVideo(newFeature);
+      activeFeature = newFeature;
+    }
+
+    async function transitionTeardown(newFeature) {
       if (POST_FEATURES.has(newFeature)) {
         /* Read BEFORE showMatchBoard() below — that's a no-op when
            Matchboard is already up (switching directly between two Post
@@ -12534,8 +12689,8 @@
          started here (see showSceneVideo's early-return branch).
          SCENE_VIDEO_DEFERRED_START features (Team Line-up) are skipped
          here on purpose too — see that Set's own comment above. */
-      if (SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature)) showSceneVideo(newFeature);
-      activeFeature = newFeature;
+      /* (the showSceneVideo call this describes now lives in transitionToImpl,
+         right after this teardown resolves — same ordering as before) */
     }
 
     function hideActiveFeature() {
@@ -13779,7 +13934,11 @@
       await preloadMedia(document.querySelectorAll('[id^="cp2-row-el-"] img'), 900);
       if (activeFeature !== 'consolidated_post_2') return; /* superseded while preloading */
       applyCp2Page(1, false); /* every show always starts on page 1 */
-      fetch(buildUrl('/overlay/cp2page/1')).catch(() => {}); /* keep server state in sync so a reconnect mid-broadcast also lands on page 1 */
+      /* keep server state in sync so a reconnect mid-broadcast also lands on
+         page 1 — but never from the dashboard's preview iframe: this route
+         broadcasts to every client, so previewing CP2 was flipping a LIVE
+         CP2 back to page 1 (same leak class as syncBoard's guard). */
+      if (!isPreviewFrame) fetch(buildUrl('/overlay/cp2page/1')).catch(() => {});
       cp2Visible = true;
       showSceneVideo('consolidated_post_2');
       cmbVisible = true;
@@ -14855,10 +15014,27 @@
       } catch (e) { return { role: 'gold_laner' }; }
     }
 
+    /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache.
+       Measured 200-960ms (median ~430ms) and the server waits up to 8s
+       on a stalled upstream, which Post Carry/Post H2H can't appear
+       without — so give the fresh read GAMEDATA_FRESH_CLIENT_TIMEOUT_MS,
+       then fall back to the server's once-a-second poll cache (same
+       payload, at most ~1s older; returns instantly). Post-game the
+       numbers are final anyway, so the fallback shows the same data. */
+    const GAMEDATA_FRESH_CLIENT_TIMEOUT_MS = 1500;
     async function fetchH2HGameData() {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), GAMEDATA_FRESH_CLIENT_TIMEOUT_MS);
       try {
-        /* ?fresh=1 — live upstream read at show-time, not the 1s poll cache. */
-        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store', signal: ctrl.signal });
+        if (r.ok) {
+          const json = await r.json();
+          if (json && json.data) return json.data;
+        }
+      } catch (e) { /* timed out / network error — use the poll cache below */ }
+      finally { clearTimeout(timer); }
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' });
         if (!r.ok) return null;
         const json = await r.json();
         return json.data || null;
@@ -15580,10 +15756,13 @@
     function pcApplyCard(seat, team) {
       document.getElementById('pc-box').src = team === 2 ? '/assets/PostH2H/PH2HRed_Box.png' : '/assets/PostH2H/PH2HBlue_Box.png';
 
+      /* Hero icon + both pose photos load lightweight WebP copies first
+         (hero_web/ is 512px for this 86x62 slot instead of the 1000x1000
+         ~870KB original; hires/*_web/ are full-size), falling back to the
+         original PNGs if a copy is missing — see mvSetImgWithFallback. */
       const logoEl = document.getElementById('pc-logo');
-      logoEl.onerror = () => { logoEl.style.display = 'none'; };
-      logoEl.style.display = '';
-      logoEl.src = (seat && seat.heroid) ? '/hero/HERO_' + seat.heroid + '_KOTAK.png' : '';
+      const heroIconUrl = (seat && seat.heroid) ? '/hero/HERO_' + seat.heroid + '_KOTAK.png' : '';
+      mvSetImgWithFallback(logoEl, heroIconUrl, mvWebUrl(heroIconUrl, '/hero/', '/hero_web/'));
 
       const roleEl = document.getElementById('pc-role');
       roleEl.onerror = () => { roleEl.style.display = 'none'; };
@@ -15595,13 +15774,11 @@
       const heroEl = document.getElementById('pc-visa-hero');
       if (heroEl) heroEl.classList.remove('pc-hero-posed'); // reset in case a role/data refresh lands mid-Phase-3
       const frontEl = document.getElementById('pc-photo-front');
-      frontEl.onerror = () => { frontEl.style.display = 'none'; };
-      frontEl.style.display = '';
-      frontEl.src = luPoseUrl(seat && seat.name, 'FRONT');
+      const frontUrl = (seat && seat.name) ? luPoseUrl(seat.name, 'FRONT') : '';
+      mvSetImgWithFallback(frontEl, frontUrl, mvWebUrl(frontUrl, '/hires/FRONT/', '/hires/FRONT_web/'));
       const sigEl = document.getElementById('pc-photo-sig');
-      sigEl.onerror = () => { sigEl.style.display = 'none'; };
-      sigEl.style.display = '';
-      sigEl.src = hlPhotoUrl(seat && seat.name);
+      const sigUrl = hlPhotoUrl(seat && seat.name);
+      mvSetImgWithFallback(sigEl, sigUrl, mvWebUrl(sigUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
 
       document.getElementById('pc-kda').textContent =
         seat ? `${seat.kill_num || 0}/${seat.dead_num || 0}/${seat.assist_num || 0}` : '-/-/-';
@@ -15836,12 +16013,28 @@
 
     async function showPostCarry() {
       const gdPromise = fetchH2HGameData();
+      /* Fill in + preload #pc-page WHILE the outgoing scene is still
+         fading out (e.g. Consolidated Post 2's 950ms exit), instead of
+         only starting after — same reasoning/guard as showHighlights:
+         the page is its own display:none layer, so writing into it early
+         is invisible, except when Post Carry itself is still on screen
+         (pc-on is only removed once its own fade-out ends), which keeps
+         the old order so its content never swaps mid-fade. pcApply only
+         builds DOM/SVG (no layout measurement that needs a visible page —
+         pcFitStatValue's measure was already running while hidden). */
+      const prepEarly = !pcPage.classList.contains('pc-on');
+      const prep = gameData => {
+        pcApply(gameData);
+        return preloadMedia(pcPage.querySelectorAll('img'), 900);
+      };
+      const prepPromise = prepEarly ? gdPromise.then(prep) : null;
       await transitionTo('post_carry');
-      const gameData = await gdPromise;
-      if (activeFeature !== 'post_carry') return;
-      pcApply(gameData);
-      await preloadMedia(pcPage.querySelectorAll('img'), 900);
-      if (activeFeature !== 'post_carry') return;
+      if (prepPromise) await prepPromise;
+      if (activeFeature !== 'post_carry') return; /* superseded while awaiting data / transition */
+      if (!prepPromise) {
+        await prep(await gdPromise);
+        if (activeFeature !== 'post_carry') return; /* superseded while preloading */
+      }
       showSceneVideo('post_carry');
       pcVisible = true;
       // Reset every intro-sequence class so a fast hide+reshow replays the
@@ -16385,6 +16578,7 @@
         const r = await fetch(buildUrl('/api/photo-manifest'), { cache: 'no-store' });
         if (r.ok) pbPhotoManifest = await r.json();
       } catch {}
+      if (!pbPhotoManifest && window.OverlayLog) OverlayLog.critical('Playerboard photo list failed to load — every photo will be blank');
     }
 
     // Returns null when there's nothing to show — callers must clear the
@@ -16406,6 +16600,7 @@
     const PB_TRANSPARENT_PHOTO = '/photos/placeholder.png';
     function pbSetPhoto(photoEl, name, pose) {
       const url = pbPhotoUrl(name, pose);
+      if (!url && pbPhotoManifest && window.OverlayLog) OverlayLog.warn('Playerboard: no ' + pose + ' photo for "' + (name || '(empty name)') + '" — showing blank');
       photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = buildUrl(PB_TRANSPARENT_PHOTO); };
       photoEl.src = url ? buildUrl(url) : buildUrl(PB_TRANSPARENT_PHOTO);
     }
@@ -16453,7 +16648,7 @@
         if (!r.ok) return;
         const json = await r.json();
         const gd = json.data;
-        if (!gd) return;
+        if (!gd) { if (window.OverlayLog) OverlayLog.warn('Playerboard: game feed returned no data'); return; }
         const camps = gd.camp_list || [];
         const c1 = camps.find(c => c.campid === 1);
         const c2 = camps.find(c => c.campid === 2);
@@ -16908,6 +17103,63 @@
         })
         .catch(function() {});
     })();
+
+    /* ── Event log: scene load verdicts (html/js/event-log-client.js) ──
+       Times every show function below, however it's called (Control-tab
+       SSE, Preview, restoreScene, or a Post scene pulling up the boards),
+       and reports one 🟢 loaded / 🟡 warnings / 🔴 failed line per show to
+       the dashboard's Logs tab + the status next to that scene's Control-tab
+       button. Keys are the SAME event names as previewTrigger above (= the
+       dashboard route key), `active` is the scene's own internal
+       activeFeature name — the two often differ, see CLAUDE.md. Passes
+       return values/errors straight through; changes no scene behavior.
+       New scene → add a line here too, or it just won't get a verdict. */
+    if (window.OverlayLog) {
+      const olActive = (name) => () =>
+        activeFeature === name ? null
+          : activeFeature === null ? 'hidden before it finished loading'
+          : 'did not appear (still showing "' + activeFeature + '")';
+      const olScenes = {
+        post_hearts:         { fn: 'showPostHearts',        label: 'Post Hearts',          active: 'hearts' },
+        post_itemline:       { fn: 'showItemTimeline',      label: 'Post Timeline',        active: 'timeline' },
+        post_richguy:        { fn: 'fetchAndShowRichguy',   label: 'Rich Guy',             active: 'richguy' },
+        post_emblems:        { fn: 'showPostEmblems',       label: 'Post Emblem',          active: 'emblems' },
+        post_items:          { fn: 'showPostItems',         label: 'Post Items',           active: 'items' },
+        post_stats:          { fn: 'showPostStats',         label: 'Post Stats',           active: 'stats' },
+        post_heatmap:        { fn: 'showPostHeatmap',       label: 'Post Heatmap',         active: 'heatmap' },
+        post_h2h:            { fn: 'showPostH2H',           label: 'Post H2H',             active: 'post_h2h' },
+        post_carry:          { fn: 'showPostCarry',         label: 'Post Carry',           active: 'post_carry' },
+        post4key:            { fn: 'showPost4Key',          label: 'Post 4 Key',           active: 'post4key' },
+        consolidated_post:   { fn: 'showConsolidatedPost',  label: 'Consolidated Post',    active: 'consolidated_post' },
+        consolidated_post_2: { fn: 'showConsolidatedPost2', label: 'Consolidated Post 2',  active: 'consolidated_post_2' },
+        waiting_tvc:         { fn: 'showWaitingScreen',     label: 'Waiting Screen TVC',   active: 'waiting' },
+        waiting_lobby:       { fn: 'showWaitingLobby',      label: 'Waiting Lobby',        active: 'lobby' },
+        today_schedule:      { fn: 'showTodaySchedule',     label: "Today's Schedule",     active: 'schedule' },
+        tomorrow_schedule:   { fn: 'showTomorrowSchedule',  label: "Tomorrow's Schedule",  active: 'tomorrow' },
+        standings:           { fn: 'showStandings',         label: 'Standings',            active: 'standings' },
+        team_hexagon:        { fn: 'showTeamHexagon',       label: 'Team Hexagon',         active: 'hexagon' },
+        highlights:          { fn: 'showHighlights',        label: 'MVP Highlights',       active: 'highlights' },
+        mvp:                 { fn: 'showMvpScene',          label: 'MVP Scene',            active: 'mvp' },
+        credits:             { fn: 'showCreditsScene',      label: 'Credit Reel',          active: 'credits' },
+        bracket:             { fn: 'showBracketScene',      label: 'Bracket',              active: 'bracket' },
+        final_team:          { fn: 'showFinalTeam',         label: 'Final Team',           active: 'finalteam' },
+        /* Resolve after the intro clip; the reveal itself is scheduled
+           later, so no "is it active yet" check — only errors/timeouts. */
+        team_lineup_blue:    { fn: 'showTeamLineupBlue',    label: 'Team Line-Up — Blue',  timeoutMs: 40000 },
+        team_lineup_red:     { fn: 'showTeamLineupRed',     label: 'Team Line-Up — Red',   timeoutMs: 40000 },
+        /* Boards: usually pulled up BY a Post scene (transitionToImpl), so
+           they're children of it — the Post scene's verdict waits for them
+           and includes their problems (e.g. missing player photos). */
+        matchboard:          { fn: 'showMatchBoard',        label: 'Matchboard',           child: true, skipIf: () => mbVisible },
+        middleboard:         { fn: 'showMiddleBoard',       label: 'Middleboard',          child: true, skipIf: () => mdbVisible },
+        playerboard:         { fn: 'showPlayerBoard',       label: 'Playerboard',          child: true, skipIf: () => pbVisible },
+      };
+      Object.keys(olScenes).forEach(k => {
+        const c = olScenes[k];
+        if (c.active) c.check = olActive(c.active);
+      });
+      OverlayLog.wrapScenes(olScenes);
+    }
 
   </script>
 

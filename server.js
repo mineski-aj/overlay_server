@@ -9,7 +9,9 @@ app.use(express.json());
 
 // CORS
 app.use((req, res, next) => {
-  console.log('[REQ]', req.method, req.url);
+  // Event-log traffic (overlay pages reporting, dashboard Logs tab polling)
+  // is constant background chatter — keep it out of the console.
+  if (!req.url.startsWith('/api/event-log')) console.log('[REQ]', req.method, req.url);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -192,6 +194,8 @@ app.use(express.static(path.join(__dirname), {
 
 // Routes
 app.use(require('./routes/feed'));
+// Before ./routes/overlay — its middleware timestamps /overlay/<key>/show|hide.
+app.use(require('./routes/eventLog'));
 app.use(require('./routes/overlay'));
 app.use(require('./routes/bracket'));
 app.use(require('./routes/led'));
@@ -213,6 +217,7 @@ app.use(function (req, res, next) {
 require('./lib/pollers');
 
 app.listen(PORT, '0.0.0.0', () => {
+  require('./lib/eventLog').add({ level: 'success', page: 'server', kind: 'server', msg: 'Overlay server started on :' + PORT });
   console.log("================================================");
   console.log(`  Overlay Server running on :${PORT}`);
   console.log(`  Dashboard  → http://localhost:${PORT}/`);

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <script src="/html/js/cache-bust.js"></script>
+  <script src="/html/js/event-log-client.js"></script>
   <script src="/html/js/overlay-sse-shim.js"></script>
   <title>Overlay Dashboard</title>
   <style>
@@ -775,6 +776,49 @@
       border: none;
       transform-origin: top left;
     }
+
+    /* ── Logs page (event log — see lib/eventLog.js) ───────────── */
+    #logs-tab-badge:not(:empty) {
+      display: inline-block; margin-left: 6px; min-width: 16px; padding: 0 5px;
+      border-radius: 8px; font-size: 10px; line-height: 16px; text-align: center;
+      background: #f5b301; color: #000; letter-spacing: 0;
+    }
+    #logs-tab-badge.critical { background: #ff4455; color: #fff; }
+    #page-logs { gap: 10px; }
+    #logs-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex-shrink: 0; }
+    #logs-toolbar select, #logs-toolbar input {
+      height: 28px; background: rgba(255,255,255,0.05); border: 1px solid #333344;
+      border-radius: 5px; color: #ddd; font-size: 12px; padding: 0 8px;
+    }
+    #logs-toolbar input { width: 220px; }
+    #logs-toolbar .settings-btn { height: 28px; }
+    #logs-conn { font-size: 11px; color: #666; margin-left: auto; }
+    #logs-conn.bad { color: #ff4455; }
+    #logs-list {
+      flex: 1; min-height: 0; overflow-y: auto; background: #0a0a10;
+      border: 1px solid #222232; border-radius: 8px; padding: 6px 0;
+      font-family: Consolas, 'Cascadia Mono', monospace; font-size: 12.5px; line-height: 1.55;
+    }
+    .log-row { padding: 2px 12px; white-space: pre-wrap; word-break: break-word; cursor: default; }
+    .log-row.has-detail { cursor: pointer; }
+    .log-row:hover { background: rgba(255,255,255,0.03); }
+    .log-row.success  { color: #2ed39a; }
+    .log-row.warning  { color: #f5b301; }
+    .log-row.critical { color: #ff5a68; font-weight: 600; }
+    .log-row.filtered { display: none; }
+    .log-row .log-src { opacity: 0.6; font-weight: 400; }
+    .log-row .log-detail { display: none; margin: 3px 0 4px 26px; color: #9a9ab0; font-weight: 400; }
+    .log-row.open .log-detail { display: block; }
+    .log-empty { padding: 20px; color: #555; font-family: 'Segoe UI', system-ui, sans-serif; }
+    /* Control tab: last load result next to each scene */
+    .scene-status { font-size: 11px; color: #555; }
+    .scene-status .ss-live.success  { color: #2ed39a; }
+    .scene-status .ss-live.warning  { color: #f5b301; }
+    .scene-status .ss-live.critical { color: #ff5a68; font-weight: 600; }
+    .scene-status .ss-preview { margin-left: 10px; opacity: 0.75; }
+    .scene-status .ss-preview.success  { color: #2ed39a; }
+    .scene-status .ss-preview.warning  { color: #f5b301; }
+    .scene-status .ss-preview.critical { color: #ff5a68; }
   </style>
 </head>
 <body>
@@ -801,6 +845,7 @@
   <button class="tab-btn" data-page="sponsors">Sponsors</button>
   <button class="tab-btn" data-page="edit">Edit</button>
   <button class="tab-btn" data-page="settings">Settings</button>
+  <button class="tab-btn" data-page="logs" id="logs-tab-btn">Logs<span id="logs-tab-badge"></span></button>
 </nav>
 
 <!-- Page 0: Match Board -->
@@ -1189,6 +1234,256 @@
 </div>
 </div>
 </div>
+
+<!-- Page: Logs — event log (scene load results, errors, latency, upstream
+     API health, show/hide presses). Server side: lib/eventLog.js. -->
+<div id="page-logs" class="page">
+  <div id="logs-toolbar">
+    <select id="logs-level" title="Which events to show">
+      <option value="all">All events</option>
+      <option value="problems">Warnings + crucial</option>
+      <option value="critical">Crucial only</option>
+    </select>
+    <select id="logs-source" title="Which sources to show">
+      <option value="real">Live overlays + server</option>
+      <option value="all">Everything (incl. previews)</option>
+      <option value="server">Server only</option>
+    </select>
+    <input id="logs-search" type="text" placeholder="Search…" spellcheck="false" autocomplete="off" />
+    <button id="logs-export" class="settings-btn" title="Save the lines currently shown as a .txt file">Export shown</button>
+    <select id="logs-day" title="Full saved log for a day"><option value="">Saved days…</option></select>
+    <button id="logs-download" class="settings-btn">Download day</button>
+    <button id="logs-clear" class="settings-btn" title="Clears this view only — nothing is deleted on the server">Clear view</button>
+    <span id="logs-conn">Connecting…</span>
+  </div>
+  <div id="logs-list"><div class="log-empty">No events yet.</div></div>
+</div>
+
+<script>
+/* ── Logs tab + Control-tab scene status ─────────────────────────────
+   Polls GET /api/event-log?since=<id> (new lines + per-scene status) —
+   every 2s while the Logs or Control tab is open, every 10s otherwise
+   (just for the tab badge), never while this browser tab is hidden. Lives
+   only in the dashboard: overlay pages never poll this, so it adds nothing
+   to vMix/OBS. Defined BEFORE the main dashboard script so
+   window.olFillSceneStatus exists for the Control tab's first render. */
+(function () {
+  var LEVEL_EMOJI = { success: '🟢', warning: '🟡', critical: '🔴' };
+  var MAX_ROWS = 1500;
+  var listEl   = document.getElementById('logs-list');
+  var connEl   = document.getElementById('logs-conn');
+  var badgeEl  = document.getElementById('logs-tab-badge');
+  var levelSel = document.getElementById('logs-level');
+  var srcSel   = document.getElementById('logs-source');
+  var searchEl = document.getElementById('logs-search');
+  var daySel   = document.getElementById('logs-day');
+
+  var lastId = 0, boot = null, statusMap = {}, unseen = 0, unseenCritical = false;
+  var pollTimer = null, polling = false;
+  var backfill = true; // first fetch = history from before this tab opened; don't badge it
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmtTime(ts) { var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function fmtDate(ts) { var d = new Date(ts); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function srcLabel(e) { return e.page === 'server' ? 'Server' : e.page + (e.kind && e.kind !== 'live' ? ' (' + e.kind + ')' : ''); }
+  // 🟢 [14:32:05 - 2026-10-09] - mplfs · Post Hearts loaded in 1.32s
+  function lineText(e) {
+    return LEVEL_EMOJI[e.level] + ' [' + fmtTime(e.ts) + ' - ' + fmtDate(e.ts) + '] - ' + srcLabel(e) + ' · ' + e.msg + (e.count ? ' (×' + e.count + ')' : '');
+  }
+  function isActive(page) { var p = document.getElementById('page-' + page); return p && p.classList.contains('active'); }
+
+  function matches(e) {
+    var lv = levelSel.value, src = srcSel.value, q = searchEl.value.trim().toLowerCase();
+    if (lv === 'problems' && e.level === 'success') return false;
+    if (lv === 'critical' && e.level !== 'critical') return false;
+    if (src === 'real' && (e.kind === 'preview' || e.kind === 'embedded')) return false;
+    if (src === 'server' && e.page !== 'server') return false;
+    if (q && (lineText(e) + ' ' + (e.detail || '')).toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  }
+
+  function buildRow(e) {
+    var row = document.createElement('div');
+    row.className = 'log-row ' + e.level + (matches(e) ? '' : ' filtered');
+    row._entry = e;
+    var head = LEVEL_EMOJI[e.level] + ' [' + fmtTime(e.ts) + ' - ' + fmtDate(e.ts) + '] - ';
+    row.appendChild(document.createTextNode(head));
+    var src = document.createElement('span');
+    src.className = 'log-src';
+    src.textContent = srcLabel(e) + ' · ';
+    row.appendChild(src);
+    row.appendChild(document.createTextNode(e.msg + (e.count ? ' (×' + e.count + ')' : '')));
+    var extra = [];
+    if (e.detail) extra.push(e.detail);
+    if (e.instance) extra.push('instance: ' + e.instance + (e.ms != null ? ' · ' + e.ms + 'ms' : ''));
+    if (e.detail || (e.instance && e.verdict)) {
+      row.classList.add('has-detail');
+      var det = document.createElement('div');
+      det.className = 'log-detail';
+      det.textContent = extra.join('\n');
+      row.appendChild(det);
+    }
+    return row;
+  }
+
+  listEl.addEventListener('click', function (ev) {
+    var row = ev.target.closest('.log-row.has-detail');
+    if (row && !window.getSelection().toString()) row.classList.toggle('open');
+  });
+
+  function addEntries(list) {
+    if (!list.length) return;
+    var empty = listEl.querySelector('.log-empty');
+    if (empty) empty.remove();
+    var frag = document.createDocumentFragment();
+    for (var i = list.length - 1; i >= 0; i--) frag.appendChild(buildRow(list[i])); // newest on top
+    var keepPos = listEl.scrollTop > 10, before = listEl.scrollHeight;
+    listEl.insertBefore(frag, listEl.firstChild);
+    if (keepPos) listEl.scrollTop += listEl.scrollHeight - before; // don't yank the view while reading older lines
+    while (listEl.children.length > MAX_ROWS) listEl.removeChild(listEl.lastChild);
+
+    if (!isActive('logs') && !backfill) {
+      list.forEach(function (e) {
+        if (e.level === 'success' || e.kind === 'preview' || e.kind === 'embedded') return;
+        unseen++;
+        if (e.level === 'critical') unseenCritical = true;
+      });
+      renderBadge();
+    }
+  }
+
+  function renderBadge() {
+    badgeEl.textContent = unseen ? (unseen > 99 ? '99+' : String(unseen)) : '';
+    badgeEl.classList.toggle('critical', unseenCritical);
+  }
+
+  function refilter() {
+    Array.prototype.forEach.call(listEl.children, function (row) {
+      if (row._entry) row.classList.toggle('filtered', !matches(row._entry));
+    });
+  }
+  levelSel.addEventListener('change', refilter);
+  srcSel.addEventListener('change', refilter);
+  searchEl.addEventListener('input', refilter);
+
+  document.getElementById('logs-clear').addEventListener('click', function () {
+    listEl.innerHTML = '<div class="log-empty">View cleared — new events will appear here. (The saved log on the server is untouched.)</div>';
+  });
+
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + text], { type: 'text/plain;charset=utf-8' }));
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+  document.getElementById('logs-export').addEventListener('click', function () {
+    var rows = Array.prototype.filter.call(listEl.children, function (r) { return r._entry && !r.classList.contains('filtered'); });
+    var text = rows.slice().reverse().map(function (r) {
+      var e = r._entry;
+      return lineText(e) + (e.detail ? '\n      ' + e.detail.replace(/\n/g, '\n      ') : '');
+    }).join('\n');
+    var d = new Date();
+    download('overlay-events-' + fmtDate(d) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.txt', text + '\n');
+  });
+
+  function loadDays() {
+    fetch('/api/event-log/days', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : { days: [] }; }).then(function (j) {
+      var cur = daySel.value;
+      daySel.innerHTML = '<option value="">Saved days…</option>' + (j.days || []).map(function (d) { return '<option value="' + d + '">' + d + '</option>'; }).join('');
+      if (cur) daySel.value = cur;
+    }).catch(function () {});
+  }
+  daySel.addEventListener('focus', loadDays);
+  document.getElementById('logs-download').addEventListener('click', function () {
+    var day = daySel.value || fmtDate(Date.now());
+    window.location.href = '/api/event-log/download?day=' + encodeURIComponent(day);
+  });
+
+  /* ── Control tab: per-scene status ── */
+  function statusText(s) {
+    return LEVEL_EMOJI[s.level] + ' ' +
+      (s.level === 'success' ? 'Loaded' : s.level === 'warning' ? 'Loaded with warnings' : 'Failed') +
+      (s.ms != null ? ' · ' + (s.ms / 1000).toFixed(2) + 's' : '') + ' · ' + fmtTime(s.ts) +
+      (s.instances > 1 ? ' · ' + s.instances + ' screens' : '');
+  }
+  window.olFillSceneStatus = function (elx) {
+    var st = statusMap[elx.dataset.page + ':' + elx.dataset.scene];
+    var html = '', tip = [];
+    if (st && st.live) {
+      html += '<span class="ss-live ' + st.live.level + '"></span>';
+      tip.push('Live: ' + st.live.msg);
+    }
+    if (st && st.preview && (!st.live || st.preview.ts > st.live.ts)) {
+      html += '<span class="ss-preview ' + st.preview.level + '"></span>';
+      tip.push('Preview: ' + st.preview.msg);
+    }
+    var sig = html + tip.join('|') + (st && st.live ? st.live.ts : '') + (st && st.preview ? st.preview.ts : '');
+    if (elx._olSig === sig) return;
+    elx._olSig = sig;
+    if (!html) { elx.textContent = '○ Not loaded yet this session'; elx.title = ''; return; }
+    elx.innerHTML = html;
+    var live = elx.querySelector('.ss-live'), prev = elx.querySelector('.ss-preview');
+    if (live) live.textContent = statusText(st.live);
+    if (prev) prev.textContent = 'Preview: ' + statusText(st.preview);
+    elx.title = tip.join('\n');
+  };
+  function refreshSceneStatus() {
+    document.querySelectorAll('.scene-status').forEach(window.olFillSceneStatus);
+  }
+
+  /* ── Poll ── */
+  function poll() {
+    if (polling) return;
+    polling = true;
+    var again = false;
+    fetch('/api/event-log?since=' + lastId, { cache: 'no-store' })
+      .then(function (r) {
+        if (r.status === 404) throw new Error('restart');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
+      .then(function (j) {
+        if (boot && j.boot !== boot) {
+          // Server restarted: its ids start over — refetch from 0.
+          lastId = 0; boot = j.boot; again = true; return;
+        }
+        boot = j.boot;
+        var list = j.entries || [];
+        if (list.length) lastId = list[list.length - 1].id;
+        addEntries(list);
+        backfill = false;
+        statusMap = j.status || {};
+        refreshSceneStatus();
+        connEl.textContent = 'Live · updated ' + fmtTime(Date.now());
+        connEl.classList.remove('bad');
+      })
+      .catch(function (err) {
+        connEl.textContent = err.message === 'restart'
+          ? 'Event log not available — restart the overlay server to enable it'
+          : 'Can’t reach the server (' + err.message + ')';
+        connEl.classList.add('bad');
+      })
+      .then(function () { polling = false; if (again) poll(); });
+  }
+  function schedule() {
+    clearTimeout(pollTimer);
+    var fast = isActive('logs') || isActive('control');
+    pollTimer = setTimeout(function () {
+      if (document.visibilityState !== 'hidden') poll();
+      schedule();
+    }, fast ? 2000 : 10000);
+  }
+  document.getElementById('logs-tab-btn').addEventListener('click', function () {
+    unseen = 0; unseenCritical = false; renderBadge();
+    poll(); loadDays(); schedule();
+  });
+  document.querySelectorAll('.tab-btn').forEach(function (b) { b.addEventListener('click', schedule); });
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') poll(); });
+  poll();
+  schedule();
+})();
+</script>
 
 <script>
 (function () {
@@ -1983,7 +2278,15 @@
      shouldn't turn off whatever scene is actually driving it. */
   var previewToggleRegistry = {};
 
-  function buildPreviewToggleBtn(eventName) {
+  /* opts (optional):
+       showAction — what to pass as previewTrigger's action instead of
+                    'show' (e.g. Player H2H's role: 'gold', 'jungler'…)
+       group      — buttons sharing a group are variants of ONE panel:
+                    switching between them skips the 'hide' and lets the
+                    page's own show-while-showing transition run (same as
+                    the real buttons), instead of hide-then-show. */
+  function buildPreviewToggleBtn(eventName, opts) {
+    opts = opts || {};
     var pvb = document.createElement('button');
     pvb.className = 'btn btn-preview-live';
     pvb.textContent = '◈ Preview';
@@ -1993,26 +2296,31 @@
       var iw = previewIframe && previewIframe.contentWindow;
       if (iw && typeof iw.previewTrigger === 'function') iw.previewTrigger(eventName, action);
     }
-    function turnOff() {
+    function turnOff(silent) {
       active = false;
       pvb.classList.remove('active');
-      trigger('hide');
+      if (!silent) trigger('hide');
       if (activePreviewOff === turnOff) activePreviewOff = null;
     }
+    turnOff.group = opts.group || null;
 
     pvb.addEventListener('click', function () {
       if (active) { turnOff(); return; }
-      if (activePreviewOff) activePreviewOff();
+      if (activePreviewOff) activePreviewOff(!!opts.group && activePreviewOff.group === opts.group);
       active = true;
       pvb.classList.add('active');
       activePreviewOff = turnOff;
-      trigger('show');
+      trigger(opts.showAction || 'show');
     });
 
-    previewToggleRegistry[eventName] = function (shown) {
-      active = shown;
-      pvb.classList.toggle('active', shown);
-    };
+    // Passive reflection is keyed by plain event name (mplfs boards) — a
+    // variant button (showAction set) doesn't own that key.
+    if (!opts.showAction) {
+      previewToggleRegistry[eventName] = function (shown) {
+        active = shown;
+        pvb.classList.toggle('active', shown);
+      };
+    }
 
     return pvb;
   }
@@ -2496,11 +2804,15 @@
          forget extraActions (each just hits its own real /show route)
          rather than checkToggles, which is for independent on/off state. */
       extraActions: [
-        { label: 'Player H2H: Gold',    action: '/overlay/playerh2h/gold/show'    },
-        { label: 'Player H2H: Jungler', action: '/overlay/playerh2h/jungler/show' },
-        { label: 'Player H2H: Exp',     action: '/overlay/playerh2h/exp/show'     },
-        { label: 'Player H2H: Mid',     action: '/overlay/playerh2h/mid/show'     },
-        { label: 'Player H2H: Roamer',  action: '/overlay/playerh2h/roamer/show'  },
+        /* preview → ◈ Preview next to each role: mpltag.html's
+           previewTrigger('playerh2h', <role>) in the Control-tab preview
+           iframe only. Same group = switching roles plays the real
+           out-then-in transition instead of hide-then-show. */
+        { label: 'Player H2H: Gold',    action: '/overlay/playerh2h/gold/show',    preview: { event: 'playerh2h', action: 'gold',    group: 'playerh2h' } },
+        { label: 'Player H2H: Jungler', action: '/overlay/playerh2h/jungler/show', preview: { event: 'playerh2h', action: 'jungler', group: 'playerh2h' } },
+        { label: 'Player H2H: Exp',     action: '/overlay/playerh2h/exp/show',     preview: { event: 'playerh2h', action: 'exp',     group: 'playerh2h' } },
+        { label: 'Player H2H: Mid',     action: '/overlay/playerh2h/mid/show',     preview: { event: 'playerh2h', action: 'mid',     group: 'playerh2h' } },
+        { label: 'Player H2H: Roamer',  action: '/overlay/playerh2h/roamer/show',  preview: { event: 'playerh2h', action: 'roamer',  group: 'playerh2h' } },
         { label: 'Player H2H: Hide',    action: '/overlay/playerh2h/hide'         },
         /* Hides every independent panel on mpltag.html at once (Map
            Selection + Player H2H today), not just Player H2H — see
@@ -3978,14 +4290,29 @@
     function renderExtraActionsRow(actions) {
       var arow = el('div', 'btn-row');
       actions.forEach(function (a) {
-        arow.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
+        /* An action with a preview keeps [button][copy][◈ Preview] in one
+           non-wrapping unit, so a Preview can never wrap onto the next
+           line and look like it belongs to a different button. */
+        var host = arow;
+        if (a.preview) {
+          host = el('span');
+          host.style.cssText = 'display:inline-flex; gap:6px; align-items:center; flex-wrap:nowrap;';
+          arow.appendChild(host);
+        }
+        host.appendChild(btn(a.label, 'btn-action', function () { hit(a.action, body); }));
         var cb = document.createElement('button');
         cb.className = 'btn btn-copy';
         cb.innerHTML = '<span class="copy-icon">⧉</span>';
         (function (path, label, b) {
           b.addEventListener('click', function () { copyRoute(path, label + ' route', b); });
         })(a.action, a.label, cb);
-        arow.appendChild(cb);
+        host.appendChild(cb);
+        /* Optional a.preview = { event, action, group } — a ◈ Preview
+           button driving the Control-tab preview iframe only (see
+           buildPreviewToggleBtn), never the real route above. */
+        if (a.preview) {
+          host.appendChild(buildPreviewToggleBtn(a.preview.event, { showAction: a.preview.action, group: a.preview.group }));
+        }
       });
       return arow;
     }
@@ -4237,6 +4564,17 @@
       ov.features.forEach(function (feat) {
         var fr = el('div', 'feature-row');
         fr.appendChild(el('div', 'feature-name', feat.name));
+        /* Last load result for this scene (🟢/🟡/🔴), filled + kept current
+           by the Logs-tab script at the bottom of this file. Keyed by the
+           same route key the Preview button uses. */
+        if (feat.show && ov.file && window.olFillSceneStatus) {
+          var ssParts = feat.show.split('/');
+          var ss = el('div', 'scene-status');
+          ss.dataset.page  = ov.file.replace(/\.html?$/i, '');
+          ss.dataset.scene = ssParts[ssParts.length - 2];
+          window.olFillSceneStatus(ss);
+          fr.appendChild(ss);
+        }
         var fb = el('div', 'feature-btns');
         if (feat.show && feat.hide && !feat.realButtons) {
           var key = feat.show.split('/')[2];
