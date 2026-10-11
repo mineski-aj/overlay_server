@@ -5784,6 +5784,8 @@
   BRACKET_DEFAULTS['#br-week-label'] = { left: 679, top: 196, width: 253,  height: 34, fontSize: 24 };
   BRACKET_ELEMENTS.push({ group: 'Header Image', id: '#br-header',     name: 'Header (Playoffs Bracket)' });
   BRACKET_ELEMENTS.push({ group: 'Header Week',  id: '#br-week-label', name: 'Header Gold Text (THE PLAYOFFS)' });
+  BRACKET_DEFAULTS['#br-sponsor'] = { left: 1520, top: 78, width: 338, height: 120 };
+  BRACKET_ELEMENTS.push({ group: 'Sponsor', id: '#br-sponsor', name: 'Sponsor Box (Playoffs)' });
   BRACKET_DEFAULTS['#br-grandfinals'] = { left: 1499, top: 718, width: 306, height: 47 };
   BRACKET_ELEMENTS.push({ group: 'Grand Finals Label', id: '#br-grandfinals', name: 'Grand Finals Label' });
   var BR_TITLE_POS = { 1: [152, 290, 207], 3: [558, 290, 288], 6: [562, 813, 288],
@@ -6341,6 +6343,33 @@
   ];
 
   /* ── Registry of editable overlays ───────────────────────────── */
+  /* ── Playoffs universal sponsor box (mplfs.html) ──
+     Every sponsor box in mplfs.html shares ONE playoffs layout (see the
+     "PLAYOFFS UNIVERSAL SPONSOR BOX" CSS block in mplfs.html). These two
+     rows edit its shared internals — gold header strip (height + font
+     size) and where the logo area starts (top) — for ALL sponsor boxes at
+     once, from whichever scene's Edit config you're in. Each box's own
+     position/size is still its normal per-scene "Sponsor Box" row.
+     Selectors are html[data-theme=playoffs]-scoped (unquoted attr value on
+     purpose, so they survive being used as ids), so a save can never touch
+     another theme. Own unique groups so arrow-key group nudging never
+     drags them. */
+  var PO_SPONSOR_CAT_SEL  = 'html[data-theme=playoffs] .sponsor-cat-label';
+  var PO_SPONSOR_LOOP_SEL = 'html[data-theme=playoffs] .wl-sponsor-loop, html[data-theme=playoffs] .ws-sponsor-loop';
+  function addPlayoffsSponsorEdit(defaults, elements) {
+    defaults[PO_SPONSOR_CAT_SEL]  = { height: 39, fontSize: 22 };
+    defaults[PO_SPONSOR_LOOP_SEL] = { top: 39 };
+    elements.push({ group: 'Playoffs Sponsor · Header', id: PO_SPONSOR_CAT_SEL,  name: 'Sponsor Header Strip (ALL playoffs boxes)' });
+    elements.push({ group: 'Playoffs Sponsor · Logo',   id: PO_SPONSOR_LOOP_SEL, name: 'Sponsor Logo Area Top (ALL playoffs boxes)' });
+  }
+  [
+    [WL_DEFAULTS, WL_ELEMENTS], [TS_DEFAULTS, TS_ELEMENTS], [TW_DEFAULTS, TW_ELEMENTS],
+    [WS_COUNT2_DEFAULTS, WS_COUNT2_ELEMENTS], [WS_COUNT3_DEFAULTS, WS_COUNT3_ELEMENTS],
+    [TS_COUNT2_DEFAULTS, TS_COUNT2_ELEMENTS], [TS_COUNT3_DEFAULTS, TS_COUNT3_ELEMENTS],
+    [TW_COUNT2_DEFAULTS, TW_COUNT2_ELEMENTS], [TW_COUNT3_DEFAULTS, TW_COUNT3_ELEMENTS],
+    [P2H_DEFAULTS, P2H_ELEMENTS], [CP2_DEFAULTS, CP2_ELEMENTS], [BRACKET_DEFAULTS, BRACKET_ELEMENTS],
+  ].forEach(function(pair) { addPlayoffsSponsorEdit(pair[0], pair[1]); });
+
   var EDIT_CONFIGS = {
     mploverlay_v7: {
       label:       'Scoreboard · mploverlay_v7',

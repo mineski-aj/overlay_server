@@ -4,7 +4,7 @@
    html/match-dashboard.html's MATCH_TYPES for the full label list) —
    same suffix convention as the asset filenames on disk
    (assets/ingame/ingamepng2_<SUFFIX>.png / assets/ingame/anniversary/
-   ingamepng2_<SUFFIX>.png). Not every matchType has art in every theme
+   ingamepng2_<SUFFIX>.png / assets/ingame/playoffs/ingamepng2_<SUFFIX>.png). Not every matchType has art in every theme
    (or at all yet) — resolved at runtime via #scoreboard-bg's own onerror
    (it's a real <img>, unlike Draft.html's CSS-background #scene) rather
    than a hardcoded whitelist, so a newly-dropped-in asset just works
@@ -47,8 +47,11 @@ function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
 
   var bg = document.createElement('img');
   bg.id  = 'scoreboard-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
+  var sbInitTheme = document.documentElement.getAttribute('data-theme');
+  bg.src = sbInitTheme === '10th_anniversary'
     ? 'assets/ingame/anniversary/ingamepng2.png'
+    : sbInitTheme === 'playoffs'
+    ? 'assets/ingame/playoffs/ingamepng2.png'
     : 'assets/ingame/ingamepng2.png';
   bg.alt = '';
   overlay.appendChild(bg);
@@ -514,6 +517,20 @@ function sbFitText(el, maxWidth, maxPx) {
   el.style.fontSize = lo + 'px';
 }
 
+/* Playoffs match-title line (#sb-mi-week): one line up to 38px; if it won't
+   fit the 168px room, wrap to at most 2 lines and shrink to fit. */
+function sbFitStage(el) {
+  var W = 168;
+  el.style.whiteSpace = 'nowrap';
+  el.style.fontSize = '38px';
+  if (el.scrollWidth <= W) return;
+  el.style.whiteSpace = 'normal';
+  for (var size = 32; size >= 12; size--) {
+    el.style.fontSize = size + 'px';
+    if (el.scrollWidth <= W && el.scrollHeight <= size * 2.2) return;
+  }
+}
+
 /* Patch/caster box text-fit budget — NOT a plain CSS font-size, because
    sbFitText() above sets an inline font-size on the text span every poll
    tick, and an inline style always beats an inherited value no matter how
@@ -584,9 +601,24 @@ function sbPollMatchState() {
       sbRenderBars(document.getElementById('sb-score-c1'), maxWins, c1Team.score, true);
       sbRenderBars(document.getElementById('sb-score-c2'), maxWins, c2Team.score, false);
 
+      var miLabelEl = document.getElementById('sb-mi-label');
       var miWeek  = document.getElementById('sb-mi-week');
       var miMatch = document.getElementById('sb-mi-match');
-      if (miWeek)  miWeek.textContent  = 'WEEK '  + (s.week  != null ? s.week  : 1) + ' - DAY '  + (s.day   != null ? s.day   : 1);
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        /* Playoffs: "MPL PH SEASON 18" / the current match's title from the
+           Match Board (PLAY-INS, LOWER BRACKET FINALS...) as the big line /
+           "MATCH n - GAME n". */
+        var poMatch = (s.todayMatches || [])[(s.match || 1) - 1];
+        if (miLabelEl) miLabelEl.textContent = 'MPL PH SEASON 18';
+        if (miWeek) {
+          miWeek.textContent = String((poMatch && poMatch.stageLabel) || 'THE PLAYOFFS').replace(/\|/g, ' ').trim().toUpperCase();
+          sbFitStage(miWeek);
+        }
+      } else {
+        if (miLabelEl) miLabelEl.textContent = 'REGULAR SEASON';
+        if (miWeek) { miWeek.style.fontSize = ''; miWeek.style.whiteSpace = ''; }
+        if (miWeek)  miWeek.textContent  = 'WEEK '  + (s.week  != null ? s.week  : 1) + ' - DAY '  + (s.day   != null ? s.day   : 1);
+      }
       if (miMatch) miMatch.textContent = 'MATCH ' + (s.match != null ? s.match : 1) + ' - GAME ' + (s.game  != null ? s.game  : 1);
 
       /* maxWidth/maxPx come from SB_MI_FIT_CONFIG (see sbFitText above) —
@@ -636,7 +668,8 @@ function sbPollMatchState() {
       var curMatch    = (s.todayMatches || [])[(s.match || 1) - 1];
       var isEnduring  = curMatch && curMatch.matchType === 'enduring';
       var isAnniv     = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-      var ingameBase  = 'assets/ingame/' + (isAnniv ? 'anniversary/' : '');
+      var isPlayoffs  = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      var ingameBase  = 'assets/ingame/' + (isAnniv ? 'anniversary/' : isPlayoffs ? 'playoffs/' : '');
       var ingamePlain = ingameBase + 'ingamepng2.png';
       var starSuffix  = curMatch && sbStarSuffixFor(curMatch.matchType);
       var ingameStar  = starSuffix ? ingameBase + 'ingamepng2_' + starSuffix + '.png' : ingamePlain;

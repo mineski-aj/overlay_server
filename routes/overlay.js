@@ -705,7 +705,8 @@ router.get('/overlay/team_lineup_red/hide', (req, res) => {
 router.get('/overlay/today_schedule/show', (req, res) => {
   if (state.mplfsScene.activeFeature === 'schedule') {
     const ms = matchState.get();
-    const maxMatches = (ms.day || 1) === 2 ? 3 : 2;
+    // Playoffs theme always shows exactly 2 matches (see mplfs.html's buildTsMatches).
+    const maxMatches = (getTheme() !== 'playoffs' && (ms.day || 1) === 2) ? 3 : 2;
     const cur  = state.mplfsScene.scheduleHighlight || 0;
     const next = cur >= maxMatches ? 0 : cur + 1;
     state.mplfsScene.scheduleHighlight = next;

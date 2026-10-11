@@ -1015,6 +1015,44 @@ already on screen does not swap the running video live; the new theme's
 asset applies the next time the scene is (re)shown. Revisit this only if
 the user asks for live-swap-mid-scene behavior specifically.
 
+### Playoffs theme — the UNIVERSAL sponsor box (mplfs.html)
+
+Every sponsor box in `mplfs.html` under the **playoffs** theme shares ONE
+layout: a gold header strip showing the live sponsor category (OFFICIAL
+SPONSOR…) over a white logo area. It lives in a single CSS block,
+"PLAYOFFS UNIVERSAL SPONSOR BOX" (next to `.sponsor-cat-label` in
+`mplfs.html`), written against the **shared classes**
+(`.sponsor-cat-label`, `.wl-sponsor-loop`/`.ws-sponsor-loop`,
+`.wl-sponsor-bg`/`.wsm-sponsor-bg`) — never a per-scene id. Waiting TVC,
+Waiting Lobby, Today's Schedule, the Bracket (`#br-sponsor`, placed on `#bracket-page` outside the tilting `#bracket-container`) and ENTVC.html's Waiting TVC (its own mirrored copy of the block) use it today; Tomorrow's Schedule, Post
+H2H, Consolidated Post 2 and Middle Board inherit the look automatically
+(they just haven't had their playoffs position/size reworked yet — Post
+H2H's 60px-tall box in particular will look cramped until it is).
+
+**When you add or rework any mplfs.html scene for playoffs that has a
+sponsor box, use this universal box — do not restyle a sponsor box for
+that one scene.** Build it with the standard markup (`.sponsor-cat-label`
++ `.wl-sponsor-loop`, same as `buildTsSponsor`) and the universal CSS
+styles it for free; the only per-scene work is position/size (default
+338×120 — add the scene's sponsor selector to the "Default box size" rule
+in that block, and seed its position in the `mplfs::playoffs` bucket of
+`overlay_styles.json`, since Regular's saved sponsor override would
+otherwise win as an `!important` fallback). Also make sure its Edit config
+gets the universal rows (below).
+
+**Editing it:** every Edit config that contains a sponsor box has two extra
+rows, group "Playoffs Sponsor" — **Sponsor Header Strip** (height, font
+size) and **Sponsor Logo Area Top** — added by `addPlayoffsSponsorEdit()`
+in `dashboard.html`. They edit the shared classes, so changing them from
+ANY scene's Edit tab changes every playoffs sponsor box at once. Their
+selectors are `html[data-theme=playoffs]`-scoped (unquoted attribute value
+on purpose, so the selector survives being used as an element id), so a
+save can never leak into another theme. A new scene's Edit config must be
+added to the pairs list passed to `addPlayoffsSponsorEdit` in the
+`forEach` right above `var EDIT_CONFIGS`. Each box's own position/size
+stays its normal per-scene "Sponsor Box" row — only the internals are
+universal.
+
 ### The dashboard's Edit tab is theme-scoped — a drag/resize under one theme never affects another
 
 `overlay_styles.json` (`routes/overlayStyles.js`, `GET`/`POST

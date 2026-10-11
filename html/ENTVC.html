@@ -650,7 +650,7 @@
     }
     .ws-sf-label { position: absolute; left: 17px; top: 0; width: 360px; height: 51px; display: flex; align-items: center; color: #fff; }
     .ws-sf-window { position: absolute; left: 396px; top: 0; width: 503px; height: 51px; overflow: hidden; }
-    .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 18s linear infinite; }
+    .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 9s linear infinite; }
     .ws-sf-window span { color: #0a0a0a; padding-right: 120px; flex: none; }
     @keyframes ws-sf-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
@@ -679,8 +679,28 @@
       font-weight: 800; font-size: 33px; white-space: nowrap;
     }
     [data-theme="playoffs"] #ws-timer-countdown-label br { display: none; }
+    /* Playoffs: "IN:" is General Sans Medium, the rest of the label stays 800 */
+    [data-theme="playoffs"] #ws-timer-countdown-label .ws-cd-in { font-weight: 500; }
     [data-theme="playoffs"] #ws-timer-value { left: 0px; top: 0px; width: 571px; height: 160px; font-size: 152px; text-align: center; }
     [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1480px; top: -202px; }
+    /* Playoffs UNIVERSAL SPONSOR BOX — mirrored from mplfs.html (see its
+       "PLAYOFFS UNIVERSAL SPONSOR BOX" block + CLAUDE.md): gold category
+       header strip over a white logo area, written against the shared
+       classes. Its header-height/font-size/logo-top knobs are the same
+       Edit-tab rows (html[data-theme=playoffs] selectors, shared
+       mplfs-bucket overrides), so editing them there updates this page too. */
+    [data-theme="playoffs"] .wsm-sponsor-bg { display: none; }
+    [data-theme="playoffs"] .sponsor-cat-label {
+      left: 0; top: 0; width: 100%; height: 39px;
+      background: url('/assets/Waiting Screen TVC/playoffs/todays_matches.png') center / 100% 100% no-repeat;
+      font-weight: 800; font-size: 22px; letter-spacing: 0.02em; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] .ws-sponsor-loop {
+      left: 0; right: 0; top: 39px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
+      background: linear-gradient(to bottom, #ffffff, #e9e9ea);
+    }
+    [data-theme="playoffs"] .ws-sponsor-loop img { padding: 6px 12px; box-sizing: border-box; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 338px; height: 120px; }
     /* Playoffs Today's Matches — mirrored from mplfs.html. */
     /* Playoffs Today's Schedule header + Open House bars. Title bar is
        todays_matches.png (571×61, blank) with HTML text; each Open House bar
@@ -800,7 +820,7 @@
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
         <div id="ws-timer-value"><span class="ws-timer-glow">30:30</span><span class="ws-timer-fill">30:30</span></div>
       </div>
-      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
+      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS&nbsp;<span class="ws-cd-in">IN:</span></div>
       <!-- Playoffs-only decorations (display:none under every other theme).
            Text is real HTML; SUPERFAN ticker text is a placeholder for now. -->
       <div id="ws-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
@@ -1125,14 +1145,14 @@
     /* Match Board state → match rows (shared by Waiting Screen TVC and
        Today's Schedule). Returns null when no state is available so callers
        can fall back to their placeholder configs. */
-    function msToMatchRows(state) {
+    function msToMatchRows(state, forceCount) {
       if (!state || !Array.isArray(state.todayMatches) || !state.todayMatches.length) return null;
       const bo  = (state.series || 'BO3').toUpperCase();
       const hId = state.home ? state.home.teamId : null;
       const aId = state.away ? state.away.teamId : null;
       /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
       const isDay2 = (state.day || 1) === 2;
-      return state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
+      return state.todayMatches.slice(0, forceCount || (isDay2 ? 3 : 2)).map((m, i) => {
         /* Once the currently-active match's live score has actually started
            moving, follow that instead of the card's own score1/score2 — but
            an untouched 0-0 live score must never stomp a score already set
@@ -1146,6 +1166,7 @@
         }
         return {
           label: 'MATCH ' + (i + 1),
+          openHouse: m.openHouseTime || '',
           time:  m.time || '',
           bo,
           star:  !!m.star,
@@ -1198,7 +1219,7 @@
         if (isPlayoffs) {
           html += `<div class="wsm-oh"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
             `<span class="wsm-oh-label">MATCH ${i + 1} OPEN HOUSE</span>` +
-            `<span class="wsm-oh-time">${WS_OPEN_HOUSE_PLACEHOLDER_TIME}</span></div>`;
+            `<span class="wsm-oh-time">${m.openHouse || ''}</span></div>`;
         }
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
@@ -1548,7 +1569,10 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES, { currentMatch: ms.match });
+      /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
+         match is ignored here. */
+      const isPoWs = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? 2 : undefined) || WS_MATCHES).slice(0, isPoWs ? 2 : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
@@ -1557,14 +1581,45 @@
          for details. */
       if (countdownLabelEl.dataset.label !== label) {
         countdownLabelEl.dataset.label = label;
-        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br> RESUMES IN:' : 'SHOW<br> STARTS IN:';
+        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br> RESUMES&nbsp;<span class="ws-cd-in">IN:</span>' : 'SHOW<br> STARTS&nbsp;<span class="ws-cd-in">IN:</span>';
       }
       wsTimerState = ms.timer || WS_TIMER_DEFAULT;
+    }
+
+    /* Playoffs SUPERFAN ticker text — comes from the Dynamic tab's
+       "Superfan Ticker" field (Universal panel, dynamic_content.json
+       superfan_text). Empty falls back to the original line. Measured with
+       canvas measureText (not DOM widths: the scene is display:none when
+       this runs): the text is repeated until one copy fills the 503px
+       window, and the scroll duration is set from the copy's width so the
+       speed stays ~70px/s whatever the length. */
+    const WS_SF_DEFAULT = 'COME AND JOIN THE FUN FOR FREE';
+    let _wsSfCtx = null;
+    function applyWsSuperfan(raw) {
+      const text = String(raw || '').trim() || WS_SF_DEFAULT;
+      const track = document.querySelector('#ws-superfan .ws-sf-track');
+      if (!track || track.dataset.text === text) return;
+      track.dataset.text = text;
+      if (!_wsSfCtx) _wsSfCtx = document.createElement('canvas').getContext('2d');
+      _wsSfCtx.font = "800 27px 'General Sans'";
+      const GAP = '\u2003\u2003\u2003\u2003';
+      const unit = _wsSfCtx.measureText(text.toUpperCase() + GAP).width || 1;
+      const copies = Math.max(1, Math.ceil(503 / unit));
+      const content = Array(copies).fill(text).join(GAP);
+      track.querySelectorAll('span').forEach(sp => { sp.textContent = content; });
+      track.style.animationDuration = Math.max(4, (unit * copies + 120) / 70) + 's';
+    }
+    function loadWsSuperfan() {
+      fetch('/api/dynamic-content', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => applyWsSuperfan(d && d.superfan_text))
+        .catch(() => {});
     }
 
     async function showWaitingScreen() {
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
+      loadWsSuperfan();
       await transitionTo('waiting');
       const ms = await msPromise;
       if (activeFeature !== 'waiting') return; /* superseded while awaiting match state */

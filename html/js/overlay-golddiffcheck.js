@@ -139,10 +139,12 @@ function gdcBuildPanel() {
   if (!overlay) return;
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  const isPlayoffs = document.documentElement.getAttribute('data-theme') === 'playoffs';
+  const gdcAssetDir = isAnniv ? 'assets/ingame/anniversary/' : isPlayoffs ? 'assets/ingame/playoffs/' : 'assets/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'gdc-bg';
-  bg.src = isAnniv ? 'assets/ingame/anniversary/golddiffback.png' : 'assets/ingame/golddiffback.png';
+  bg.src = gdcAssetDir + 'golddiffback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -151,7 +153,7 @@ function gdcBuildPanel() {
   smart.id = 'gdc-smart';
   const smartImg = document.createElement('img');
   smartImg.className = 'gdc-smart-img';
-  smartImg.src = isAnniv ? 'assets/ingame/anniversary/golddiffsmart.png' : 'assets/ingame/golddiffsmart.png';
+  smartImg.src = gdcAssetDir + 'golddiffsmart.png';
   smartImg.alt = '';
   const smartSheen = document.createElement('div');
   smartSheen.className = 'gdc-smart-sheen';

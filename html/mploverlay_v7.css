@@ -1084,6 +1084,14 @@
     color: #ffffff;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
   }
+  /* Playoffs — gold box: "MPL PH SEASON 18" / big match title from the Match
+     Board / "MATCH n - GAME n", all black (see sbPollMatchState + sbFitStage). */
+  [data-theme="playoffs"] #sb-matchinfo { gap: 3px; }
+  [data-theme="playoffs"] #sb-mi-label { font-size: 14px; letter-spacing: 0.5px; color: #0a0a0a; }
+  [data-theme="playoffs"] #sb-mi-week {
+    font-size: 38px; color: #0a0a0a; width: 168px; text-align: center; line-height: 0.95;
+  }
+  [data-theme="playoffs"] #sb-mi-match { font-size: 16px; color: #0a0a0a; }
   /* Patch + casters — transparent, coordinates measured directly off
      the guide's .Rectangle_6 layers. */
   #sb-mi-patch {
@@ -1767,13 +1775,23 @@
   /* 10th Anniversary's golddiffsmart.png is narrower (293px vs 396px,
      same 61px height) — re-centered over the same 858px-wide .gdc-bg
      panel: 231+396/2 = 429 (panel center) => 429-293/2 = 282.5. */
-  [data-theme="10th_anniversary"] .gdc-smart {
+  /* Playoffs' golddiffsmart.png is the same 293x61, so it shares this. */
+  [data-theme="10th_anniversary"] .gdc-smart,
+  [data-theme="playoffs"] .gdc-smart {
     left: 282.5px;
     width: 293px;
   }
-  [data-theme="10th_anniversary"] .gdc-smart-img {
+  [data-theme="10th_anniversary"] .gdc-smart-img,
+  [data-theme="playoffs"] .gdc-smart-img {
     width: 293px;
   }
+  /* Playoffs' golddiffsmart.png was rescaled to 293x47 (shorter than the 61px
+     chip the other themes use). Keep its bottom edge where it was (61px, the
+     1px overlap with the panel top at 60) by dropping its top to 14px. The
+     press-bounce scales about the chip's own center and the sheen is sized in
+     % of the chip, so both follow the new 47px height automatically. */
+  [data-theme="playoffs"] .gdc-smart { top: 14px; height: 47px; }
+  [data-theme="playoffs"] .gdc-smart-img { height: 47px; }
   .gdc-smart-sheen {
     position: absolute;
     top: 0; left: -60%;

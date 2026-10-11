@@ -244,19 +244,37 @@
   </div>
 </div>
 
+<!-- Universal: Superfan Ticker (own panel, own Save) -->
+<div class="universal-row">
+  <div class="panel">
+    <div class="panel-header">
+      <span class="panel-badge badge-universal">Universal</span>
+      <button id="sf-save-btn" class="panel-save-btn" onclick="savePanel('sf')">Save</button>
+      <span id="sf-status" class="panel-save-status">—</span>
+      <span class="panel-label-sub">Superfan Ticker — Playoffs Waiting TVC</span>
+    </div>
+    <div class="field">
+      <label class="field-label" for="superfan-text">Superfan Ticker</label>
+      <textarea id="superfan-text" name="superfan_text" rows="2" placeholder="Scrolling text next to MPL PH SUPERFAN CITY (blank = default)…"></textarea>
+    </div>
+  </div>
+</div>
+
 <script>
-  const FIELDS = ['ph_ticker', 'en_ticker', 'ph_headline', 'en_headline', 'match_headline'];
+  const FIELDS = ['ph_ticker', 'en_ticker', 'ph_headline', 'en_headline', 'match_headline', 'superfan_text'];
   const ID_MAP  = {
     ph_ticker:      'ph-ticker',
     en_ticker:      'en-ticker',
     ph_headline:    'ph-headline',
     en_headline:    'en-headline',
     match_headline: 'match-headline',
+    superfan_text:  'superfan-text',
   };
   const PANELS = {
     ph:  { fields: ['ph_ticker', 'ph_headline'], statusId: 'ph-status',  btnId: 'ph-save-btn' },
     en:  { fields: ['en_ticker', 'en_headline'], statusId: 'en-status',  btnId: 'en-save-btn' },
     uni: { fields: ['match_headline'],           statusId: 'uni-status', btnId: 'uni-save-btn' },
+    sf:  { fields: ['superfan_text'],            statusId: 'sf-status',  btnId: 'sf-save-btn'  },
   };
 
   // Last-known-saved value per field. A panel's own save only ever overwrites

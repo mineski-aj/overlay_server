@@ -199,7 +199,10 @@
     .match-type-sel:hover { color: #888; }
     .match-type-sel.on { color: #e6b422; border-color: #8a6d1a; }
     .match-num-lbl { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: #555; text-transform: uppercase; }
-    .match-time-inp { width: 76px; font-size: 12px; text-align: center; }
+    .match-card-hdr .match-time-inp { width: 76px; flex: 0 0 auto; font-size: 12px; text-align: center; }
+    .match-oh-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    .match-oh-row .match-oh-inp { flex: 1 1 auto; font-size: 12px; }
+    .match-card-hdr .match-stage-inp { flex: 1 1 140px; min-width: 0; font-size: 12px; }
     .match-body { display: flex; align-items: center; gap: 6px; }
     .match-team-sel { flex: 1; font-size: 12px; min-width: 0; }
     .match-score-ctrl { display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
@@ -1198,6 +1201,15 @@
     { value: 'clash',         label: 'Clash of Titans' },
     { value: 'enduring',      label: 'Enduring Legacy' },
   ];
+  /* Playoffs theme: schedules always use exactly the first 2 matches (Today's
+     3rd match is ignored; Tomorrow's uses cards 1+2, or just card 1 when its
+     label is GRAND FINALS), so the greyed-out "not used today" cards follow
+     that instead of the regular-season 3-match-on-Day-2 rule. */
+  var poTheme = false;
+  fetch('/api/theme', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (t) {
+    poTheme = !!t && t.theme === 'playoffs';
+    if (poTheme) { renderTodayMatches(); renderTomorrowMatches(); }
+  }).catch(function () {});
   function matchTypeOf(m) { return m.matchType || (m.star ? 'clash' : 'regular'); }
 
   function getMatches() {
@@ -1224,7 +1236,7 @@
     var matches = getMatches();
 
     matches.forEach(function (m, i) {
-      var disabled = (i === 2 && !isDay2);
+      var disabled = poTheme ? (i === 2) : (i === 2 && !isDay2);
       var mt = matchTypeOf(m);
       var card = document.createElement('div');
       card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');
@@ -1246,6 +1258,21 @@
       }; })(i, timeInp));
       timeInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') timeInp.blur(); });
       hdr.appendChild(timeInp);
+
+      /* stage label (PLAY-INS, UPPER BRACKET FINALS...) — shown big in the
+         middle of the Playoffs theme's Today's Schedule row. "|" forces a
+         line break (e.g. UPPER|BRACKET FINALS). */
+      var stageInp = document.createElement('input');
+      stageInp.type = 'text'; stageInp.className = 'match-stage-inp';
+      stageInp.placeholder = 'Match label (e.g. PLAY-INS)';
+      stageInp.value = m.stageLabel || '';
+      stageInp.addEventListener('blur', (function (idx, inp) { return function () {
+        var tm = getMatches().slice();
+        tm[idx] = Object.assign({}, tm[idx], { stageLabel: inp.value });
+        saveMatches(tm);
+      }; })(i, stageInp));
+      stageInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') stageInp.blur(); });
+      hdr.appendChild(stageInp);
 
       /* match type selector — picks the Waiting Screen TVC match box art */
       var typeSel = document.createElement('select');
@@ -1324,6 +1351,25 @@
       body.appendChild(t1Wrap); body.appendChild(s1Ctrl); body.appendChild(vsEl);
       body.appendChild(s2Ctrl); body.appendChild(t2Wrap);
       card.appendChild(body);
+
+      /* open house time — shown on the Playoffs Waiting TVC's "MATCH n OPEN
+         HOUSE" bar above this match */
+      var ohRow = document.createElement('div');
+      ohRow.className = 'match-oh-row';
+      var ohLbl = document.createElement('span');
+      ohLbl.className = 'match-num-lbl'; ohLbl.textContent = 'OPEN HOUSE';
+      var ohInp = document.createElement('input');
+      ohInp.type = 'text'; ohInp.className = 'match-oh-inp';
+      ohInp.placeholder = 'Open house time (e.g. 12:30 PHT.)';
+      ohInp.value = m.openHouseTime || '';
+      ohInp.addEventListener('blur', function () {
+        var tm = getMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { openHouseTime: ohInp.value });
+        saveMatches(tm);
+      });
+      ohInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ohInp.blur(); });
+      ohRow.appendChild(ohLbl); ohRow.appendChild(ohInp);
+      card.appendChild(ohRow);
       container.appendChild(card);
     });
 
@@ -1436,7 +1482,7 @@
     var matches = getTomorrowMatches();
 
     matches.forEach(function (m, i) {
-      var disabled = (i === 0 && !isThreeMatch);
+      var disabled = poTheme ? (i === 2) : (i === 0 && !isThreeMatch);
       var mt = matchTypeOf(m);
       var card = document.createElement('div');
       card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');
@@ -1458,6 +1504,22 @@
       }; })(i, timeInp));
       timeInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') timeInp.blur(); });
       hdr.appendChild(timeInp);
+
+      /* stage label (PLAY-INS, GRAND FINALS...) — same as Today's; the
+         Playoffs Tomorrow's Schedule shows it large in the middle, and a
+         first match labelled GRAND FINALS makes it a 1-match day. "|"
+         forces a line break. */
+      var stageInp = document.createElement('input');
+      stageInp.type = 'text'; stageInp.className = 'match-stage-inp';
+      stageInp.placeholder = 'Match label (e.g. PLAY-INS)';
+      stageInp.value = m.stageLabel || '';
+      stageInp.addEventListener('blur', (function (idx, inp) { return function () {
+        var tm = getTomorrowMatches().slice();
+        tm[idx] = Object.assign({}, tm[idx], { stageLabel: inp.value });
+        saveTomorrowMatches(tm);
+      }; })(i, stageInp));
+      stageInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') stageInp.blur(); });
+      hdr.appendChild(stageInp);
 
       /* match type selector — same star/rivalry options as Today's
          Matches; drives StarMatch_Match_Box.png in Tomorrow's Schedule */
@@ -1509,6 +1571,24 @@
 
       body.appendChild(t1Wrap); body.appendChild(vsEl); body.appendChild(t2Wrap);
       card.appendChild(body);
+
+      /* open house time — same field as Today's matches */
+      var ohRow = document.createElement('div');
+      ohRow.className = 'match-oh-row';
+      var ohLbl = document.createElement('span');
+      ohLbl.className = 'match-num-lbl'; ohLbl.textContent = 'OPEN HOUSE';
+      var ohInp = document.createElement('input');
+      ohInp.type = 'text'; ohInp.className = 'match-oh-inp';
+      ohInp.placeholder = 'Open house time (e.g. 12:30 PHT.)';
+      ohInp.value = m.openHouseTime || '';
+      ohInp.addEventListener('blur', function () {
+        var tm = getTomorrowMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { openHouseTime: ohInp.value });
+        saveTomorrowMatches(tm);
+      });
+      ohInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ohInp.blur(); });
+      ohRow.appendChild(ohLbl); ohRow.appendChild(ohInp);
+      card.appendChild(ohRow);
       container.appendChild(card);
     });
 

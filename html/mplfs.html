@@ -1216,6 +1216,48 @@
     [data-theme="10th_anniversary"] #cp2-sponsor-cat,
     [data-theme="10th_anniversary"] #mdb-sponsor-cat,
     [data-theme="10th_anniversary"] #p2h-sponsor-cat { background-color: transparent; }
+
+    /* ═══ PLAYOFFS UNIVERSAL SPONSOR BOX ═══
+       One layout for EVERY sponsor box in mplfs.html under the playoffs
+       theme (Waiting TVC #ws-sponsor, Waiting Lobby #wl-sponsor, Today's/
+       Tomorrow's Schedule, Post H2H, Consolidated Post 2 / Middle Board):
+       gold "category" header strip (the live sponsor category, e.g.
+       OFFICIAL SPONSOR) over a white logo area. Written against the SHARED
+       classes (.sponsor-cat-label / .wl-sponsor-loop / .ws-sponsor-loop /
+       the two bg classes), never a per-scene id, so a new scene's sponsor
+       box inherits it automatically. Per-scene position/size still lives in
+       each scene's own Edit config + mplfs::playoffs bucket; the header
+       strip height/font size and logo-area top are the universal knobs
+       (dashboard Edit tab, group "Playoffs Sponsor", see
+       addPlayoffsSponsorEdit in dashboard.html) and apply to all boxes at
+       once. The Edit-tab selectors for them are html[data-theme=playoffs]-
+       scoped, so they can never touch another theme. */
+    [data-theme="playoffs"] .wl-sponsor-bg,
+    [data-theme="playoffs"] .wsm-sponsor-bg { display: none; }
+    [data-theme="playoffs"] .sponsor-cat-label {
+      left: 0; top: 0; width: 100%; height: 39px;
+      background: url('/assets/Waiting Screen TVC/playoffs/todays_matches.png') center / 100% 100% no-repeat;
+      font-weight: 800; font-size: 22px; letter-spacing: 0.02em; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] .wl-sponsor-loop,
+    [data-theme="playoffs"] .ws-sponsor-loop {
+      left: 0; right: 0; top: 39px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
+      background: linear-gradient(to bottom, #ffffff, #e9e9ea);
+    }
+    [data-theme="playoffs"] .wl-sponsor-loop img,
+    [data-theme="playoffs"] .ws-sponsor-loop img { padding: 6px 12px; box-sizing: border-box; }
+    /* Default box size for the scenes reworked for playoffs so far */
+    [data-theme="playoffs"] #wl-sponsor,
+    [data-theme="playoffs"] #ts-sponsor,
+    [data-theme="playoffs"] #br-sponsor,
+    [data-theme="playoffs"] #tw-sponsor,
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 338px; height: 120px; }
+    /* Bracket: same spot as Waiting TVC/Lobby's sponsor box. Lives on
+       #bracket-page itself (not inside the tilting #bracket-container) so
+       the 3D pose never moves it. Playoffs only. */
+    #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; }
+    [data-theme="playoffs"] #br-sponsor { display: block; }
+    [data-theme="playoffs"] #ts-sponsor { display: block; left: 1492px; top: 78px; }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -2092,7 +2134,7 @@
        (same stacked layout as Regular; label text swapped to THE PLAYOFFS
        by applyMvBoxBgTheme). playoffs_mvpcontainer.png backs the
        SPELL/EMBLEM/EQUIPMENTS row; position/size is a judgment call from
-       playoffs_mvpscenereference.png (adjustable from the Edit tab, saved
+       playoffs_mvpscenereference.png, then repositioned to the user's 1002,697 (adjustable from the Edit tab, saved
        to mplfs::playoffs). The red/blue name backer is swapped in mvApply. */
     [data-theme="playoffs"] #mv-matchbox {
       background: linear-gradient(135deg, #f6d85f 0%, #e6bd3c 100%);
@@ -2100,10 +2142,28 @@
     }
     [data-theme="playoffs"] #mv-matchbox-season,
     [data-theme="playoffs"] #mv-matchbox-game { color: #0a0a0a; opacity: 1; }
+    /* Playoffs — lower-left graphic drawn over the hero art (same z tier as
+       #mv-hero-img, later in the DOM), still behind the player photo. */
+    #mv-po-herofronter { display: none; }
+    [data-theme="playoffs"] #mv-po-herofronter {
+      display: block; position: absolute; left: 0; top: 796px; width: 534px; height: 284px;
+      z-index: 11; pointer-events: none;
+    }
+    /* Playoffs — player photo is solid down to the vertical middle of the
+       long stat container (#mv-backer: top 810, height 164 -> y=892), then
+       feathers out to transparent at the bottom of the canvas (y=1080) —
+       the jersey stays visible below the plate, fading away. Mask is in the
+       photo box's own coordinates (#mv-photo top is 30 in the playoffs
+       bucket, so y=892 is 862px down and y=1080 is 1050px down); re-tune
+       these two numbers if the photo box is moved in the Edit tab. */
+    [data-theme="playoffs"] #mv-photo {
+      -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 862px, transparent 1050px);
+              mask-image: linear-gradient(to bottom, #000 0, #000 862px, transparent 1050px);
+    }
     [data-theme="playoffs"] #mv-stats-back {
       display: block;
       content: url('/assets/mvp/playoffs/playoffs_mvpcontainer.png');
-      position: absolute; left: 990px; top: 656px; width: 837px; height: 115px;
+      position: absolute; left: 1002px; top: 697px; width: 837px; height: 115px;
       z-index: 13;
     }
 
@@ -2601,13 +2661,14 @@
        luPlayGroupPhotoIntro the moment the group photo buttons out) — keeps
        Phase 1 to just the photo, no title/team-bar bleeding through any
        transparent part of the photo underneath it. */
-    .lu-title, .lu-teambar-logo, .lu-teambar-season, .lu-teambar-match, .lu-annivbanner {
+    .lu-title, .lu-teambar-logo, .lu-teambar-season, .lu-teambar-match, .lu-annivbanner,
+    .lu-po-feather, .lu-po-logobox {
       opacity: 0;
       transition: opacity 400ms ease;
     }
     .lu-phase2 .lu-title, .lu-phase2 .lu-teambar-logo,
     .lu-phase2 .lu-teambar-season, .lu-phase2 .lu-teambar-match,
-    .lu-phase2 .lu-annivbanner {
+    .lu-phase2 .lu-annivbanner, .lu-phase2 .lu-po-feather, .lu-phase2 .lu-po-logobox {
       opacity: 1;
     }
 
@@ -2906,6 +2967,61 @@
     [data-theme="10th_anniversary"] .lu-teambar-season { left: 341px; }
     [data-theme="10th_anniversary"] .lu-teambar-match  { left: 1104px; font-weight: 600; }
     [data-theme="10th_anniversary"] .lu-season-semibold { font-weight: 600; }
+
+    /* ── Playoffs — completely different Team Line-up layout (Blue AND Red;
+       see assets/lineup/playoffs/guide_playoffslineup.png). All scoped to
+       the playoffs theme, shared classes so both sides match. Notes:
+       - The photos' CSS bottom-fade mask is OFF; playoffs_bottomfeather.png
+         (.lu-po-feather, drawn over the photos, under the name tags) does
+         the feathering instead.
+       - The team-name wordmark background and the season/match text are not
+         part of this layout (hidden).
+       - Name tags are 261x47 (playoffs_bluebox/redbox.png). They REST on top
+         of their (hidden) secondary-role plate and the usual reveal shifts
+         them up by their own height, so each tag's rest top is its final
+         top + 47. The plate (216x29, white, CSS-drawn — no asset for it) is
+         inset 22px from the tag's left (see luSyncSecRolePosition).
+       - Per-element positions live in the mplfs::playoffs overrides bucket
+         (Regular's saved ones would otherwise win as !important fallbacks). */
+    .lu-po-feather, .lu-po-logobox { display: none; }
+    [data-theme="playoffs"] .lu-bg-photo,
+    [data-theme="playoffs"] .lu-teambar-season,
+    [data-theme="playoffs"] .lu-teambar-match { display: none; }
+    [data-theme="playoffs"] .lu-photo { -webkit-mask-image: none; mask-image: none; }
+    [data-theme="playoffs"] .lu-po-feather {
+      display: block; position: absolute; left: 0; top: 789px; width: 1920px; height: 291px; z-index: 8;
+      pointer-events: none;
+    }
+    [data-theme="playoffs"] .lu-po-logobox {
+      display: block; position: absolute; left: 844px; top: 843px; width: 237px; height: 237px; z-index: 10;
+    }
+    [data-theme="playoffs"] .lu-title {
+      left: 0; top: 0; width: 1920px; height: 1080px; display: block; z-index: 10;
+    }
+    [data-theme="playoffs"] .lu-title-logo {
+      position: absolute; left: 643px; top: 37px; width: 262px; height: 76px;
+      content: url('/assets/lineup/playoffs/playoffs_smartlineup.png');
+    }
+    [data-theme="playoffs"] .lu-title-text {
+      position: absolute; left: 933px; top: 41px; width: 420px; height: 66px;
+      font-size: 67px; line-height: 66px; text-align: left; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] .lu-nametag { width: 261px; height: 47px; }
+    [data-theme="playoffs"] #team-lineup-blue-page .lu-nametag-bg { content: url('/assets/lineup/playoffs/playoffs_bluebox.png'); }
+    [data-theme="playoffs"] #team-lineup-red-page  .lu-nametag-bg { content: url('/assets/lineup/playoffs/playoffs_redbox.png'); }
+    [data-theme="playoffs"] .lu-nametag-role { left: 20px; top: 7px; width: 33px; height: 33px; }
+    [data-theme="playoffs"] .lu-nametag-name { left: 77px; top: 0; width: 180px; height: 47px; font-size: 23px; }
+    [data-theme="playoffs"] .lu-secrole {
+      width: 216px; height: 29px;
+      background: linear-gradient(to bottom, #ffffff, #e4e4e6);
+    }
+    [data-theme="playoffs"] .lu-secrole-bg { display: none; }
+    [data-theme="playoffs"] .lu-secrole-icon { left: 9px; top: 3px; width: 23px; height: 23px; filter: brightness(0); }
+    [data-theme="playoffs"] .lu-secrole-label {
+      left: 32px; top: 0; width: 176px; height: 29px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px;
+      color: #0a0a0a; line-height: normal; letter-spacing: 0.02em;
+    }
 
     /* ── TODAY'S SCHEDULE PAGE ── */
     #today-schedule-page {
@@ -3426,6 +3542,129 @@
       display: none; /* hidden for now — undecided whether Today's Schedule needs a sponsor loop */
     }
 
+    /* ── Playoffs — completely different Today's Schedule layout (see
+       assets/Today's Schedule/playoffs/guide_playoffs todayschedule.png).
+       Always exactly 2 match rows (see buildTsMatches). All scoped to the
+       playoffs theme; positions are canvas-absolute from the guide. The
+       header reuses Waiting TVC's S18_Header_playoffs.png minus its baked
+       "MPL PHILIPPINES" title (clip-path), with real "TODAY'S MATCHES"
+       text instead. Geometry for #ts-header/#ts-matches lives in the
+       mplfs::playoffs overrides bucket (Regular's saved ones would
+       otherwise win as !important fallbacks). */
+    [data-theme="playoffs"] #ts-header { text-align: left; }
+    [data-theme="playoffs"] #ts-title-bg {
+      display: block; position: absolute; left: 0; top: 0; width: 924px; height: 158px;
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+      clip-path: polygon(0 0, 196px 0, 196px 120px, 924px 120px, 924px 158px, 0 158px);
+    }
+    [data-theme="playoffs"] #ts-title {
+      position: absolute; left: 195px; top: -6px; width: 830px; height: 126px; margin: 0;
+      font-size: 128px; line-height: 126px; letter-spacing: -0.01em; text-align: left;
+      color: #0a0a0a;
+      text-shadow: 1px 0 0 #c9a227, -1px 0 0 #c9a227, 0 1px 0 #c9a227, 0 -1px 0 #c9a227, 2px 2px 3px rgba(0,0,0,0.35);
+    }
+    [data-theme="playoffs"] #ts-subline { display: block; margin: 0; }
+    [data-theme="playoffs"] #ts-season {
+      position: absolute; left: 210px; top: 123px; width: 400px; height: 35px;
+      display: flex; align-items: center;
+      font-size: 34px; font-weight: 800; letter-spacing: 0; color: #fff;
+    }
+    [data-theme="playoffs"] #ts-week {
+      position: absolute; left: 618px; top: 123px; width: 117px; height: 35px;
+      background: none; color: #0a0a0a; font-size: 34px; font-weight: 800;
+    }
+    [data-theme="playoffs"] #ts-matches { gap: 22px; }
+    /* Highlight "grow": Regular's 1.15 reduced by 30% (15% -> 10.5%) */
+    [data-theme="playoffs"] #ts-matches .tsm-row.tsm-highlight { transform: scale(1.105) !important; }
+    /* Match rows: 1661x242, team photos drawn OVER playoffs_schedcontainer.png
+       (its side areas are opaque dark, not transparent), highlight strips + logo plates on top. */
+    /* will-change gives each row its own compositor layer, rastered whole —
+       otherwise the big rows are split into 256px raster tiles (row 2 spans
+       y=653..895, crossing the 768 tile edge) and the lower tile repaints
+       late while the clip-path reveal runs, which flickers the bottom half. */
+    [data-theme="playoffs"] #ts-matches .tsm-row { width: 1661px; height: 242px; will-change: transform, opacity, clip-path; backface-visibility: hidden; }
+    .tsm-po-photo { position: absolute; top: 0; width: 524px; height: 242px; object-fit: cover; }
+    .tsm-po-photo-l { left: 0; }
+    .tsm-po-photo-r { left: 1137px; }
+    [data-theme="playoffs"] #ts-matches .tsm-row > img.tsm-bg { width: 1661px; height: 242px; }
+    /* Animated gold center (612x242 alpha webm, includes the white label tab),
+       centered in the 1661px row ((1661-612)/2 = 524.5), over the photos'
+       neighbors and under the highlight strips/plates/text. Played only
+       while its scene is on screen (see tsPlayRowVideos). */
+    .tsm-po-gold { position: absolute; left: 524.5px; top: 0; width: 612px; height: 242px; display: block; pointer-events: none; }
+    .tsm-po-hl { position: absolute; top: 0; width: 15px; height: 242px; }
+    .tsm-po-hl-l { left: 0; }
+    .tsm-po-hl-r { left: 1646px; }
+    .tsm-po-plate { position: absolute; top: 68px; width: 88px; height: 132px; }
+    .tsm-po-plate-l { left: 480px; }
+    .tsm-po-plate-r { left: 1093px; }
+    .tsm-po-plate > img.tsm-po-plate-bg { position: absolute; left: 0; top: 0; width: 88px; height: 132px; }
+    .tsm-po-plate .tsm-po-logo { position: absolute; left: 6px; top: 6px; width: 76px; height: 76px; object-fit: contain; }
+    .tsm-po-plate .tsm-po-tri {
+      position: absolute; left: 0; top: 88px; width: 88px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 34px; color: #fff; text-transform: uppercase; white-space: nowrap;
+    }
+    [data-theme="playoffs"] #ts-matches .tsm-label,
+    [data-theme="playoffs"] #ts-matches .tsm-time,
+    [data-theme="playoffs"] #ts-matches .tsm-bo {
+      top: 0; height: 40px; width: 200px; left: auto; right: auto; justify-content: center;
+      font-size: 24px; font-weight: 800; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] #ts-matches .tsm-label { left: 595px; }
+    [data-theme="playoffs"] #ts-matches .tsm-time  { left: 761px; }
+    [data-theme="playoffs"] #ts-matches .tsm-bo    { left: 891px; width: 200px; }
+    .tsm-po-stage {
+      position: absolute; left: 530px; top: 46px; width: 600px; height: 190px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: 'Anton', sans-serif; color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+      text-shadow: 0 2px 3px rgba(0,0,0,0.25);
+    }
+
+
+    /* ── Playoffs Tomorrow's Schedule — clone of the playoffs Today's
+       Schedule above (same header/rows/sponsor, "#ts-" -> "#tw-"), shares
+       the global .tsm-po-* row classes. ALWAYS 2 rows, or 1 when the first
+       match's label is GRAND FINALS (see msToTomorrowMatchRows). The title
+       reads TOMORROW'S MATCHES (not the sign-off line other themes use) and
+       is scaleX-fitted by applyTwTitle. */
+    [data-theme="playoffs"] #tw-header { text-align: left; }
+    [data-theme="playoffs"] #tw-title-bg {
+      display: block; position: absolute; left: 0; top: 0; width: 924px; height: 158px;
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+      clip-path: polygon(0 0, 196px 0, 196px 120px, 924px 120px, 924px 158px, 0 158px);
+    }
+    [data-theme="playoffs"] #tw-title {
+      position: absolute; left: 195px; top: -6px; width: 1267px; height: 126px; margin: 0;
+      font-size: 128px; line-height: 126px; letter-spacing: -0.01em; text-align: left;
+      color: #0a0a0a;
+      text-shadow: 1px 0 0 #c9a227, -1px 0 0 #c9a227, 0 1px 0 #c9a227, 0 -1px 0 #c9a227, 2px 2px 3px rgba(0,0,0,0.35);
+    }
+    [data-theme="playoffs"] #tw-subline { display: block; margin: 0; }
+    [data-theme="playoffs"] #tw-season {
+      position: absolute; left: 210px; top: 123px; width: 400px; height: 35px;
+      display: flex; align-items: center;
+      font-size: 34px; font-weight: 800; letter-spacing: 0; color: #fff;
+    }
+    [data-theme="playoffs"] #tw-week {
+      position: absolute; left: 618px; top: 123px; width: 117px; height: 35px;
+      background: none; color: #0a0a0a; font-size: 34px; font-weight: 800;
+    }
+    [data-theme="playoffs"] #tw-matches { gap: 22px; }
+    [data-theme="playoffs"] #tw-matches .tsm-row { width: 1661px; height: 242px; will-change: transform, opacity, clip-path; backface-visibility: hidden; }
+    [data-theme="playoffs"] #tw-matches .tsm-row > img.tsm-bg { width: 1661px; height: 242px; }
+    [data-theme="playoffs"] #tw-matches .tsm-label,
+    [data-theme="playoffs"] #tw-matches .tsm-time,
+    [data-theme="playoffs"] #tw-matches .tsm-bo {
+      top: 0; height: 40px; width: 200px; left: auto; right: auto; justify-content: center;
+      font-size: 24px; font-weight: 800; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] #tw-matches .tsm-label { left: 595px; }
+    [data-theme="playoffs"] #tw-matches .tsm-time  { left: 761px; }
+    [data-theme="playoffs"] #tw-matches .tsm-bo    { left: 891px; width: 200px; }
+    [data-theme="playoffs"] #tw-title { transform-origin: left center; white-space: nowrap; }
+    [data-theme="playoffs"] #tw-sponsor { left: 1492px; top: 78px; }
+
     /* ── TOMORROW'S SCHEDULE PAGE (same layout as Today's Schedule) ── */
     #tomorrow-schedule-page {
       position: absolute;
@@ -3877,6 +4116,12 @@
     }
 
     /* Slide-in — applied per element with a staggered delay from JS */
+    /* Playoffs Today's Schedule — rows are centered/symmetric, so instead of
+       sliding in from the left they open outward from the middle. */
+    @keyframes tsm-po-in {
+      from { opacity: 0; clip-path: inset(0 50% 0 50%); }
+      to   { opacity: 1; clip-path: inset(0 0 0 0); }
+    }
     @keyframes wsm-slide-in {
       from { opacity: 0; transform: translateX(-660px); }
       to   { opacity: 1; transform: translateX(0); }
@@ -4038,7 +4283,7 @@
     }
     .ws-sf-label { position: absolute; left: 17px; top: 0; width: 360px; height: 51px; display: flex; align-items: center; color: #fff; }
     .ws-sf-window { position: absolute; left: 396px; top: 0; width: 503px; height: 51px; overflow: hidden; }
-    .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 18s linear infinite; }
+    .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 9s linear infinite; }
     .ws-sf-window span { color: #0a0a0a; padding-right: 120px; flex: none; }
     @keyframes ws-sf-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
@@ -4067,6 +4312,8 @@
       font-weight: 800; font-size: 33px; white-space: nowrap;
     }
     [data-theme="playoffs"] #ws-timer-countdown-label br { display: none; }
+    /* Playoffs: "IN:" is General Sans Medium, the rest of the label stays 800 */
+    [data-theme="playoffs"] #ws-timer-countdown-label .ws-cd-in { font-weight: 500; }
     [data-theme="playoffs"] #ws-timer-value { left: 0px; top: 0px; width: 571px; height: 160px; font-size: 152px; text-align: center; }
     [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1480px; top: -202px; }
     /* Playoffs Today's Matches — MatchBox_REGULAR MATCH.png (playoffs/) is
@@ -6177,7 +6424,7 @@
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
         <div id="ws-timer-value"><span class="wl-timer-glow">30:30</span><span class="wl-timer-fill">30:30</span></div>
       </div>
-      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
+      <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS&nbsp;<span class="ws-cd-in">IN:</span></div>
       <!-- Playoffs-only decorations (display:none under every other theme).
            Text is real HTML; SUPERFAN ticker text is a placeholder for now. -->
       <div id="ws-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
@@ -6397,6 +6644,8 @@
         <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <img class="lu-annivbanner" src="/assets/lineup/anniversary/annivbanner.png" alt="">
+      <img class="lu-po-feather" src="/assets/lineup/playoffs/playoffs_bottomfeather.png" alt="">
+      <img class="lu-po-logobox" src="/assets/lineup/playoffs/playoffs_lineuplogobox.png" alt="">
       <img class="lu-teambar-logo" id="lub-teambar-logo" src="" alt="" onerror="this.style.display='none'">
       <div class="lu-teambar-season">MPL PH S18&nbsp;<span class="lu-season-semibold">REGULAR SEASON</span></div>
       <div class="lu-teambar-match" id="lub-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
@@ -6484,6 +6733,8 @@
         <div class="lu-secrole-label">SECONDARY ROLE</div>
       </div>
       <img class="lu-annivbanner" src="/assets/lineup/anniversary/annivbanner.png" alt="">
+      <img class="lu-po-feather" src="/assets/lineup/playoffs/playoffs_bottomfeather.png" alt="">
+      <img class="lu-po-logobox" src="/assets/lineup/playoffs/playoffs_lineuplogobox.png" alt="">
       <img class="lu-teambar-logo" id="lur-teambar-logo" src="" alt="" onerror="this.style.display='none'">
       <div class="lu-teambar-season">MPL PH S18&nbsp;<span class="lu-season-semibold">REGULAR SEASON</span></div>
       <div class="lu-teambar-match" id="lur-teambar-match">WEEK 1 - DAY 1 - MATCH 1</div>
@@ -6729,6 +6980,7 @@
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
       <img id="mv-hero-img" src="" alt="" onerror="this.style.display='none'">
+      <img id="mv-po-herofronter" src="/assets/mvp/playoffs/playoffs_mvpherofronter.png" alt="">
       <img id="mv-photo" src="" alt="" onerror="this.style.display='none'">
 
       <div id="mv-ofthegame">OF THE GAME</div>
@@ -6783,6 +7035,7 @@
         <img id="br-grandfinals" src="/assets/bracket/grandfinals_brack.png" alt="">
         <!-- 8 matches x 2 slots x (cell, logo, name, score) are built by brBuild() — each its own id (#br-m1a-cell ...), absolutely positioned on this 1920x1080 plane -->
       </div>
+      <div id="br-sponsor"></div>
     </div>
     <div id="item-timeline-page"></div>
     <div id="post-emblems-page"></div>
@@ -8260,6 +8513,8 @@
         waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         lobby:   '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         bracket: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        schedule: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        tomorrow: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
       },
       '10th_anniversary': {
         waiting:    '/assets/phase2_annivloopsun.webm',
@@ -8604,14 +8859,14 @@
     /* Match Board state → match rows (shared by Waiting Screen TVC and
        Today's Schedule). Returns null when no state is available so callers
        can fall back to their placeholder configs. */
-    function msToMatchRows(state) {
+    function msToMatchRows(state, forceCount) {
       if (!state || !Array.isArray(state.todayMatches) || !state.todayMatches.length) return null;
       const bo  = (state.series || 'BO3').toUpperCase();
       const hId = state.home ? state.home.teamId : null;
       const aId = state.away ? state.away.teamId : null;
       /* Days 1 & 3 run only two matches — the Match 3 row is not shown */
       const isDay2 = (state.day || 1) === 2;
-      return state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
+      return state.todayMatches.slice(0, forceCount || (isDay2 ? 3 : 2)).map((m, i) => {
         /* Once the currently-active match's live score has actually started
            moving, follow that instead of the card's own score1/score2 — but
            an untouched 0-0 live score must never stomp a score already set
@@ -8625,6 +8880,8 @@
         }
         return {
           label: 'MATCH ' + (i + 1),
+          stage: m.stageLabel || '',
+          openHouse: m.openHouseTime || '',
           time:  m.time || '',
           bo,
           star:  !!m.star,
@@ -8662,7 +8919,7 @@
         if (isPlayoffs) {
           html += `<div class="wsm-oh"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
             `<span class="wsm-oh-label">MATCH ${i + 1} OPEN HOUSE</span>` +
-            `<span class="wsm-oh-time">${WS_OPEN_HOUSE_PLACEHOLDER_TIME}</span></div>`;
+            `<span class="wsm-oh-time">${m.openHouse || ''}</span></div>`;
         }
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
@@ -9064,9 +9321,82 @@
         `<div class="tsm-slot tsm-tri tsm-tri-r${m.matchType === 'enduring' ? ' tsm-tri-gold' : ''}">${m.right.tri}</div></div>`;
     }
 
+    /* Playoffs Today's Schedule row — see the playoffs CSS block above. The
+       middle label is fitted with canvas measureText (not scrollWidth: the
+       page is still display:none when this runs — see CLAUDE.md). A "|" in
+       the label forces a line break; otherwise one line at up to 128px,
+       else greedy-wrapped to two lines at 96px (shrinking if still too
+       wide). */
+    let _tsMeasureCtx = null;
+    function tsTextWidth(text, size) {
+      if (!_tsMeasureCtx) _tsMeasureCtx = document.createElement('canvas').getContext('2d');
+      _tsMeasureCtx.font = size + "px 'Anton'";
+      return _tsMeasureCtx.measureText(text).width;
+    }
+    function tsFitStage(raw) {
+      /* W = usable width between the two logo plates (699..1224 on the
+         row = 525px) minus breathing room. */
+      const W = 500, text = String(raw || '').trim().toUpperCase();
+      if (!text) return { lines: [], size: 128 };
+      const fits = (lines, size) => lines.every(l => tsTextWidth(l, size) <= W);
+      if (text.indexOf('|') >= 0) {
+        const lines = text.split('|').map(l => l.trim()).filter(Boolean);
+        for (let size = lines.length > 1 ? 96 : 128; size >= 40; size -= 2) if (fits(lines, size)) return { lines, size };
+        return { lines, size: 40 };
+      }
+      const wrap = (size) => {
+        const out = [];
+        let cur = '';
+        text.split(/\s+/).forEach(w => {
+          const next = cur ? cur + ' ' + w : w;
+          if (cur && tsTextWidth(next, size) > W) { out.push(cur); cur = w; } else cur = next;
+        });
+        if (cur) out.push(cur);
+        return out;
+      };
+      /* Largest size that fits: one line at >=100px, else at most two lines. */
+      for (let size = 128; size >= 40; size -= 2) {
+        const lines = wrap(size);
+        if (fits(lines, size) && lines.length <= (size >= 100 ? 1 : 2)) return { lines, size };
+      }
+      return { lines: wrap(40), size: 40 };
+    }
+    function tsmRowPoHtml(m) {
+      const ph = '/assets/Today\'s Schedule/playoffs/';
+      const fit = tsFitStage(m.stage);
+      const logo = (side) => {
+        const o = m[side === 'l' ? 'left' : 'right'];
+        return `<img class="tsm-po-logo" src="${o.logo || (WS_ASSET + 'Null_Icon.png')}" onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt="">`;
+      };
+      return `<div class="tsm-row">` +
+        `<img class="tsm-bg" src="${ph}playoffs_schedcontainer.png" alt="">` +
+        `<img class="tsm-po-photo tsm-po-photo-l" src="${ph}playoffs_blueteamplaceholder.png" alt="">` +
+        `<img class="tsm-po-photo tsm-po-photo-r" src="${ph}playoffs_redteamplaceholder.png" alt="">` +
+        `<video class="tsm-po-gold" muted loop playsinline preload="auto" src="${ph}GOLD BG W HOLDER_612x242.webm"></video>` +
+        `<img class="tsm-po-hl tsm-po-hl-l" src="${ph}playoffs_blueschedhighlight.png" alt="">` +
+        `<img class="tsm-po-hl tsm-po-hl-r" src="${ph}playoffs_redschedhighlight.png" alt="">` +
+        `<div class="tsm-po-plate tsm-po-plate-l"><img class="tsm-po-plate-bg" src="${ph}playoffs_schedlogoblue.png" alt="">${logo('l')}<div class="tsm-po-tri">${m.left.tri}</div></div>` +
+        `<div class="tsm-po-plate tsm-po-plate-r"><img class="tsm-po-plate-bg" src="${ph}playoffs_schedlogored.png" alt="">${logo('r')}<div class="tsm-po-tri">${m.right.tri}</div></div>` +
+        `<span class="tsm-label">${m.label}</span><span class="tsm-time">${m.time}</span><span class="tsm-bo">${m.bo}</span>` +
+        `<div class="tsm-po-stage" style="font-size:${fit.size}px; line-height:${fit.lines.length > 1 ? 0.92 : 1}">${fit.lines.join('<br>')}</div>` +
+        `</div>`;
+    }
+
+    /* The playoffs rows each hold a looping 60fps VP9 webm — decode only
+       while their scene is actually showing (see CLAUDE.md's video note):
+       play on show / after a live rebuild while on, pause on hide. */
+    function tsPlayRowVideos(rootId, on) {
+      document.querySelectorAll('#' + rootId + ' .tsm-po-gold').forEach(v => {
+        if (on) { v.currentTime = 0; v.play().catch(() => {}); } else { v.pause(); }
+      });
+    }
+
     function buildTsMatches(state) {
       const root = document.getElementById('ts-matches');
-      const rows = msToMatchRows(state) || TS_MATCHES;
+      /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
+         match (Day 2) is ignored here. */
+      const isPoTs = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      const rows = (msToMatchRows(state, isPoTs ? 2 : undefined) || TS_MATCHES).slice(0, isPoTs ? 2 : undefined);
       /* Tags the match container AND the whole page with the live match
          count so the dashboard Edit tab can save a separate layout per
          2-match/3-match day (see mplfs_todayschedule_2m/3m in
@@ -9083,11 +9413,13 @@
         page.classList.add(countClass);
       }
       root.innerHTML = rows.map(m => {
+        if (isPoTs) return tsmRowPoHtml(m);
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`
           : `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
         return tsmRowHtml(m, center);
       }).join('');
+      if (isPoTs && document.getElementById('today-schedule-page').classList.contains('ts-on')) tsPlayRowVideos('ts-matches', true);
     }
     buildTsMatches();
 
@@ -9120,8 +9452,17 @@
       const bo = (state.series || 'BO3').toUpperCase();
       const isThreeMatch = computeTomorrowWeekDay(state).day === 2;
       const slice = isThreeMatch ? state.tomorrowMatches.slice(0, 3) : state.tomorrowMatches.slice(-2);
-      return slice.map((m, i) => ({
+      /* Playoffs: ALWAYS the first 2 matches, or just 1 when the first
+         match's label is GRAND FINALS. */
+      const isPoTw = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      const poSlice = (() => {
+        const first = state.tomorrowMatches[0] || {};
+        return /grand\s*finals?/i.test(first.stageLabel || '') ? state.tomorrowMatches.slice(0, 1) : state.tomorrowMatches.slice(0, 2);
+      })();
+      return (isPoTw ? poSlice : slice).map((m, i) => ({
         label: 'MATCH ' + (i + 1),
+        stage: m.stageLabel || '',
+        openHouse: m.openHouseTime || '',
         time:  m.time || '',
         bo,
         matchType: m.matchType || (m.star ? 'clash' : 'regular'),
@@ -9132,18 +9473,20 @@
 
     function buildTwMatches(state) {
       const root = document.getElementById('tw-matches');
-      const rows = msToTomorrowMatchRows(state) || TS_MATCHES;
+      const isPoTw = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      const rows = msToTomorrowMatchRows(state) || (isPoTw ? TS_MATCHES.slice(0, 2) : TS_MATCHES);
       /* Same page+matches count-tagging as buildTsMatches above — see
          mplfs_tomorrowschedule_2m/3m in dashboard.html. */
       const countClass = 'tsm-count-' + rows.length;
-      root.classList.remove('tsm-count-2', 'tsm-count-3');
+      root.classList.remove('tsm-count-1', 'tsm-count-2', 'tsm-count-3');
       root.classList.add(countClass);
       const page = document.getElementById('tomorrow-schedule-page');
       if (page) {
-        page.classList.remove('tsm-count-2', 'tsm-count-3');
+        page.classList.remove('tsm-count-1', 'tsm-count-2', 'tsm-count-3');
         page.classList.add(countClass);
       }
-      root.innerHTML = rows.map(m => tsmRowHtml(m, `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`)).join('');
+      root.innerHTML = rows.map(m => isPoTw ? tsmRowPoHtml(m) : tsmRowHtml(m, `<img class="tsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`)).join('');
+          if (isPoTw && document.getElementById('tomorrow-schedule-page').classList.contains('tw-on')) tsPlayRowVideos('tw-matches', true);
     }
     buildTwMatches();
 
@@ -9169,8 +9512,22 @@
       if (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY') return 'See You On Sunday';
       return (state && state.day === 3) ? 'See You Next Week' : 'See You Tomorrow';
     }
+    /* Playoffs title may run from its left edge (canvas x=225) right up to the
+       sponsor box (x=1492): 1492-225 = 1267px. */
+    const TW_TITLE_MAX_W = 1267;
     function applyTwTitle(state) {
       const el = document.getElementById('tw-title');
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        /* Playoffs: clone of Today's Schedule — fixed TOMORROW'S MATCHES, fitted
+           to the title room left of the sponsor box with scaleX via canvas measureText (the scene
+           is display:none when this runs, so no DOM measuring). */
+        el.textContent = "TOMORROW\u2019S MATCHES";
+        if (!_tsMeasureCtx) _tsMeasureCtx = document.createElement('canvas').getContext('2d');
+        _tsMeasureCtx.font = "120px 'Anton'";
+        const w = _tsMeasureCtx.measureText(el.textContent).width;
+        el.style.transform = w > TW_TITLE_MAX_W ? 'scaleX(' + (TW_TITLE_MAX_W / w) + ')' : '';
+        return;
+      }
       el.textContent = twTitleText(state);
       fitTitleText(el, 80, 40);
       /* 10th Anniversary — swap the title graphic itself between the two
@@ -9195,7 +9552,10 @@
     function applyTwWeekDay(state) {
       if (state.week == null || state.day == null) return;
       const wd = computeTomorrowWeekDay(state);
-      if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        document.getElementById('tw-season').textContent = 'MPL PH S18 PLAYOFFS';
+        document.getElementById('tw-week').textContent = 'DAY ' + wd.day;
+      } else if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
         document.getElementById('tw-season').innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + wd.week + 'D' + wd.day + '</span>';
       } else {
         document.getElementById('tw-week').textContent = 'WEEK ' + wd.week + ' - DAY ' + wd.day;
@@ -9208,7 +9568,9 @@
       [...document.getElementById(rootId).children].forEach((el, i) => {
         el.style.animation = 'none';
         void el.offsetWidth; /* restart the animation on every show */
-        el.style.animation = `wsm-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 140}ms both`;
+        el.style.animation = ((rootId === 'ts-matches' || rootId === 'tw-matches') && document.documentElement.getAttribute('data-theme') === 'playoffs')
+          ? `tsm-po-in 640ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 160}ms both`
+          : `wsm-slide-in 520ms cubic-bezier(0.22, 1, 0.36, 1) ${i * 140}ms both`;
         /* fill-mode "both" pins transform via inline style forever once the
            animation ends — without clearing it, a later class-driven
            transform change (e.g. .tsm-highlight) has nothing to transition
@@ -9241,7 +9603,10 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      buildWsMatches('ws-matches', msToMatchRows(ms) || WS_MATCHES, { currentMatch: ms.match });
+      /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
+         match is ignored here. */
+      const isPoWs = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? 2 : undefined) || WS_MATCHES).slice(0, isPoWs ? 2 : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
@@ -9251,14 +9616,45 @@
          a trailing colon on the next, per the exact wording specified. */
       if (countdownLabelEl.dataset.label !== label) {
         countdownLabelEl.dataset.label = label;
-        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br> RESUMES IN:' : 'SHOW<br> STARTS IN:';
+        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br> RESUMES&nbsp;<span class="ws-cd-in">IN:</span>' : 'SHOW<br> STARTS&nbsp;<span class="ws-cd-in">IN:</span>';
       }
       wsTimerState = ms.timer || WS_TIMER_DEFAULT;
+    }
+
+    /* Playoffs SUPERFAN ticker text — comes from the Dynamic tab's
+       "Superfan Ticker" field (Universal panel, dynamic_content.json
+       superfan_text). Empty falls back to the original line. Measured with
+       canvas measureText (not DOM widths: the scene is display:none when
+       this runs): the text is repeated until one copy fills the 503px
+       window, and the scroll duration is set from the copy's width so the
+       speed stays ~70px/s whatever the length. */
+    const WS_SF_DEFAULT = 'COME AND JOIN THE FUN FOR FREE';
+    let _wsSfCtx = null;
+    function applyWsSuperfan(raw) {
+      const text = String(raw || '').trim() || WS_SF_DEFAULT;
+      const track = document.querySelector('#ws-superfan .ws-sf-track');
+      if (!track || track.dataset.text === text) return;
+      track.dataset.text = text;
+      if (!_wsSfCtx) _wsSfCtx = document.createElement('canvas').getContext('2d');
+      _wsSfCtx.font = "800 27px 'General Sans'";
+      const GAP = '\u2003\u2003\u2003\u2003';
+      const unit = _wsSfCtx.measureText(text.toUpperCase() + GAP).width || 1;
+      const copies = Math.max(1, Math.ceil(503 / unit));
+      const content = Array(copies).fill(text).join(GAP);
+      track.querySelectorAll('span').forEach(sp => { sp.textContent = content; });
+      track.style.animationDuration = Math.max(4, (unit * copies + 120) / 70) + 's';
+    }
+    function loadWsSuperfan() {
+      fetch('/api/dynamic-content', { cache: 'no-store' })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => applyWsSuperfan(d && d.superfan_text))
+        .catch(() => {});
     }
 
     async function showWaitingScreen() {
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
+      loadWsSuperfan();
       await transitionTo('waiting');
       const ms = await msPromise;
       if (activeFeature !== 'waiting') return; /* superseded while awaiting match state */
@@ -11180,6 +11576,7 @@
       if (activeFeature !== 'bracket') return; /* superseded while preloading */
       showSceneVideo('bracket');
       brTrophy.currentTime = 0; brTrophy.play().catch(() => {});
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') brSponsorLoop.start();
       brPage.classList.add('br-on');
       void brPage.offsetWidth; /* force reflow so the opacity transition runs */
       brPage.classList.add('br-visible');
@@ -11190,6 +11587,7 @@
 
     function hideBracketScene() {
       activeFeature = null;
+      brSponsorLoop.stop();
       brPage.classList.remove('br-visible');
       return new Promise(resolve => {
         setTimeout(() => {
@@ -11621,6 +12019,15 @@
         const nametag = document.getElementById(s.prefix + '-nametag-' + n);
         const secrole = document.getElementById(s.prefix + '-secrole-' + n);
         const cs = getComputedStyle(nametag);
+        if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+          /* Playoffs: the plate is a narrower 216x29 strip inset 22px from
+             the tag's left, resting at the tag's own top (under it). */
+          secrole.style.left   = (parseFloat(cs.left) + 22) + 'px';
+          secrole.style.top    = cs.top;
+          secrole.style.width  = '216px';
+          secrole.style.height = '29px';
+          continue;
+        }
         secrole.style.left   = cs.left;
         secrole.style.top    = cs.top;
         secrole.style.width  = cs.width;
@@ -12294,7 +12701,12 @@
        instead. Regular theme keeps the original two-piece layout. */
     function applyTsWeekDay(ms) {
       if (ms.week == null || ms.day == null) return;
-      if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        // Playoffs: "MPL PH S18 PLAYOFFS" on the black part of the header bar,
+        // "DAY n" on the gold part (fixed text; only the day is real data).
+        document.getElementById('ts-season').textContent = 'MPL PH S18 PLAYOFFS';
+        document.getElementById('ts-week').textContent = 'DAY ' + ms.day;
+      } else if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
         document.getElementById('ts-season').innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
       } else {
         document.getElementById('ts-week').textContent = 'WEEK ' + ms.week + ' DAY ' + ms.day;
@@ -12312,8 +12724,17 @@
         applyTsWeekDay(ms);
         buildTsMatches(ms);
       }
+      /* Playoffs rows are built from fresh <img> elements (1661px container
+         + two 524px photos + logo plates) — without waiting for them to
+         decode, they pop in mid-reveal while the rows open, which reads as
+         a flicker (worst on the staggered 2nd row). */
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        await preloadMedia(document.querySelectorAll('#ts-matches img, #ts-matches video'), 1500);
+        if (activeFeature !== 'schedule') return; /* superseded while preloading */
+      }
       showSceneVideo('schedule');
       wsMatchesSlideIn('ts-matches');
+      tsPlayRowVideos('ts-matches', true);
       tsSponsorLoop.start();
       tsPage.classList.add('ts-on');
       void tsPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -12351,6 +12772,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           tsPage.classList.remove('ts-on');
+          if (!tsPage.classList.contains('ts-visible')) tsPlayRowVideos('ts-matches', false); /* skip if re-shown during the fade */
           hideSceneVideo();
           resolve();
         }, 420);
@@ -12378,6 +12800,19 @@
     }
     buildTwSponsor();
     const twSponsorLoop = makeSponsorLoop('tw-sponsor-img', 'tw-sponsor-cat');
+
+    /* Bracket's sponsor box (playoffs only — hidden by CSS under other
+       themes) — same shared markup as the schedules', so the playoffs
+       universal sponsor box CSS styles it. Started/stopped from
+       showBracketScene/hideBracketScene. */
+    function buildBrSponsor() {
+      document.getElementById('br-sponsor').innerHTML =
+        `<img class="wl-sponsor-bg" src="${WL_ASSET}Sponsor_Box.png" alt="Official Sponsor">` +
+        `<div class="sponsor-cat-label" id="br-sponsor-cat"></div>` +
+        `<div class="wl-sponsor-loop"><img id="br-sponsor-img" src="" alt=""></div>`;
+    }
+    buildBrSponsor();
+    const brSponsorLoop = makeSponsorLoop('br-sponsor-img', 'br-sponsor-cat');
 
     /* Consolidated Post 2's sponsor loop, below the Kill Map — same
        system/markup as Tomorrow's Schedule's above, just a different
@@ -12430,8 +12865,15 @@
         applyTwWeekDay(ms);
         buildTwMatches(ms);
       }
+      /* Playoffs rows use fresh <img>s — wait for them to decode before
+         animating (same flicker fix as showTodaySchedule). */
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        await preloadMedia(document.querySelectorAll('#tw-matches img, #tw-matches video'), 1500);
+        if (activeFeature !== 'tomorrow') return; /* superseded while preloading */
+      }
       showSceneVideo('tomorrow');
       wsMatchesSlideIn('tw-matches');
+      tsPlayRowVideos('tw-matches', true);
       twSponsorLoop.start();
       twPage.classList.add('tw-on');
       void twPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -12467,6 +12909,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           twPage.classList.remove('tw-on');
+          if (!twPage.classList.contains('tw-visible')) tsPlayRowVideos('tw-matches', false); /* skip if re-shown during the fade */
           hideSceneVideo();
           resolve();
         }, 420);
