@@ -1,43 +1,9 @@
 {
   "home": {
-    "teamId": "10765",
-    "name": "TNC Pro Team PH",
-    "short": "TNC",
-    "score": 0,
-    "lineup": [
-      {
-        "role": "EXP LANER",
-        "ign": "Ryota",
-        "id": "915241466"
-      },
-      {
-        "role": "JUNGLER",
-        "ign": "Zaida",
-        "id": "1271650180"
-      },
-      {
-        "role": "MID LANER",
-        "ign": "Vinnn",
-        "id": "1475950692"
-      },
-      {
-        "role": "ROAMER",
-        "ign": "Zehn",
-        "id": "1475950734"
-      },
-      {
-        "role": "GOLD LANER",
-        "ign": "Jowm",
-        "id": "1155833611"
-      }
-    ],
-    "coach": "E2max"
-  },
-  "away": {
     "teamId": "10973",
     "name": "Team Falcons",
     "short": "FLCN",
-    "score": 0,
+    "score": 1,
     "lineup": [
       {
         "role": "EXP LANER",
@@ -67,69 +33,99 @@
     ],
     "coach": "Ducky"
   },
+  "away": {
+    "teamId": "10763",
+    "name": "Team Liquid PH",
+    "short": "TLPH",
+    "score": 2,
+    "lineup": [
+      {
+        "role": "EXP LANER",
+        "ign": "Sanford",
+        "id": "1025593308"
+      },
+      {
+        "role": "JUNGLER",
+        "ign": "KarlTzy",
+        "id": "1271650163"
+      },
+      {
+        "role": "MID LANER",
+        "ign": "Sanji",
+        "id": "1271650190"
+      },
+      {
+        "role": "ROAMER",
+        "ign": "Jaypee",
+        "id": "1582754314"
+      },
+      {
+        "role": "GOLD LANER",
+        "ign": "Teddy",
+        "id": "1810330654"
+      }
+    ],
+    "coach": "Aeon"
+  },
   "series": "BO3",
-  "game": 1,
+  "game": 4,
   "match": 2,
-  "swapped": true,
+  "swapped": false,
   "official": true,
   "week": 8,
-  "day": 2,
+  "day": 3,
   "patch": "Starward Decade 0916",
-  "map": "Golden Turret",
+  "map": "Healing Turtle",
   "hosts": [
+    "Odin",
     "Denisse",
-    "None",
-    "Odin"
+    "Thea"
   ],
   "casters": [
-    "Hans",
-    "Athena",
-    "Joshycakes"
+    "Uomi",
+    "Burrito",
+    "Midnight"
   ],
   "enCasters": [
+    "Leo",
     "Naisou",
-    "Brigida",
-    "Wolf"
+    "Renmar"
   ],
   "countdownLabel": "SHOW RESUMES IN",
-  "goodbyeLabel": "SEE YOU ON SUNDAY",
+  "goodbyeLabel": "SEE YOU NEXT WEEK",
   "timer": {
     "running": true,
-    "endAt": 1791526201157,
-    "remaining": 11045
+    "endAt": 1791708000251,
+    "remaining": 14250
   },
   "todayMatches": [
     {
-      "team1Id": "11149",
-      "team1Name": "AP.BREN",
-      "team1Short": "APBR",
-      "team2Id": "11150",
-      "team2Name": "Smart Omega",
-      "team2Short": "OMG",
-      "score1": 0,
-      "score2": 0,
-      "vsDisplay": "VS",
-      "time": "2:30 PM",
-      "star": false,
-      "matchType": "regular",
-      "stageLabel": "QUARTER FINALS",
-      "openHouseTime": "1:30pm"
-    },
-    {
-      "team1Id": "10765",
-      "team1Name": "TNC Pro Team PH",
-      "team1Short": "TNC",
-      "team2Id": "10973",
-      "team2Name": "Team Falcons",
-      "team2Short": "FLCN",
-      "score1": 0,
-      "score2": 0,
-      "vsDisplay": "VS",
+      "team1Id": "10845",
+      "team1Name": "Aurora Gaming PH",
+      "team1Short": "RORA",
+      "team2Id": "10975",
+      "team2Name": "Twisted Minds PH",
+      "team2Short": "TWIS",
+      "score1": 2,
+      "score2": 1,
+      "vsDisplay": "2 - 1",
       "time": "5:00 PM",
       "star": false,
-      "matchType": "regular",
-      "stageLabel": "PLAY-INS",
-      "openHouseTime": "4:00pm"
+      "matchType": "regular"
+    },
+    {
+      "team1Id": "10973",
+      "team1Name": "Team Falcons",
+      "team1Short": "FLCN",
+      "team2Id": "10763",
+      "team2Name": "Team Liquid PH",
+      "team2Short": "TLPH",
+      "score1": 1,
+      "score2": 2,
+      "vsDisplay": "1 - 2",
+      "time": "7:30 PM",
+      "star": true,
+      "matchType": "clash"
     },
     {
       "team1Id": "10763",
@@ -157,9 +153,7 @@
       "vsDisplay": "VS",
       "time": "2:30 PM",
       "star": false,
-      "matchType": "regular",
-      "openHouseTime": "",
-      "stageLabel": "lower bracket finals"
+      "matchType": "regular"
     },
     {
       "team1Id": "10845",
@@ -171,8 +165,7 @@
       "vsDisplay": "VS",
       "time": "5:00 PM",
       "star": false,
-      "matchType": "regular",
-      "stageLabel": "upper bracket finals"
+      "matchType": "regular"
     },
     {
       "team1Id": "10973",

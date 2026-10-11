@@ -2455,10 +2455,19 @@
        `left` (box pan) and now its own crop point (object-position, via
        cropX/cropY) can be nudged individually from the dashboard Edit
        tab (FT_ELEMENTS/FT_DEFAULTS) to compensate for a given photo's
-       own off-center framing, without moving any other card. */
+       own off-center framing, without moving any other card.
+       Horizontal crop is automatic: ftAutoCenterPhoto() finds the face
+       in each photo and sets --ft-auto-x (px) on the <img> so the face
+       lands mid-card. The Edit tab's cropX is now a fine-tune ON TOP of
+       that (50 = no nudge), emitted as --ft-crop-x/--ft-crop-y rather
+       than a competing object-position, so the two compose instead of
+       the saved override replacing the auto value. */
     .ft-card-photo {
       position: absolute; left: 0; top: 210px; width: 183px; height: 380px;
-      object-fit: cover; object-position: 50% 15%; z-index: 3;
+      object-fit: cover; z-index: 3;
+      object-position:
+        calc(var(--ft-auto-x, 50%) + (var(--ft-crop-x, 50) - 50) * 1%)
+        calc(var(--ft-crop-y, 15) * 1%);
     }
     /* Spell icon — horizontally centered on the card (the role icon sits
        on the name bar itself, below; no team logo on this card). */
@@ -5164,16 +5173,9 @@
       -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
               mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
     }
-    /* Bracket header (S18_Header_bracket.png, same 1028x150 box Waiting TVC's header uses): "THE PLAYOFFS"
-       sits in the gold part of the strip. Separate elements so each is editable. */
-    #br-header, #br-week-label { transition: opacity 500ms ease; } /* fades with the trophy off the base pose */
+    /* Bracket header (S18_Header_bracket.png, same 1028x150 box Waiting TVC's header uses). */
+    #br-header { transition: opacity 500ms ease; } /* fades with the trophy off the base pose */
     #br-header { position: absolute; left: 40px; top: 80px; width: 1028px; height: 150px; display: block; }
-    #br-week-label {
-      position: absolute; left: 679px; top: 196px; width: 253px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 24px;
-      color: #000; letter-spacing: 0.02em; text-transform: uppercase; white-space: nowrap;
-    }
     #br-grandfinals { position: absolute; left: 1499px; top: 718px; width: 306px; height: 47px; display: block; }
     .br-cell  { position: absolute; width: 377px; height: 70px; display: block; }
     .br-logo  { position: absolute; width: 53px; height: 53px; object-fit: contain; display: block; }
@@ -7030,9 +7032,7 @@
       <div id="bracket-container">
         <video id="br-trophy" src="/assets/bracket/trophybrack_loop.webm" muted loop playsinline preload="auto"></video>
         <img id="bracket-img" src="/assets/bracket/bracket_lines.png" alt="">
-        <img id="br-header" src="/assets/bracket/S18_Header_bracket.png" alt="MPL Philippines — Playoffs Bracket">
-        <div id="br-week-label">THE PLAYOFFS</div>
-        <img id="br-grandfinals" src="/assets/bracket/grandfinals_brack.png" alt="">
+        <img id="br-header" src="/assets/bracket/S18_Header_bracket.png" alt="MPL Philippines — Playoffs Bracket">        <img id="br-grandfinals" src="/assets/bracket/grandfinals_brack.png" alt="">
         <!-- 8 matches x 2 slots x (cell, logo, name, score) are built by brBuild() — each its own id (#br-m1a-cell ...), absolutely positioned on this 1920x1080 plane -->
       </div>
       <div id="br-sponsor"></div>
@@ -7444,7 +7444,7 @@
         if (p.cropX !== undefined || p.cropY !== undefined) {
           const cx = p.cropX !== undefined ? p.cropX : 50;
           const cy = p.cropY !== undefined ? p.cropY : 15;
-          decls.push('object-position:' + cx + '% ' + cy + '% !important');
+          decls.push('--ft-crop-x:' + cx + ' !important', '--ft-crop-y:' + cy + ' !important');
         }
         return sel + '{' + decls.join(';') + '}';
       }).join('\n');
@@ -8492,7 +8492,7 @@
       highlights: '/assets/bgloopwaves2.webm',
       mvp:        '/assets/bgloopwaves2.webm',
       credits:    '/assets/bgloopwaves2.webm',
-      bracket:    '/assets/bgloopwaves2.webm', /* all themes — no SCENE_VIDEO_SRC_BY_THEME entry */
+      bracket:    '/assets/bgloopnowaves.webm', /* Regular + 10th Anniversary; Playoffs has its own entry below */
       consolidated_post: '/assets/bgloopwaves2.webm',
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
@@ -11390,7 +11390,6 @@
     const brContainer = document.getElementById('bracket-container');
     const brTrophy    = document.getElementById('br-trophy');
     const brHeader    = document.getElementById('br-header');
-    const brWeekLabel = document.getElementById('br-week-label');
 
     /* Base pose = the one the scene fades in at. The trophy only shows there. */
     let brBase = null;
@@ -11404,7 +11403,6 @@
       const baseOp = brIsBase(p) ? '1' : '0';
       brTrophy.style.opacity = baseOp;
       brHeader.style.opacity = baseOp;
-      brWeekLabel.style.opacity = baseOp;
       brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
       brContainer.style.transform =
         `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
@@ -11704,11 +11702,80 @@
         (heroSrc  ? `<video class="ft-card-hero" src="${heroSrc}" loop muted playsinline preload="auto"></video>` : '') +
         `<div class="ft-card-rest" style="--ft-delay:${ftStaggerDelayMs(colIndex)}ms;">` +
         `<img class="ft-card-fader ft-${side}" src="/assets/finalteam/finalfader.png" alt="">` +
-        (photoSrc ? `<img class="ft-card-photo" id="ft-photo-${colIndex}" src="${photoSrc}" alt="" onerror="this.style.display='none'">` : '') +
+        (photoSrc ? `<img class="ft-card-photo" id="ft-photo-${colIndex}" src="${photoSrc}" alt="" onload="ftAutoCenterPhoto(this)" onerror="this.style.display='none'">` : '') +
         (spellSrc ? `<img class="ft-card-spell" src="${spellSrc}" alt="" onerror="this.style.display='none'">` : '') +
         `<div class="ft-card-name ft-${side}">${ign}</div>` +
         `<div class="ft-card-role ft-${side}"><img src="${roleSrc}" alt="" onerror="this.parentElement.style.display='none'"></div>` +
         `</div></div>`;
+    }
+
+    /* Auto-center each card photo on the player's face, so a photo whose
+       subject isn't centered in the original image doesn't need a manual
+       per-slot Crop X (which was keyed to the card slot, not the player,
+       so it went stale every time a different player filled that slot).
+       The hires/ photos are transparent cut-outs: find the top of the
+       silhouette, then take the centroid of skin-toned pixels in the head
+       band below it (face + neck; hair/jersey excluded by color). Falls
+       back to the silhouette's midpoint across that band if too few skin
+       pixels match. Measured on a detached canvas from the image's own
+       pixels — no layout dependency, so it's correct even while the
+       scene is still display:none (see CLAUDE.md's measureText note).
+       Result is cached per src as a fraction of natural width. */
+    const FT_FACE_CACHE = new Map();
+    function ftFindFaceFrac(img) {
+      const W0 = img.naturalWidth, H0 = img.naturalHeight;
+      if (!W0 || !H0) return null;
+      const k = Math.min(1, 200 / Math.max(W0, H0));
+      const w = Math.max(1, Math.round(W0 * k)), h = Math.max(1, Math.round(H0 * k));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const ctx = cv.getContext('2d', { willReadFrequently: true });
+      ctx.drawImage(img, 0, 0, w, h);
+      const px = ctx.getImageData(0, 0, w, h).data;
+      const minRow = Math.max(2, Math.round(w * 0.01));
+      let top = -1;
+      for (let y = 0; y < h && top < 0; y++) {
+        let n = 0;
+        for (let x = 0; x < w; x++) if (px[(y * w + x) * 4 + 3] > 128) n++;
+        if (n >= minRow) top = y;
+      }
+      if (top < 0) return null;
+      const bandEnd = Math.min(h, top + Math.round(h * 0.42));
+      let sum = 0, cnt = 0;
+      for (let y = top; y < bandEnd; y++) {
+        for (let x = 0; x < w; x++) {
+          const i = (y * w + x) * 4;
+          if (px[i + 3] <= 128) continue;
+          const r = px[i], g = px[i + 1], b = px[i + 2];
+          const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+          if (r > 95 && g > 40 && b > 20 && r > g && r > b && r - g > 15 && mx - mn > 15) { sum += x; cnt++; }
+        }
+      }
+      if (cnt >= w * h * 0.003) return (sum / cnt + 0.5) / w;
+      /* Fallback: silhouette midpoint over the head band. */
+      let mid = 0, rows = 0;
+      for (let y = top + Math.round(h * 0.12); y < Math.min(h, top + Math.round(h * 0.32)); y++) {
+        let lo = -1, hi = -1;
+        for (let x = 0; x < w; x++) if (px[(y * w + x) * 4 + 3] > 128) { if (lo < 0) lo = x; hi = x; }
+        if (lo >= 0) { mid += (lo + hi + 1) / 2; rows++; }
+      }
+      return rows ? (mid / rows) / w : null;
+    }
+    function ftAutoCenterPhoto(img) {
+      let frac = FT_FACE_CACHE.get(img.src);
+      if (frac === undefined) {
+        try { frac = ftFindFaceFrac(img); } catch (e) { frac = null; }
+        FT_FACE_CACHE.set(img.src, frac);
+      }
+      if (frac == null) { img.style.removeProperty('--ft-auto-x'); return; }
+      /* Box size from computed style, not layout — reads the CSS/Edit-tab
+         width/height even while the scene is hidden. */
+      const cs = getComputedStyle(img);
+      const bw = parseFloat(cs.width) || 183, bh = parseFloat(cs.height) || 380;
+      const s  = Math.max(bw / img.naturalWidth, bh / img.naturalHeight);
+      const rw = img.naturalWidth * s;
+      const x  = Math.min(0, Math.max(bw - rw, bw / 2 - frac * rw));
+      img.style.setProperty('--ft-auto-x', x.toFixed(1) + 'px');
     }
 
     /* Long IGNs would otherwise overflow the 183px-wide card (and get
@@ -17770,7 +17837,7 @@
             if (props.cropX !== undefined || props.cropY !== undefined) {
               var cx = props.cropX !== undefined ? parseFloat(props.cropX) : 50;
               var cy = props.cropY !== undefined ? parseFloat(props.cropY) : 15;
-              decls.push('object-position:' + cx + '% ' + cy + '% !important');
+              decls.push('--ft-crop-x:' + cx + ' !important', '--ft-crop-y:' + cy + ' !important');
             }
             return sel + '{' + decls.join(';') + '}';
           }).join('\n');
