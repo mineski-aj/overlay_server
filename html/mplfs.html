@@ -16886,7 +16886,16 @@
         const pose1 = winCamp === 0 ? 'VICTORY' : (winCamp === 1 ? 'VICTORY' : 'DEFEAT');
         const pose2 = winCamp === 0 ? 'VICTORY' : (winCamp === 2 ? 'VICTORY' : 'DEFEAT');
         const poseKey = pose1 + '|' + pose2;
-        const updatePhotos = poseKey !== pbLastPoseKey;
+        /* Don't resolve (or lock in pbLastPoseKey for) photos until the
+           manifest has loaded. pbVisible flips true BEFORE showPlayerBoard's
+           first pbLoadManifest() resolves, so a unified-poll tick (started
+           by Middleboard on a restore-on-load) can land here first: with no
+           manifest every photo resolved to the blank placeholder, AND the
+           poseKey got cached — so showPlayerBoard's own fetch right after
+           saw "pose unchanged" and never set the real photos. Blank until
+           the next win/lose change. Consolidated Post didn't have this
+           because cpSetPhoto always sets photos, with no poseKey cache. */
+        const updatePhotos = !!pbPhotoManifest && poseKey !== pbLastPoseKey;
         if (updatePhotos) pbLastPoseKey = poseKey;
         if (c1) pbApplySeats(c1, 'pb-b', pose1, updatePhotos);
         if (c2) pbApplySeats(c2, 'pb-r', pose2, updatePhotos);
