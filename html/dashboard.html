@@ -4640,6 +4640,12 @@
 
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
   var WL_DEFAULTS = {
+    /* Playoffs only — title + corner text. */
+    '#wl-title':        { left: 190,  top: 376,  width: 660, height: 90 },
+    '#wl-po-tag-left':  { left: 30,   top: 28,   width: 230, height: 24 },
+    '#wl-po-tag-right': { left: 1640, top: 18,   width: 252, height: 24 },
+    '#wl-lakas':        { left: 30,   top: 1027, width: 430, height: 26 },
+    '#wl-po-palag':     { left: 1670, top: 1031, width: 190, height: 24 },
     '#wl-header':         { left: 40,   top: 80,  width: 967, height: 150 },
     '#wl-match':          { left: 40,   top: 390 },
     '#wl-sponsor':        { left: 40,   top: 705 },
@@ -4675,6 +4681,11 @@
   };
 
   var WL_ELEMENTS = [
+    { group: 'Playoffs Title',     id: '#wl-title',        name: 'Next Match Title (Playoffs)' },
+    { group: 'Playoffs Tag Left',  id: '#wl-po-tag-left',  name: 'Top-Left Tag (Playoffs)'  },
+    { group: 'Playoffs Tag Right', id: '#wl-po-tag-right', name: 'Top-Right Tag (Playoffs)' },
+    { group: 'Playoffs Lakas',     id: '#wl-lakas',        name: 'Lakas ng Pinas (Playoffs)' },
+    { group: 'Playoffs Palag',     id: '#wl-po-palag',     name: 'Palag Na To (Playoffs)'   },
     { group: 'Header',  id: '#wl-header',       name: 'Header Logo'     },
     { group: 'Header',  id: '#wl-timer',        name: 'Countdown Timer' },
     { group: 'Timer Label',    id: '#wl-timer-label',    name: 'Timer Label'          },
@@ -4756,11 +4767,27 @@
     '.wsm-band-label, .wsm-band-time, .wsm-band-bo': { fontSize: 19 },
     '.wsm-tri':                                      { fontSize: 34 },
     '.wsm-score-l, .wsm-score-r':                    { fontSize: 32 },
+    /* Playoffs only — real HTML title + Open House bar text. */
+    '.wsm-title-text':                               { fontSize: 34 },
+    '.wsm-oh-label, .wsm-oh-time':                   { fontSize: 21 },
+    /* Playoffs only — corner tags, Lakas ng Pinas, SUPERFAN ticker. */
+    '#ws-po-tag-left':  { left: 30,   top: 28,   width: 230, height: 24 },
+    '#ws-po-tag-right': { left: 1640, top: 18,   width: 252, height: 24 },
+    '#ws-lakas':        { left: 30,   top: 1027, width: 440, height: 26 },
+    '#ws-po-palag':     { left: 1670, top: 1031, width: 190, height: 24 },
+    '#ws-superfan':     { left: 628,  top: 997,  width: 899, height: 51 },
   };
   var WS_MATCHES_ELEMENTS = [
     { group: 'Match Row Text', id: '.wsm-band-label, .wsm-band-time, .wsm-band-bo', name: 'Header Text Size' },
     { group: 'Match Row Text', id: '.wsm-tri',                                      name: 'Team Code Size'   },
     { group: 'Match Row Text', id: '.wsm-score-l, .wsm-score-r',                    name: 'Score Size'       },
+    { group: 'Playoffs Title', id: '.wsm-title-text',                              name: 'Title Text Size (Playoffs)' },
+    { group: 'Playoffs Open House', id: '.wsm-oh-label, .wsm-oh-time',             name: 'Open House Text Size (Playoffs)' },
+    { group: 'Playoffs Tag Left',  id: '#ws-po-tag-left',  name: 'Top-Left Tag (Playoffs)'  },
+    { group: 'Playoffs Tag Right', id: '#ws-po-tag-right', name: 'Top-Right Tag (Playoffs)' },
+    { group: 'Playoffs Lakas',     id: '#ws-lakas',        name: 'Lakas ng Pinas (Playoffs)' },
+    { group: 'Playoffs Palag',     id: '#ws-po-palag',     name: 'Palag Na To (Playoffs)'   },
+    { group: 'Playoffs SuperFan',  id: '#ws-superfan',     name: 'SuperFan Ticker (Playoffs)' },
   ];
 
   /* ── Waiting Screen TVC — per-match-count layout ──────────────────
@@ -5190,6 +5217,8 @@
     '.ws-casters-slot-left-name':   { left: 0,   top: 0, width: 190, height: 61 },
     '.ws-casters-slot-middle-name': { left: 190, top: 0, width: 191, height: 61 },
     '.ws-casters-slot-right-name':  { left: 381, top: 0, width: 190, height: 61 },
+    /* Playoffs only — title text ("CASTER") is real HTML there. */
+    '.ws-casters-title': { left: 0, top: 0, width: 571, height: 61, fontSize: 34 },
   };
 
   var CASTER_ELEMENTS = [
@@ -5200,6 +5229,7 @@
     { group: 'Caster Name (Left)',   id: '.ws-casters-slot-left-name',   name: 'Caster 1 Name' },
     { group: 'Caster Name (Middle)', id: '.ws-casters-slot-middle-name', name: 'Caster 2 Name' },
     { group: 'Caster Name (Right)',  id: '.ws-casters-slot-right-name',  name: 'Caster 3 Name' },
+    { group: 'Caster Title', id: '.ws-casters-title', name: 'Title Text (Playoffs)' },
   ];
 
   /* ── Hosts (mplfs.html Waiting Screen TVC) element defaults ─────
@@ -5211,12 +5241,15 @@
     '.ws-hosts-slot-left':   { left: 40,  top: 14, width: 300, height: 464 },
     '.ws-hosts-slot-middle': { left: 125, top: 0,  width: 320, height: 478 },
     '.ws-hosts-slot-right':  { left: 251, top: 14, width: 300, height: 464 },
+    /* Playoffs only — title text ("HOST") is real HTML there. */
+    '.ws-hosts-title': { left: 0, top: 0, width: 571, height: 61, fontSize: 34 },
   };
 
   var HOST_ELEMENTS = [
     { group: 'Hosts', id: '.ws-hosts-slot-left',   name: 'Photo (Left)'   },
     { group: 'Hosts', id: '.ws-hosts-slot-middle', name: 'Photo (Middle)' },
     { group: 'Hosts', id: '.ws-hosts-slot-right',  name: 'Photo (Right)'  },
+    { group: 'Host Title', id: '.ws-hosts-title', name: 'Title Text (Playoffs)' },
   ];
 
   /* ── Map Selection tag (mpltag.html) element defaults ──────────
@@ -5273,6 +5306,8 @@
     '.ws-encasters-slot-left-name':   { left: 0,   top: 0, width: 190, height: 61 },
     '.ws-encasters-slot-middle-name': { left: 190, top: 0, width: 191, height: 61 },
     '.ws-encasters-slot-right-name':  { left: 381, top: 0, width: 190, height: 61 },
+    /* Playoffs only — title text is real HTML there. */
+    '.ws-encasters-title': { left: 0, top: 0, width: 571, height: 61, fontSize: 34 },
   };
 
   var EN_CASTER_ELEMENTS = [
@@ -5283,6 +5318,7 @@
     { group: 'EN Caster Name (Left)',   id: '.ws-encasters-slot-left-name',   name: 'Caster 1 Name' },
     { group: 'EN Caster Name (Middle)', id: '.ws-encasters-slot-middle-name', name: 'Caster 2 Name' },
     { group: 'EN Caster Name (Right)',  id: '.ws-encasters-slot-right-name',  name: 'Caster 3 Name' },
+    { group: 'EN Caster Title', id: '.ws-encasters-title', name: 'Title Text (Playoffs)' },
   ];
 
   /* ── MVP Highlights (mplfs.html) element defaults ───────────────

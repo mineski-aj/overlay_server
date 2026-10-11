@@ -1376,6 +1376,69 @@
     }
     .wl-namebox-blue .wl-namebox-name { left: 62px; }
     .wl-namebox-red  .wl-namebox-name { left: 0; }
+    /* ── Playoffs Waiting Lobby (per the updated lobby reference) ──
+       Reuses Waiting TVC's assets: header art, match box
+       (MatchBox_REGULAR MATCH.png scaled ×1.268 to 724×219), corner text.
+       Regular's saved Edit-tab overrides for these selectors are shadowed by
+       seeded entries in the mplfs::playoffs bucket (overlay_styles.json). */
+    #wl-title, #wl-po-tag-left, #wl-po-tag-right, #wl-lakas, #wl-po-palag { display: none; }
+    [data-theme="playoffs"] #wl-po-tag-left, [data-theme="playoffs"] #wl-po-tag-right,
+    [data-theme="playoffs"] #wl-lakas, [data-theme="playoffs"] #wl-po-palag { display: flex; }
+    [data-theme="playoffs"] #wl-title { display: block; }
+    #wl-po-tag-left, #wl-po-tag-right, #wl-lakas, #wl-po-palag {
+      position: absolute; align-items: center; gap: 12px;
+      font-family: 'General Sans', sans-serif; font-size: 17px; font-weight: 400;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    #wl-po-tag-left b, #wl-po-tag-right b, #wl-lakas b, #wl-po-palag b { font-weight: 800; }
+    #wl-po-tag-right span:first-of-type { font-weight: 500; }
+    #wl-po-tag-left  { left: 30px;   top: 28px; width: 230px; height: 24px; gap: 18px; }
+    #wl-po-tag-right { left: 1640px; top: 18px; width: 252px; height: 24px; }
+    #wl-lakas        { left: 30px;   top: 1027px; width: 430px; height: 26px; gap: 20px; }
+    #wl-lakas .ws-lakas-text { font-size: 17px; }
+    #wl-lakas .ws-lakas-line { flex: 1; height: 1px; background: #0a0a0a; margin-left: -7px; }
+    #wl-po-palag     { left: 1670px; top: 1031px; width: 190px; height: 24px; font-size: 16px; font-style: italic; }
+    #wl-title {
+      position: absolute; left: 190px; top: 376px; width: 660px; height: 90px;
+      font-family: 'Anton', sans-serif; font-size: 74px; line-height: 90px; letter-spacing: -0.045em;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    [data-theme="playoffs"] #wl-header { left: 30px; top: 60px; width: 924px; height: 158px; }
+    [data-theme="playoffs"] #wl-header img {
+      width: 924px; height: 158px;
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+    }
+    [data-theme="playoffs"] #wl-week-label {
+      left: 0; top: 123px; width: 735px; height: 35px;
+      justify-content: flex-start; font-size: 34px; font-weight: 800; letter-spacing: 0;
+    }
+    [data-theme="playoffs"] #wl-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
+    [data-theme="playoffs"] #wl-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
+    [data-theme="playoffs"] #wl-redcorner { display: none; }
+    /* Match box: TVC's 571×173 art ×1.268 */
+    [data-theme="playoffs"] .wlm-box { width: 724px; height: 219px; }
+    [data-theme="playoffs"] .wlm-box > img.wlm-box-bg { width: 724px; height: 219px; }
+    [data-theme="playoffs"] #wl-match { width: 724px; height: 219px; }
+    [data-theme="playoffs"] .wlm-label, [data-theme="playoffs"] .wlm-time, [data-theme="playoffs"] .wlm-bo { height: 49px; font-size: 24px; }
+    [data-theme="playoffs"] .wlm-label { left: 18px; }
+    [data-theme="playoffs"] .wlm-bo { right: 18px; }
+    [data-theme="playoffs"] .wlm-slot { top: 49px; height: 170px; }
+    [data-theme="playoffs"] .wlm-tri { font-size: 52px; }
+    [data-theme="playoffs"] .wlm-tri-l { width: 119px; }
+    [data-theme="playoffs"] .wlm-tri-r { width: 119px; }
+    [data-theme="playoffs"] .wlm-logo-l { left: 130px; width: 166px; }
+    [data-theme="playoffs"] .wlm-logo-r { left: 430px; width: 166px; }
+    [data-theme="playoffs"] .wlm-logo-l img, [data-theme="playoffs"] .wlm-logo-r img { width: 155px; height: 137px; }
+    [data-theme="playoffs"] .wlm-center { left: 285px; width: 153px; }
+    [data-theme="playoffs"] .wlm-center img.wlm-vs { width: 90px; height: 49px; }
+    [data-theme="playoffs"] .wlm-score .wlm-score-l, [data-theme="playoffs"] .wlm-score .wlm-score-r { font-size: 41px; }
+    /* Countdown: label + big digits centered under the match box */
+    [data-theme="playoffs"] #wl-timer { left: 110px; top: 735px; width: 724px; height: 230px; }
+    [data-theme="playoffs"] #wl-timer-label { left: 0; top: 0; width: 724px; height: 50px; justify-content: center; }
+    [data-theme="playoffs"] #wl-timer-label-img { font-weight: 800; font-size: 40px; }
+    [data-theme="playoffs"] #wl-timer-label-img::after { content: ':'; }
+    [data-theme="playoffs"] #wl-timer-label-bg { display: none; }
+    [data-theme="playoffs"] #wl-timer-value { left: 0; top: 58px; width: 724px; height: 200px; font-size: 185px; text-align: center; }
     /* Scoreboard-style rotation: outgoing name/logo/photo slides down while
        fading out, incoming starts above (translateY negative) and slides
        down into place while fading in — same direction for both halves of
@@ -3761,6 +3824,132 @@
     }
     .ws-talent-star { width: 14px; height: 14px; pointer-events: none; flex-shrink: 0; }
 
+    /* Playoffs — HOST_BOXv1/CASTER_BOXv1 (playoffs/) are 571×500 of art
+       (571×601 canvas, bottom 101px transparent): 61px gold title bar,
+       402px photo window, 37px gold name bar baked in. The title text is
+       real HTML (.ws-talent-title) and the name bar's own image is
+       dropped (the box art already contains it), so the generic
+       namebar/names rules are just resized to the new 37px bar. Same
+       class names as Regular on purpose, so the dashboard Edit rows keep
+       working (saved to the mplfs::playoffs bucket). */
+    /* Playoffs Waiting TVC — header art, week chip, corner tags, Lakas ng
+       Pinas, SUPERFAN ticker (per reference_fullwaiting.png). All of these
+       are display:none under other themes. SUPERFAN ticker text is
+       placeholder content; it scrolls via .ws-sf-track. */
+    #ws-po-tag-left, #ws-po-tag-right, #ws-lakas, #ws-po-palag, #ws-superfan { display: none; }
+    [data-theme="playoffs"] #ws-po-tag-left, [data-theme="playoffs"] #ws-po-tag-right,
+    [data-theme="playoffs"] #ws-lakas, [data-theme="playoffs"] #ws-po-palag { display: flex; }
+    [data-theme="playoffs"] #ws-superfan { display: block; }
+    #ws-po-tag-left, #ws-po-tag-right, #ws-lakas, #ws-po-palag {
+      position: absolute; align-items: center; gap: 10px;
+      font-family: 'General Sans', sans-serif; font-size: 17px; font-weight: 400;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    #ws-po-tag-left b, #ws-po-tag-right b, #ws-lakas b, #ws-po-palag b { font-weight: 800; }
+    #ws-po-tag-right span:first-of-type { font-weight: 500; }
+    .ws-po-chev { width: 19px; height: 12px; flex: none; }
+    .ws-po-spark { font-size: 20px; line-height: 1; }
+    #ws-po-tag-left  { left: 30px;   top: 28px; width: 230px; height: 24px; gap: 18px; }
+    #ws-po-tag-right { left: 1640px; top: 18px; width: 252px; height: 24px; }
+    #ws-lakas        { left: 30px;   top: 1027px; width: 430px; height: 26px; gap: 20px; }
+    #ws-lakas .ws-lakas-text { font-size: 17px; }
+    #ws-lakas .ws-lakas-line { flex: 1; height: 1px; background: #0a0a0a; margin-left: -7px; }
+    #ws-po-palag     { left: 1670px; top: 1031px; width: 190px; height: 24px; font-size: 16px; font-style: italic; }
+    #ws-superfan { position: absolute; left: 628px; top: 997px; width: 899px; height: 51px; }
+    #ws-superfan > img { position: absolute; left: 0; top: 0; width: 899px; height: 51px; }
+    .ws-sf-label, .ws-sf-window span {
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 27px;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .ws-sf-label { position: absolute; left: 17px; top: 0; width: 360px; height: 51px; display: flex; align-items: center; color: #fff; }
+    .ws-sf-window { position: absolute; left: 396px; top: 0; width: 503px; height: 51px; overflow: hidden; }
+    .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 18s linear infinite; }
+    .ws-sf-window span { color: #0a0a0a; padding-right: 120px; flex: none; }
+    @keyframes ws-sf-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
+    [data-theme="playoffs"] #ws-header img {
+      width: 924px; height: 158px;
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+    }
+    /* Chip text lives on the header art's own bar (art y 123–158): phase on
+       the black part (white), DAY n on the gold part (dark). */
+    [data-theme="playoffs"] #ws-week-label {
+      left: 0; top: 123px; width: 735px; height: 35px;
+      justify-content: flex-start; font-size: 34px; font-weight: 800; letter-spacing: 0;
+    }
+    [data-theme="playoffs"] #ws-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
+    [data-theme="playoffs"] #ws-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
+    [data-theme="playoffs"] #ws-matches, [data-theme="playoffs"] .ws-talent-box { left: 30px; top: 278px; }
+    /* Playoffs Waiting TVC layout (per the updated reference screenshot):
+       "SHOW STARTS IN:" (one line) + the big countdown sit centered under
+       the matches panel with no plaque, and the sponsor box moves to the top
+       right of the overlay where the countdown used to be. Positions are
+       canvas px; #ws-matches panel is x 40–611. */
+    [data-theme="playoffs"] #ws-timer { left: 30px; right: auto; top: 854px; width: 571px; height: 160px; }
+    [data-theme="playoffs"] #ws-timer-label-bg { display: none; }
+    [data-theme="playoffs"] #ws-timer-countdown-label {
+      left: 30px; top: 806px; width: 571px; height: 40px;
+      font-weight: 800; font-size: 33px; white-space: nowrap;
+    }
+    [data-theme="playoffs"] #ws-timer-countdown-label br { display: none; }
+    [data-theme="playoffs"] #ws-timer-value { left: 0px; top: 0px; width: 571px; height: 160px; font-size: 152px; text-align: center; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1480px; top: -202px; }
+    /* Playoffs Today's Matches — MatchBox_REGULAR MATCH.png (playoffs/) is
+       the same 571×173 canvas; per reference_MatchBox_REGULAR MATCH.png the
+       tricodes and logos are larger than Regular's. Scoped to #ws-matches
+       so other .wsm-* users keep Regular sizing. */
+    /* Playoffs Today's Schedule header + Open House bars. Title bar is
+       todays_matches.png (571×61, blank) with HTML text; each Open House bar
+       is openhouser.png (571×37: black arrow label on the left, gold time
+       on the right). Open House text is placeholder content for now. */
+    [data-theme="playoffs"] #ws-matches .wsm-title-po { position: relative; margin-bottom: 4px; }
+    [data-theme="playoffs"] #ws-matches .wsm-title-po > img { position: absolute; left: 0; top: 0; width: 571px; height: 61px; }
+    .wsm-title-text {
+      position: absolute; left: 0; top: 0; width: 571px; height: 61px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 34px;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    .wsm-oh { position: relative; width: 571px; height: 37px; flex: none; }
+    .wsm-oh > img { position: absolute; left: 0; top: 0; width: 571px; height: 37px; }
+    .wsm-oh-label, .wsm-oh-time {
+      position: absolute; top: 0; height: 37px;
+      display: flex; align-items: center; white-space: nowrap;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 21px;
+      text-transform: uppercase;
+    }
+    .wsm-oh-label { left: 12px; width: 255px; color: #fff; }
+    .wsm-oh-time  { left: 295px; width: 270px; justify-content: center; color: #0a0a0a; }
+    [data-theme="playoffs"] #ws-matches .wsm-tri { font-size: 41px; }
+    [data-theme="playoffs"] #ws-matches .wsm-logo-l img,
+    [data-theme="playoffs"] #ws-matches .wsm-logo-r img { width: 122px; height: 108px; }
+    [data-theme="playoffs"] .ws-talent-box { height: 500px; }
+    [data-theme="playoffs"] .ws-talent-box .ws-talent-bg { width: 571px; height: 601px; }
+    [data-theme="playoffs"] .ws-talent-photos { top: 61px; height: 402px; }
+    [data-theme="playoffs"] .ws-talent-namebar { top: 463px; height: 37px; }
+    [data-theme="playoffs"] .ws-talent-namebox {
+      position: absolute; left: 21px; top: 0; width: 530px; height: 37px;
+      display: flex; align-items: center; justify-content: center; overflow: hidden;
+    }
+    .ws-talent-name-po {
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 20px;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    [data-theme="playoffs"] .ws-talent-title {
+      position: absolute; left: 0; top: 0; width: 571px; height: 61px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 34px;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-2 .ws-hosts-slot-left   { left: 33px;  top: 12px; width: 252px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-2 .ws-hosts-slot-right  { left: 211px; top: 12px; width: 252px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-casters-slot-left   { left: -96px; top: 31px; width: 297px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-casters-slot-middle { left: 124px; top: 23px; width: 269px; height: 402px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-casters-slot-right  { left: 329px; top: 29px; width: 297px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-left   { left: 0px;   top: 12px; width: 297px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-middle { left: 105px; top: 0px;  width: 269px; height: 402px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-right  { left: 182px; top: 12px; width: 297px; height: 390px; }
+
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
       from { opacity: 0; transform: translateX(-40px); }
@@ -5814,6 +6003,17 @@
         <div id="ws-timer-value"><span class="wl-timer-glow">30:30</span><span class="wl-timer-fill">30:30</span></div>
       </div>
       <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS IN:</div>
+      <!-- Playoffs-only decorations (display:none under every other theme).
+           Text is real HTML; SUPERFAN ticker text is a placeholder for now. -->
+      <div id="ws-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
+      <div id="ws-po-tag-right"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>SEASON 18 PLAYOFFS</b></span><span class="ws-po-spark">&#10039;</span></div>
+      <div id="ws-lakas"><span class="ws-po-spark">&#10022;</span><span class="ws-lakas-text"><b>LAKAS</b> NG <b>PINAS</b></span><span class="ws-lakas-line"></span></div>
+      <div id="ws-po-palag"><span><b>PALAG</b> NA <b>TO!</b></span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
+      <div id="ws-superfan">
+        <img src="/assets/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
+        <span class="ws-sf-label">MPL PH SUPERFAN CITY</span>
+        <div class="ws-sf-window"><div class="ws-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
+      </div>
       <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
     <div id="waiting-lobby-page">
@@ -5821,6 +6021,13 @@
         <img src="/assets/Waiting Lobby/MPL Header.png" alt="MPL Philippines">
         <div id="wl-week-label">WEEK 8 DAY 3</div>
       </div>
+      <!-- Playoffs-only decorations (hidden under every other theme). Title
+           text is a placeholder constant for now. -->
+      <div id="wl-title">NEXT MATCH / PLAY-INS</div>
+      <div id="wl-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
+      <div id="wl-po-tag-right"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>SEASON 18 PLAYOFFS</b></span><span class="ws-po-spark">&#10039;</span></div>
+      <div id="wl-lakas"><span class="ws-po-spark">&#10022;</span><span class="ws-lakas-text"><b>LAKAS</b> NG <b>PINAS</b></span><span class="ws-lakas-line"></span></div>
+      <div id="wl-po-palag"><span><b>PALAG</b> NA <b>TO!</b></span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
       <div id="wl-match"></div>
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
@@ -7864,6 +8071,10 @@
     // system section. A feature/theme pair not listed here just keeps
     // SCENE_VIDEO_SRC's plain (Regular-theme) file, unchanged.
     const SCENE_VIDEO_SRC_BY_THEME = {
+      'playoffs': {
+        waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        lobby:   '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+      },
       '10th_anniversary': {
         waiting:    '/assets/phase2_annivloopsun.webm',
         lobby:      '/assets/phase2_annivloopwaves.webm',
@@ -7890,9 +8101,16 @@
         finalteam:  '/assets/phase2_annivloopwavesnosun.webm',
       },
     };
+    // Playoffs: one default background for every scene that has a
+    // SCENE_VIDEO_SRC entry. Per-scene overrides can be added later under
+    // SCENE_VIDEO_SRC_BY_THEME.playoffs; anything unlisted uses this.
+    const PLAYOFFS_DEFAULT_VIDEO = '/assets/z_playoffs%20background/playoffsbg_theme.webm';
     function getSceneVideoSrc(feature) {
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
-      return (SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature]) || SCENE_VIDEO_SRC[feature];
+      const themed = SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature];
+      if (themed) return themed;
+      if (theme === 'playoffs' && SCENE_VIDEO_SRC[feature]) return PLAYOFFS_DEFAULT_VIDEO;
+      return SCENE_VIDEO_SRC[feature];
     }
     // #bg-video (the idle-state fallback background, see CLAUDE.md's
     // "Video-heavy overlays" section) sits completely outside the
@@ -7904,6 +8122,7 @@
     const BG_VIDEO_SRC = '/assets/bgloop.webm';
     const BG_VIDEO_SRC_BY_THEME = {
       '10th_anniversary': '/assets/phase2_annivloop.webm',
+      'playoffs': '/assets/z_playoffs%20background/playoffsbg_theme.webm',
     };
     function applyBgVideoTheme() {
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
@@ -8011,6 +8230,16 @@
     // Regular-look until separately asked for (same caution as the
     // Waiting Lobby redcorner.webm precedent elsewhere in this file).
     const WS_TVC_ASSET_BY_THEME = {
+      // Playoffs: blank gold-framed boxes (title text + names are real HTML
+      // text, not baked into the art) — see the [data-theme="playoffs"]
+      // .ws-talent-* CSS block and populateWsTalentBox's playoffs branch.
+      'playoffs': {
+        'HOST_BOXv1.png':   'playoffs/HOST_BOXv1.png',
+        'CASTER_BOXv1.png': 'playoffs/CASTER_BOXv1.png',
+        'MatchBox_REGULAR MATCH.png': 'playoffs/MatchBox_REGULAR MATCH.png',
+        'TodayMatches.png': 'playoffs/todays_matches.png',
+        'openhouser.png':   'playoffs/openhouser.png',
+      },
       '10th_anniversary': {
         'TodayMatches.png':          'anniversary/TodayMatches.png',
         'MatchBox_REGULAR MATCH.png': 'anniversary/MatchBox_REGULAR MATCH.png',
@@ -8161,6 +8390,8 @@
     // WS_TVC_ASSET_BY_THEME since there's no Regular-theme counterpart to
     // fall back to — the effect simply doesn't exist outside this theme.
     const WS_CURRENT_MATCH_HIGHLIGHT = 'anniversary/MatchboxHighlight.png';
+    // Placeholder until the Open House data is wired up.
+    const WS_OPEN_HOUSE_PLACEHOLDER_TIME = '14:30 GMT +8';
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
@@ -8168,8 +8399,20 @@
       const logo = (m, side) =>
         `<div class="wsm-slot wsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
-      let html = opts.title === false ? '' : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
+      const isPlayoffs = theme === 'playoffs';
+      // Playoffs: title text is real HTML over the blank todays_matches.png
+      // bar (not baked into the image), and every match gets an Open House
+      // bar above it (openhouser.png) — contents are PLACEHOLDERS for now.
+      let html = opts.title === false ? ''
+        : isPlayoffs
+          ? `<div class="wsm-title wsm-title-po"><img src="${wsTvcAsset('TodayMatches.png')}" alt=""><span class="wsm-title-text">TODAY'S SCHEDULE</span></div>`
+          : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
       matches.forEach((m, i) => {
+        if (isPlayoffs) {
+          html += `<div class="wsm-oh"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
+            `<span class="wsm-oh-label">MATCH ${i + 1} OPEN HOUSE</span>` +
+            `<span class="wsm-oh-time">${WS_OPEN_HOUSE_PLACEHOLDER_TIME}</span></div>`;
+        }
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score
           ? `<img class="wsm-score-img" src="${WS_TVC_ASSET}SCORES/${m.score.l}-${m.score.r}.png" ` +
@@ -8371,7 +8614,7 @@
     }
     /* Builds one talent box's innerHTML (Hosts or Casters); returns how many
        names were actually shown so the carousel can skip empty panels. */
-    function populateWsTalentBox(rootId, list, bgAsset, posOrder) {
+    function populateWsTalentBox(rootId, list, bgAsset, posOrder, titleText) {
       const names = ((list) || []).filter(n => n && n !== 'None').slice(0, posOrder.length);
       const root = document.getElementById(rootId);
       if (names.length < 1) { root.innerHTML = ''; return 0; }
@@ -8398,6 +8641,17 @@
         return names.length;
       }
       const namesHtml = names.map((n, i) => `<div class="ws-talent-name ${slotClass(i)}-name">${n.toUpperCase()}</div>`).join('');
+      // Playoffs: the box art already includes the name bar, so no
+      // NAMEBOX image; title is real text (titleText, wired from the
+      // caller) instead of being baked into the bg image.
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        root.innerHTML =
+          `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
+          `<div class="ws-talent-title ${rootId}-title">${titleText || ''}</div>` +
+          `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
+          `<div class="ws-talent-namebar">` + buildPlayoffsNameBox(names) + `</div>`;
+        return names.length;
+      }
       root.innerHTML =
         `<img class="ws-talent-bg" src="${wsTvcAsset(bgAsset)}" alt="">` +
         `<div class="ws-talent-photos ws-talent-count-${names.length}">${photosHtml}</div>` +
@@ -8405,6 +8659,27 @@
         `<div class="ws-talent-names ws-talent-namecount-${names.length}">${namesHtml}</div></div>`;
       wsAutoFitTalentNames(root);
       return names.length;
+    }
+    /* Playoffs name row — "NAME - NAME - NAME", same flowing/auto-scaling
+       row as 10th Anniversary's buildAnnivNameBox, with a "-" separator
+       instead of a star. Canvas-measured for the same hidden-ancestor
+       reason (see annivTextWidth). Box is the 571×37 name bar's inner
+       area; the whole row (text + dashes) scales down together only as
+       much as needed to fit. */
+    const PO_NAME_BOX  = { left: 21, w: 530, h: 37 };
+    const PO_NAME_SIZE = 20;   // unscaled font-size, px
+    const PO_NAME_GAP  = 16;   // gap on each side of every dash
+    function buildPlayoffsNameBox(names) {
+      const font = `800 ${PO_NAME_SIZE}px 'General Sans'`;
+      const total = names.reduce((sum, n) => sum + annivTextWidth(n.toUpperCase(), font), 0);
+      const natural = total + (names.length - 1) * (annivTextWidth('-', font) + 2 * PO_NAME_GAP);
+      const scale = Math.min(1, PO_NAME_BOX.w / natural);
+      const itemsHtml = names.map((n, i) =>
+        `<span class="ws-talent-name-po">${n.toUpperCase()}</span>` +
+        (i < names.length - 1 ? `<span class="ws-talent-name-po ws-talent-dash">-</span>` : '')
+      ).join('');
+      return `<div class="ws-talent-namebox">` +
+        `<div class="ws-talent-names-inner" style="gap:${PO_NAME_GAP}px;transform:scale(${scale})">${itemsHtml}</div></div>`;
     }
     /* Shrinks each name to fit its column (classic scrollWidth/clientWidth
        auto-fit), then unifies every name in the box to the smallest size
@@ -8433,7 +8708,7 @@
       if (key === wsHostsLastKey) return; /* unchanged — don't disturb a panel mid-display */
       wsHostsLastKey = key;
       const hostPosOrder = hosts.length >= 3 ? TALENT_HOST3_POS_ORDER : TALENT_HOST_POS_ORDER;
-      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'HOST_BOXv1.png', hostPosOrder);
+      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'HOST_BOXv1.png', hostPosOrder, 'Host');
       if (wsHostsCount < 1) wsPanelDropIfShowing(WS_HOSTS_IDX);
     }
     let wsCastersCount = 0, wsCastersLastKey = null;
@@ -8442,7 +8717,7 @@
       const key = casters.join('|');
       if (key === wsCastersLastKey) return;
       wsCastersLastKey = key;
-      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER);
+      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, 'Caster');
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 
@@ -8701,6 +8976,11 @@
         const wsWeekLabel = document.getElementById('ws-week-label');
         if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
           wsWeekLabel.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+          // Playoffs: phase text on the black part of the header bar, day on
+          // the gold part. "SEASON 18 PLAYOFFS" is fixed text (no phase
+          // field in match state), only the day is real data.
+          wsWeekLabel.innerHTML = '<span class="ws-po-phase">SEASON 18 PLAYOFFS</span><span class="ws-po-day">DAY ' + ms.day + '</span>';
         } else {
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
@@ -8715,7 +8995,7 @@
          a trailing colon on the next, per the exact wording specified. */
       if (countdownLabelEl.dataset.label !== label) {
         countdownLabelEl.dataset.label = label;
-        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br>RESUMES IN:' : 'SHOW<br>STARTS IN:';
+        countdownLabelEl.innerHTML = label === 'SHOW RESUMES IN' ? 'SHOW<br> RESUMES IN:' : 'SHOW<br> STARTS IN:';
       }
       wsTimerState = ms.timer || WS_TIMER_DEFAULT;
     }
@@ -8890,8 +9170,11 @@
       // to pick the right BASE folder, not just the filename). Regular
       // theme is completely unaffected — still Waiting Lobby's own asset.
       const isAnniversary = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      // Playoffs reuses Waiting TVC's Sponsor Box.png (same as #ws-sponsor).
+      const isPlayoffs = document.documentElement.getAttribute('data-theme') === 'playoffs';
       const sponsorBg = isAnniversary
         ? WS_TVC_ASSET + 'anniversary/Sponsor Box.png'
+        : isPlayoffs ? WS_TVC_ASSET + 'Sponsor Box.png'
         : WL_ASSET + 'Sponsor_Box.png';
       document.getElementById('wl-sponsor').innerHTML =
         `<img class="wl-sponsor-bg" src="${sponsorBg}" alt="Official Sponsor">` +
@@ -9086,6 +9369,9 @@
         const wlWeekLabel = document.getElementById('wl-week-label');
         if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
           wlWeekLabel.innerHTML = 'SEASON 18 REGULAR SEASON <span class="ws-week-wd">W' + ms.week + 'D' + ms.day + '</span>';
+        } else if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+          // Same fixed-phase / real-day split as Waiting TVC's playoffs chip.
+          wlWeekLabel.innerHTML = '<span class="ws-po-phase">SEASON 18 PLAYOFFS</span><span class="ws-po-day">DAY ' + ms.day + '</span>';
         } else {
           wlWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
