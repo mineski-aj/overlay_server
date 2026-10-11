@@ -5781,9 +5781,7 @@
   BRACKET_DEFAULTS['#br-trophy'] = { left: 1334, top: 228, width: 638, height: 638 };
   BRACKET_ELEMENTS.push({ group: 'Trophy', id: '#br-trophy', name: 'Grand Finals Trophy (video)' });
   BRACKET_DEFAULTS['#br-header']     = { left: 40,  top: 80,  width: 1028, height: 150 };
-  BRACKET_DEFAULTS['#br-week-label'] = { left: 679, top: 196, width: 253,  height: 34, fontSize: 24 };
   BRACKET_ELEMENTS.push({ group: 'Header Image', id: '#br-header',     name: 'Header (Playoffs Bracket)' });
-  BRACKET_ELEMENTS.push({ group: 'Header Week',  id: '#br-week-label', name: 'Header Gold Text (THE PLAYOFFS)' });
   BRACKET_DEFAULTS['#br-grandfinals'] = { left: 1499, top: 718, width: 306, height: 47 };
   BRACKET_ELEMENTS.push({ group: 'Grand Finals Label', id: '#br-grandfinals', name: 'Grand Finals Label' });
   var BR_TITLE_POS = { 1: [152, 290, 207], 3: [558, 290, 288], 6: [562, 813, 288],
@@ -7066,7 +7064,7 @@
       if (p.cropX !== undefined || p.cropY !== undefined) {
         var cx = p.cropX !== undefined ? p.cropX : 50;
         var cy = p.cropY !== undefined ? p.cropY : 15;
-        d.push('object-position:' + cx + '% ' + cy + '% !important');
+        d.push('--ft-crop-x:' + cx + ' !important', '--ft-crop-y:' + cy + ' !important');
       }
       if (p.visible === false) d.push('display:none !important');
       return sel + '{' + d.join(';') + '}';
