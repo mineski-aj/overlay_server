@@ -1705,6 +1705,94 @@
        anniversary bar fills (Gold Difference, side-check bars). */
     [data-theme="10th_anniversary"] .th-bar-seg-blue { background: #0095fd; }
     [data-theme="10th_anniversary"] .th-bar-seg-red  { background: #ff243e; }
+    /* ── Playoffs — totally different Team Hexagon layout (see
+       assets/hexagon/playoffs/guide_hexagonV2.png). Everything below is
+       scoped to the playoffs theme; Regular/10th Anniversary render the
+       original layout untouched. Positions are canvas-absolute straight
+       from the guide. The #th-po-* elements exist only for this theme. */
+    #th-po-hexabg, #th-po-accent-blue, #th-po-accent-red, #th-po-match, #th-po-vs { display: none; }
+    [data-theme="playoffs"] #th-po-hexabg { display: block; position: absolute; left: 571px; top: 135px; width: 779px; height: 694px; z-index: 1; }
+    [data-theme="playoffs"] #th-po-accent-blue { display: block; position: absolute; left: 24px;   top: 222px; width: 34px; height: 520px; z-index: 2; }
+    [data-theme="playoffs"] #th-po-accent-red  { display: block; position: absolute; left: 1863px; top: 222px; width: 34px; height: 520px; z-index: 2; }
+    [data-theme="playoffs"] #th-po-match { display: block; position: absolute; left: 619px; top: 100px; width: 684px; height: 71px; z-index: 3; }
+    [data-theme="playoffs"] #th-po-vs {
+      display: flex; align-items: center; justify-content: center;
+      position: absolute; left: 889px; top: 100px; width: 146px; height: 71px; z-index: 4;
+      font-family: 'Anton', sans-serif; font-size: 54px; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] #th-bottom-panel { display: none; }
+    /* Player photos — placeholder set inside 515x694 containers until the
+       dedicated playoffs photo set exists. */
+    [data-theme="playoffs"] .th-player { top: 135px; width: 515px; height: 694px; overflow: hidden; background: #2b2b2e; z-index: 1; }
+    [data-theme="playoffs"] .th-player-blue { left: 40px; }
+    [data-theme="playoffs"] .th-player-red  { left: 1365px; }
+    [data-theme="playoffs"] .th-player-photo { object-fit: cover; object-position: 50% 0%; }
+    /* Team banner — logos + names sit on playofgfs_hexagonmatch.png. */
+    [data-theme="playoffs"] .th-teambox { left: 619px; top: 100px; width: 684px; height: 71px; pointer-events: none; }
+    [data-theme="playoffs"] .th-teambox img.th-teambox-bg { display: none; }
+    [data-theme="playoffs"] .th-teambox-logo { top: 7px; width: 57px; height: 57px; }
+    [data-theme="playoffs"] .th-teambox-blue .th-teambox-logo { left: 23px; }
+    [data-theme="playoffs"] .th-teambox-red  .th-teambox-logo { left: 604px; }
+    [data-theme="playoffs"] .th-teambox-name { height: 71px; width: 240px; font-size: 54px; }
+    [data-theme="playoffs"] .th-teambox-blue .th-teambox-name { left: 71px; }
+    [data-theme="playoffs"] .th-teambox-red  .th-teambox-name { left: 377px; }
+    /* Title ribbon */
+    [data-theme="playoffs"] #th-title { left: 655px; top: 793px; width: 606px; height: 70px; z-index: 4; }
+    [data-theme="playoffs"] #th-title-bg { width: 606px; height: 70px; content: url('/assets/hexagon/playoffs/playoffs_hexatitle.png'); }
+    [data-theme="playoffs"] #th-title-text { font-size: 52px; color: #0a0a0a; letter-spacing: 0.02em; }
+    /* Player name plates (gold role tab at the outer edge, team color body) */
+    [data-theme="playoffs"] .th-namebox { top: 797px; z-index: 4; }
+    [data-theme="playoffs"] .th-namebox-blue { left: 118px; }
+    [data-theme="playoffs"] .th-namebox-red  { left: 1469px; }
+    [data-theme="playoffs"] .th-namebox-blue img.th-namebox-bg { content: url('/assets/hexagon/playoffs/playoffs_hexabluename.png'); }
+    [data-theme="playoffs"] .th-namebox-red  img.th-namebox-bg { content: url('/assets/hexagon/playoffs/playoffs_hexaredname.png'); }
+    [data-theme="playoffs"] .th-namebox-logo { width: 80px; }
+    [data-theme="playoffs"] .th-namebox-blue .th-namebox-logo { left: 0; }
+    [data-theme="playoffs"] .th-namebox-red  .th-namebox-logo { right: 0; }
+    [data-theme="playoffs"] .th-namebox-name { width: 267px; font-size: 30px; }
+    [data-theme="playoffs"] .th-namebox-blue .th-namebox-name { left: 80px; }
+    [data-theme="playoffs"] .th-namebox-red  .th-namebox-name { left: 0; }
+    /* Radar axis labels + values (built by buildThRadar's playoffs branch) */
+    .th-po-label {
+      position: absolute; z-index: 2; white-space: nowrap;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 19px; line-height: 15px;
+      color: #0a0a0a; text-transform: uppercase;
+    }
+    .th-po-valrow { position: absolute; z-index: 2; display: flex; flex-direction: column; }
+    .th-po-row { display: flex; align-items: center; gap: 4px; height: 22px; font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 23px; }
+    .th-po-chip { width: 14px; height: 14px; flex: 0 0 auto; }
+    .th-po-chip-blue { background: #0b52d6; }
+    .th-po-chip-red  { background: #d8120a; }
+    .th-po-num-blue { color: #0b52d6; }
+    .th-po-num-red  { color: #d8120a; }
+    /* Bottom stats — the same six #th-bar-* nodes (so every count-up and
+       setThBar call keeps working) re-laid-out as six playoffs_hexastatbox
+       cards. The art has a fixed 50/50 blue|red split, so segment widths
+       are pinned to 50% here instead of the proportional inline widths. */
+    [data-theme="playoffs"] #th-bars { display: block; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
+    [data-theme="playoffs"] .th-bar-col { display: contents; }
+    [data-theme="playoffs"] .th-bar-divider { display: none; }
+    [data-theme="playoffs"] .th-bar-row {
+      position: absolute; top: 882px; width: 298px; height: 89px; display: block;
+      background: url('/assets/hexagon/playoffs/playoffs_hexastatbox.png') no-repeat; background-size: 100% 100%;
+    }
+    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(1) { left: 40px; }
+    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(2) { left: 347px; }
+    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(3) { left: 655px; }
+    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(1) { left: 962px; }
+    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(2) { left: 1270px; }
+    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(3) { left: 1577px; }
+    [data-theme="playoffs"] .th-bar-label {
+      position: absolute; left: 0; top: 0; width: 298px; height: 38px; text-align: center !important;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #0a0a0a;
+    }
+    [data-theme="playoffs"] .th-bar {
+      position: absolute; left: 2px; top: 41px; width: 294px; height: 46px; border-radius: 0;
+      font-size: 24px; color: #fff;
+    }
+    [data-theme="playoffs"] #th-bars .th-bar-seg { width: 50% !important; background: none; justify-content: center !important; padding: 0 !important; }
+
     /* ── MVP HIGHLIGHTS PAGE — single-player MVP card, fed by the
        game-mvp/view API (see /api/highlights-url in Settings to repoint
        it). Signature-pose hires photo sits behind the plaque, the plaque
@@ -1790,6 +1878,24 @@
       z-index: 40;
       background: url('/assets/highlights/mvphlstats.png') no-repeat;
       background-size: 100% 100%;
+    }
+    /* Playoffs — decorative corner graphic (playoffs_mvpcoverer.png, 250x610)
+       pinned to the lower-right canvas corner, over the player photo.
+       Deliberately NOT in the dashboard Edit tab (locked in place per the
+       request). Same z tier as the photo (40) but later in the DOM, so it
+       draws over the photo yet under #hl-stats-backer and #hl-plaque. */
+    #hl-playoffs-coverer { display: none; }
+    [data-theme="playoffs"] #hl-playoffs-coverer {
+      display: block; position: absolute; left: 1670px; top: 470px;
+      width: 250px; height: 610px; z-index: 40; pointer-events: none;
+    }
+    /* Playoffs — "MVP HIGHLIGHTS" title in #2c2c2c. Size/box live in the
+       mplfs::playoffs bucket (Regular's saved #hl-title box would
+       otherwise win as an !important fallback). */
+    [data-theme="playoffs"] #hl-title { color: #2c2c2c; }
+    /* Playoffs — gold-trimmed container behind the KDA / KP% / stat row. */
+    [data-theme="playoffs"] #hl-stats-backer {
+      background-image: url('/assets/mvp/playoffs/highlights/playoffs_statcointainerhl.png');
     }
     .hlst-label {
       position: absolute; top: 2px; height: 44px;
@@ -1935,6 +2041,25 @@
     }
     [data-theme="10th_anniversary"] #mv-matchbox-season { left: 26px; }
     [data-theme="10th_anniversary"] #mv-matchbox-game   { left: 267px; }
+
+    /* Playoffs — gold plate with black text replaces the black matchbox
+       (same stacked layout as Regular; label text swapped to THE PLAYOFFS
+       by applyMvBoxBgTheme). playoffs_mvpcontainer.png backs the
+       SPELL/EMBLEM/EQUIPMENTS row; position/size is a judgment call from
+       playoffs_mvpscenereference.png (adjustable from the Edit tab, saved
+       to mplfs::playoffs). The red/blue name backer is swapped in mvApply. */
+    [data-theme="playoffs"] #mv-matchbox {
+      background: linear-gradient(135deg, #f6d85f 0%, #e6bd3c 100%);
+      color: #0a0a0a;
+    }
+    [data-theme="playoffs"] #mv-matchbox-season,
+    [data-theme="playoffs"] #mv-matchbox-game { color: #0a0a0a; opacity: 1; }
+    [data-theme="playoffs"] #mv-stats-back {
+      display: block;
+      content: url('/assets/mvp/playoffs/playoffs_mvpcontainer.png');
+      position: absolute; left: 990px; top: 656px; width: 837px; height: 115px;
+      z-index: 13;
+    }
 
     .mv-icon-title {
       position: absolute; z-index: 14; top: 672px; height: 24px;
@@ -6063,6 +6188,11 @@
     </div>
     <div id="team-hexagon-page">
       <div id="th-bottom-panel"></div>
+      <img id="th-po-hexabg" src="/assets/hexagon/playoffs/playoffs_hexabg.png" alt="">
+      <img id="th-po-accent-blue" src="/assets/hexagon/playoffs/playoffs_hexablueaccent.png" alt="">
+      <img id="th-po-accent-red" src="/assets/hexagon/playoffs/playoffs_hexaredaccent.png" alt="">
+      <img id="th-po-match" src="/assets/hexagon/playoffs/playofgfs_hexagonmatch.png" alt="">
+      <div id="th-po-vs">VS</div>
       <div class="th-player th-player-blue">
         <img class="th-player-photo" id="th-blue-photo-0" src="" alt="">
         <img class="th-player-photo" id="th-blue-photo-1" src="" alt="">
@@ -6362,6 +6492,7 @@
     <div id="highlights-page">
       <div id="hl-title">MVP HIGHLIGHTS</div>
       <div class="hl-player-photo-wrap"><img class="hl-player-photo" id="hl-player-photo" src="" alt=""></div>
+      <img id="hl-playoffs-coverer" src="/assets/mvp/playoffs/highlights/playoffs_mvpcoverer.png" alt="">
       <div id="hl-plaque">
         <div class="hl-logo"><img id="hl-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
         <div class="hl-role"><img id="hl-role-icon" src="" alt="" onerror="this.style.display='none'"></div>
@@ -8078,6 +8209,7 @@
       'playoffs': {
         waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         lobby:   '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        bracket: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
       },
       '10th_anniversary': {
         waiting:    '/assets/phase2_annivloopsun.webm',
@@ -8146,6 +8278,8 @@
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
       const mvBoxBg = document.getElementById('mv-box-bg');
       if (mvBoxBg) mvBoxBg.src = MV_BOX_BG_SRC_BY_THEME[theme] || MV_BOX_BG_SRC;
+      const mvSeason = document.getElementById('mv-matchbox-season');
+      if (mvSeason) mvSeason.textContent = theme === 'playoffs' ? 'THE PLAYOFFS' : 'REGULAR SEASON';
     }
     applyMvBoxBgTheme();
     /* Features that stay in SCENE_VIDEO_SRC (their own reveal step still
@@ -9676,6 +9810,21 @@
       { key: 'lord',    label: 'LORD<br>CONTROL %', annivLabel: 'LORD<br>CONTROL%', annivPos: { left: 558, top: 308 } },
     ];
     const TH_R = 250, TH_CX = 300, TH_CY = 300;
+    /* Playoffs layout draws a slightly smaller hexagon (R=238, 7 rings —
+       measured off guide_hexagonV2.png); read at build time so a live theme
+       switch picks it up. */
+    function thIsPlayoffs() { return document.documentElement.getAttribute('data-theme') === 'playoffs'; }
+    function thR() { return thIsPlayoffs() ? 238 : TH_R; }
+    /* Playoffs axis label/value positions, canvas-absolute (guide_hexagonV2.png).
+       label: left/top/width/align; vals: left/top of the 2-row value block. */
+    const TH_PO_AXES = [
+      { label: { left: 760,  top: 211, width: 208, align: 'right' }, vals: { left: 995,  top: 196 } },
+      { label: { left: 1190, top: 306, width: 150, align: 'left'  }, vals: { left: 1191, top: 345 } },
+      { label: { left: 1188, top: 601, width: 150, align: 'left'  }, vals: { left: 1152, top: 622 } },
+      { label: { left: 780,  top: 737, width: 198, align: 'right' }, vals: { left: 995,  top: 724 } },
+      { label: { left: 640,  top: 602, width: 150, align: 'left'  }, vals: { left: 642,  top: 640 } },
+      { label: { left: 624,  top: 306, width: 150, align: 'left'  }, vals: { left: 626,  top: 345 } },
+    ];
     /* Shared duration for both team shapes' entrance (see buildThRadar's
        THR_KEYFRAMES) and every number's count-up. */
     const TH_ANIM_MS = 700;
@@ -9716,29 +9865,32 @@
          here rather than as a stylesheet override like everywhere else
          in this scene. */
       const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-      const gridColor = isAnniv ? '#ffffff' : '#9a9a9f';
+      const isPo = thIsPlayoffs();
+      const R = thR();
+      const gridColor = isAnniv ? '#ffffff' : (isPo ? '#0a0a0a' : '#9a9a9f');
       const gridWidth = isAnniv ? 3 : 2;
       /* Darker than the axis-label chips' own #0095fd/#ff243e (see
          .th-axis-val-blue/-red above, unchanged) — those sit on flat
          backgrounds and read fine bright; these two polygons sit directly
          on the busy gradient scene background (see screenshot) and were
          getting lost against it at the brighter shade. */
-      const blueColor = isAnniv ? '#0068c9' : '#1656d5';
-      const redColor  = isAnniv ? '#d1001f' : '#d92027';
+      const blueColor = isAnniv ? '#0068c9' : (isPo ? '#0b52d6' : '#1656d5');
+      const redColor  = isAnniv ? '#d1001f' : (isPo ? '#d8120a' : '#d92027');
+      const ringCount = isPo ? 7 : 5;
       let grid = '';
-      for (let ring = 1; ring <= 5; ring++) {
-        const r = TH_R * ring / 5;
+      for (let ring = 1; ring <= ringCount; ring++) {
+        const r = R * ring / ringCount;
         const pts = TH_RADAR_AXES.map((_, i) => { const p = thAxisPoint(i, r); return `${p.x},${p.y}`; }).join(' ');
         grid += `<polygon points="${pts}" fill="none" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
       }
       const spokes = TH_RADAR_AXES.map((_, i) => {
-        const p = thAxisPoint(i, TH_R);
+        const p = thAxisPoint(i, R);
         return `<line x1="${TH_CX}" y1="${TH_CY}" x2="${p.x}" y2="${p.y}" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
       }).join('');
       function poly(stats, color, groupId) {
         const pts = TH_RADAR_AXES.map((ax, i) => {
           const v = Math.max(0, Math.min(100, stats[ax.key] || 0));
-          const p = thAxisPoint(i, TH_R * v / 100);
+          const p = thAxisPoint(i, R * v / 100);
           return `${p.x},${p.y}`;
         }).join(' ');
         /* transform-origin here is in the SVG's own user-unit space (same
@@ -9760,7 +9912,19 @@
          row — name, then the chips beside it — instead of 3 stacked lines,
          since those two sit right up against the team boxes / title bar. */
       const labels = TH_RADAR_AXES.map((ax, i) => {
-        const p = thAxisPoint(i, TH_R + 42);
+        const p = thAxisPoint(i, R + 42);
+        /* Playoffs — plain label + two chip/value rows at the guide's
+           per-axis canvas positions (converted to #th-radar-local, which
+           sits at 660,180). Same th-radar-v-N-blue/red ids as the other
+           branches so the count-ups keep working. */
+        if (isPo) {
+          const pa = TH_PO_AXES[i];
+          return `<div class="th-po-label" style="left:${pa.label.left - 660}px; top:${pa.label.top - 180}px; width:${pa.label.width}px; text-align:${pa.label.align};">${ax.label}</div>` +
+            `<div class="th-po-valrow" style="left:${pa.vals.left - 660}px; top:${pa.vals.top - 180}px;">` +
+            `<div class="th-po-row"><span class="th-po-chip th-po-chip-blue"></span><span class="th-po-num-blue" id="th-radar-v-${i}-blue"></span></div>` +
+            `<div class="th-po-row"><span class="th-po-chip th-po-chip-red"></span><span class="th-po-num-red" id="th-radar-v-${i}-red"></span></div>` +
+            `</div>`;
+        }
         /* 10th Anniversary — every axis gets the annivstater.png card
            treatment instead of the normal .th-axis treatment (see the
            .th-fb-* CSS comment for why/positioning). ax.annivPos holds the
@@ -10097,8 +10261,11 @@
          buildWlSponsor's own asset swap does for the same reason. */
       const isRed = player && player.campid === 2;
       const isAnniversaryHl = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const isPlayoffsHl = document.documentElement.getAttribute('data-theme') === 'playoffs';
       plaque.style.backgroundImage = isAnniversaryHl
         ? `url('/assets/mvp/anniversary/${isRed ? 'mvpreplaybackerred' : 'mvpreplaybacker'}.png')`
+        : isPlayoffsHl
+        ? `url('/assets/mvp/playoffs/highlights/${isRed ? 'mvpreplaybackerred' : 'mvpreplaybacker'}.png')`
         : `url('/assets/highlights/${isRed ? 'mvphlred' : 'mvphlblue'}.png')`;
 
       const tricode = ((player && player.team_simple_name) || '').toUpperCase();
@@ -10484,8 +10651,11 @@
          hlApply's plaque swap above. */
       const isRed = player && player.campid === 2;
       const isAnniversaryMv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+      const isPlayoffsMv = document.documentElement.getAttribute('data-theme') === 'playoffs';
       document.getElementById('mv-backer').style.backgroundImage = isAnniversaryMv
         ? `url('/assets/mvp/anniversary/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`
+        : isPlayoffsMv
+        ? `url('/assets/mvp/playoffs/playoffs_${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`
         : `url('/assets/mvp/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`;
 
       const logoEl = document.getElementById('mv-team-logo');
