@@ -17,7 +17,7 @@ function buildSwapOverlay(i) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');

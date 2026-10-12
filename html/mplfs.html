@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/hero-web.js"></script>
   <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>MPLFS Overlay</title>
@@ -478,6 +479,9 @@
        p4kAsset/mbAsset (page 1 background). */
     [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/anniversary/consoblue3.png'); }
     [data-theme="10th_anniversary"] .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/anniversary/consored3.png'); }
+    /* Playoffs — same filenames under assets/consolidated_post/playoffs/. */
+    [data-theme="playoffs"] .cp2-row:not(.cp2-mirrored) { background-image: url('/assets/consolidated_post/playoffs/consoblue3.png'); }
+    [data-theme="playoffs"] .cp2-row.cp2-mirrored       { background-image: url('/assets/consolidated_post/playoffs/consored3.png'); }
     /* Page 2's background, as its own stacked layer instead of swapping
        the base background-image directly (which can't be transitioned).
        z-index:-1 (not 0) is required to keep it under every real
@@ -505,7 +509,29 @@
        the page 1 override above. */
     [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored)::after { background-image: url('/assets/consolidated_post/anniversary/consoblue4.png'); }
     [data-theme="10th_anniversary"] .cp2-row.cp2-mirrored::after       { background-image: url('/assets/consolidated_post/anniversary/consored4.png'); }
+    [data-theme="playoffs"] .cp2-row:not(.cp2-mirrored)::after { background-image: url('/assets/consolidated_post/playoffs/consoblue4.png'); }
+    [data-theme="playoffs"] .cp2-row.cp2-mirrored::after       { background-image: url('/assets/consolidated_post/playoffs/consored4.png'); }
     .cp2-row.cp2-page2::after { opacity: 1; }
+    /* Page 3 — the Average BPM column sits in page 1's gray-diagonal Runes
+       panel, which butts against the vertical-gradient Items panel and leaves
+       a hard seam right beside it. This layer paints the Items panel's own
+       gradient (stretched) over the Runes panel, so the whole BPM area reads
+       as one continuous panel. Covers x355-730 (blue) / x0-375 (red, mirrored): the Runes
+       and Items panels together, sampled from inside the Items panel (x527+
+       / x0-203) so its baked 1px edge line is covered too. */
+    .cp2-row::before {
+      content: '';
+      position: absolute; top: 0; height: 154px; width: 375px; z-index: -1;
+      background-repeat: no-repeat; background-size: 1348px 154px;
+      opacity: 0; transition: opacity 400ms ease; pointer-events: none;
+    }
+    .cp2-row:not(.cp2-mirrored)::before { left: 355px; background-image: url('/assets/consolidated_post/consoblue3.png'); background-position: -973px 0; }
+    .cp2-row.cp2-mirrored::before       { left: 0; background-image: url('/assets/consolidated_post/consored3.png');  background-position: 0 0; }
+    [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored)::before { background-image: url('/assets/consolidated_post/anniversary/consoblue3.png'); }
+    [data-theme="10th_anniversary"] .cp2-row.cp2-mirrored::before       { background-image: url('/assets/consolidated_post/anniversary/consored3.png'); }
+    [data-theme="playoffs"] .cp2-row:not(.cp2-mirrored)::before { background-image: url('/assets/consolidated_post/playoffs/consoblue3.png'); }
+    [data-theme="playoffs"] .cp2-row.cp2-mirrored::before       { background-image: url('/assets/consolidated_post/playoffs/consored3.png'); }
+    .cp2-row.cp2-page3::before { opacity: 1; }
 
     /* blue — left column, 11px gap: pitch = row height (154) + 11 */
     .cp2-row-1 { left: 59px; top: 193px; z-index: 3; }
@@ -555,6 +581,8 @@
       line-height: 1; white-space: nowrap; overflow: hidden;
     }
     .cp2-level { left: 0px;  top: 132px; width: 69px; height: 22px; font-size: 15px; }
+    /* Playoffs — the level sits on the gold tab: black text. */
+    [data-theme="playoffs"] .cp2-level { color: #111; }
     .cp2-name  { left: 98px; top: 132px; width: 99px; height: 22px; font-size: 12.4px; transform-origin: center center; }
 
     /* Runes — same on both pages, only fade out on page 2 (see
@@ -627,6 +655,12 @@
        of Regular's gradient. */
     [data-theme="10th_anniversary"] .cp2-row:not(.cp2-mirrored) .cp2-dmg-bar { background: #0094fb; }
     [data-theme="10th_anniversary"] .cp2-mirrored .cp2-dmg-bar { background: #ff243e; }
+    /* Playoffs — the empty part of each stat bar is GOLD instead of black
+       (blue+gold on the blue side, red+gold on the red side). The numbers
+       over the gold track turn black; the ones over the colored fill stay
+       white (no glow on either). */
+    [data-theme="playoffs"] .cp2-dmg-taken, [data-theme="playoffs"] .cp2-dmg-dealt { background: linear-gradient(to bottom, #edc555, #d0a43e); }
+    [data-theme="playoffs"] .cp2-dmg-num-dark { color: #111; }
     .cp2-dmg-num-dark, .cp2-dmg-num-light {
       position: absolute; inset: 0; display: flex; align-items: center; padding-left: 8px;
       font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 1;
@@ -691,14 +725,18 @@
       font-family: 'Anton', sans-serif; font-size: 56px; line-height: 1; color: #000;
       white-space: nowrap; overflow: hidden;
     }
-    .cp2-bpm-heart-0 { left: 390px; } .cp2-bpm-label-0 { left: 434px; } .cp2-bpm-value-0 { left: 388px; }
-    .cp2-bpm-heart-1 { left: 526px; } .cp2-bpm-label-1 { left: 570px; } .cp2-bpm-value-1 { left: 524px; }
-    .cp2-bpm-heart-2 { left: 628px; } .cp2-bpm-label-2 { left: 672px; } .cp2-bpm-value-2 { left: 626px; }
+    /* Evenly spaced: the BPM area is x355-730 (375px) = three 125px cells. The
+       heart+label groups differ in visible width (Peak/Clash carry an extra
+       icon), so each is positioned by its VISIBLE center (418/543/668), and
+       each value box (100px) is centered on that same x. */
+    .cp2-bpm-heart-0 { left: 365px; } .cp2-bpm-label-0 { left: 409px; } .cp2-bpm-value-0 { left: 368px; }
+    .cp2-bpm-heart-1 { left: 507px; } .cp2-bpm-label-1 { left: 551px; } .cp2-bpm-value-1 { left: 492px; }
+    .cp2-bpm-heart-2 { left: 629px; } .cp2-bpm-label-2 { left: 673px; } .cp2-bpm-value-2 { left: 618px; }
     /* mirrored — column boxes follow x' = 730 - x - 100, but heart stays
        left of its label inside each column so it still reads normally */
-    .cp2-mirrored .cp2-bpm-heart-0 { left: 244px; } .cp2-mirrored .cp2-bpm-label-0 { left: 288px; } .cp2-mirrored .cp2-bpm-value-0 { left: 242px; }
-    .cp2-mirrored .cp2-bpm-heart-1 { left: 108px; } .cp2-mirrored .cp2-bpm-label-1 { left: 152px; } .cp2-mirrored .cp2-bpm-value-1 { left: 106px; }
-    .cp2-mirrored .cp2-bpm-heart-2 { left: 6px;   } .cp2-mirrored .cp2-bpm-label-2 { left: 50px;  } .cp2-mirrored .cp2-bpm-value-2 { left: 4px;   }
+    .cp2-mirrored .cp2-bpm-heart-0 { left: 259px; } .cp2-mirrored .cp2-bpm-label-0 { left: 303px; } .cp2-mirrored .cp2-bpm-value-0 { left: 262px; }
+    .cp2-mirrored .cp2-bpm-heart-1 { left: 151px; } .cp2-mirrored .cp2-bpm-label-1 { left: 195px; } .cp2-mirrored .cp2-bpm-value-1 { left: 137px; }
+    .cp2-mirrored .cp2-bpm-heart-2 { left: 24px;  } .cp2-mirrored .cp2-bpm-label-2 { left: 68px;  } .cp2-mirrored .cp2-bpm-value-2 { left: 13px;  }
 
     .cp2-row.cp2-page3 .cp2-rune-main,
     .cp2-row.cp2-page3 .cp2-rune-1,
@@ -757,6 +795,7 @@
        assets/consolidated_post/anniversary/, same convention as
        p4kAsset/mbAsset. */
     [data-theme="10th_anniversary"] #cmb-board { background-image: url('/assets/consolidated_post/anniversary/consomiddle.png'); }
+    [data-theme="playoffs"] #cmb-board { background-image: url('/assets/consolidated_post/playoffs/consomiddle.png'); }
 
     .cmb-header {
       position: absolute; left: 0; top: 0; width: 311px; height: 22px;
@@ -772,6 +811,8 @@
       color: #876330;
       font-weight: 600;
     }
+    /* Playoffs — header text sits on the gold header block: black. */
+    [data-theme="playoffs"] .cmb-header span { color: #111; }
     .cmb-gametime-label {
       position: absolute; left: 20px; top: 22px; width: 140px; height: 43px;
       display: flex; align-items: center;
@@ -869,6 +910,7 @@
       background-image: url('/assets/consolidated_post/consopart1.png');
       background-size: 311px 67px; background-repeat: no-repeat;
     }
+    [data-theme="playoffs"] #ckm2-part1 { background-image: url('/assets/consolidated_post/playoffs/consopart1.png'); }
     #ckm2-part2 {
       position: absolute; left: 0; top: 67px; width: 311px; height: 359px;
       background-image: url('/assets/consolidated_post/consopart2.png');
@@ -1246,6 +1288,20 @@
     }
     [data-theme="playoffs"] .wl-sponsor-loop img,
     [data-theme="playoffs"] .ws-sponsor-loop img { padding: 6px 12px; box-sizing: border-box; }
+    /* Exception: Consolidated Post 2's #cp2-sponsor keeps the standard
+       (Regular) layout — category plate on the left, logo area on the right —
+       because the universal header-strip layout leaves too little room for
+       logos in its 310x86 box. Same structure as Regular, gold plate. */
+    [data-theme="playoffs"] #cp2-sponsor { background: linear-gradient(to bottom, #ffffff, #e9e9ea); }
+    [data-theme="playoffs"] #cp2-sponsor .sponsor-cat-label {
+      left: 0; top: 0; width: 120px; height: 100%;
+      background: linear-gradient(to bottom, #edc555, #d0a43e);
+      font-size: 15.5px; font-weight: 800; letter-spacing: 0; line-height: 1.15;
+    }
+    [data-theme="playoffs"] #cp2-sponsor .wl-sponsor-loop {
+      left: 128px; right: 8px; top: 8px; bottom: 8px; padding: 0; background: none;
+    }
+    [data-theme="playoffs"] #cp2-sponsor .wl-sponsor-loop img { padding: 0; }
     /* Default box size for the scenes reworked for playoffs so far */
     [data-theme="playoffs"] #wl-sponsor,
     [data-theme="playoffs"] #ts-sponsor,
@@ -1255,7 +1311,7 @@
     /* Bracket: same spot as Waiting TVC/Lobby's sponsor box. Lives on
        #bracket-page itself (not inside the tilting #bracket-container) so
        the 3D pose never moves it. Playoffs only. */
-    #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; }
+    #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; transition: opacity 400ms ease; }
     [data-theme="playoffs"] #br-sponsor { display: block; }
     [data-theme="playoffs"] #ts-sponsor { display: block; left: 1492px; top: 78px; }
     #wl-timer {
@@ -1473,23 +1529,8 @@
        (MatchBox_REGULAR MATCH.png scaled ×1.268 to 724×219), corner text.
        Regular's saved Edit-tab overrides for these selectors are shadowed by
        seeded entries in the mplfs::playoffs bucket (overlay_styles.json). */
-    #wl-title, #wl-po-tag-left, #wl-po-tag-right, #wl-lakas, #wl-po-palag { display: none; }
-    [data-theme="playoffs"] #wl-po-tag-left, [data-theme="playoffs"] #wl-po-tag-right,
-    [data-theme="playoffs"] #wl-lakas, [data-theme="playoffs"] #wl-po-palag { display: flex; }
+    #wl-title { display: none; }
     [data-theme="playoffs"] #wl-title { display: block; }
-    #wl-po-tag-left, #wl-po-tag-right, #wl-lakas, #wl-po-palag {
-      position: absolute; align-items: center; gap: 12px;
-      font-family: 'General Sans', sans-serif; font-size: 17px; font-weight: 400;
-      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
-    }
-    #wl-po-tag-left b, #wl-po-tag-right b, #wl-lakas b, #wl-po-palag b { font-weight: 800; }
-    #wl-po-tag-right span:first-of-type { font-weight: 500; }
-    #wl-po-tag-left  { left: 30px;   top: 28px; width: 230px; height: 24px; gap: 18px; }
-    #wl-po-tag-right { left: 1640px; top: 18px; width: 252px; height: 24px; }
-    #wl-lakas        { left: 30px;   top: 1027px; width: 430px; height: 26px; gap: 20px; }
-    #wl-lakas .ws-lakas-text { font-size: 17px; }
-    #wl-lakas .ws-lakas-line { flex: 1; height: 1px; background: #0a0a0a; margin-left: -7px; }
-    #wl-po-palag     { left: 1670px; top: 1031px; width: 190px; height: 24px; font-size: 16px; font-style: italic; }
     #wl-title {
       position: absolute; left: 190px; top: 376px; width: 660px; height: 90px;
       font-family: 'Anton', sans-serif; font-size: 74px; line-height: 90px; letter-spacing: -0.045em;
@@ -1507,9 +1548,16 @@
     [data-theme="playoffs"] #wl-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
     [data-theme="playoffs"] #wl-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
     [data-theme="playoffs"] #wl-redcorner { display: none; }
+    /* Slight feather on the bottom edge of the lobby players: the 1080px photo
+       boxes start at y130, so the canvas edge is 950px down the box. */
+    [data-theme="playoffs"] .wl-player {
+      -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 810px, transparent 920px);
+              mask-image: linear-gradient(to bottom, #000 0, #000 810px, transparent 920px);
+    }
     /* Match box: TVC's 571×173 art ×1.268 */
     [data-theme="playoffs"] .wlm-box { width: 724px; height: 219px; }
     [data-theme="playoffs"] .wlm-box > img.wlm-box-bg { width: 724px; height: 219px; }
+    [data-theme="playoffs"] .wlm-box .wlm-band-cot { left: 198px; top: 0; width: 330px; height: 50px; }
     [data-theme="playoffs"] #wl-match { width: 724px; height: 219px; }
     [data-theme="playoffs"] .wlm-label, [data-theme="playoffs"] .wlm-time, [data-theme="playoffs"] .wlm-bo { height: 49px; font-size: 24px; }
     [data-theme="playoffs"] .wlm-label { left: 18px; }
@@ -4265,25 +4313,8 @@
        Pinas, SUPERFAN ticker (per reference_fullwaiting.png). All of these
        are display:none under other themes. SUPERFAN ticker text is
        placeholder content; it scrolls via .ws-sf-track. */
-    #ws-po-tag-left, #ws-po-tag-right, #ws-lakas, #ws-po-palag, #ws-superfan { display: none; }
-    [data-theme="playoffs"] #ws-po-tag-left, [data-theme="playoffs"] #ws-po-tag-right,
-    [data-theme="playoffs"] #ws-lakas, [data-theme="playoffs"] #ws-po-palag { display: flex; }
+    #ws-superfan { display: none; }
     [data-theme="playoffs"] #ws-superfan { display: block; }
-    #ws-po-tag-left, #ws-po-tag-right, #ws-lakas, #ws-po-palag {
-      position: absolute; align-items: center; gap: 10px;
-      font-family: 'General Sans', sans-serif; font-size: 17px; font-weight: 400;
-      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
-    }
-    #ws-po-tag-left b, #ws-po-tag-right b, #ws-lakas b, #ws-po-palag b { font-weight: 800; }
-    #ws-po-tag-right span:first-of-type { font-weight: 500; }
-    .ws-po-chev { width: 19px; height: 12px; flex: none; }
-    .ws-po-spark { font-size: 20px; line-height: 1; }
-    #ws-po-tag-left  { left: 30px;   top: 28px; width: 230px; height: 24px; gap: 18px; }
-    #ws-po-tag-right { left: 1640px; top: 18px; width: 252px; height: 24px; }
-    #ws-lakas        { left: 30px;   top: 1027px; width: 430px; height: 26px; gap: 20px; }
-    #ws-lakas .ws-lakas-text { font-size: 17px; }
-    #ws-lakas .ws-lakas-line { flex: 1; height: 1px; background: #0a0a0a; margin-left: -7px; }
-    #ws-po-palag     { left: 1670px; top: 1031px; width: 190px; height: 24px; font-size: 16px; font-style: italic; }
     #ws-superfan { position: absolute; left: 628px; top: 997px; width: 899px; height: 51px; }
     #ws-superfan > img { position: absolute; left: 0; top: 0; width: 899px; height: 51px; }
     .ws-sf-label, .ws-sf-window span {
@@ -4292,6 +4323,11 @@
     }
     .ws-sf-label { position: absolute; left: 17px; top: 0; width: 360px; height: 51px; display: flex; align-items: center; color: #fff; }
     .ws-sf-window { position: absolute; left: 396px; top: 0; width: 503px; height: 51px; overflow: hidden; }
+    /* Fade the ticker text out/in at both edges so it never hard-cuts. */
+    .ws-sf-window {
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 44px, #000 calc(100% - 44px), transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 44px, #000 calc(100% - 44px), transparent 100%);
+    }
     .ws-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: ws-sf-scroll 9s linear infinite; }
     .ws-sf-window span { color: #0a0a0a; padding-right: 120px; flex: none; }
     @keyframes ws-sf-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -4352,6 +4388,8 @@
     .wsm-oh-label { left: 12px; width: 255px; color: #fff; }
     .wsm-oh-time  { left: 295px; width: 270px; justify-content: center; color: #0a0a0a; }
     [data-theme="playoffs"] #ws-matches .wsm-tri { font-size: 41px; }
+    [data-theme="playoffs"] #ws-matches .wsm-logo-l { left: 107px; width: 131px; }
+    [data-theme="playoffs"] #ws-matches .wsm-logo-r { left: 341px; }
     [data-theme="playoffs"] #ws-matches .wsm-logo-l img,
     [data-theme="playoffs"] #ws-matches .wsm-logo-r img { width: 122px; height: 108px; }
     [data-theme="playoffs"] .ws-talent-box { height: 500px; }
@@ -6429,10 +6467,6 @@
       <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS&nbsp;<span class="ws-cd-in">IN:</span></div>
       <!-- Playoffs-only decorations (display:none under every other theme).
            Text is real HTML; SUPERFAN ticker text is a placeholder for now. -->
-      <div id="ws-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
-      <div id="ws-po-tag-right"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>SEASON 18 PLAYOFFS</b></span><span class="ws-po-spark">&#10039;</span></div>
-      <div id="ws-lakas"><span class="ws-po-spark">&#10022;</span><span class="ws-lakas-text"><b>LAKAS</b> NG <b>PINAS</b></span><span class="ws-lakas-line"></span></div>
-      <div id="ws-po-palag"><span><b>PALAG</b> NA <b>TO!</b></span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
       <div id="ws-superfan">
         <img src="/assets/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
         <span class="ws-sf-label">MPL PH SUPERFAN CITY</span>
@@ -6448,10 +6482,6 @@
       <!-- Playoffs-only decorations (hidden under every other theme). Title
            text is a placeholder constant for now. -->
       <div id="wl-title">NEXT MATCH / PLAY-INS</div>
-      <div id="wl-po-tag-left"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>MPL</b> PHILIPPINES</span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
-      <div id="wl-po-tag-right"><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><span><b>SEASON 18 PLAYOFFS</b></span><span class="ws-po-spark">&#10039;</span></div>
-      <div id="wl-lakas"><span class="ws-po-spark">&#10022;</span><span class="ws-lakas-text"><b>LAKAS</b> NG <b>PINAS</b></span><span class="ws-lakas-line"></span></div>
-      <div id="wl-po-palag"><span><b>PALAG</b> NA <b>TO!</b></span><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M0 0L9 6L0 12Z M10 0L19 6L10 12Z" fill="#0a0a0a"/></svg><svg class="ws-po-chev" viewBox="0 0 20 12"><path d="M1 1L8 6L1 11Z M11 1L18 6L11 11Z" fill="none" stroke="#0a0a0a" stroke-width="1.3"/></svg></div>
       <div id="wl-match"></div>
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
@@ -7956,7 +7986,7 @@
           heroBox.style.cssText = `position:absolute;left:0;top:0;width:${HERO_W}px;height:${ROW_H}px;overflow:hidden;z-index:4`;
           const heroImg = document.createElement('img');
           heroImg.style.cssText = `width:100%;height:100%;object-fit:cover;display:block`;
-          heroImg.src = p.hero_id ? `hero/HERO_${p.hero_id}_KOTAK.png` : '';
+          heroImg.src = p.hero_id ? heroWebUrl(p.hero_id) : '';
           heroImg.onerror = () => { heroImg.style.display = 'none'; };
           heroBox.appendChild(heroImg);
           rowGroup.appendChild(heroBox);
@@ -8167,7 +8197,7 @@
       const hero = document.createElement('img');
       hero.dataset.rgNtHero = '1';
       hero.style.cssText = `position:absolute;left:0;top:50%;transform:translateY(-50%);width:123px;height:123px;object-fit:contain;z-index:2`;
-      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.src = buildUrl('/' + heroWebUrl(heroid));
       hero.onerror = () => { hero.style.display = 'none'; };
       wrap.appendChild(hero);
 
@@ -8219,7 +8249,7 @@
       /* hero portrait — black left section */
       const hero = document.createElement('img');
       hero.style.cssText = `position:absolute;left:0;top:50%;transform:translateY(-50%);width:107px;height:107px;object-fit:contain;z-index:2`;
-      hero.src = buildUrl('/hero/HERO_' + heroid + '_KOTAK.png');
+      hero.src = buildUrl('/' + heroWebUrl(heroid));
       hero.onerror = () => { hero.style.display = 'none'; };
       wrap.appendChild(hero);
 
@@ -8513,6 +8543,7 @@
         waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         lobby:   '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         bracket: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        bracket_anim: '/assets/z_playoffs%20background/playoffsbg_theme.webm', /* bracket while off its base pose */
         schedule: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         tomorrow: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
       },
@@ -9364,14 +9395,21 @@
     function tsmRowPoHtml(m) {
       const ph = '/assets/Today\'s Schedule/playoffs/';
       const fit = tsFitStage(m.stage);
+      /* Real team photos: photos/Playoffs Sched/<TRI>_sched.png (524x242).
+         A team without one yet falls back to the side's placeholder. */
+      const photo = (side) => {
+        const o = m[side === 'l' ? 'left' : 'right'];
+        const tri = String((o && o.tri) || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+        const fb = ph.replace(/'/g, '%27') + (side === 'l' ? 'playoffs_blueteamplaceholder.png' : 'playoffs_redteamplaceholder.png');
+        return `<img class="tsm-po-photo tsm-po-photo-${side}" src="${tri ? '/photos/Playoffs%20Sched/' + tri + '_sched.png' : fb}" onerror="this.onerror=null;this.src='${fb}'" alt="">`;
+      };
       const logo = (side) => {
         const o = m[side === 'l' ? 'left' : 'right'];
         return `<img class="tsm-po-logo" src="${o.logo || (WS_ASSET + 'Null_Icon.png')}" onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt="">`;
       };
       return `<div class="tsm-row">` +
         `<img class="tsm-bg" src="${ph}playoffs_schedcontainer.png" alt="">` +
-        `<img class="tsm-po-photo tsm-po-photo-l" src="${ph}playoffs_blueteamplaceholder.png" alt="">` +
-        `<img class="tsm-po-photo tsm-po-photo-r" src="${ph}playoffs_redteamplaceholder.png" alt="">` +
+        photo('l') + photo('r') +
         `<video class="tsm-po-gold" muted loop playsinline preload="auto" src="${ph}GOLD BG W HOLDER_612x242.webm"></video>` +
         `<img class="tsm-po-hl tsm-po-hl-l" src="${ph}playoffs_blueschedhighlight.png" alt="">` +
         `<img class="tsm-po-hl tsm-po-hl-r" src="${ph}playoffs_redschedhighlight.png" alt="">` +
@@ -11398,11 +11436,30 @@
       return !!brBase && BR_POSE_KEYS.every(k => Math.abs((+p[k]) - (+brBase[k])) < 0.001);
     }
 
+    const brSponsorEl = document.getElementById('br-sponsor');
+    let brAnimActive = false;
+    function brBgFeature() {
+      return (brAnimActive && document.documentElement.getAttribute('data-theme') === 'playoffs') ? 'bracket_anim' : 'bracket';
+    }
+    /* Only while the scene is actually on screen; showSceneVideo is a no-op
+       when the requested file is already the current one. */
+    function brSyncBg() {
+      if (document.documentElement.getAttribute('data-theme') !== 'playoffs') return;
+      if (activeFeature !== 'bracket' || !brPage.classList.contains('br-on')) return;
+      showSceneVideo(brBgFeature());
+    }
+
     function brApplyPose(p, durMs) {
       if (!p) return;
       const baseOp = brIsBase(p) ? '1' : '0';
       brTrophy.style.opacity = baseOp;
       brHeader.style.opacity = baseOp;
+      /* Playoffs: while the bracket is off its base pose (animating through
+         the banked poses) swap to the theme background and fade the sponsor
+         box out; both revert on returning to the base pose. */
+      brAnimActive = baseOp === '0';
+      brSponsorEl.style.opacity = brAnimActive ? '0' : '1';
+      brSyncBg();
       brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
       brContainer.style.transform =
         `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
@@ -11572,7 +11629,7 @@
       brApplyPose(cfg ? cfg.pose : { rx: 0, ry: 0, rz: 0, scale: 1, x: 0, y: 0, persp: 1500 }, 0);
       await preloadMedia(brPage.querySelectorAll('img'), 1500);
       if (activeFeature !== 'bracket') return; /* superseded while preloading */
-      showSceneVideo('bracket');
+      showSceneVideo(brBgFeature());
       brTrophy.currentTime = 0; brTrophy.play().catch(() => {});
       if (document.documentElement.getAttribute('data-theme') === 'playoffs') brSponsorLoop.start();
       brPage.classList.add('br-on');
@@ -13822,7 +13879,7 @@
       const kdaEl   = document.getElementById(`${id}-kda`);
       const goldEl  = document.getElementById(`${id}-gold`);
 
-      if (heroEl) heroEl.src = buildUrl('/hero/HERO_' + s.heroid + '_KOTAK.png');
+      if (heroEl) heroEl.src = buildUrl('/' + heroWebUrl(s.heroid));
 
       const spellUrl = ftSpellUrl(s.skillid);
       if (spellEl) { spellEl.src = spellUrl ? buildUrl(spellUrl) : ''; spellEl.style.display = spellUrl ? '' : 'none'; }
@@ -15809,7 +15866,7 @@
 
       logoEl.onerror = () => { logoEl.style.display = 'none'; };
       logoEl.style.display = '';
-      logoEl.src = (seat && seat.heroid) ? '/hero/HERO_' + seat.heroid + '_KOTAK.png' : '';
+      logoEl.src = (seat && seat.heroid) ? '/' + heroWebUrl(seat.heroid) : '';
 
       roleEl.onerror = () => { roleEl.style.display = 'none'; };
       roleEl.style.display = '';
@@ -16987,9 +17044,14 @@
     // this only swaps the specific filenames actually covered; anything
     // else keeps Regular's art under every theme.
     const MB_ANNIV_ASSETS = new Set(['blue_victory.png', 'red_victory.png', 'postname_blue.png', 'postname_red.png']);
+    /* Playoffs — only the VICTORY plaques have art so far
+       (assets/postgame/playoffs/); anything else keeps Regular's art. */
+    const MB_PLAYOFFS_ASSETS = new Set(['blue_victory.png', 'red_victory.png']);
     function mbAsset(filename) {
-      const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-      return 'assets/postgame/' + (isAnniv && MB_ANNIV_ASSETS.has(filename) ? 'anniversary/' : '') + filename;
+      const theme = document.documentElement.getAttribute('data-theme');
+      const dir = (theme === '10th_anniversary' && MB_ANNIV_ASSETS.has(filename)) ? 'anniversary/'
+                : (theme === 'playoffs' && MB_PLAYOFFS_ASSETS.has(filename)) ? 'playoffs/' : '';
+      return 'assets/postgame/' + dir + filename;
     }
 
     /* Star match backgrounds (Epic Rivalry, Enduring Legacy, etc. — see

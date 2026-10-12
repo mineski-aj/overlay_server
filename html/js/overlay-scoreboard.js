@@ -24,10 +24,24 @@ function sbStarSuffixFor(matchType) {
   if (isAnniv && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
   return STAR_MATCH_SUFFIX[matchType];
 }
+/* Called every 3s from sbPollMatchState. Must be a no-op when nothing
+   changed: re-assigning a star-match src that doesn't exist on disk used to
+   flash the 404 (blank) between each poll and its fallback, i.e. a flicker
+   every 3 seconds. Remember what's already applied and which primaries are
+   known-missing, and only touch the <img> when the wanted src changes. */
+var _sbMissingImgs = {};
 function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
   if (!imgEl) return;
-  if (primarySrc === fallbackSrc) { imgEl.onerror = null; imgEl.src = fallbackSrc; return; }
-  imgEl.onerror = function () { imgEl.onerror = null; imgEl.src = fallbackSrc; };
+  var want = (primarySrc !== fallbackSrc && !_sbMissingImgs[primarySrc]) ? primarySrc : fallbackSrc;
+  if (imgEl.dataset.sbWant === want) return;
+  imgEl.dataset.sbWant = want;
+  if (want === fallbackSrc) { imgEl.onerror = null; imgEl.src = fallbackSrc; return; }
+  imgEl.onerror = function () {
+    imgEl.onerror = null;
+    _sbMissingImgs[primarySrc] = true;
+    imgEl.dataset.sbWant = fallbackSrc;
+    imgEl.src = fallbackSrc;
+  };
   imgEl.src = primarySrc;
 }
 

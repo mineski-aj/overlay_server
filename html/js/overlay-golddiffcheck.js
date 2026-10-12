@@ -171,8 +171,8 @@ function gdcApplyRow(lane, homeSeat, awaySeat) {
   const ref = gdcRefs[lane];
   if (!ref) return;
 
-  if (homeSeat && homeSeat.heroid) ref.homePortrait.src = `hero/HERO_${homeSeat.heroid}_KOTAK.png`;
-  if (awaySeat && awaySeat.heroid) ref.awayPortrait.src = `hero/HERO_${awaySeat.heroid}_KOTAK.png`;
+  if (homeSeat && homeSeat.heroid) ref.homePortrait.src = heroWebUrl(homeSeat.heroid);
+  if (awaySeat && awaySeat.heroid) ref.awayPortrait.src = heroWebUrl(awaySeat.heroid);
 
   const homeGold = (homeSeat && homeSeat.gold) || 0;
   const awayGold = (awaySeat && awaySeat.gold) || 0;

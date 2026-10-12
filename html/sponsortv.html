@@ -115,11 +115,90 @@
     .tsm-score .tsm-score-l   { font-weight: 700; font-size: 48px; color: #1656d5; }
     .tsm-score .tsm-score-div { width: 50px; height: 4px; background: #0a0a0a; margin: 4px 0; }
     .tsm-score .tsm-score-r   { font-weight: 700; font-size: 48px; color: #d92027; }
+
+    /* ── Playoffs — the Waiting TVC's match containers (571x173 boxes,
+       playoffs art/fonts/positions copied from mplfs.html's .wsm-* rules),
+       always 2 matches. They render at their native 571 width inside the
+       existing 858x712 block and are scaled 1.5x (to 857px wide) so the
+       Edit tab's single #stv-content box still moves/scales the group. ── */
+    #stv-matches.stv-po { width: 571px; gap: 8px; transform: scale(1.5); transform-origin: center center; }
+    .wsm-box { position: relative; width: 571px; height: 173px; }
+    .wsm-box > img.wsm-box-bg { position: absolute; left: 0; top: 0; width: 571px; height: 173px; }
+    .wsm-box .wsm-band-label,
+    .wsm-box .wsm-band-time,
+    .wsm-box .wsm-band-bo {
+      position: absolute; top: 0; height: 39px;
+      display: flex; align-items: center;
+      font-weight: 800; font-size: 19px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .wsm-box .wsm-band-label { left: 14px; }
+    .wsm-box .wsm-band-time  { left: 0; width: 100%; justify-content: center; }
+    .wsm-box .wsm-band-bo    { right: 14px; }
+    .wsm-box .wsm-band-cot     { position: absolute; left: 169px; top: 0; width: 233px; height: 39px; animation: wsm-cot-mask 9s ease-in-out infinite; }
+    .wsm-box .wsm-band-cot-img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .wsm-box .wsm-band-time.star { animation: wsm-cot-pulse-inv 9s ease-in-out infinite; }
+    @keyframes wsm-cot-mask {
+      0%     { clip-path: inset(0 100% 0 0); }
+      10%    { clip-path: inset(0 0% 0 0); animation-timing-function: linear; }
+      48%    { clip-path: inset(0 0% 0 0); animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0); }
+      58%    { clip-path: inset(0 0 0 100%); }
+      58.5%  { clip-path: inset(0 100% 0 0); }
+      100%   { clip-path: inset(0 100% 0 0); }
+    }
+    .wsm-box .wsm-band-cot::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.9) 50%, transparent 65%);
+      background-size: 300% 100%; background-position: 150% 0;
+      mix-blend-mode: screen; pointer-events: none;
+      -webkit-mask-image: var(--cot-mask); -webkit-mask-size: 100% 100%; -webkit-mask-repeat: no-repeat;
+      mask-image: var(--cot-mask); mask-size: 100% 100%; mask-repeat: no-repeat;
+      animation: wsm-cot-shine 9s linear infinite;
+    }
+    @keyframes wsm-cot-shine {
+      0%, 10% { background-position: 150% 0; }
+      18%     { background-position: -50% 0; }
+      18%     { background-position: 150% 0; }
+      40%     { background-position: 150% 0; }
+      48%     { background-position: -50% 0; }
+      100%    { background-position: -50% 0; }
+    }
+    @keyframes wsm-cot-pulse-inv {
+      0%, 55%  { opacity: 0; }
+      62%, 96% { opacity: 1; }
+      100%     { opacity: 0; }
+    }
+    .wsm-box .wsm-slot {
+      position: absolute; top: 39px; height: 134px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .wsm-tri { font-family: 'Anton', sans-serif; font-weight: 400; font-size: 41px; color: #fff; text-transform: uppercase; white-space: nowrap; }
+    .wsm-tri.wsm-tri-gold { color: #0a0a0a; }
+    .wsm-tri-l { left: 0;  width: 94px; }
+    .wsm-tri-r { right: 0; width: 94px; }
+    .wsm-logo-l { left: 107px; width: 131px; }
+    .wsm-logo-r { left: 341px; width: 131px; }
+    .wsm-logo-l img, .wsm-logo-r img { width: 122px; height: 108px; object-fit: contain; }
+    .wsm-center { left: 225px; width: 121px; }
+    .wsm-center img.wsm-vs { width: 71px; height: 39px; }
+    .wsm-center img.wsm-score-img { width: 35px; height: 94px; object-fit: contain; }
+    .wsm-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    .wsm-score .wsm-score-l { font-weight: 800; font-size: 32px; color: #1656d5; }
+    .wsm-score .wsm-score-div { width: 34px; height: 3px; background: #0a0a0a; margin: 3px 0; }
+    .wsm-score .wsm-score-r { font-weight: 800; font-size: 32px; color: #d92027; }
   </style>
 </head>
 <body>
   <div id="scene">
     <video id="bg-video" src="/assets/bgloopwaves.webm" autoplay loop muted playsinline></video>
+    <script>
+      /* Playoffs background — swapped before the default loop gets a chance
+         to load (theme-apply.js's synchronous read already ran). */
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+        document.getElementById('bg-video').src = '/assets/z_playoffs%20background/playoffsbg_theme.webm';
+      }
+    </script>
     <div id="stv-content">
       <div id="stv-inner">
         <div id="stv-matches"></div>
@@ -133,6 +212,20 @@
     const WS_ASSET     = '/assets/Waiting Screen/';
     const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
     const TS_ASSET      = "/assets/Today's Schedule/";
+    const IS_PLAYOFFS   = document.documentElement.getAttribute('data-theme') === 'playoffs';
+    /* Waiting TVC match-container art per match type (same table as mplfs.html).
+       Playoffs only overrides the Regular box; the star-match boxes fall back to
+       the Waiting TVC's own art, exactly like mplfs.html does. */
+    const WS_MATCH_TYPE_ASSETS = {
+      regular:       { box: 'MatchBox_REGULAR MATCH',    blinker: null },
+      epic:          { box: 'MatchBox_EPIC RIVALRY',      blinker: 'EPIC RIVALRY BLINKER' },
+      international: { box: 'MatchBox_INTERNATIONAL',     blinker: 'INTERNATIONAL RIVALRY BLINKER' },
+      golden:        { box: 'MatchBox_GOLDEN RIVALRY',    blinker: 'GOLDEN RIVALRY BLINKER' },
+      clash:         { box: 'MatchBox_CLASH OF TITANS',   blinker: 'CLASH OF TITANS BLINKER' },
+      enduring:      { box: 'MatchBox_ENDURING LEGACY',   blinker: 'ENDURING LEGACY BLINKER' },
+    };
+    const WS_TVC_PLAYOFFS_OVERRIDE = { 'MatchBox_REGULAR MATCH.png': 'playoffs/MatchBox_REGULAR MATCH.png' };
+    function wsTvcAsset(filename) { return WS_TVC_ASSET + (WS_TVC_PLAYOFFS_OVERRIDE[filename] || filename); }
 
     /* Placeholder fallback — only used until the Match Board has real
        todayMatches data (same shape/values as Today's Schedule's). */
@@ -153,7 +246,8 @@
       const hId = state.home ? state.home.teamId : null;
       const aId = state.away ? state.away.teamId : null;
       const isDay2 = (state.day || 1) === 2;
-      return state.todayMatches.slice(0, isDay2 ? 3 : 2).map((m, i) => {
+      /* Playoffs always shows exactly 2 matches (same rule as the Waiting TVC). */
+      return state.todayMatches.slice(0, IS_PLAYOFFS ? 2 : (isDay2 ? 3 : 2)).map((m, i) => {
         let s1 = m.score1 || 0, s2 = m.score2 || 0;
         const liveStarted = !!(state.home && state.away && ((state.home.score || 0) || (state.away.score || 0)));
         if (liveStarted && hId && aId && m.team1Id && m.team2Id) {
@@ -165,6 +259,7 @@
           time:  m.time || '',
           bo,
           star:  !!m.star,
+          matchType: m.matchType || (m.star ? 'clash' : 'regular'),
           left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
           right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
           score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
@@ -190,6 +285,30 @@
       const logo = (m, side) =>
         `<div class="tsm-slot tsm-logo-${side}"><img src="${(m[side === 'l' ? 'left' : 'right'].logo) || (WS_ASSET + 'Null_Icon.png')}" ` +
         `onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>`;
+      if (IS_PLAYOFFS) {
+        root.classList.add('stv-po');
+        root.innerHTML = rows.slice(0, 2).map(m => {
+          const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
+          const gold = m.matchType === 'enduring' ? ' wsm-tri-gold' : '';
+          const center = m.score
+            ? `<img class="wsm-score-img" src="${WS_TVC_ASSET}SCORES/${m.score.l}-${m.score.r}.png" ` +
+              `onerror="this.onerror=null;this.outerHTML='<div class=&quot;wsm-score&quot;><span class=&quot;wsm-score-l&quot;>${m.score.l}</span><span class=&quot;wsm-score-div&quot;></span><span class=&quot;wsm-score-r&quot;>${m.score.r}</span></div>'" alt="">`
+            : `<img class="wsm-vs" src="${WS_TVC_ASSET}SCORES/vs.png" alt="VS">`;
+          return `<div class="wsm-box"><img class="wsm-box-bg" src="${wsTvcAsset(typeAssets.box + '.png')}" alt="">` +
+            `<span class="wsm-band-label">${m.label}</span>` +
+            (typeAssets.blinker
+              ? `<span class="wsm-band-time star">${m.time}</span>` +
+                `<div class="wsm-band-cot" style="--cot-mask:url('${WS_TVC_ASSET}${typeAssets.blinker}.png')"><img class="wsm-band-cot-img" src="${WS_TVC_ASSET}${typeAssets.blinker}.png" alt=""></div>`
+              : `<span class="wsm-band-time">${m.time}</span>`) +
+            `<span class="wsm-band-bo">${m.bo}</span>` +
+            `<div class="wsm-slot wsm-tri wsm-tri-l${gold}">${m.left.tri}</div>` +
+            `<div class="wsm-slot wsm-logo-l"><img src="${m.left.logo || (WS_ASSET + 'Null_Icon.png')}" onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>` +
+            `<div class="wsm-slot wsm-center">${center}</div>` +
+            `<div class="wsm-slot wsm-logo-r"><img src="${m.right.logo || (WS_ASSET + 'Null_Icon.png')}" onerror="this.onerror=null;this.src='${WS_ASSET}Null_Icon.png'" alt=""></div>` +
+            `<div class="wsm-slot wsm-tri wsm-tri-r${gold}">${m.right.tri}</div></div>`;
+        }).join('');
+        return;
+      }
       root.innerHTML = rows.map(m => {
         const center = m.score
           ? `<div class="tsm-score"><span class="tsm-score-l">${m.score.l}</span><span class="tsm-score-div"></span><span class="tsm-score-r">${m.score.r}</span></div>`

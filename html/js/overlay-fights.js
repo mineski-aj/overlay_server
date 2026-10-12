@@ -153,7 +153,7 @@ function calcNameSize(name) {
 
 function fightHeroImgUrl(id) {
   if (!id) return null;
-  return `hero/HERO_${id}_KOTAK.png`;
+  return heroWebUrl(id);
 }
 
 function renderFight(fight, feed) {

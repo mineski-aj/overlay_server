@@ -114,7 +114,7 @@ function preloadHeroImages(data) {
     const r = getPlayer(data, i);
     if (r?.player?.heroid) {
       const img = new Image();
-      img.src = `hero/HERO_${r.player.heroid}_KOTAK.png`;
+      img.src = heroWebUrl(r.player.heroid);
     }
   }
 }

@@ -1790,7 +1790,7 @@
      1px overlap with the panel top at 60) by dropping its top to 14px. The
      press-bounce scales about the chip's own center and the sheen is sized in
      % of the chip, so both follow the new 47px height automatically. */
-  [data-theme="playoffs"] .gdc-smart { top: 14px; height: 47px; }
+  [data-theme="playoffs"] .gdc-smart { top: 14px; height: 47px; border-radius: 0; }
   [data-theme="playoffs"] .gdc-smart-img { height: 47px; }
   .gdc-smart-sheen {
     position: absolute;
@@ -2156,6 +2156,10 @@
      title in, so there's nothing to recolor there). */
   [data-theme="10th_anniversary"] .sidecheck-header {
     color: #ffffff;
+  }
+  /* Playoffs — black Anton title on the gold ribbon strip. */
+  [data-theme="playoffs"] .sidecheck-header {
+    color: #0a0a0a;
   }
   .sidecheck-row {
     position: absolute;

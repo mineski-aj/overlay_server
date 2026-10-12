@@ -56,9 +56,10 @@ function puiBuildCard(i) {
   /* 10th Anniversary versions are the same 180x89 (see the coordinate
      comment at the top of this file), so no layout recalculation needed. */
   const puiIsAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-  bg.src = puiIsAnniv
-    ? (side === 'home' ? 'assets/ingame/anniversary/ui/uiblue.png' : 'assets/ingame/anniversary/ui/uired.png')
-    : (side === 'home' ? 'assets/ingame/ui/uiblue.png' : 'assets/ingame/ui/uired.png');
+  const puiDir = puiIsAnniv ? 'assets/ingame/anniversary/ui/'
+    : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/'
+    : 'assets/ingame/ui/';
+  bg.src = puiDir + (side === 'home' ? 'uiblue.png' : 'uired.png');
   bg.alt = '';
   card.appendChild(bg);
 

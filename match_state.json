@@ -3,7 +3,7 @@
     "teamId": "10973",
     "name": "Team Falcons",
     "short": "FLCN",
-    "score": 1,
+    "score": 3,
     "lineup": [
       {
         "role": "EXP LANER",
@@ -37,7 +37,7 @@
     "teamId": "10763",
     "name": "Team Liquid PH",
     "short": "TLPH",
-    "score": 2,
+    "score": 3,
     "lineup": [
       {
         "role": "EXP LANER",
@@ -67,15 +67,15 @@
     ],
     "coach": "Aeon"
   },
-  "series": "BO3",
-  "game": 4,
+  "series": "BO7",
+  "game": 7,
   "match": 2,
   "swapped": false,
   "official": true,
   "week": 8,
   "day": 3,
   "patch": "Starward Decade 0916",
-  "map": "Healing Turtle",
+  "map": "Flying Cloud",
   "hosts": [
     "Odin",
     "Denisse",
@@ -111,7 +111,9 @@
       "vsDisplay": "2 - 1",
       "time": "5:00 PM",
       "star": false,
-      "matchType": "regular"
+      "matchType": "regular",
+      "openHouseTime": "4:00 PM",
+      "stageLabel": "UPPER BRACKET FINALS"
     },
     {
       "team1Id": "10973",
@@ -125,7 +127,9 @@
       "vsDisplay": "1 - 2",
       "time": "7:30 PM",
       "star": true,
-      "matchType": "clash"
+      "matchType": "clash",
+      "openHouseTime": "6:30 PM",
+      "stageLabel": "LOWER BRACKET FINALS"
     },
     {
       "team1Id": "10763",

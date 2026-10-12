@@ -127,10 +127,12 @@ function icBuildPanel() {
   if (!overlay) return;
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  const isPlayoffs = document.documentElement.getAttribute('data-theme') === 'playoffs';
+  const icAssetDir = isAnniv ? '/assets/ingame/anniversary/' : isPlayoffs ? '/assets/ingame/playoffs/' : '/assets/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'ic-bg';
-  bg.src = isAnniv ? '/assets/ingame/anniversary/ingameitemback2.png' : '/assets/ingame/ingameitemback2.png';
+  bg.src = icAssetDir + 'ingameitemback2.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -142,7 +144,7 @@ function icBuildPanel() {
 
   const labelImg = document.createElement('img');
   labelImg.className = 'ic-label-img';
-  labelImg.src = isAnniv ? '/assets/ingame/anniversary/ingameitemlabel.png' : '/assets/ingame/ingameitemlabel.png';
+  labelImg.src = icAssetDir + 'ingameitemlabel.png';
   labelImg.alt = '';
   label.appendChild(labelImg);
 
@@ -167,7 +169,7 @@ function icUpdate(data) {
     if (!r || !r.player || !ref) continue;
 
     const heroId = r.player.heroid;
-    if (heroId) ref.portrait.src = `hero/HERO_${heroId}_KOTAK.png`;
+    if (heroId) ref.portrait.src = heroWebUrl(heroId);
     else        ref.portrait.removeAttribute('src');
 
     ref.goldText.textContent = icFormatGold(r.player.gold);

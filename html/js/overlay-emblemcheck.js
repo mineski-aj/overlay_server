@@ -84,16 +84,17 @@ function eccBuildPanel() {
   if (!overlay) return;
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  const eccAssetDir = isAnniv ? 'assets/ingame/anniversary/' : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/' : 'assets/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'ecc-bg';
-  bg.src = isAnniv ? 'assets/ingame/anniversary/emblemback.png' : 'assets/ingame/emblemback.png';
+  bg.src = eccAssetDir + 'emblemback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
   const middle = document.createElement('img');
   middle.className = 'ecc-middle';
-  middle.src = isAnniv ? 'assets/ingame/anniversary/emblemmiddle.png' : 'assets/ingame/emblemmiddle.png';
+  middle.src = eccAssetDir + 'emblemmiddle.png';
   middle.alt = '';
   overlay.appendChild(middle);
   eccRefs.middle = middle;

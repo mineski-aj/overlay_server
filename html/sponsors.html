@@ -91,6 +91,18 @@
     #ws-sponsor-cat { color: var(--anniv-accent, #0a0a0a); }
     [data-theme="10th_anniversary"] #ws-sponsor-cat { background-color: transparent; }
 
+    /* Playoffs — same side-by-side box as Consolidated Post 2's sponsor box in
+       mplfs.html: gold category plate on the left, white logo area on the
+       right (the Sponsor Box.png frame art is hidden). */
+    [data-theme="playoffs"] .wsm-sponsor { background: linear-gradient(to bottom, #ffffff, #e9e9ea); }
+    [data-theme="playoffs"] .wsm-sponsor > img { display: none; }
+    [data-theme="playoffs"] #ws-sponsor-cat {
+      left: 0; top: 0; width: 120px; height: 100%;
+      background: linear-gradient(to bottom, #edc555, #d0a43e);
+      font-weight: 800;
+    }
+    [data-theme="playoffs"] .ws-sponsor-loop { left: 128px; right: 8px; top: 8px; bottom: 8px; }
+
     /* White backdrop box around the 2nd (in-game style) logo loop — 300x300,
        centered on the loop below. Checked against the boxed sponsor bar
        (.wsm-sponsor: left 115-455px) for collision: this box spans

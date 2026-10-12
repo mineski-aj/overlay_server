@@ -38,7 +38,7 @@ function skdcSidePhotoSrc(name) {
   return `/photos/FRONT/${encodeURIComponent(name + '_FRONT_resized.png')}`;
 }
 function skdcHeroSrc(heroid) {
-  return heroid ? `hero/HERO_${heroid}_KOTAK.png` : '';
+  return heroid ? heroWebUrl(heroid) : '';
 }
 /* "Exp Laner" / "Gold Laner" / etc already match role/EXP LANER.png
    etc's naming exactly once uppercased — no lookup table needed. */

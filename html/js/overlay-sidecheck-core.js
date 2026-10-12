@@ -35,16 +35,16 @@ function sidecheckFormatK(v) {
   return ((v || 0) / 1000).toFixed(1) + 'K';
 }
 
-/* 10th Anniversary has its own sidestatback.png/sidestatbackgold.png —
+/* 10th Anniversary and Playoffs each have their own sidestatback.png/sidestatbackgold.png —
    shared by every panel that sets a sidecheck-bg src, whether through
    createSideCheck's opts.bgSrc below or one of the bespoke panels
    (overlay-sidekdadistricheck.js, overlay-sidegolddistricheck.js) that
    set it directly. This file loads first (see mploverlay_v7.html), so
    it's a plain global the others can call. */
 function sidecheckThemedBg(src) {
-  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
-    return src.replace('assets/ingame/', 'assets/ingame/anniversary/');
-  }
+  const theme = document.documentElement.getAttribute('data-theme');
+  if (theme === '10th_anniversary') return src.replace('assets/ingame/', 'assets/ingame/anniversary/');
+  if (theme === 'playoffs') return src.replace('assets/ingame/', 'assets/ingame/playoffs/');
   return src;
 }
 
@@ -226,7 +226,7 @@ function createSideCheck(opts) {
 
       moveRowTo(ref, SIDECHECK_BAR_TOPS[rank] - SIDECHECK_PORTRAIT_OFFSET, instant);
 
-      if (seat && seat.heroid) ref.portrait.src = `hero/HERO_${seat.heroid}_KOTAK.png`;
+      if (seat && seat.heroid) ref.portrait.src = heroWebUrl(seat.heroid);
       ref.nameInner.textContent = ((seat && seat.name) || '').toUpperCase();
       sidecheckFitName(ref.nameInner);
       ref.statText.textContent = opts.formatStat(seat);

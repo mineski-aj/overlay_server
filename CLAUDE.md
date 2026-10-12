@@ -1029,6 +1029,8 @@ H2H, Consolidated Post 2 and Middle Board inherit the look automatically
 (they just haven't had their playoffs position/size reworked yet — Post
 H2H's 60px-tall box in particular will look cramped until it is).
 
+**One deliberate exception:** Consolidated Post 2's `#cp2-sponsor` (310×86 box under the Kill Map) keeps the standard side-by-side layout (gold category plate on the left, logo area on the right) with its own `[data-theme="playoffs"] #cp2-sponsor …` rules, because the universal header-strip layout left too little room for logos at that size. It does not follow the "Playoffs Sponsor" Edit rows.
+
 **When you add or rework any mplfs.html scene for playoffs that has a
 sponsor box, use this universal box — do not restyle a sponsor box for
 that one scene.** Build it with the standard markup (`.sponsor-cat-label`
