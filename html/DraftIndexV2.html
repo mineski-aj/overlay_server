@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <base href="/">
+  <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/event-log-client.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
+  <title>Draft Index Overlay v2</title>
+  <style>
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 600;
+      font-display: block;
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 700;
+      font-display: block;
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'Anton';
+      font-weight: 400;
+      font-display: block;
+      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      width: 1920px;
+      height: 1080px;
+      overflow: hidden;
+      background: transparent;
+    }
+
+    /* ── Debug bar (backtick to toggle) — local-only testing, bypasses
+       the network entirely, same spirit as mplfs.html's debug card ── */
+    #di-debug-bar {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 30px;
+      background: rgba(0,0,0,0.85);
+      display: none;
+      align-items: center;
+      padding: 0 14px; gap: 10px;
+      z-index: 9999;
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px; color: #bbb;
+    }
+    #di-debug-bar.open { display: flex; }
+    #di-debug-bar button {
+      height: 22px; padding: 0 10px;
+      background: #2a2a2a; border: 1px solid #555; border-radius: 3px;
+      color: #bbb; cursor: pointer; font-size: 12px;
+    }
+    #di-debug-bar button:hover { background: #383838; color: #fff; }
+
+    /* ── Root wrapper — whole overlay fades in/out as one; individual
+       phase containers underneath animate their own contents. Transparent
+       — this is a browser-source overlay composited over the live scene
+       in OBS, not a full-screen opaque card (indexguide.png/indexguide2.png
+       are just white-canvas design mockups, not the on-air background). ── */
+    #di-root {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+      background: transparent;
+    }
+
+    #di-phase1, #di-phase2 {
+      position: absolute;
+      top: 0; left: 0;
+      width: 1920px; height: 1080px;
+      display: none;
+    }
+
+    /* ── Phase 1 — Smart logo + DRAFT INDEX title lockup, mask-revealed
+       from the shared center seam (see indexguide.png) ── */
+    #di-smart-logo-p1 {
+      position: absolute;
+      left: 377px; top: 469px;
+      width: 424px; height: 154px;
+      object-fit: contain;
+    }
+    #di-title-text {
+      position: absolute;
+      left: 855px; top: 469px;
+      width: 700px; height: 154px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 145px;
+      line-height: 1;
+      color: #0a0a0a;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+    /* 10th Anniversary — "DRAFT INDEX" title, white with a black glow to
+       lift it off the scene background, same convention as mplfs.html's
+       MVP Highlights/Heatmap titles (see that file's CLAUDE.md). */
+    [data-theme="10th_anniversary"] #di-title-text {
+      color: #ffffff;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.35), 1px 1px 1.5px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ── Phase 2 — mini Smart badge + blue/red team panels + stat bars
+       (see indexguide2.png / indexguide3.png) ── */
+    #di-smart-logo-p2 {
+      position: absolute;
+      left: 874px; top: 301px;
+      width: 172px; height: 63px;
+      object-fit: contain;
+    }
+
+    /* 10th Anniversary only — decorative backdrop behind every other
+       Phase 2 element, no Regular-theme equivalent at all (same pattern
+       as mplfs.html's #ws-anniv-logo). First child in #di-phase2's DOM
+       order (see the HTML below) and no z-index of its own, same as
+       every other Phase 2 element — that alone keeps it painting behind
+       everything else here, none of which sets z-index either. Position/
+       size only, from the user's pasted design-tool spec — its
+       background-image/z-index values are placeholder export noise, not
+       real styling intent (see CLAUDE.md's "Working from pasted
+       design-tool CSS" convention) — the real anniversary asset and
+       paint order are used instead. Starts at opacity:0, same as every
+       other Phase 2 shell element, and fades in with diRevealPhase2(). */
+    #di-anniv-bg { display: none; }
+    [data-theme="10th_anniversary"] #di-anniv-bg {
+      display: block;
+      position: absolute;
+      left: 299px; top: 311px;
+      width: 1308px; height: 472px;
+      background-image: url('/assets/index/anniversary/annivindex.png');
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+      opacity: 0;
+    }
+
+    .di-team-box {
+      position: absolute;
+      width: 285px; height: 414px;
+      background-repeat: no-repeat;
+      background-size: 100% 100%;
+    }
+    #di-blue-box { left: 166px;  top: 340px; background-image: url('/assets/index/indexblue.png'); }
+    #di-red-box  { left: 1429px; top: 342px; background-image: url('/assets/index/indexred.png'); }
+    /* 10th Anniversary — same filenames, reskinned art under
+       assets/index/anniversary/, same convention as mplfs.html's
+       p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] #di-blue-box { background-image: url('/assets/index/anniversary/indexblue.png'); }
+    [data-theme="10th_anniversary"] #di-red-box  { background-image: url('/assets/index/anniversary/indexred.png'); }
+    [data-theme="playoffs"] #di-blue-box { background-image: url('/assets/index/playoffs/indexblue.png'); }
+    [data-theme="playoffs"] #di-red-box  { background-image: url('/assets/index/playoffs/indexred.png'); }
+
+    .di-team-logo {
+      position: absolute;
+      left: 61px; width: 164px; height: 164px;
+      object-fit: contain;
+    }
+    #di-blue-logo { top: 11px;  }
+    #di-red-logo  { top: 239px; }
+
+    .di-team-name {
+      position: absolute;
+      left: 0; width: 285px; height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #di-blue-name { top: 189px; }
+    #di-red-name  { top: 157px; }
+    .di-team-name span {
+      display: block;
+      max-width: 265px;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 34px;
+      line-height: 1;
+      color: #fff;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .di-stat-row {
+      position: absolute;
+      left: 0; width: 285px; height: 78.5px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+    }
+    #di-blue-counter { top: 257px;   }
+    #di-blue-lineup  { top: 335.5px; }
+    #di-red-counter  { top: 0;       }
+    #di-red-lineup   { top: 78.5px;  }
+    .di-stat-label {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      line-height: 13px;
+      letter-spacing: 0.02em;
+      color: #222;
+      text-transform: uppercase;
+      text-align: left;
+    }
+    .di-stat-value {
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 30px;
+      line-height: 1;
+      color: #0a0a0a;
+    }
+
+    /* ── Stat comparison bars — single editable viewport; the 7 rows
+       inside are generated from DI_BARS + the live API data, not
+       individually positioned (same philosophy as the Credit Reel
+       viewport in mplfs.html — only the box is drag/resize-able). ── */
+    #di-bars-container {
+      position: absolute;
+      left: 634px; top: 370px;
+      width: 622px; height: 420px;
+      display: flex;
+      flex-direction: column;
+    }
+    .di-bar-row {
+      flex: 1 1 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .di-bar-label {
+      font-family: 'General Sans', sans-serif;
+      font-weight: 600;
+      font-size: 14px;
+      letter-spacing: 0.04em;
+      color: #111;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    /* 10th Anniversary — brown brand color instead of Regular's near-black. */
+    [data-theme="10th_anniversary"] .di-bar-label { color: #876330; }
+    .di-bar-line {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 14px;
+    }
+    .di-bar-num {
+      width: 46px;
+      flex-shrink: 0;
+      font-family: 'Anton', sans-serif;
+      font-weight: 400;
+      font-size: 22px;
+      line-height: 1;
+      color: #0a0a0a;
+    }
+    .di-bar-num-blue { text-align: right; }
+    .di-bar-num-red  { text-align: left;  }
+    .di-bar-track {
+      flex: 1 1 auto;
+      height: 18px;
+      border-radius: 9px;
+      overflow: hidden;
+      display: flex;
+      background: #e2e2e6;
+    }
+    .di-bar-seg {
+      height: 100%;
+      width: 50%;
+      transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .di-bar-seg-blue { background: #1E64FF; }
+    .di-bar-seg-red  { background: #FF3232; }
+    /* 10th Anniversary — same anniversary blue/red pair as Consolidated
+       Post 2's Damage bars/Post H2H's comparison bars. Radius is a huge
+       value rather than a hand-computed half-height, so it stays a true
+       pill regardless of the track's own (re-laid-out below) height. */
+    [data-theme="10th_anniversary"] .di-bar-seg-blue { background: #0094fb; border-radius: 999px 0 0 999px; }
+    [data-theme="10th_anniversary"] .di-bar-seg-red  { background: #ff243e; border-radius: 0 999px 999px 0; }
+
+    /* 10th Anniversary — full re-layout of the 7 stat rows, per explicit
+       request/pasted spec: fixed 672x50 rows on a 57px pitch (50px row +
+       7px gap) instead of Regular's flex-auto-distributed rows, starting
+       at (625,361) — the container itself moves/resizes to that exact
+       bounding box (7*50 + 6*7 = 392px tall) and a `gap` on the flex
+       column reproduces the 57px pitch with zero per-row math, keeping
+       the file's existing "only the container box is drag/resize-able"
+       philosophy (see the comment above #di-bars-container) — no
+       per-row nth-child positioning needed.
+       Within each row: the label moves from ABOVE the bar (Regular's
+       column layout) to CENTERED in the horizontal gap between the two
+       value numbers (the pasted spec's two value boxes, x=8-144 and
+       x=528-664, leave an exact x=144-528 gap for it) — both share one
+       top 29px band, per the pasted Rectangle_1/Rectangle_1_copy specs
+       — with the actual color bar sitting in the remaining band below
+       (y=29 to the row's own 50px bottom edge). Once every child below
+       is made position:absolute, they fall out of .di-bar-row's/
+       .di-bar-line's own flex layout automatically, so neither of those
+       needs its own display/flex override here. */
+    [data-theme="10th_anniversary"] #di-bars-container {
+      left: 625px; top: 361px;
+      width: 672px; height: 392px;
+      gap: 7px;
+    }
+    [data-theme="10th_anniversary"] .di-bar-row {
+      flex: 0 0 50px;
+      position: relative;
+    }
+    [data-theme="10th_anniversary"] .di-bar-label {
+      position: absolute;
+      left: 144px; top: 0;
+      width: 384px; height: 29px;
+      margin-bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    [data-theme="10th_anniversary"] .di-bar-num {
+      position: absolute;
+      top: 24px; width: 136px; height: 29px;
+      display: flex; align-items: center;
+      font-family: 'General Sans', sans-serif;
+      font-weight: 700;
+      font-size: 21px;
+      color: #fff;
+      z-index: 2; /* above .di-bar-track below — see its own comment */
+    }
+    [data-theme="10th_anniversary"] .di-bar-num-blue { left: 20px;  text-align: left;  justify-content: flex-start; }
+    [data-theme="10th_anniversary"] .di-bar-num-red  { left: 514px; text-align: right; justify-content: flex-end;  }
+    [data-theme="10th_anniversary"] .di-bar-track {
+      position: absolute;
+      left: 8px; top: 29px;
+      width: 656px; height: 21px;
+      border-radius: 999px;
+      /* Explicit z-index (both .di-bar-num and this one, see above) since
+         plain DOM order alone put this on top of the two number spans —
+         they're both position:absolute with no z-index, so per normal
+         stacking rules the LATER-appended sibling (this track — see
+         buildBarsRows' append order: numBlue, track, numRed) painted
+         over the earlier one (numBlue), hiding it. */
+      z-index: 1;
+    }
+
+    /* ══════════ DRAFT INDEX v2 ══════════════════════════════════════════
+       v2 = the original Draft Index (phases 1 + 2, unchanged) plus:
+       - a looping webm background band (y193-885, theme-picked, see JS),
+       - a blue strip (top) and red strip (bottom) listing each team's five
+         players as ROLE ICON + NAME, left to right EXP, JUNGLE, MID, ROAM,
+         GOLD,
+       - 2s after the scene animates in, the five players' heroes
+         (posthero/) animate into the empty space above and below the band,
+         hold 4s, then animate out. Independent of phase 2.
+       Shares the original's SSE event, restore state, and Edit-tab styles. */
+    #dv2-band {
+      position: absolute; left: 0; top: 193px; width: 1920px; height: 692px;
+      overflow: hidden; /* static — the webm band is not animated */
+    }
+    #dv2-bg { position: absolute; left: 0; top: -193px; width: 1920px; height: 1080px; display: block; }
+    .dv2-strip {
+      position: absolute; left: 0; width: 1920px; height: 70px;
+      display: flex; align-items: center;
+      border-top: 2px solid #dbac35; border-bottom: 2px solid #dbac35;
+    }
+    #dv2-strip-blue { top: 193px; background: linear-gradient(to bottom, #0051ff 0%, #0047c4 55%, #003ca4 100%); }
+    #dv2-strip-red  { top: 815px; background: linear-gradient(to bottom, #a70100 0%, #c90008 45%, #fd0009 100%); }
+    /* Chrome off (for now): the webm band and the blue/red container art are
+       transparent, so the camera feed shows through. The strips' CONTENTS
+       (role icons + names) and the heroes are unaffected. Flip DV2_SHOW_CHROME
+       in the script to bring the band + containers back. */
+    html.dv2-chrome-off #dv2-band { display: none; }
+    html.dv2-chrome-off .dv2-strip { background: none !important; border-color: transparent !important; }
+    .dv2-cell { position: relative; width: 384px; height: 100%; flex: none; opacity: 0; } /* contents start hidden; JS animates them in */
+    .dv2-role {
+      position: absolute; left: 22px; top: 12px; width: 42px; height: 42px; object-fit: contain;
+      filter: brightness(0) invert(1);
+    }
+    .dv2-name {
+      position: absolute; left: 80px; top: 0; width: 290px; height: 66px;
+      display: flex; align-items: center; justify-content: center; text-align: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 38px;
+      color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    }
+    /* Hero row — cards sit in the empty space above/below the band. */
+    .dv2-heroes { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: none; pointer-events: none; }
+    /* Cards tile edge to edge (no gaps — a camera feed sits underneath): each
+       is a slanted parallelogram sized so its right edge lands exactly on the
+       next card's left edge; size/position/clip are set per card in JS. */
+    .dv2-hero { position: absolute; overflow: hidden; background: #0c0f1c; will-change: clip-path, transform; contain: layout paint; }
+    /* The hero art keeps its earlier display size (326x188, centered in the
+       card) — it is NOT scaled up to fill. The card's remaining area is
+       filled by a soft blurred copy of the same art, so there is no gap. */
+    .dv2-hero img.dv2-hero-fill { position: absolute; left: -20px; top: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; display: block; filter: blur(16px) brightness(0.85) saturate(1.2); will-change: transform; }
+    .dv2-hero img.dv2-hero-img {
+      position: absolute; width: 326px; height: 188px; object-fit: cover; display: block; transform-origin: 50% 40%; will-change: transform;
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+    }
+    .dv2-hero .dv2-hero-shade { position: absolute; inset: 0; }
+    .dv2-heroes-blue .dv2-hero-shade { background: linear-gradient(to top, rgba(0,70,220,0.55) 0%, rgba(0,70,220,0) 55%); }
+    .dv2-heroes-red  .dv2-hero-shade { background: linear-gradient(to bottom, rgba(230,0,12,0.55) 0%, rgba(230,0,12,0) 55%); }
+    .dv2-hero .dv2-hero-sheen {
+      position: absolute; top: 0; left: 0; width: 70px; height: 100%;
+      background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+      transform: translateX(-120%) skewX(-18deg); opacity: 0;
+    }
+  </style>
+</head>
+<body>
+
+<div id="di-debug-bar">
+  <span>Draft Index debug —</span>
+  <button onclick="showDraftIndexScene()">▶ SHOW</button>
+  <button onclick="hideDraftIndexScene()">■ HIDE</button>
+  <button onclick="diDebugJumpToPhase2()">⏭ JUMP TO PHASE 2</button>
+</div>
+
+<!-- v2: the webm background band + the blue/red player containers are the page's
+     PERMANENT look (shown on load and while hidden; never animated). Only the
+     contents of the containers animate (see dv2RevealContents), and the webm only
+     plays while the scene is shown. -->
+<div id="dv2-band"><video id="dv2-bg" muted loop playsinline preload="auto"></video></div>
+<div id="dv2-strip-blue" class="dv2-strip"></div>
+<div id="dv2-strip-red" class="dv2-strip"></div>
+
+<div id="di-root">
+
+  <div id="di-phase1">
+    <img id="di-smart-logo-p1" src="/assets/index/indexsmart.png" alt="">
+    <div id="di-title-text">DRAFT INDEX</div>
+  </div>
+
+  <div id="di-phase2">
+    <div id="di-anniv-bg"></div>
+    <img id="di-smart-logo-p2" src="/assets/index/indexsmart.png" alt="">
+
+    <div id="di-blue-box" class="di-team-box">
+      <img id="di-blue-logo" class="di-team-logo" alt="">
+      <div id="di-blue-name" class="di-team-name"><span></span></div>
+      <div id="di-blue-counter" class="di-stat-row">
+        <div class="di-stat-label">COUNTER<br>INDEX</div>
+        <div class="di-stat-value">0.0</div>
+      </div>
+      <div id="di-blue-lineup" class="di-stat-row">
+        <div class="di-stat-label">LINE UP<br>RATING</div>
+        <div class="di-stat-value">0.0</div>
+      </div>
+    </div>
+
+    <div id="di-red-box" class="di-team-box">
+      <div id="di-red-counter" class="di-stat-row">
+        <div class="di-stat-label">COUNTER<br>INDEX</div>
+        <div class="di-stat-value">0.0</div>
+      </div>
+      <div id="di-red-lineup" class="di-stat-row">
+        <div class="di-stat-label">LINE UP<br>RATING</div>
+        <div class="di-stat-value">0.0</div>
+      </div>
+      <img id="di-red-logo" class="di-team-logo" alt="">
+      <div id="di-red-name" class="di-team-name"><span></span></div>
+    </div>
+
+    <div id="di-bars-container"></div>
+  </div>
+
+  <!-- v2: hero reveal rows (top = blue team, bottom = red team) -->
+  <div id="dv2-heroes-blue" class="dv2-heroes dv2-heroes-blue"></div>
+  <div id="dv2-heroes-red" class="dv2-heroes dv2-heroes-red"></div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── Constants ─────────────────────────────────────────────────
+     PHASE1_HOLD_MS is how long the title card stays up before the
+     scene cuts to the comparison (phase 2). REVEAL_MS is the
+     center-out mask reveal duration for the phase-1 lockup. */
+  var PHASE1_HOLD_MS = 1000;
+  var REVEAL_MS       = 800;
+  var EASE_OUT        = 'cubic-bezier(0.22, 1, 0.36, 1)';
+
+  /* Stat categories, in display order — key matches the Line-Up Rate
+     API's t1/t2 fields (see /api/lineuprate-url in Settings to repoint
+     the API; labels match indexguide3.png). */
+  var DI_BARS = [
+    { key: 'early_mid_ability',  label: 'Early to Mid Game Potential' },
+    { key: 'late_stage_ability', label: 'Late Game Potential'         },
+    { key: 'damage_ability',     label: 'Damage Potential'            },
+    { key: 'survival_ability',   label: 'Survival Potential'          },
+    { key: 'control_ability',    label: 'Crowd Control'               },
+    { key: 'push_ability',       label: 'Push Potential'              },
+    { key: 'team_coordination',  label: 'Team Coordination'           },
+  ];
+
+  var diRoot    = document.getElementById('di-root');
+  var diPhase1  = document.getElementById('di-phase1');
+  var diPhase2  = document.getElementById('di-phase2');
+  var diLogoP1  = document.getElementById('di-smart-logo-p1');
+  var diTitle   = document.getElementById('di-title-text');
+  var diLogoP2  = document.getElementById('di-smart-logo-p2');
+  var diBlueBox = document.getElementById('di-blue-box');
+  var diRedBox  = document.getElementById('di-red-box');
+  var diBarsContainer = document.getElementById('di-bars-container');
+  var diAnnivBg = document.getElementById('di-anniv-bg'); /* 10th Anniversary only, see its CSS */
+
+  /* sceneToken guards against a stale setTimeout/fetch from a previous
+     SHOW still running after a HIDE (or another SHOW) supersedes it —
+     same pattern mplfs.html uses (activeFeature guard). */
+  var sceneToken = 0;
+
+  /* Every entrance/exit animation below uses fill:'forwards'/'both' so
+     its end state holds instead of snapping back to the CSS default —
+     but a held fill persists indefinitely and outranks any later plain
+     style write on the same property, so a stale animation from the
+     previous show/hide cycle silently overrides the next one (e.g.
+     HIDE's opacity:0 fill still winning over the next SHOW setting
+     display:block, leaving the whole scene invisible). Cancelling
+     every animation on these elements at the start of each entry point
+     clears that slate first. */
+  var DI_ANIMATED_ELS = [diRoot, diLogoP1, diTitle, diLogoP2, diBlueBox, diRedBox, diBarsContainer, diAnnivBg];
+  function diCancelAllAnimations() {
+    DI_ANIMATED_ELS.forEach(function (el) {
+      el.getAnimations().forEach(function (a) { a.cancel(); });
+    });
+  }
+
+  /* ── Build the 7 stat-bar rows once — content itself (labels/values)
+     comes from the API, only the container box is edit-tab draggable. */
+  var diBarEls = [];
+  function buildBarsRows() {
+    diBarsContainer.innerHTML = '';
+    diBarEls = DI_BARS.map(function (bar) {
+      var row = document.createElement('div');
+      row.className = 'di-bar-row';
+
+      var label = document.createElement('div');
+      label.className = 'di-bar-label';
+      label.textContent = bar.label;
+      row.appendChild(label);
+
+      var line = document.createElement('div');
+      line.className = 'di-bar-line';
+
+      var numBlue = document.createElement('div');
+      numBlue.className = 'di-bar-num di-bar-num-blue';
+      numBlue.textContent = '0.0';
+
+      var track = document.createElement('div');
+      track.className = 'di-bar-track';
+      var segBlue = document.createElement('div');
+      segBlue.className = 'di-bar-seg di-bar-seg-blue';
+      var segRed = document.createElement('div');
+      segRed.className = 'di-bar-seg di-bar-seg-red';
+      track.appendChild(segBlue);
+      track.appendChild(segRed);
+
+      var numRed = document.createElement('div');
+      numRed.className = 'di-bar-num di-bar-num-red';
+      numRed.textContent = '0.0';
+
+      line.appendChild(numBlue);
+      line.appendChild(track);
+      line.appendChild(numRed);
+      row.appendChild(line);
+      diBarsContainer.appendChild(row);
+
+      return { numBlue: numBlue, numRed: numRed, segBlue: segBlue, segRed: segRed, line: line };
+    });
+  }
+  buildBarsRows();
+
+  /* ── Number count-up (same easing/shape as Team Hexagon's thCountUp) */
+  function diFmt1(v) { return (Math.round(v * 10) / 10).toFixed(1); }
+  function diCountUp(el, to, durationMs) {
+    if (!el) return;
+    var start = performance.now();
+    function tick(now) {
+      var t = Math.min(1, (now - start) / durationMs);
+      var eased = 1 - Math.pow(1 - t, 3);
+      el.textContent = diFmt1(to * eased);
+      if (t < 1) requestAnimationFrame(tick);
+      else el.textContent = diFmt1(to);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function diSetBar(i, blueVal, redVal, animate) {
+    var els = diBarEls[i];
+    if (!els) return;
+    var total = blueVal + redVal;
+    var bluePct = total > 0 ? (blueVal / total * 100) : 50;
+    var redPct  = 100 - bluePct;
+    els.segBlue.style.width = bluePct + '%';
+    els.segRed.style.width  = redPct + '%';
+    if (!animate) {
+      els.numBlue.textContent = diFmt1(blueVal);
+      els.numRed.textContent  = diFmt1(redVal);
+      return;
+    }
+    diCountUp(els.numBlue, blueVal, 700);
+    diCountUp(els.numRed,  redVal,  700);
+  }
+
+  /* ── Shrink-to-fit for team short codes (see CLAUDE.md font-fitting
+     convention) — short codes are usually 3-5 chars so this rarely
+     kicks in, but keeps a long/unexpected code from overflowing. ── */
+  function diFitTeamName(boxEl, textEl, maxSize, minSize) {
+    var size = maxSize;
+    textEl.style.fontSize = size + 'px';
+    while (textEl.scrollWidth > boxEl.clientWidth - 20 && size > minSize) {
+      textEl.style.fontSize = (--size) + 'px';
+    }
+  }
+
+  function diApplyTeamBox(prefix, teamObj, logoTricode) {
+    var nameBox  = document.getElementById('di-' + prefix + '-name');
+    var nameText = nameBox.querySelector('span');
+    var logoEl   = document.getElementById('di-' + prefix + '-logo');
+    var short    = (teamObj && teamObj.short) || '';
+    /* Name text and logo both follow the live game feed's own campid (see
+       diApplyPhase2Data/diResolveCamps), not the Match Board's home/away —
+       keeps the tricode label and the logo always matching. Falls back to
+       the Match Board short code only if the live feed has no tricode for
+       that camp yet. */
+    var logoTri = logoTricode || short;
+    nameText.textContent = logoTri;
+    diFitTeamName(nameBox, nameText, 34, 18);
+    logoEl.onerror = function () { logoEl.style.display = 'none'; };
+    logoEl.style.display = '';
+    logoEl.src = logoTri ? '/logos/' + encodeURIComponent(logoTri) + '.png' : '';
+  }
+
+  /* ── Data fetch ──────────────────────────────────────────────── */
+  /* Team logos: campid 1 = blue, campid 2 = red — same strict, live-feed-
+     based convention as mplfs.html's Final Team scene (updateFtTeamIdentity/
+     ftResolveCardCamps), independent of the Match Board's home/away call. */
+  function diFetchGameData() {
+    return fetch('/api/gamedata-proxy', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+  function diResolveCamps(gd) {
+    var camps = (gd && gd.data && gd.data.camp_list) || [];
+    var blueCamp = null, redCamp = null;
+    for (var i = 0; i < camps.length; i++) {
+      if (camps[i].campid === 1) blueCamp = camps[i];
+      if (camps[i].campid === 2) redCamp = camps[i];
+    }
+    return {
+      blue: (blueCamp && blueCamp.team_simple_name) || '',
+      red:  (redCamp  && redCamp.team_simple_name)  || ''
+    };
+  }
+  function diFetchMatchState() {
+    return fetch('/match/state', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+  function diFetchLineupRate() {
+    return fetch('/api/lineuprate-data', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+
+  /* Line-Up Rate's upstream (theapi.dpdns.org) has hung/errored for extended
+     periods before — the server route (/api/lineuprate-data) already times
+     out at 5s and resolves on its own, so this just waits for the real
+     data instead of racing a second, redundant client-side cap: no
+     artificial ceiling here means Phase 2 never reveals early with
+     blank/stale values, it waits for the actual fetch and reveals the
+     instant it resolves. */
+  function diFetchPhase2Data() {
+    return Promise.all([diFetchMatchState(), diFetchLineupRate(), diFetchGameData()]);
+  }
+
+  /* t1/t2 → blue/red: this codebase's universal convention is camp1 =
+     blue = home (see CLAUDE.md campid note), and unlike the Team Head
+     to Head API, the Line-Up Rate API doesn't return a tricode to
+     cross-check sides against — so t1 is taken as blue/home and t2 as
+     red/away directly. Revisit if a real match ever shows this
+     backwards against the live API's actual side convention. */
+  function diNum(v) { return typeof v === 'number' ? v : (parseFloat(v) || 0); }
+  function diNormalizeSides(lu) {
+    var d = (lu && lu.data) || {};
+    var t1 = d.t1 || {};
+    var t2 = d.t2 || {};
+    return { blue: t1, red: t2 };
+  }
+
+  /* ── Data validity guard ──────────────────────────────────────────
+     showDraftIndexScene's Promise.all only waits for the phase-2
+     fetches to SETTLE, not for what comes back to be usable — a fetch
+     "succeeds" (200, parses as JSON) even when the upstream body is
+     empty/malformed (e.g. /api/draft-index-1 responding with no `t1`/
+     `t2`, or a shape missing every stat field), which is
+     indistinguishable from a real response by truthiness alone. Left
+     unchecked, diNum()'s `parseFloat(v) || 0` fallback silently turns
+     "field missing" into a real-looking 0.0 instead of that section
+     just staying hidden — this is what actually shipped: match state/
+     game data resolved fine, Line-Up Rate came back malformed, and the
+     stat bars revealed real zeros instead of holding back.
+     diHasNumber checks for a genuinely present, parseable number
+     rather than requiring `typeof === 'number'` specifically, since
+     this is a 3rd-party API and its exact field types aren't
+     guaranteed (see diNum's own comment above). */
+  function diHasNumber(v) {
+    if (typeof v === 'number') return !isNaN(v);
+    if (typeof v === 'string') return v.trim() !== '' && !isNaN(parseFloat(v));
+    return false;
+  }
+  function diHasLineupStats(sideObj) {
+    if (!sideObj) return false;
+    if (diHasNumber(sideObj.lineup_rating) || diHasNumber(sideObj.counter_the_opponent)) return true;
+    return DI_BARS.some(function (bar) { return diHasNumber(sideObj[bar.key]); });
+  }
+  /* Valid if EITHER side has at least one real stat — a real response
+     can legitimately have a blank side (unpicked lineup slot), but a
+     response with zero numeric fields on both sides is a dead/malformed
+     fetch, not real data. */
+  function diIsValidLineupData(lu) {
+    var sides = diNormalizeSides(lu);
+    return diHasLineupStats(sides.blue) || diHasLineupStats(sides.red);
+  }
+  function diIsValidTeamData(ms, gd) {
+    var home = (ms && ms.home) || {};
+    var away = (ms && ms.away) || {};
+    if (home.short || away.short) return true;
+    var liveTri = diResolveCamps(gd);
+    return !!(liveTri.blue || liveTri.red);
+  }
+
+  function diApplyPhase2Data(ms, lu, animate, gd) {
+    var home = (ms && ms.home) || {};
+    var away = (ms && ms.away) || {};
+    var liveTri = diResolveCamps(gd);
+    dv2ApplyStrips(gd);
+    diApplyTeamBox('blue', home, liveTri.blue);
+    diApplyTeamBox('red', away, liveTri.red);
+
+    var sides = diNormalizeSides(lu);
+    var blue = sides.blue, red = sides.red;
+
+    var blueCounter = document.querySelector('#di-blue-counter .di-stat-value');
+    var redCounter  = document.querySelector('#di-red-counter .di-stat-value');
+    var blueLineup  = document.querySelector('#di-blue-lineup .di-stat-value');
+    var redLineup   = document.querySelector('#di-red-lineup .di-stat-value');
+    if (animate) {
+      diCountUp(blueCounter, diNum(blue.counter_the_opponent), 700);
+      diCountUp(redCounter,  diNum(red.counter_the_opponent),  700);
+      diCountUp(blueLineup,  diNum(blue.lineup_rating), 700);
+      diCountUp(redLineup,   diNum(red.lineup_rating),  700);
+    } else {
+      blueCounter.textContent = diFmt1(diNum(blue.counter_the_opponent));
+      redCounter.textContent  = diFmt1(diNum(red.counter_the_opponent));
+      blueLineup.textContent  = diFmt1(diNum(blue.lineup_rating));
+      redLineup.textContent   = diFmt1(diNum(red.lineup_rating));
+    }
+
+    DI_BARS.forEach(function (bar, i) {
+      diSetBar(i, diNum(blue[bar.key]), diNum(red[bar.key]), animate);
+    });
+  }
+
+  /* ── Data-content opacity (logos/names/stat numbers/bar values) ──
+     Separate from diRevealPhase2()'s shell animation (box slide-in, mini
+     logo pop, bars container fade) on purpose — this scene is sponsored
+     and must always reveal on schedule, never delayed waiting on the
+     Line-Up Rate fetch (2-2.6s worst case). Content starts transparent
+     the moment phase 2 is entered and fades in separately the instant
+     real data actually lands, whenever that is relative to the shell
+     reveal — see diTransitionToPhase2(). Bar LABELS aren't included
+     here since they're static (from DI_BARS), not fetched. */
+  /* Split into two independently-gated groups — team identity (logos/
+     names) comes from /match/state + /api/gamedata-proxy, stats
+     (counters/lineup numbers/bars) comes from /api/lineuprate-data —
+     two unrelated upstreams that fail independently, so one group can
+     be valid while the other isn't (see diIsValidTeamData/
+     diIsValidLineupData above). */
+  var DI_TEAM_SELECTORS = [
+    '#di-blue-logo', '#di-red-logo',
+    '#di-blue-name', '#di-red-name',
+  ];
+  var DI_STATS_SELECTORS = [
+    '#di-blue-counter .di-stat-value', '#di-red-counter .di-stat-value',
+    '#di-blue-lineup .di-stat-value',  '#di-red-lineup .di-stat-value',
+  ];
+  function diSetSelectorOpacity(selectors, value, animate) {
+    selectors.forEach(function (sel) {
+      var el = document.querySelector(sel);
+      if (!el) return;
+      el.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+      el.style.opacity = String(value);
+    });
+  }
+  function diSetDataOpacity(teamValue, statsValue, animate) {
+    diSetSelectorOpacity(DI_TEAM_SELECTORS, teamValue, animate);
+    diSetSelectorOpacity(DI_STATS_SELECTORS, statsValue, animate);
+    diBarEls.forEach(function (els) {
+      if (!els.line) return;
+      els.line.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+      els.line.style.opacity = String(statsValue);
+    });
+  }
+
+  /* ── Phase 1 — mask reveal from the center seam, then ease out ── */
+  function diResetPhase1() {
+    diLogoP1.style.clipPath = 'inset(0 0 0 100%)';
+    diTitle.style.clipPath  = 'inset(0 100% 0 0)';
+  }
+  function diRevealPhase1() {
+    diLogoP1.animate(
+      [{ clipPath: 'inset(0 0 0 100%)' }, { clipPath: 'inset(0 0 0 0%)' }],
+      { duration: REVEAL_MS, easing: EASE_OUT, fill: 'forwards' }
+    );
+    diTitle.animate(
+      [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }],
+      { duration: REVEAL_MS, easing: EASE_OUT, fill: 'forwards' }
+    );
+  }
+  function diHidePhase1(durationMs) {
+    var kf = [
+      { opacity: 1, transform: 'scale(1)' },
+      { opacity: 0, transform: 'scale(0.85)' },
+    ];
+    diLogoP1.animate(kf, { duration: durationMs, easing: 'ease-in', fill: 'forwards' });
+    diTitle.animate(kf,  { duration: durationMs, easing: 'ease-in', fill: 'forwards' });
+  }
+
+  /* ── Phase 2 entrance — mini logo pops in, team panels slide in from
+     their respective sides, bars fade in and grow (staggered). ── */
+  function diRevealPhase2() {
+    /* 10th Anniversary only — display:none under every other theme (see
+       its CSS), so animating it there is a harmless no-op. Same simple
+       fade shape as diBarsContainer, since it's just a decorative
+       backdrop with no motion/slide of its own. */
+    diAnnivBg.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 400, easing: 'ease-out', fill: 'both' }
+    );
+    diLogoP2.animate(
+      [{ opacity: 0, transform: 'scale(0.6)' }, { opacity: 1, transform: 'scale(1)' }],
+      { duration: 500, easing: EASE_OUT, fill: 'both' }
+    );
+    diBlueBox.animate(
+      [{ opacity: 0, transform: 'translateX(-140px)' }, { opacity: 1, transform: 'translateX(0)' }],
+      { duration: 650, easing: EASE_OUT, fill: 'both' }
+    );
+    diRedBox.animate(
+      [{ opacity: 0, transform: 'translateX(140px)' }, { opacity: 1, transform: 'translateX(0)' }],
+      { duration: 650, easing: EASE_OUT, fill: 'both' }
+    );
+    diBarsContainer.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 400, delay: 150, easing: 'ease-out', fill: 'both' }
+    );
+    diBarEls.forEach(function (els, i) {
+      els.segBlue.style.transitionDelay = (200 + i * 80) + 'ms';
+      els.segRed.style.transitionDelay  = (200 + i * 80) + 'ms';
+    });
+  }
+  function diResetPhase2Transition() {
+    diBarEls.forEach(function (els) {
+      els.segBlue.style.transitionDelay = '0ms';
+      els.segRed.style.transitionDelay  = '0ms';
+    });
+  }
+
+  /* ── Preload images before revealing (avoids a partially-drawn frame
+     — same helper shape as mplfs.html's preloadMedia). ── */
+  function diPreload(els, maxWaitMs) {
+    return Promise.all(Array.prototype.map.call(els, function (el) {
+      return new Promise(function (resolve) {
+        if (!el.getAttribute('src')) return resolve();
+        if (el.complete) return resolve();
+        el.addEventListener('load', resolve, { once: true });
+        el.addEventListener('error', resolve, { once: true });
+        setTimeout(resolve, maxWaitMs);
+      });
+    }));
+  }
+
+  /* ── Phase 2 data polling ─────────────────────────────────────────
+     A single fetch attempt meant one failed/malformed response
+     permanently left a section (team identity or stats) hidden for the
+     rest of the scene's life, even if the upstream recovered a moment
+     later — a real risk given the Line-Up Rate upstream's known
+     hangs/errors (see /api/lineuprate-data's own comment). Instead,
+     keep retrying every DI_POLL_MS for as long as this scene is
+     active: starting the moment phase 1 begins, so the title card gets
+     every chance to have real data ready before anything is asked to
+     cut over. Each tick applies whatever came back and reveals (fades
+     in) only the section(s) that just became valid for the first time
+     — already-revealed sections are left alone, so a later hiccup
+     can't re-hide something already shown. Returns a promise that
+     resolves once BOTH sections have validated — showDraftIndexScene
+     awaits this before ever cutting to phase 2 (see below), so phase 1
+     stays up for as long as it takes; this loop never gives up on its
+     own — only sceneToken changing (scene hidden or re-shown) stops
+     it. */
+  var DI_POLL_MS = 300;
+  function diPollPhase2Data(token, revealed, isAnimated) {
+    return new Promise(function (resolveWhenComplete) {
+      function tick() {
+        if (token !== sceneToken) return;
+        diFetchPhase2Data().then(function (r) {
+          if (token !== sceneToken) return;
+          var animate = isAnimated();
+          diApplyPhase2Data(r[0], r[1], animate, r[2]);
+          if (diIsValidTeamData(r[0], r[2]) && !revealed.team) {
+            diSetSelectorOpacity(DI_TEAM_SELECTORS, 1, animate);
+            revealed.team = true;
+          }
+          if (diIsValidLineupData(r[1]) && !revealed.stats) {
+            diSetSelectorOpacity(DI_STATS_SELECTORS, 1, animate);
+            diBarEls.forEach(function (els) {
+              if (!els.line) return;
+              els.line.style.transition = animate ? 'opacity 300ms ease-out' : 'none';
+              els.line.style.opacity = '1';
+            });
+            revealed.stats = true;
+          }
+          if (!revealed.team || !revealed.stats) setTimeout(tick, DI_POLL_MS);
+          else resolveWhenComplete();
+        });
+      }
+      tick();
+    });
+  }
+
+
+  /* ══════════ v2 — background band, player strips, hero reveal ══════════ */
+  var DV2_ROLES = ['EXP LANER', 'JUNGLER', 'MID LANER', 'ROAMER', 'GOLD LANER']; /* left to right: EXP, JUNGLE, MID, ROAM, GOLD */
+  var DV2_HERO_DELAY_MS = 2000;   /* after the scene starts animating in */
+  var DV2_HERO_HOLD_MS  = 4000;   /* how long the heroes stay once they're in */
+  var DV2_STAGGER_MS    = 110;
+  var DV2_IN_MS         = 700;
+  var DV2_OUT_MS        = 480;
+
+  var dv2Band   = document.getElementById('dv2-band');
+  var dv2Bg     = document.getElementById('dv2-bg');
+  var dv2Strips = { blue: document.getElementById('dv2-strip-blue'), red: document.getElementById('dv2-strip-red') };
+  var dv2Heroes = { blue: document.getElementById('dv2-heroes-blue'), red: document.getElementById('dv2-heroes-red') };
+
+  /* Background loop per theme — same files the other scenes use. */
+  function dv2BgSrc() {
+    var theme = document.documentElement.getAttribute('data-theme');
+    if (theme === 'playoffs') return '/assets/z_playoffs%20background/playoffsbg_theme.webm';
+    if (theme === '10th_anniversary') return '/assets/annivloopsun.webm';
+    return '/assets/bgloopsun2.webm';
+  }
+
+  /* Canvas measureText fit (never DOM layout — the scene may be display:none
+     while this runs; see CLAUDE.md). */
+  var dv2Ctx = null;
+  function dv2FitName(el, text, maxPx, minPx, boxW) {
+    if (!dv2Ctx) dv2Ctx = document.createElement('canvas').getContext('2d');
+    var size = maxPx;
+    while (size > minPx) {
+      dv2Ctx.font = '700 ' + size + 'px "General Sans", sans-serif';
+      if (dv2Ctx.measureText(text.toUpperCase()).width <= boxW) break;
+      size--;
+    }
+    el.style.fontSize = size + 'px';
+  }
+
+  /* Build both strips once: five cells (role icon + name) each. */
+  var dv2NameEls = { blue: [], red: [] };
+  function dv2BuildStrips() {
+    ['blue', 'red'].forEach(function (side) {
+      var strip = dv2Strips[side];
+      strip.innerHTML = '';
+      dv2NameEls[side] = DV2_ROLES.map(function (role) {
+        var cell = document.createElement('div');
+        cell.className = 'dv2-cell';
+        var icon = document.createElement('img');
+        icon.className = 'dv2-role';
+        icon.alt = '';
+        icon.src = 'role/' + encodeURIComponent(role) + '.png';
+        icon.onerror = function () { icon.style.display = 'none'; };
+        var name = document.createElement('div');
+        name.className = 'dv2-name';
+        cell.appendChild(icon);
+        cell.appendChild(name);
+        strip.appendChild(cell);
+        return name;
+      });
+    });
+  }
+  dv2BuildStrips();
+
+  function dv2Seats(gd, campid) {
+    var camps = (gd && gd.data && gd.data.camp_list) || [];
+    for (var i = 0; i < camps.length; i++) {
+      if (camps[i].campid === campid) {
+        var out = [];
+        for (var s = 1; s <= 5; s++) out.push(camps[i]['seat_' + s] || null);
+        return out;
+      }
+    }
+    return [null, null, null, null, null];
+  }
+
+  /* Names into the strips (idempotent — safe to call from every poll tick). */
+  function dv2ApplyStrips(gd) {
+    [['blue', 1], ['red', 2]].forEach(function (p) {
+      var seats = dv2Seats(gd, p[1]);
+      seats.forEach(function (seat, i) {
+        var el = dv2NameEls[p[0]][i];
+        var text = (seat && seat.name) || '';
+        if (el.dataset.txt === text) return;
+        el.dataset.txt = text;
+        el.textContent = text;
+        dv2FitName(el, text, 38, 22, 280);
+      });
+    });
+  }
+
+  /* The background webm: the src is loaded up front so the (paused) first frame is
+     the idle look; it only PLAYS while the scene is shown. */
+  var DV2_SHOW_CHROME = false;   /* true = webm band + blue/red containers visible again */
+  if (!DV2_SHOW_CHROME) document.documentElement.classList.add('dv2-chrome-off');
+  function dv2SetBgSrc() {
+    if (!DV2_SHOW_CHROME) return;   /* hidden: don't even load the video */
+    var src = dv2BgSrc();
+    if (dv2Bg.getAttribute('data-src') !== src) { dv2Bg.setAttribute('data-src', src); dv2Bg.src = src; }
+  }
+  function dv2StartBg() {
+    if (!DV2_SHOW_CHROME) return;
+    dv2SetBgSrc();
+    dv2Bg.currentTime = 0;
+    dv2Bg.play().catch(function () {});
+  }
+  function dv2StopBg() { dv2Bg.pause(); }
+  dv2SetBgSrc();
+
+  /* The containers never animate. Only their contents (role icon + name cells)
+     animate: they rise/fade in staggered on show, and fade out on hide. */
+  function dv2AllCells() {
+    return [].concat([].slice.call(dv2Strips.blue.children), [].slice.call(dv2Strips.red.children));
+  }
+  function dv2CancelCells() {
+    dv2AllCells().forEach(function (c) { c.getAnimations().forEach(function (a) { a.cancel(); }); });
+  }
+  function dv2RevealContents() {
+    dv2CancelCells();
+    ['blue', 'red'].forEach(function (side) {
+      [].forEach.call(dv2Strips[side].children, function (cell, i) {
+        cell.animate(
+          [{ opacity: 0, transform: 'translateY(16px)' }, { opacity: 1, transform: 'translateY(0)' }],
+          { duration: 520, delay: 120 + i * 80, easing: EASE_OUT, fill: 'both' }
+        );
+      });
+    });
+  }
+  function dv2ResetContents() {
+    dv2CancelCells();
+    dv2AllCells().forEach(function (c) { c.style.opacity = '0'; c.style.transform = 'none'; });
+  }
+  function dv2SettleContents() {
+    dv2CancelCells();
+    dv2AllCells().forEach(function (c) { c.style.opacity = '1'; c.style.transform = 'none'; });
+  }
+  function dv2HideContents() {
+    dv2AllCells().forEach(function (c) {
+      c.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 280, easing: 'ease-in', fill: 'forwards' });
+    });
+  }
+
+  /* ── Hero reveal ─────────────────────────────────────────────────
+     Five parallelogram cards per team, one over each player's column.
+     Entrance: the card splits open from its centre line while sliding in
+     from the screen edge, the art zooms out of a bright flash, and a
+     light sheen sweeps across; cards cascade left to right. Exit: they
+     close back to the centre line and fade, cascading the same way. */
+  /* Tiling geometry: 5 columns on a 384px pitch, 14px slant. Card i spans
+     x = i*384-14 .. i*384+384 (width 398); the last card runs off the right
+     edge with a straight right side so no corner is left uncovered. Blue
+     fills y0-193 (down to the strip), red fills y885-1080 (below the strip). */
+  var DV2_SLANT = 14, DV2_PITCH = 384;
+  var DV2_H = { blue: 193, red: 195 };
+  function dv2Geom(side, i) {
+    var w = (i === 4) ? 412 : 398, h = DV2_H[side];
+    var full = (i === 4)
+      ? 'polygon(14px 0px, ' + w + 'px 0px, ' + w + 'px ' + h + 'px, 0px ' + h + 'px)'
+      : 'polygon(14px 0px, ' + w + 'px 0px, ' + (w - 14) + 'px ' + h + 'px, 0px ' + h + 'px)';
+    var cx = Math.round(w / 2);
+    var shut = 'polygon(' + cx + 'px 0px, ' + cx + 'px 0px, ' + cx + 'px ' + h + 'px, ' + cx + 'px ' + h + 'px)';
+    return { w: w, h: h, left: i * DV2_PITCH - DV2_SLANT, top: side === 'blue' ? 0 : 885, full: full, shut: shut };
+  }
+  function dv2HeroUrl(heroid) { return 'posthero/' + heroid + '_POST_HERO.png'; }
+
+  function dv2BuildHeroes(side, seats) {
+    var wrap = dv2Heroes[side];
+    wrap.innerHTML = '';
+    var cards = [];
+    seats.forEach(function (seat, i) {
+      var g = dv2Geom(side, i);
+      var card = document.createElement('div');
+      card.className = 'dv2-hero';
+      card.style.left = g.left + 'px'; card.style.top = g.top + 'px';
+      card.style.width = g.w + 'px';   card.style.height = g.h + 'px';
+      card.style.clipPath = g.shut;
+      /* A seat with no hero yet still gets a (dark) card so there is never a gap. */
+      var img = null;
+      if (seat && seat.heroid) {
+        var fill = document.createElement('img');
+        fill.className = 'dv2-hero-fill';
+        fill.alt = '';
+        fill.src = dv2HeroUrl(seat.heroid);
+        card.appendChild(fill);
+        img = document.createElement('img');
+        img.className = 'dv2-hero-img';
+        img.alt = '';
+        img.style.left = Math.round((g.w - 326) / 2) + 'px';
+        img.style.top  = Math.round((g.h - 188) / 2) + 'px';
+        img.onerror = function () { img.style.display = 'none'; fill.style.display = 'none'; };
+        img.src = dv2HeroUrl(seat.heroid);
+        card.appendChild(img);
+      }
+      var shade = document.createElement('div'); shade.className = 'dv2-hero-shade';
+      var sheen = document.createElement('div'); sheen.className = 'dv2-hero-sheen';
+      card.appendChild(shade); card.appendChild(sheen);
+      wrap.appendChild(card);
+      cards.push({ card: card, img: img, sheen: sheen, geom: g });
+    });
+    return cards;
+  }
+
+  function dv2AnimateIn(side, cards) {
+    var fromY = side === 'blue' ? -60 : 60;
+    cards.forEach(function (c, i) {
+      if (!c) return;
+      var d = i * DV2_STAGGER_MS;
+      var inAnim = c.card.animate(
+        [{ clipPath: c.geom.shut, transform: 'translateY(' + fromY + 'px)', opacity: 0 },
+         { clipPath: c.geom.full, transform: 'translateY(0)', opacity: 1 }],
+        { duration: DV2_IN_MS, delay: d, easing: EASE_OUT, fill: 'both' }
+      );
+      /* Once it has landed, bake the final state into plain styles and drop the
+         animation, so nothing is left running/held during the hold — the exit
+         then starts from a clean, idle layer (no animation-stack swap, which
+         showed up as a hitch right before the windows close). */
+      (function (card, geom, anim) {
+        anim.finished.then(function () {
+          if (!card.isConnected) return;
+          card.style.clipPath = geom.full; card.style.transform = 'none'; card.style.opacity = '1';
+          anim.cancel();
+        }).catch(function () {});
+      })(c.card, c.geom, inAnim);
+      if (c.img) c.img.animate(
+        [{ filter: 'brightness(2.4) saturate(1.3)' },
+         { filter: 'brightness(1) saturate(1)' }],
+        { duration: DV2_IN_MS + 350, delay: d, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }
+      );
+      c.sheen.animate(
+        [{ transform: 'translateX(-120%) skewX(-18deg)', opacity: 0 },
+         { opacity: 1, offset: 0.2 },
+         { transform: 'translateX(520%) skewX(-18deg)', opacity: 0 }],
+        { duration: 650, delay: d + 260, easing: 'ease-in-out', fill: 'backwards' }
+      );
+    });
+    return (cards.length - 1) * DV2_STAGGER_MS + DV2_IN_MS + 350;
+  }
+  function dv2AnimateOut(side, cards) {
+    /* "Close the windows": each card just closes toward its centre line — no
+       scale, no x/y movement, no fade. */
+    cards.forEach(function (c, i) {
+      if (!c) return;
+      c.card.animate(
+        [{ clipPath: c.geom.full }, { clipPath: c.geom.shut }],
+        { duration: DV2_OUT_MS, delay: i * 70, easing: 'cubic-bezier(0.55, 0, 0.9, 0.4)', fill: 'forwards' }
+      );
+    });
+    return 4 * 70 + DV2_OUT_MS;
+  }
+
+  var dv2HeroTimers = [];
+  function dv2ClearHeroes() {
+    dv2HeroTimers.forEach(clearTimeout); dv2HeroTimers = [];
+    ['blue', 'red'].forEach(function (side) {
+      dv2Heroes[side].getAnimations({ subtree: true }).forEach(function (a) { a.cancel(); });
+      dv2Heroes[side].style.display = 'none';
+      dv2Heroes[side].innerHTML = '';
+    });
+  }
+  function dv2HeroSequence(token) {
+    dv2HeroTimers.push(setTimeout(function () {
+      if (token !== sceneToken) return;
+      diFetchGameData().then(function (gd) {
+        if (token !== sceneToken) return;
+        var builds = { blue: dv2BuildHeroes('blue', dv2Seats(gd, 1)), red: dv2BuildHeroes('red', dv2Seats(gd, 2)) };
+        var imgs = [].concat(
+          builds.blue.filter(function (c) { return c && c.img; }).map(function (c) { return c.img; }),
+          builds.red.filter(function (c) { return c && c.img; }).map(function (c) { return c.img; })
+        );
+        diPreload(imgs, 800).then(function () {
+          if (token !== sceneToken) return;
+          dv2Heroes.blue.style.display = 'block';
+          dv2Heroes.red.style.display = 'block';
+          var inMs = Math.max(dv2AnimateIn('blue', builds.blue), dv2AnimateIn('red', builds.red));
+          dv2HeroTimers.push(setTimeout(function () {
+            if (token !== sceneToken) return;
+            var outMs = Math.max(dv2AnimateOut('blue', builds.blue), dv2AnimateOut('red', builds.red));
+            dv2HeroTimers.push(setTimeout(function () {
+              if (token !== sceneToken) return;
+              dv2ClearHeroes();
+            }, outMs + 80));
+          }, inMs + DV2_HERO_HOLD_MS));
+        });
+      });
+    }, DV2_HERO_DELAY_MS));
+  }
+
+  /* ── Main sequence ─────────────────────────────────────────────
+     skipIntro=true restores an already-active scene straight into
+     its settled phase-2 state (e.g. a browser source reloading
+     mid-show) instead of replaying the title card from scratch. */
+  function showDraftIndexScene(skipIntro) {
+    var token = ++sceneToken;
+    diCancelAllAnimations();
+    diRoot.style.display = 'block';
+
+    dv2ClearHeroes();
+    dv2StartBg();
+    if (skipIntro) {
+      dv2SettleContents();
+      diFetchGameData().then(function (gd) { if (token === sceneToken) dv2ApplyStrips(gd); });
+      diPhase1.style.display = 'none';
+      diPhase2.style.display = 'block';
+      diLogoP2.style.opacity = '1';
+      diLogoP2.style.transform = 'scale(1)';
+      diBlueBox.style.opacity = '1';
+      diBlueBox.style.transform = 'translateX(0)';
+      diRedBox.style.opacity = '1';
+      diRedBox.style.transform = 'translateX(0)';
+      diBarsContainer.style.opacity = '1';
+      diAnnivBg.style.opacity = '1';
+      /* Data content itself starts hidden (independent of the shell
+         above, which restores instantly) and fades in per-section as
+         diPollPhase2Data validates it — same never-give-up polling as
+         the main sequence below, since a reload-mid-show can hit the
+         exact same malformed/failed-upstream case. */
+      diSetDataOpacity(0, 0, false);
+      diPollPhase2Data(token, { team: false, stats: false }, function () { return true; });
+      return;
+    }
+
+    diPhase2.style.display = 'none';
+    dv2ResetContents();
+    diLogoP2.style.opacity = '0';
+    diBlueBox.style.opacity = '0';
+    diRedBox.style.opacity = '0';
+    diBarsContainer.style.opacity = '0';
+    diAnnivBg.style.opacity = '0';
+    diResetPhase2Transition();
+    DI_BARS.forEach(function (_, i) { diSetBar(i, 0, 0, false); });
+
+    diPhase1.style.display = 'block';
+    diResetPhase1();
+    diSetDataOpacity(0, 0, false);
+
+    /* Start polling now, in parallel with the whole phase-1 title
+       card, instead of waiting for the phase-2 cut — the Line-Up Rate
+       API alone can take 2-2.6s to answer even on a healthy response,
+       so this gives it as much of a head start as the title card's
+       runway allows. Same shape as Team Hexagon's showTeamHexagon(),
+       which starts its /match/state fetch before the transition even
+       begins — except this keeps retrying instead of firing once.
+       isAnimated is false throughout phase 1: phase 2 is display:none
+       underneath, so there's nothing to animate yet — each section's
+       opacity is simply set to 1 the instant it validates, ready and
+       already-visible the moment phase 2 actually shows. */
+    var revealed = { team: false, stats: false };
+    var dataReady = diPollPhase2Data(token, revealed, function () { return false; });
+
+    /* Names in the strips come from the same game feed — grab them before the
+       strips slide in (capped, so the show never waits on it). */
+    var dv2Names = Promise.race([diFetchGameData(), new Promise(function (r) { setTimeout(function () { r(null); }, 700); })]);
+    dv2Names.then(function (gd) { if (token === sceneToken && gd) dv2ApplyStrips(gd); });
+
+    diPreload([diLogoP1], 500).then(function () {
+      if (token !== sceneToken) return;
+      dv2RevealContents();
+      dv2HeroSequence(token);
+      diRevealPhase1();
+
+      /* Hold phase 1 (the branded title card) until BOTH the normal
+         pacing floor has elapsed AND real phase-2 data has actually
+         validated — never cut to an empty/zeroed phase 2 on a fixed
+         timer alone. Phase 1 is itself sponsored, always-safe content,
+         so if the upstream is slow or down, it just keeps polling
+         (diPollPhase2Data above never gives up on its own) and phase 1
+         stays up for as long as it takes — there is no timeout here. */
+      var minHold = new Promise(function (resolve) {
+        setTimeout(resolve, REVEAL_MS + PHASE1_HOLD_MS);
+      });
+      Promise.all([minHold, dataReady]).then(function () {
+        if (token !== sceneToken) return;
+        diTransitionToPhase2(token);
+      });
+    });
+  }
+
+  /* Only reached once diPollPhase2Data's promise has resolved (see
+     showDraftIndexScene), so team + stats are already validated,
+     applied, and at full opacity by this point — this just plays the
+     shell reveal (mini logo pop, box slide-in, bars fade), waiting for
+     the now-real team logos to preload first so it doesn't flash a
+     half-drawn frame. */
+  function diTransitionToPhase2(token) {
+    diHidePhase1(380);
+
+    setTimeout(function () {
+      if (token !== sceneToken) return;
+      diPhase1.style.display = 'none';
+      diPhase2.style.display = 'block';
+
+      diPreload(diPhase2.querySelectorAll('img'), 900).then(function () {
+        if (token !== sceneToken) return;
+        diRevealPhase2();
+      });
+    }, 380);
+  }
+
+  function hideDraftIndexScene() {
+    sceneToken++; /* invalidate any in-flight show sequence */
+    diCancelAllAnimations();
+    dv2ClearHeroes();
+    dv2HideContents();
+    var kf = [{ opacity: 1 }, { opacity: 0 }];
+    diRoot.animate(kf, { duration: 300, easing: 'ease-in', fill: 'forwards' });
+    var hideToken = sceneToken;
+    setTimeout(function () {
+      if (hideToken !== sceneToken) return; /* re-shown during the fade-out */
+      diRoot.style.display = 'none';
+      diPhase1.style.display = 'none';
+      diPhase2.style.display = 'none';
+      dv2ResetContents();   /* back to the idle look: empty containers over the paused webm */
+      dv2StopBg();
+    }, 300);
+  }
+
+  /* ── Local debug helpers ──────────────────────────────────────── */
+  window.showDraftIndexScene = showDraftIndexScene;
+  window.hideDraftIndexScene = hideDraftIndexScene;
+  window.diDebugJumpToPhase2 = function () { showDraftIndexScene(true); };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === '`') document.getElementById('di-debug-bar').classList.toggle('open');
+  });
+
+  /* ── Dashboard Edit-tab force-show (see EDIT_CONFIGS' draftindex_intro
+     / draftindex_compare in dashboard.html) — static, unanimated, no
+     network dependency for the intro; compare fetches live data once
+     so the drag targets sit at realistic widths. ── */
+  window.showDraftIndexIntroForEdit = function () {
+    sceneToken++;
+    diCancelAllAnimations();
+    diRoot.style.display = 'block';
+    dv2SettleContents(); dv2StartBg();
+    diPhase1.style.display = 'block';
+    diPhase2.style.display = 'none';
+    diLogoP1.style.clipPath = 'inset(0 0 0 0%)';
+    diTitle.style.clipPath  = 'inset(0 0% 0 0)';
+  };
+  window.showDraftIndexCompareForEdit = function () {
+    var token = ++sceneToken;
+    diCancelAllAnimations();
+    diRoot.style.display = 'block';
+    dv2SettleContents(); dv2StartBg();
+    diPhase1.style.display = 'none';
+    diPhase2.style.display = 'block';
+    diLogoP2.style.opacity = '1';
+    diLogoP2.style.transform = 'scale(1)';
+    diBlueBox.style.opacity = '1';
+    diBlueBox.style.transform = 'translateX(0)';
+    diRedBox.style.opacity = '1';
+    diRedBox.style.transform = 'translateX(0)';
+    diBarsContainer.style.opacity = '1';
+    diAnnivBg.style.opacity = '1';
+    diFetchPhase2Data().then(function (r) {
+      if (token !== sceneToken) return;
+      diApplyPhase2Data(r[0], r[1], false, r[2]);
+    });
+  };
+
+  /* ── Live control (SSE) ──────────────────────────────────────── */
+  // Backed by the shared SharedWorker (html/js/overlay-shared-worker.js) —
+  // this page opens zero real connections of its own now, so having
+  // several overlay browser sources/tabs open at once no longer eats into
+  // the browser's shared connection pool per page.
+  var es = createOverlaySSE();
+  es.addEventListener('theme', function (e) { applyTheme(JSON.parse(e.data).theme); dv2SetBgSrc(); });
+
+  /* Fired by routes/overlayStyles.js after any Edit-tab Save — force a
+     hard reload so new position/size overrides apply immediately (see
+     mplfs.html's connectSSE() for the identical pattern). */
+  es.addEventListener('reload', function () { window.location.reload(); });
+
+  es.addEventListener('draftindex', function (e) {
+    var msg = {};
+    try { msg = JSON.parse(e.data); } catch (err) {}
+    if (msg.action === 'show') showDraftIndexScene();
+    else if (msg.action === 'hide') hideDraftIndexScene();
+  });
+
+  /* ── Restore-on-load — jump straight to the settled phase-2 state
+     instead of replaying the title card if this reloads mid-show. ── */
+  fetch('/overlay/draftindex-state', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.active) showDraftIndexScene(true); })
+    .catch(function () {});
+
+  /* ── Load saved position/size overrides from dashboard editor ── */
+  (function loadDraftIndexOverrides() {
+    fetch('/api/overlay-styles?file=DraftIndex')
+      .then(function (r) { return r.json(); })
+      .then(function (styles) {
+        if (!styles || !Object.keys(styles).length) return;
+        var css = Object.keys(styles).map(function (sel) {
+          var props = styles[sel];
+          var decls = Object.keys(props).map(function (prop) {
+            var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+            return cssProp + ':' + props[prop] + ' !important';
+          }).join(';');
+          return sel + '{' + decls + '}';
+        }).join('\n');
+        var style = document.createElement('style');
+        style.id = 'draftindex-overrides';
+        style.textContent = css;
+        document.head.appendChild(style);
+      })
+      .catch(function () {});
+  })();
+})();
+</script>
+</body>
+</html>

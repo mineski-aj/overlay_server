@@ -141,6 +141,10 @@
       background-image: url('/assets/mapselect/mapwin.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
+    /* Playoffs art (same sizes) — assets/mapselect/playoffs/. The side boxes'
+       playoffs art is picked in JS (sideAssetUrl). */
+    [data-theme="playoffs"] .ms-mapbox { background-image: url('/assets/mapselect/playoffs/mapbacker.png'); }
+    [data-theme="playoffs"] .ms-winbox { background-image: url('/assets/mapselect/playoffs/mapwin.png'); }
 
     /* ── Phase 2/3 "emerge from behind" reveal (ENTRANCE ONLY — hiding
        still uses the exact same fade-left-and-out as every other box,
@@ -769,6 +773,7 @@
   var MAPSEL_PAGE = document.getElementById('mapselect-page');
   var blocks = {}; // gameIndex -> { wrap, sidebox/mapbox/winbox, *Content, *text els, game }
   var pageOn = false;
+  function isPlayoffs() { return document.documentElement.getAttribute('data-theme') === 'playoffs'; }
   function isAnniv() { return document.documentElement.getAttribute('data-theme') === '10th_anniversary'; }
 
   // Consecutive game blocks sit fully side-by-side (not stacked/overlapping):
@@ -805,7 +810,7 @@
 
   function logoUrl(short)  { return '/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
   function mapIconUrl(name) { return '/maps/' + encodeURIComponent(name || '') + '.png'; }
-  function sideAssetUrl(side) { return '/assets/mapselect/' + (isAnniv() ? 'anniversary/' : '') + 'mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
+  function sideAssetUrl(side) { return '/assets/mapselect/' + (isAnniv() ? 'anniversary/' : isPlayoffs() ? 'playoffs/' : '') + 'mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
 
   function fitText(el, maxSize, minSize) {
     var size = maxSize;

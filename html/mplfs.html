@@ -2337,6 +2337,9 @@
        assets/finalteam/anniversary/, same convention as p4kAsset/mbAsset. */
     [data-theme="10th_anniversary"] .ft-teambox-blue .ft-teambox-bg { content: url('/assets/finalteam/anniversary/finalteambackblue.png'); }
     [data-theme="10th_anniversary"] .ft-teambox-red .ft-teambox-bg { content: url('/assets/finalteam/anniversary/finalteambackred.png'); }
+    /* Playoffs — same filenames/sizes under assets/finalteam/playoffs/. */
+    [data-theme="playoffs"] .ft-teambox-blue .ft-teambox-bg { content: url('/assets/finalteam/playoffs/finalteambackblue.png'); }
+    [data-theme="playoffs"] .ft-teambox-red .ft-teambox-bg { content: url('/assets/finalteam/playoffs/finalteambackred.png'); }
     .ft-teambox-logo {
       position: absolute; top: 14px; width: 80px; height: 80px;
       display: flex; align-items: center; justify-content: center;
@@ -2397,6 +2400,12 @@
     /* 10th Anniversary — same filename, reskinned art under
        assets/finalteam/anniversary/. */
     [data-theme="10th_anniversary"] #ft-matchbar-bg { content: url('/assets/finalteam/anniversary/finalteammatch.png'); }
+    /* Playoffs — finalteammatch.png is the same 692x39 but its art is inset
+       (opaque x92-598: black section x101-336, gold x337-590), so the label and
+       series text are re-centered on their own sections. */
+    [data-theme="playoffs"] #ft-matchbar-bg { content: url('/assets/finalteam/playoffs/finalteammatch.png'); }
+    [data-theme="playoffs"] .ft-matchbar-label  { left: 101px; width: 235px; }
+    [data-theme="playoffs"] .ft-matchbar-series { left: 337px; right: auto; width: 250px; }
     .ft-matchbar-label, .ft-matchbar-series {
       position: absolute; top: 0; height: 39px;
       display: flex; align-items: center;
@@ -2498,6 +2507,18 @@
     }
     [data-theme="10th_anniversary"] .ft-card-fader.ft-blue { background: #ff465a; }
     [data-theme="10th_anniversary"] .ft-card-fader.ft-red  { background: #ffac50; }
+    /* Playoffs — the fader keeps its shape/fade (playoffs finalfader.png, used as
+       a mask) but is a GOLD gradient on both sides instead of blue/red. */
+    [data-theme="playoffs"] .ft-card-fader.ft-blue,
+    [data-theme="playoffs"] .ft-card-fader.ft-red {
+      content: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+      filter: none;
+      -webkit-mask-image: url('/assets/finalteam/playoffs/finalfader.png');
+      mask-image: url('/assets/finalteam/playoffs/finalfader.png');
+      -webkit-mask-size: 100% 100%;
+      mask-size: 100% 100%;
+      background: linear-gradient(to bottom, #edc555, #d0a43e);
+    }
     /* Base position/size shared by every photo — each of the 10 also
        gets its own id (#ft-photo-0..9, set in ftBuildCardHtml) so its
        `left` (box pan) and now its own crop point (object-position, via
@@ -2555,6 +2576,11 @@
     /* 10th Anniversary only — blue side's role icon nudged 2px right,
        red side's nudged 2px left, both within their own plate, per
        explicit request; Regular theme is untouched. */
+    /* Playoffs — each card is cropped 6px on both sides, which was slicing 6px
+       off the outer edge of the role plate and its icon; move the plate inside
+       the visible area so the icon sits centered in a full 34px square. */
+    [data-theme="playoffs"] .ft-card-role.ft-blue { left: 6px; }
+    [data-theme="playoffs"] .ft-card-role.ft-red  { right: 6px; }
     [data-theme="10th_anniversary"] .ft-card-role.ft-blue img { position: relative; left: 2px; }
     [data-theme="10th_anniversary"] .ft-card-role.ft-red  img { position: relative; left: -2px; }
 
@@ -3031,8 +3057,9 @@
        - The photos' CSS bottom-fade mask is OFF; playoffs_bottomfeather.png
          (.lu-po-feather, drawn over the photos, under the name tags) does
          the feathering instead.
-       - The team-name wordmark background and the season/match text are not
-         part of this layout (hidden).
+       - The season/match text is not part of this layout (hidden). The
+         team-name wordmark background (.lu-bg-photo) is shown again, from
+         /photos/groupbg_playoffs/ (see luApplyBgPhoto).
        - Name tags are 261x47 (playoffs_bluebox/redbox.png). They REST on top
          of their (hidden) secondary-role plate and the usual reveal shifts
          them up by their own height, so each tag's rest top is its final
@@ -3041,7 +3068,6 @@
        - Per-element positions live in the mplfs::playoffs overrides bucket
          (Regular's saved ones would otherwise win as !important fallbacks). */
     .lu-po-feather, .lu-po-logobox { display: none; }
-    [data-theme="playoffs"] .lu-bg-photo,
     [data-theme="playoffs"] .lu-teambar-season,
     [data-theme="playoffs"] .lu-teambar-match { display: none; }
     [data-theme="playoffs"] .lu-photo { -webkit-mask-image: none; mask-image: none; }
@@ -3066,7 +3092,7 @@
     [data-theme="playoffs"] .lu-nametag { width: 261px; height: 47px; }
     [data-theme="playoffs"] #team-lineup-blue-page .lu-nametag-bg { content: url('/assets/lineup/playoffs/playoffs_bluebox.png'); }
     [data-theme="playoffs"] #team-lineup-red-page  .lu-nametag-bg { content: url('/assets/lineup/playoffs/playoffs_redbox.png'); }
-    [data-theme="playoffs"] .lu-nametag-role { left: 20px; top: 7px; width: 33px; height: 33px; }
+    [data-theme="playoffs"] .lu-nametag-role { left: 12px; top: 7px; width: 33px; height: 33px; }
     [data-theme="playoffs"] .lu-nametag-name { left: 77px; top: 0; width: 180px; height: 47px; font-size: 23px; }
     [data-theme="playoffs"] .lu-secrole {
       width: 216px; height: 29px;
@@ -11922,7 +11948,11 @@
       const day      = (ms && ms.day   != null) ? ms.day   : 1;
       const matchNum = (ms && ms.match != null) ? ms.match : 1;
       const gameNum  = (ms && ms.game  != null) ? ms.game  : 1;
-      document.getElementById('ft-matchbar-match').textContent  = 'REGULAR SEASON WEEK ' + week + ' DAY ' + day;
+      /* Playoffs has no weeks (and its black section is only ~235px wide). */
+      document.getElementById('ft-matchbar-match').textContent  =
+        document.documentElement.getAttribute('data-theme') === 'playoffs'
+          ? 'THE PLAYOFFS DAY ' + day
+          : 'REGULAR SEASON WEEK ' + week + ' DAY ' + day;
       document.getElementById('ft-matchbar-series').textContent = 'MATCH ' + matchNum + ' GAME ' + gameNum;
     }
 
@@ -12203,7 +12233,9 @@
       const s = LU_SIDES[side];
       const imgEl = document.getElementById(s.prefix + '-bg-photo');
       imgEl.style.visibility = '';
-      imgEl.src = (teamObj && teamObj.short) ? '/photos/groupbg/' + encodeURIComponent(teamObj.short.toLowerCase()) + '_bg.png' : '';
+      // Playoffs has its own set of team backgrounds (same filenames).
+      const bgDir = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'groupbg_playoffs' : 'groupbg';
+      imgEl.src = (teamObj && teamObj.short) ? '/photos/' + bgDir + '/' + encodeURIComponent(teamObj.short.toLowerCase()) + '_bg.png' : '';
     }
 
     function luApplyTeamBar(side, teamObj, ms) {

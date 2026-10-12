@@ -2669,6 +2669,16 @@
       hide: '/overlay/draftindex/hide',
     },
     {
+      id: 'draftindexv2',
+      name: 'Draft Index v2',
+      file: 'DraftIndexV2.html',
+      /* v2 listens to the SAME draftindex SSE event and restore state as
+         Draft Index above, so these are the same two routes — either entry's
+         Show/Hide drives whichever of the two pages is loaded. */
+      show: '/overlay/draftindex/show',
+      hide: '/overlay/draftindex/hide',
+    },
+    {
       id: 'sponsortv',
       name: 'Sponsor TV',
       file: 'sponsortv.html',
