@@ -259,6 +259,11 @@
       background-image: url('assets/draft/anniversary/plateback2.png');
     }
 
+    /* Playoffs — gold plate back for both sides. */
+    [data-theme="playoffs"] .plate {
+      background-image: url('assets/draft/playoffs/playoffs_draftgold.png');
+    }
+
     /* Content wrapper — fills the plate width so cropping scales with it */
     .plate-content {
       position: absolute;
@@ -458,6 +463,19 @@
     }
     .dstats-text {
       z-index: 3;
+    }
+    /* Playoffs out animation: the text just fades while the gold gradient
+       map wipes away through picking_reveal's matte (see dstatsPoOut). */
+    [data-theme="playoffs"] .dstats-slide.dstats-in { transition: none; }
+    .dstats-text.dstats-po-fade { opacity: 0; transition: opacity 0.25s ease-out; }
+    /* Canvas that stands in for the backdrop-filter rect during the wipe. */
+    .dstats-po-canvas {
+      position: absolute;
+      left: 50%; top: -3px;
+      transform: translateX(-50%);
+      width: 168px;
+      z-index: 2;
+      pointer-events: none;
     }
 
     /* Rows sit inset from one edge to clear the vertical hero-name
@@ -810,6 +828,7 @@
     /* Layers on top of .plate-pick-video (later in the same untiered
        stacking group — see DOM order in buildPickPlates), but still under
        the player photo, which has an explicit z-index. */
+    [data-theme="playoffs"] .plate-pick-video { display: none !important; }
     .plate-pick-anim {
       position: absolute;
       top: 0; left: 0; right: 0; bottom: 0;
@@ -1642,6 +1661,12 @@
   /* 10th Anniversary reskin — draftbg.png, bluehero/redhero.png, and the
      picking*.webm animations (recolored white; plateback swap is CSS-only,
      see .plates-camp-1/-2 .plate below) all have anniversary/ variants. */
+  /* Playoffs picking art (opaque white "PICKING" loop, both sides) + its own
+     reveal matte (luma runs black→white, so its baked alpha = luma — the
+     opposite polarity of s17_matte2). Read at plate-build time. */
+  function isPlayoffsDraft() {
+    return document.documentElement.getAttribute('data-theme') === 'playoffs';
+  }
   function isAnniversaryTheme() {
     return document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   }
@@ -1945,7 +1970,9 @@
 
         var vid = document.createElement('video');
         vid.className   = 'plate-pick-video';
-        vid.src         = isAnniversaryTheme()
+        /* Playoffs: no blue/red pick loop at all — the gold plate back +
+           picking_bg webm replace it (src left unset so nothing loads). */
+        if (!isPlayoffsDraft()) vid.src = isAnniversaryTheme()
           ? (campid === 1 ? 'assets/draft/anniversary/motion/bluepickbg1.webm' : 'assets/draft/anniversary/motion/redpickbg1.webm')
           : (campid === 1 ? 'assets/draft/motion/bluepickbg1.webm' : 'assets/draft/motion/redpickbg1.webm');
         vid.loop = true; vid.muted = true;
@@ -1967,7 +1994,9 @@
            blue/red distinction once it's white). */
         pickAnim.src = isAnniversaryTheme()
           ? (campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
-          : (campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
+          : isPlayoffsDraft()
+            ? 'assets/draft/playoffs/motion/picking_bg_150x170.webm'
+            : (campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
         pickAnim.loop = true; pickAnim.muted = true;
         pickAnim.playsInline = true; pickAnim.preload = 'none';
         plate.appendChild(pickAnim);
@@ -2008,7 +2037,7 @@
            for both the hero reveal and the photo erase come from
            heroMatteVid's baked alpha below. */
         var matteVid = document.createElement('video');
-        matteVid.src = 'assets/draft/motion/s17_matte2.webm';
+        matteVid.src = isPlayoffsDraft() ? 'assets/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/draft/motion/s17_matte2.webm';
         matteVid.muted = true; matteVid.playsInline = true;
         matteVid.preload = 'none'; matteVid.style.display = 'none';
         plateContent.appendChild(matteVid);
@@ -2019,7 +2048,7 @@
            hero reveal can composite on the GPU via destination-in
            instead of getImageData/putImageData every frame. */
         var heroMatteVid = document.createElement('video');
-        heroMatteVid.src = 'assets/draft/motion/s17_matte2_alpha.webm';
+        heroMatteVid.src = isPlayoffsDraft() ? 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/draft/motion/s17_matte2_alpha.webm';
         heroMatteVid.muted = true; heroMatteVid.playsInline = true;
         heroMatteVid.preload = 'none'; heroMatteVid.style.display = 'none';
         plateContent.appendChild(heroMatteVid);
@@ -4649,7 +4678,7 @@
      pop so the bigger count actually gets seen) → phase 3 starts shortly
      after that (PICK shrinks back to normal size while settling into its
      final row, ~450ms) — then a 1.8s hold, then a 400ms slide back out. */
-  var DSTATS_PHASE1_MS = 300;  // rect slide-in duration
+  var DSTATS_PHASE1_MS = (document.documentElement.getAttribute('data-theme') === 'playoffs') ? 700 : 300;  // rect slide-in duration (playoffs: text starts 300ms before the 1s wipe ends)
   var DSTATS_PHASE2_MS = 750;  // delay from phase 1 end to phase 3 start (oversized PICK hold)
   var DSTATS_PHASE3_MS = 450;  // reserved for the settle transition before the hold begins
   var DSTATS_HOLD_MS   = 1800;
@@ -4665,18 +4694,117 @@
      comment above .dstats-slide for why) but always slide together —
      this pair of helpers is the only place that needs to know that. */
   function dstatsSlideIn(e) {
+    if (isPlayoffsDraft()) {
+      /* No slide: rect + text snap into place (CSS transition none) while
+         the gradient map wipes in on the canvas. */
+      e.dstatsRect.classList.remove('dstats-out');
+      e.dstatsText.classList.remove('dstats-out');
+      e.dstatsRect.classList.add('dstats-in');
+      e.dstatsText.classList.add('dstats-in');
+      dstatsPoWipe(e, true);
+      return;
+    }
     e.dstatsRect.classList.remove('dstats-out');
     e.dstatsText.classList.remove('dstats-out');
     e.dstatsRect.classList.add('dstats-in');
     e.dstatsText.classList.add('dstats-in');
   }
+  /* Playoffs: the gold gradient map doesn't slide out — it is redrawn on a
+     canvas (hero luminance -> gold via #po-gradmap, over the gold plate back,
+     same as the backdrop-filter rect shows) and erased by the inverse of
+     picking_reveal_150x170_alpha.webm (alpha 0->1, so destination-out leaves
+     the map fully there at the start and gone at the end). */
+  var DSTATS_PO_OUT_MS = 1000;
+  var dstatsPoBg = null;
+  function dstatsPoOutCancel(e) {
+    var o = e.dstatsPoOut;
+    if (!o) return;
+    if (o.raf) { cancelAnimationFrame(o.raf); o.raf = null; }
+    clearTimeout(o.endTimer);
+    if (o.vid) o.vid.pause();
+    if (o.cvs) o.cvs.style.display = 'none';
+    e.dstatsRect.style.visibility = '';
+    e.dstatsText.classList.remove('dstats-po-fade');
+  }
+  function dstatsPoWipe(e, wipeIn) {
+    var o = e.dstatsPoOut;
+    if (!o) {
+      var cvs = document.createElement('canvas');
+      cvs.className = 'dstats-po-canvas';
+      cvs.style.display = 'none';
+      e.dstatsRect.parentNode.insertBefore(cvs, e.dstatsText);
+      var vid = document.createElement('video');
+      vid.src = 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm';
+      vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
+      vid.style.display = 'none';
+      e.dstatsRect.parentNode.appendChild(vid);
+      o = e.dstatsPoOut = { cvs: cvs, ctx: cvs.getContext('2d'), vid: vid, raf: null };
+    }
+    if (!dstatsPoBg) { dstatsPoBg = new Image(); dstatsPoBg.src = 'assets/draft/playoffs/playoffs_draftgold.png'; }
+    var hv = e.heroVid;
+    var natW = hv.videoWidth || 168, natH = hv.videoHeight || 300;
+    var H = Math.round(natH * 168 / natW);
+    o.cvs.width = 168; o.cvs.height = H; o.cvs.style.height = H + 'px';
+    function frame() {
+      var c = o.ctx;
+      c.globalCompositeOperation = 'source-over';
+      c.clearRect(0, 0, 168, H);
+      c.filter = 'url(#po-gradmap)';
+      try {
+        if (dstatsPoBg.complete && dstatsPoBg.naturalWidth) c.drawImage(dstatsPoBg, 0, 3, 168, 168);
+        if (hv.readyState >= 2) c.drawImage(hv, 0, 0, 168, H);
+      } catch (err) {}
+      c.filter = 'none';
+      /* Until the matte video has actually restarted from frame 0 it still
+         holds its LAST frame (alpha ~1) from the previous run — masking with
+         that would flash the full map (in) or erase it (out). Wipe-in shows
+         nothing yet; wipe-out shows the unmasked map. */
+      if (!o.ready) {
+        if (wipeIn) c.clearRect(0, 0, 168, H);
+        c.globalCompositeOperation = 'source-over';
+        return;
+      }
+      c.globalCompositeOperation = wipeIn ? 'destination-in' : 'destination-out';
+      try { c.drawImage(o.vid, 0, 0, 168, H); } catch (err) {}
+      c.globalCompositeOperation = 'source-over';
+    }
+    frame();
+    o.cvs.style.display = 'block';
+    e.dstatsRect.style.visibility = 'hidden';
+    if (!wipeIn) e.dstatsText.classList.add('dstats-po-fade');
+    clearTimeout(o.endTimer);
+    o.ready = false;
+    o.vid.currentTime = 0;
+    o.vid.play().then(function () {
+      (function chk() {
+        if (o.vid.seeking || o.vid.currentTime > 0.1) { if (o.vid.seeking) return requestAnimationFrame(chk); }
+        o.ready = true;
+      }());
+    }).catch(function () { o.ready = true; });
+    (function loop() {
+      frame();
+      o.raf = requestAnimationFrame(loop);
+    }());
+    if (wipeIn) {
+      /* Wipe done — hand over to the real backdrop-filter rect (already in
+         place, same look) and drop the canvas. */
+      o.endTimer = setTimeout(function () {
+        if (o.raf) { cancelAnimationFrame(o.raf); o.raf = null; }
+        o.vid.pause();
+        o.cvs.style.display = 'none';
+        e.dstatsRect.style.visibility = '';
+      }, DSTATS_PO_OUT_MS);
+    }
+  }
   function dstatsSlideOut(e) {
+    if (isPlayoffsDraft()) { dstatsPoWipe(e, false); return; }
     e.dstatsRect.classList.remove('dstats-in');
     e.dstatsText.classList.remove('dstats-in');
     e.dstatsRect.classList.add('dstats-out');
     e.dstatsText.classList.add('dstats-out');
   }
   function dstatsSlideReset(e) {
+    dstatsPoOutCancel(e);
     e.dstatsRect.classList.remove('dstats-in', 'dstats-out');
     e.dstatsText.classList.remove('dstats-in', 'dstats-out');
   }
@@ -4753,7 +4881,7 @@
       dstatsClearContent(e);
       showBuffBadge(e, stats.buffStatus);
       p.dstatsTimers = null;
-    }, introEndMs + DSTATS_HOLD_MS + DSTATS_OUT_MS));
+    }, introEndMs + DSTATS_HOLD_MS + (isPlayoffsDraft() ? DSTATS_PO_OUT_MS : DSTATS_OUT_MS)));
   }
 
   /* Cancels any in-flight reveal and snaps the layer back to fully

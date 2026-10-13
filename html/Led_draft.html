@@ -805,6 +805,7 @@
   <div class="dbg-hint">` to toggle</div>
 </div>
 
+<script src="html/js/led-autoside.js"></script>
 <script src="html/js/led-events.js"></script>
 <script>
   /* ═══════════════════════════════════════════════════════════════════
@@ -841,15 +842,21 @@
     });
   }
 
-  function setSwap(swap) {
+  let manualSwap = false;   // HOME/SWAP buttons
+  let autoSwap = null;      // Match Board home/away vs game feed teams (null = no match -> manual)
+
+  function setSwap(swap) { manualSwap = swap; applySwap(); }
+
+  function applySwap(noPoll) {
+    const swap = autoSwap !== null ? autoSwap : manualSwap;
     const changed = swap !== isSwapped;
     isSwapped = swap;
     if (window.LedEvents) LedEvents.setSwapped(swap);
-    try { localStorage.setItem('ledSwap', swap ? '1' : '0'); } catch (e) {}
+    try { localStorage.setItem('ledSwap', manualSwap ? '1' : '0'); } catch (e) {}
     document.getElementById('btn-home').className = swap ? 'dbg-btn'             : 'dbg-btn active-home';
     document.getElementById('btn-swap').className = swap ? 'dbg-btn active-swap' : 'dbg-btn';
     applySides();
-    if (changed) pollSubInfo();
+    if (changed && !noPoll) pollSubInfo();
   }
 
   const sse = createOverlaySSE();
@@ -896,6 +903,10 @@
     } catch (e) { dbgStatus('game feed: ' + e.message); return; }
     if (!json || json.code !== 0 || !json.data || !Array.isArray(json.data.camp_list)) { dbgStatus('game feed: bad response'); return; }
     const cl = json.data.camp_list;
+    if (window.LedAutoSide) {
+      const a = LedAutoSide.resolve(cl);
+      if (a !== autoSwap) { autoSwap = a; applySwap(true); }
+    }
     _updateMidPanel('left',  cl, isSwapped ? 2 : 1, 'TLPH');
     _updateMidPanel('right', cl, isSwapped ? 1 : 2, 'RORA');
     if (window.LedEvents) LedEvents.onData(json.data);
@@ -972,11 +983,14 @@
 
   /* The PICKING / matte videos are created on first use — ten slots would
      otherwise carry 30+ idle <video> elements. */
+  /* Playoffs picking art + its own reveal matte (luma black->white, baked alpha = luma;
+     same files Draft.html uses). Read at media-creation time, i.e. on first use. */
+  const PLAYOFFS = () => document.documentElement.getAttribute('data-theme') === 'playoffs';
   function ensureMedia(e) {
     if (e.matteVid) return;
-    e.matteVid = mk('video', '', e.slot); e.matteVid.src = 'assets/draft/motion/s17_matte2.webm';
+    e.matteVid = mk('video', '', e.slot); e.matteVid.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/draft/motion/s17_matte2.webm';
     e.matteVid.muted = true; e.matteVid.playsInline = true; e.matteVid.preload = 'none'; e.matteVid.style.display = 'none';
-    e.heroMatteVid = mk('video', '', e.slot); e.heroMatteVid.src = 'assets/draft/motion/s17_matte2_alpha.webm';
+    e.heroMatteVid = mk('video', '', e.slot); e.heroMatteVid.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/draft/motion/s17_matte2_alpha.webm';
     e.heroMatteVid.muted = true; e.heroMatteVid.playsInline = true; e.heroMatteVid.preload = 'none'; e.heroMatteVid.style.display = 'none';
   }
   function ensurePickAnim(e) {
@@ -984,7 +998,7 @@
     e.pickAnim = mk('video', 'dr-pickanim');
     e.slot.insertBefore(e.pickAnim, e.slot.firstChild.nextSibling);   // above the glow's slot, below the photo
     const anniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';   // Draft.html's isAnniversaryTheme()
-    e.pickAnim.src = anniv
+    e.pickAnim.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_bg_150x170.webm' : anniv
       ? (e.campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
       : (e.campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
     e.pickAnim.loop = true; e.pickAnim.muted = true; e.pickAnim.playsInline = true; e.pickAnim.preload = 'none';

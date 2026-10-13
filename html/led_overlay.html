@@ -157,11 +157,36 @@
 
   /* per-kind layout — items right-aligned (14px margin), label/time in the
      left column; lvl15 has no item so it keeps the full-width label + value */
-  [data-kind="item"] .led-evt-label, [data-kind="conceal"] .led-evt-label { width: 395px; height: 38px; font-size: 20px; }
-  [data-kind="item"] .led-evt-time, [data-kind="conceal"] .led-evt-time { display: flex; top: 38px; width: 395px; height: 51px; }
-  [data-kind="item"] .led-evt-time-num, [data-kind="conceal"] .led-evt-time-num { font-size: 44px; }
-  [data-kind="item"] .led-evt-box[data-i="0"], [data-kind="conceal"] .led-evt-box[data-i="0"] { display: block; left: 405px; }
+  [data-kind="item"] .led-evt-label, [data-kind="conceal"] .led-evt-label, [data-kind="skypiercer"] .led-evt-label { width: 395px; height: 38px; font-size: 20px; }
+  [data-kind="item"] .led-evt-time, [data-kind="conceal"] .led-evt-time, [data-kind="skypiercer"] .led-evt-time { display: flex; top: 38px; width: 395px; height: 51px; }
+  [data-kind="item"] .led-evt-time-num, [data-kind="conceal"] .led-evt-time-num, [data-kind="skypiercer"] .led-evt-time-num { font-size: 44px; }
+  [data-kind="skypiercer"] .led-evt-time { gap: 14px; }
+  [data-kind="skypiercer"] .led-evt-time-unit { font-size: 26px; }
+  [data-kind="item"] .led-evt-box[data-i="0"], [data-kind="conceal"] .led-evt-box[data-i="0"], [data-kind="skypiercer"] .led-evt-box[data-i="0"] { display: block; left: 405px; }
   [data-kind="lvl15"] .led-evt-value { display: flex; }
+
+  /* Phase 2 — core-item timing (see led-events.js runCard/coreItemPhase2). Fades in over the title strip. */
+  .led-evt-label { transition: opacity 280ms ease, transform 280ms ease; }
+  .led-p2 .led-evt-label { opacity: 0; transform: translateY(-8px); }
+  .led-evt-p2 {
+    position: absolute; left: 0; top: 0; display: none; align-items: center; justify-content: center;
+    white-space: nowrap; opacity: 0; transform: translateY(8px);
+    transition: opacity 280ms ease 120ms, transform 280ms ease 120ms;
+    --led-good: #0b6b2a; --led-bad: #d9322b;
+  }
+  .led-p2 .led-evt-p2 { opacity: 1; transform: translateY(0); }
+  .led-evt-p2-line { display: inline-flex; align-items: center; gap: 8px; color: var(--led-good); }
+  .led-slower .led-evt-p2-line { color: var(--led-bad); }
+  .led-evt-p2-arrow { font-size: 20px; line-height: 1; }
+  .led-evt-p2-text  { font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700; font-size: 28px; letter-spacing: 0.01em; line-height: 1; }
+  .led-evt-p2-time  { display: none; font-family: 'Anton', sans-serif; font-size: 38px; line-height: 1; color: #111; }
+  /* First Item Priority / Sky Piercer: arrow + seconds only (time is already on the card), over the title strip */
+  [data-kind="item"] .led-evt-p2 { display: flex; width: 395px; height: 38px; }
+  /* Trinity: the whole 215px title column — time over arrow + seconds */
+  [data-kind="trinity"] .led-evt-p2 { display: flex; flex-direction: column; gap: 4px; width: 215px; height: 89px; }
+  [data-kind="trinity"] .led-evt-p2-time { display: block; }
+  [data-kind="trinity"] .led-evt-p2-arrow { font-size: 16px; }
+  [data-kind="trinity"] .led-evt-p2-text  { font-size: 21px; }
   [data-kind="trinity"] .led-evt-label { width: 215px; height: 89px; font-size: 21px; line-height: 1.15; text-align: center; padding: 0 14px; }
   [data-kind="trinity"] .led-evt-label.big { font-size: 24px; }
   [data-kind="trinity"] .led-evt-box[data-i="0"] { display: block; left: 223px; }
@@ -1467,6 +1492,7 @@
   <div class="dbg-hint">` to toggle</div>
 </div>
 
+<script src="html/js/led-autoside.js"></script>
 <script src="html/js/led-events.js"></script>
 <script>
   /* Same-origin: the server's own cached game data (follows the Settings API mode) and BPM feed. */
@@ -1501,12 +1527,17 @@
 
   /* ── Swap state ── */
   let isSwapped = false;
+  let manualSwap = false;   // HOME/SWAP buttons
+  let autoSwap = null;      // Match Board home/away vs game feed teams (null = no match -> manual)
 
-  function setSwap(swap) {
+  function setSwap(swap) { manualSwap = swap; applySwap(); }
+
+  function applySwap(noPoll) {
+    const swap = autoSwap !== null ? autoSwap : manualSwap;
     const changed = swap !== isSwapped;
     isSwapped = swap;
     if (window.LedEvents) LedEvents.setSwapped(swap);
-    localStorage.setItem('ledSwap', swap ? '1' : '0');
+    localStorage.setItem('ledSwap', manualSwap ? '1' : '0');
     document.getElementById('btn-home').className = swap ? 'dbg-btn'             : 'dbg-btn active-home';
     document.getElementById('btn-swap').className = swap ? 'dbg-btn active-swap' : 'dbg-btn';
     if (changed) {
@@ -1521,8 +1552,7 @@
       }
       setEkgDisplay();
     }
-    pollSubInfo();
-    pollFeed();
+    if (!noPoll) { pollSubInfo(); pollFeed(); }
   }
 
   /* apply persisted swap state on load */
@@ -1830,6 +1860,11 @@
 
     const campList = json.data.camp_list;
     if (!Array.isArray(campList)) { dbgStatus('camp_list missing'); return; }
+
+    if (window.LedAutoSide) {
+      const a = LedAutoSide.resolve(campList);
+      if (a !== autoSwap) { autoSwap = a; applySwap(true); pollFeed(); }
+    }
 
     for (let i = 1; i <= 5; i++) {
       const leftSeat  = isSwapped ? i + 5 : i;

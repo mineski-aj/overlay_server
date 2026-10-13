@@ -207,12 +207,14 @@
     <div id="debug-tabs">
       <button class="tab-btn active" data-tab="lvl15">LEVEL 15</button>
       <button class="tab-btn"        data-tab="items">ITEM PICKUP</button>
+      <button class="tab-btn"        data-tab="skypiercer">SKY PIERCER</button>
       <button class="tab-btn"        data-tab="conceal">CONCEAL</button>
       <button class="tab-btn"        data-tab="trinity">TRINITY</button>
       <button class="tab-btn"        data-tab="swap">SWAP</button>
       <button class="tab-btn"        data-tab="killevents">KILL EVENTS</button>
       <button class="tab-btn"        data-tab="objectivespawn">OBJECTIVE SPAWN</button>
       <button class="tab-btn"        data-tab="stolengold">STOLEN GOLD</button>
+      <button class="tab-btn"        data-tab="lordadv">LORD ADVANTAGE</button>
     </div>
 
     <!-- Level 15 tab -->
@@ -226,15 +228,37 @@
     <div id="tab-items" class="tab-content">
       <div class="section-note" style="margin-bottom:6px;">SELECT ITEM &nbsp;(click to select, then press a player button)</div>
       <div id="t3-browser"></div>
+      <div style="margin:6px 0;"><label class="section-note">PHASE 2 (first-item timing)
+        <select id="item-dbg-p2">
+          <option value="live">live data (from feed)</option>
+          <option value="faster">fake: 33s FASTER</option>
+          <option value="slower">fake: 12s SLOWER</option>
+          <option value="none">fake: no data</option>
+        </select></label></div>
       <div style="margin-top:8px;display:flex;gap:12px;align-items:center;">
         <div class="debug-team" id="item-team-left"></div>
         <div class="debug-team" id="item-team-right"></div>
       </div>
     </div>
 
+    <!-- Sky Piercer tab [FEATURE: skypiercer] -->
+    <div id="tab-skypiercer" class="tab-content">
+      <span class="section-note">TRIGGERS AT STACK 3, 5, 7, ... PER PLAYER (extra_param.sky_piercer_stack.stack) — DEBUG SHOWS THE STACK COUNT BELOW</span>
+      <div style="margin:6px 0;"><label class="section-note">STACKS <input id="skp-debug-stacks" type="number" min="1" max="99" value="3" style="width:60px;"></label></div>
+      <div class="debug-team" id="skp-team-left"></div>
+      <div class="debug-team" id="skp-team-right"></div>
+    </div>
+
     <!-- Trinity tab [FEATURE: trinity] -->
     <div id="tab-trinity" class="tab-content">
       <span class="section-note">TRIGGERS WHEN PLAYER REACHES 3 TIER 3 ITEMS — DEBUG USES 3 DEFAULT T3 ITEMS</span>
+      <div style="margin:6px 0;"><label class="section-note">PHASE 2 (core_item timing)
+        <select id="trinity-dbg-p2">
+          <option value="live">live data (from feed)</option>
+          <option value="faster">fake: 8:20 · 33s FASTER</option>
+          <option value="slower">fake: 8:59 · 12s SLOWER</option>
+          <option value="none">fake: no data</option>
+        </select></label></div>
       <div class="debug-team" id="trinity-team-left"></div>
       <div class="debug-team" id="trinity-team-right"></div>
     </div>
@@ -244,6 +268,17 @@
       <span class="section-note">ITEM QUICK SWAP — ALL PLAYERS &nbsp;|&nbsp; DEBUG: SELLS ANY T3 → BUYS IMMORTALITY</span>
       <div class="debug-team" id="swap-team-left"></div>
       <div class="debug-team" id="swap-team-right"></div>
+    </div>
+
+    <!-- Lord advantage tab [FEATURE: lordadv] -->
+    <div id="tab-lordadv" class="tab-content">
+      <span class="section-note">AUTO: FIRES WHEN camp_list[].kill_lord_advantage.end_time IS SET — MANUAL TEST BELOW (shows under the camp's tricode, auto-hides)</span>
+      <div style="margin:6px 0;display:flex;gap:10px;align-items:center;">
+        <label class="section-note">GOLD <input id="lordadv-dbg-gold" type="number" value="433" style="width:70px;"></label>
+        <label class="section-note">KILLS <input id="lordadv-dbg-kills" type="number" value="2" style="width:50px;"></label>
+        <label class="section-note">TURRET <input id="lordadv-dbg-turret" type="number" value="1" style="width:50px;"></label>
+      </div>
+      <div class="debug-team" id="lordadv-debug-btns"></div>
     </div>
 
     <!-- Kill events tab [FEATURE: kill-events] -->
@@ -284,12 +319,14 @@
 <script src="html/js/overlay-scoreboard.js"></script>
 <script src="html/js/overlay-lvl15.js"></script>
 <script src="html/js/overlay-items.js"></script>
+<script src="html/js/overlay-skypiercer.js"></script>
 <script src="html/js/overlay-trinity.js"></script>
 <script src="html/js/overlay-swap.js"></script>
 <script src="html/js/overlay-conceal.js"></script>
 <script src="html/js/overlay-killevents.js"></script>
 <script src="html/js/overlay-objectivespawn.js"></script>
 <script src="html/js/overlay-stolengold.js"></script>
+<script src="html/js/overlay-lordadv.js"></script>
 <script src="html/js/overlay-fights.js"></script>
 <script src="html/js/overlay-itemcheck.js"></script>
 <script src="html/js/overlay-teamfightcheck.js"></script>

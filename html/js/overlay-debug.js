@@ -63,7 +63,13 @@ for (let i = 1; i <= 10; i++) {
         const data = lastData || await fetchData();
         timeStr = formatTime(data.game_time || 0);
       } catch(e) {}
-      triggerItem(pi, selId, timeStr);
+      const mode = (document.getElementById('item-dbg-p2') || {}).value || 'live';
+      const fake = {
+        faster: { status: 'early', time: 500, fastestTime: 533, difference: 33 },
+        slower: { status: 'late',  time: 539, fastestTime: 527, difference: 12 },
+        none:   null,
+      };
+      triggerItem(pi, selId, timeStr, mode === 'live' ? undefined : fake[mode]);
     });
   })(i);
   document.getElementById(i <= 5 ? 'item-team-left' : 'item-team-right').appendChild(btn);
@@ -98,7 +104,13 @@ for (let i = 1; i <= 10; i++) {
           if (actualT3.length > 0) items = [...actualT3, ...TRINITY_DEBUG_ITEMS].slice(0, 3);
         }
       } catch(e) {}
-      triggerTrinity(pi, items, trinityLabel(seatNum, items));
+      const mode = (document.getElementById('trinity-dbg-p2') || {}).value || 'live';
+      const fake = {
+        faster: { status: 'early', time: 500, fastestTime: 533, difference: 33 },
+        slower: { status: 'late',  time: 539, fastestTime: 527, difference: 12 },
+        none:   null,
+      };
+      triggerTrinity(pi, items, trinityLabel(seatNum, items), mode === 'live' ? undefined : fake[mode]);
     });
   })(i);
   document.getElementById(i <= 5 ? 'trinity-team-left' : 'trinity-team-right').appendChild(btn);
@@ -178,6 +190,8 @@ window.iframeTest = async function(playerIdx, feature) {
     } else if (feature === 'item') {
       const itemId = t3s.length > 0 ? t3s[0] : Object.keys(T3_RECIPES)[0];
       triggerItem(playerIdx, itemId, formatTime(data.game_time || 0));
+    } else if (feature === 'skypiercer') {
+      triggerSkyPiercer(playerIdx, getSkyPiercerStack(player) || 3);
     } else if (feature === 'trinity') {
       const items = t3s.length >= 3 ? t3s.slice(0, 3) : [...TRINITY_DEBUG_ITEMS];
       triggerTrinity(playerIdx, items, trinityLabel(seatNum, items));
@@ -254,6 +268,7 @@ registerPollHandler(function(data) {
         }
       }
     }
+    checkSkyPiercer(pidx, player);
     prevEquipState[pidx] = [...equipIds];
   }
 

@@ -175,6 +175,10 @@
     font-weight: 700; font-size: 11px; color: #111;
     letter-spacing: 0.02em; line-height: 1;
   }
+  /* Sky Piercer: wider number/word gap, bigger STACKS word (fits the 109px time box) */
+  .skp-label { font-size: 16px; } /* SKY PIERCER is ~122px at 16px, fits the 151px label box */
+  .skp-time { gap: 8px; }
+  .skp-time .fip-time-unit { font-size: 14px; }
   .evt-item-box {
     position: absolute; top: 28px;
     width: 42px; height: 42px;
@@ -3093,3 +3097,69 @@
     }
     .bpmmeter-fire.on { opacity: 1; }
 
+
+  /* ── [FEATURE: lordadv] Lord advantage recap (see overlay-lordadv.js) ──
+     Under each camp's tricode block, inside #scoreboard-overlay. Blue = camp 1
+     (left), red = camp 2 (right). Accent colour per camp; playoffs uses gold. */
+  .lordadv {
+    --lordadv-accent: #2f5cf0;
+    --lordadv-team: #2f5cf0;   /* title colour: blue on blue, red on red, every theme */
+    --lordadv-gold: #d0a43e;   /* lord icon: gold on both sides */
+    position: absolute; top: 78px; width: 290px;   /* tucked 2-3px under the bar (bar art ends at y=80; panel is behind it) */
+    height: 58px;
+    background: #ffffff;
+    opacity: 0; transform: translateY(-14px);
+    transition: transform 420ms cubic-bezier(.22,1,.36,1), opacity 300ms ease;
+    pointer-events: none;
+  }
+  .lordadv-in { opacity: 1; transform: translateY(0); }
+  /* soft shadow cast by the scoreboard onto the top of the panel */
+  .lordadv::before {
+    content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 18px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.32) 0%, rgba(0,0,0,0.12) 45%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+  }
+  #lordadv-c1 { left: 338px; }   /* left edge = left edge of the gold logo box */
+  #lordadv-c2 { left: 1218px; --lordadv-accent: #e53a2f; --lordadv-team: #e53a2f; }   /* right edge (1508) touches the gold match-info box */
+  [data-theme="playoffs"] .lordadv { --lordadv-accent: #d0a43e; }
+  .lordadv-bar { position: absolute; left: 8px; top: 8px; width: 3px; height: 42px; background: var(--lordadv-accent); }
+  .lordadv-icon {
+    position: absolute; left: 20px; top: 14px; width: 30px; height: 30px;
+    background: var(--lordadv-gold);
+    -webkit-mask: url('/assets/postgame/lord.png') center / contain no-repeat;
+            mask: url('/assets/postgame/lord.png') center / contain no-repeat;
+  }
+  .lordadv-title {
+    position: absolute; left: 58px; top: 0; height: 58px; display: flex; align-items: center;
+    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
+    color: var(--lordadv-team);
+  }
+  .lordadv-stat {
+    position: absolute; top: 0; height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  }
+  .lordadv-gold   { left: 142px; width: 56px; }
+  .lordadv-kills  { left: 202px; width: 38px; }
+  .lordadv-turret { left: 242px; width: 44px; }
+  .lordadv-num { font-family: 'Anton', sans-serif; font-size: 20px; line-height: 1; color: #111; }
+  .lordadv-lbl { font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 10px; letter-spacing: 0.03em; color: #6b7280; line-height: 1; }
+
+  /* ── Trinity phase 2: core-item timing (see overlay-trinity.js) ── label fades out, TIME ▲ 33s FASTER fades in */
+  .evt-label { transition: opacity 280ms ease, transform 280ms ease; }
+  .trn-phase2 .evt-label { opacity: 0; transform: translateY(-6px); }
+  .trn-p2 {
+    position: absolute; left: 0; top: 0; width: 151px; height: 26px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    white-space: nowrap; opacity: 0; transform: translateY(6px);
+    transition: opacity 280ms ease 120ms, transform 280ms ease 120ms;
+    --trn-good: #0b6b2a; --trn-bad: #d9322b;
+  }
+  .trn-phase2 .trn-p2 { opacity: 1; transform: translateY(0); }
+  .trn-p2-time  { font-family: 'Anton', sans-serif; font-size: 15px; line-height: 1; color: #111; }
+  .trn-p2-arrow { font-size: 11px; line-height: 1; color: var(--trn-good); }
+  .trn-p2-text  { font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.01em; line-height: 1; color: var(--trn-good); }
+  .trn-slower .trn-p2-arrow, .trn-slower .trn-p2-text { color: var(--trn-bad); }
+  /* First Item Priority phase 2: no time (it's already under the title), arrow + "24s FASTER" use the full strip */
+  .trn-p2-notime .trn-p2-time { display: none; }
+  .trn-p2-notime { gap: 6px; }
+  .trn-p2-notime .trn-p2-arrow { font-size: 15px; }
+  .trn-p2-notime .trn-p2-text  { font-size: 17px; }

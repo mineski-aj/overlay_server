@@ -38,7 +38,7 @@ const CONCEAL_CAT_LABEL = { conceal:'CONCEAL', encourage:'ENCOURAGE', favor:'FAV
 const CONCEAL_CAT_IMG   = { conceal:'assets/conceal.webp', encourage:'assets/encourage.webp', favor:'assets/favor.webp', direhit:'assets/direhit.webp' };
 
 /* ── Feature toggles (dashboard Control tab → /overlay/feature/led_xxx/enable|disable) ── */
-const featureEnabled = { led_items: true, led_trinity: true, led_swap: true, led_lvl15: true, led_conceal: true };
+const featureEnabled = { led_items: true, led_trinity: true, led_swap: true, led_lvl15: true, led_conceal: true, led_skypiercer: true };
 fetch('/overlay/features', { cache: 'no-store' }).then(r => r.json()).then(d => {
   if (d && typeof d === 'object') Object.keys(featureEnabled).forEach(k => { if (k in d) featureEnabled[k] = !!d[k]; });
 }).catch(() => {});
@@ -1060,6 +1060,8 @@ const queueTrinity = {};
 const queueSwap    = {};
 const queueLvl15   = {};
 const queueConceal = {};   // campId → payload
+const queueSky     = {};   // plate → payload (Sky Piercer stacks)
+const prevSkyMilestone = {};   // seat → highest Sky Piercer milestone already shown (0 = none)
 
 const SWAP_ARROW = c => `<svg viewBox="0 0 40 40" width="100%" height="100%">` +
   `<path d="M 6.4 13.7 A 15 15 0 0 1 32.3 11.4 L 31.6 16.9 L 26.6 15.4 A 8 8 0 0 0 12.8 16.6 Z" fill="${c}"/>` +
@@ -1079,6 +1081,7 @@ function buildPlateEvent(n) {
     `<span class="led-evt-label"></span>` +
     `<span class="led-evt-value"></span>` +
     `<div class="led-evt-time"><span class="led-evt-time-num">--:--</span><span class="led-evt-time-unit">MIN</span></div>` +
+    `<div class="led-evt-p2"><span class="led-evt-p2-time"></span><span class="led-evt-p2-line"><span class="led-evt-p2-arrow"></span><span class="led-evt-p2-text"></span></span></div>` +
     [0,1,2].map(i => `<div class="led-evt-box" data-i="${i}"><img class="led-evt-icon" alt=""><div class="led-evt-sheen"></div></div>`).join('') +
     `<div class="led-evt-swapicon">${SWAP_ARROW(n >= 6 ? '#e80b00' : '#005bff')}</div>`;
   clip.appendChild(card);
@@ -1088,6 +1091,10 @@ function buildPlateEvent(n) {
     label:    card.querySelector('.led-evt-label'),
     value:    card.querySelector('.led-evt-value'),
     timeNum:  card.querySelector('.led-evt-time-num'),
+    timeUnit: card.querySelector('.led-evt-time-unit'),
+    p2Time:   card.querySelector('.led-evt-p2-time'),
+    p2Arrow:  card.querySelector('.led-evt-p2-arrow'),
+    p2Text:   card.querySelector('.led-evt-p2-text'),
     boxes:    [...card.querySelectorAll('.led-evt-box')],
     icons:    [...card.querySelectorAll('.led-evt-icon')],
     sheens:   [...card.querySelectorAll('.led-evt-sheen')],
@@ -1103,15 +1110,41 @@ function setIcon(img, src, fallback) {
 function itemIcon(img, id) { setIcon(img, id ? `items/${id}.png` : 'items/99999.png'); }
 
 function resetCard(r) {
-  r.clip.classList.remove('evt-in');
+  r.clip.classList.remove('evt-in', 'led-p2', 'led-slower');
+  r.timeUnit.textContent = 'MIN';
   r.sheens.forEach(s => s.classList.remove('sweep'));
   r.boxes.forEach(b => b.classList.remove('swap-out', 'swap-center'));
   r.swapIcon.classList.remove('swap-out');
   r.icons.forEach(i => i.classList.remove('dimmed'));
 }
 
-/* Shared runner: show → hold 2400ms → wipe out 350ms → cleanup. */
-function runCard(plate, kind, guardMs, setup, schedule) {
+/* Core-item timing (Trinity's core_item / First Item Priority's first_item, same shape):
+   { difference (neg = faster), fastestTime, status: 'faster'|'late'|'no_data'|…, time }.
+   Returns { timeStr, slower, text } or null when there is nothing to show. */
+function coreItemPhase2(core) {
+  if (!core || core.status === 'no_data') return null;
+  const time = parseInt(core.time) || 0, fastest = parseInt(core.fastestTime) || 0;
+  let diff = Math.abs(parseInt(core.difference) || 0);
+  if (!time || !fastest) return null;
+  if (!diff) diff = Math.abs(time - fastest);
+  if (!diff) return null;
+  const slower = core.status === 'late' ? true : (time > fastest);
+  return { timeStr: Math.floor(time / 60) + ':' + String(time % 60).padStart(2, '0'), slower, text: diff + 's ' + (slower ? 'SLOWER' : 'FASTER') };
+}
+function getTimingData(player, key) {
+  return (player && ((player.extra_param && player.extra_param[key]) || player[key])) || null;
+}
+/* p2fn for runCard: p.core given (debug) → use it (null = force no data); else read the latest poll for that plate's seat */
+function timingFor(plate, p, key) {
+  if (p.core !== undefined) return coreItemPhase2(p.core);
+  const pl = lastData ? getPlayerFromSeat(lastData, seatToPlate(plate)) : null;   // seatToPlate is its own inverse
+  return coreItemPhase2(getTimingData(pl, key));
+}
+
+/* Shared runner: show → hold 2400ms → wipe out 350ms → cleanup.
+   Optional p2fn: checked 1.5s in; if it returns a view model the title strip fades to the timing line
+   (phase 2) and the card holds until 4200ms instead; null → leaves at 2400ms exactly as before. */
+function runCard(plate, kind, guardMs, setup, schedule, p2fn) {
   const r = evRefs[plate];
   if (!r) return;                 // Led_draft.html has no player plates, so no plate events to show
   isPlaying[plate] = true;
@@ -1127,7 +1160,7 @@ function runCard(plate, kind, guardMs, setup, schedule) {
     isPlaying[plate] = false;
     playNextQueued(plate);
   };
-  later(cleanup, guardMs);          // safety net
+  later(cleanup, p2fn ? guardMs + 3000 : guardMs);          // safety net
 
   resetCard(r);
   r.clip.dataset.kind = kind;
@@ -1135,10 +1168,23 @@ function runCard(plate, kind, guardMs, setup, schedule) {
   r.clip.style.display = 'block';
   requestAnimationFrame(() => requestAnimationFrame(() => r.clip.classList.add('evt-in')));
   schedule(r, later);
-  later(() => {
-    r.clip.classList.remove('evt-in');
-    later(cleanup, 350);
-  }, 2400);
+  const leave = () => { r.clip.classList.remove('evt-in'); later(cleanup, 350); };
+  if (p2fn) {
+    later(() => {
+      let m = null;
+      try { m = p2fn(); } catch (e) {}
+      if (!m) return;
+      r.p2Time.textContent  = m.timeStr;
+      r.p2Arrow.textContent = m.slower ? '▼' : '▲';
+      r.p2Text.textContent  = m.text;
+      r.clip.classList.toggle('led-slower', m.slower);
+      r.clip.classList.add('led-p2');
+    }, 1500);
+    later(() => { if (!r.clip.classList.contains('led-p2')) leave(); }, 2400);
+    later(() => { if (r.clip.classList.contains('led-p2')) leave(); }, 4200);
+  } else {
+    later(leave, 2400);
+  }
 }
 
 function playNextQueued(plate) {
@@ -1151,6 +1197,9 @@ function playNextQueued(plate) {
   } else if (queueItem[plate]) {
     const q = queueItem[plate]; delete queueItem[plate];
     setTimeout(() => triggerItem(plate, q), 300);
+  } else if (queueSky[plate]) {
+    const q = queueSky[plate]; delete queueSky[plate];
+    setTimeout(() => triggerSkyPiercer(plate, q), 300);
   } else if (queueLvl15[plate]) {
     const q = queueLvl15[plate]; delete queueLvl15[plate];
     setTimeout(() => triggerLvl15(plate, q), 300);
@@ -1169,6 +1218,23 @@ function triggerItem(plate, p) {
     r.label.textContent   = 'FIRST ITEM PRIORITY';
     r.timeNum.textContent = p.timeStr || '--:--';
     itemIcon(r.icons[0], p.itemId);
+  }, (r, later) => later(() => r.sheens[0].classList.add('sweep'), 400), () => timingFor(plate, p, 'first_item'));
+}
+
+/* Sky Piercer stacks: same card as First Item Priority, "N STACKS" in the time slot. Fires at stack 3, 5, 7, … */
+const SKYPIERCER_ITEM_ID = '2014';
+function getSkyPiercerStack(player) {
+  const o = (player && player.extra_param && player.extra_param.sky_piercer_stack) || (player && player.sky_piercer_stack);
+  return o ? (parseInt(o.stack) || 0) : 0;
+}
+function skyPiercerMilestone(stack) { return stack >= 3 ? (stack % 2 ? stack : stack - 1) : 0; }
+function triggerSkyPiercer(plate, p) {
+  if (isPlaying[plate]) { queueSky[plate] = p; return; }
+  runCard(plate, 'skypiercer', 3500, r => {
+    r.label.textContent    = 'SKY PIERCER';
+    r.timeNum.textContent  = String(p.stacks);
+    r.timeUnit.textContent = 'STACKS';
+    itemIcon(r.icons[0], SKYPIERCER_ITEM_ID);
   }, (r, later) => later(() => r.sheens[0].classList.add('sweep'), 400));
 }
 
@@ -1185,7 +1251,7 @@ function triggerTrinity(plate, p) {
     r.label.textContent = p.label || 'CORE ITEMS ACHIEVED';
     r.label.classList.toggle('big', p.label === 'MARKSMAN TRINITY');
     r.icons.forEach((img, i) => itemIcon(img, p.t3ItemIds[i]));
-  }, (r, later) => r.sheens.forEach((sh, i) => later(() => sh.classList.add('sweep'), 400 + i * 120)));
+  }, (r, later) => r.sheens.forEach((sh, i) => later(() => sh.classList.add('sweep'), 400 + i * 120)), () => timingFor(plate, p, 'core_item'));
 }
 
 function triggerSwap(plate, p) {
@@ -1264,11 +1330,11 @@ const prevBlessingGold = {};   // campId → int
 function resetGameState() {
   for (let s = 1; s <= 10; s++) {
     trinityFired[s] = false;
-    delete prevLevel[s]; delete prevEquipState[s]; delete prevTotalDamage[s];
+    delete prevLevel[s]; delete prevEquipState[s]; delete prevTotalDamage[s]; delete prevSkyMilestone[s];
     combatHistory[s] = [];
   }
   for (let p = 1; p <= 10; p++) {
-    delete queueItem[p]; delete queueTrinity[p]; delete queueSwap[p]; delete queueLvl15[p];
+    delete queueItem[p]; delete queueSky[p]; delete queueTrinity[p]; delete queueSwap[p]; delete queueLvl15[p];
   }
   [1, 2].forEach(c => { delete prevBlessingGold[c]; delete queueConceal[c]; });
 }
@@ -1323,6 +1389,15 @@ registerPollHandler(function (data) {
       triggerLvl15(plate, { timeStr });
     }
     prevLevel[seat] = lvl;
+
+    /* Sky Piercer stacks: first poll = baseline; a drop re-arms (death / item sold) */
+    const skyMs = skyPiercerMilestone(getSkyPiercerStack(player));
+    const skyPrev = prevSkyMilestone[seat];
+    if (skyPrev === undefined || skyMs < skyPrev) prevSkyMilestone[seat] = skyMs;
+    else if (skyMs > skyPrev) {
+      prevSkyMilestone[seat] = skyMs;
+      if (featureEnabled.led_skypiercer) triggerSkyPiercer(plate, { stacks: skyMs });
+    }
   }
 
   for (const campId of [1, 2]) {
@@ -1441,10 +1516,16 @@ function buildDebugUI() {
   if (document.getElementById('plate-1')) {   // plate-event buttons only make sense where plates exist
   title('Plate events — armed toggles live in the dashboard Control tab');
   perPlate('First item priority', n => triggerItem(n, { itemId: dbgT3s(n)[0] || '3001', timeStr: dbgTime() }));
+  perPlate('Item priority · fake 24s FASTER', n => triggerItem(n, { itemId: dbgT3s(n)[0] || '3001', timeStr: dbgTime(), core: { status: 'faster', time: 215, fastestTime: 239, difference: -24 } }));
+  perPlate('Item priority · fake 12s SLOWER', n => triggerItem(n, { itemId: dbgT3s(n)[0] || '3001', timeStr: dbgTime(), core: { status: 'late', time: 539, fastestTime: 527, difference: 12 } }));
+  perPlate('Sky Piercer (stacks 3)', n => triggerSkyPiercer(n, { stacks: 3 }));
+  perPlate('Sky Piercer (stacks 12)', n => triggerSkyPiercer(n, { stacks: 12 }));
   perPlate('Trinity', n => {
     const t = [...dbgT3s(n), ...TRINITY_DEBUG_ITEMS].slice(0, 3);
     triggerTrinity(n, { t3ItemIds: t, label: trinityLabel(n <= 5 ? n : n - 5, t) });
   });
+  perPlate('Trinity · fake 33s FASTER', n => triggerTrinity(n, { t3ItemIds: [...TRINITY_DEBUG_ITEMS], label: 'CORE ITEMS ACHIEVED', core: { status: 'faster', time: 500, fastestTime: 533, difference: -33 } }));
+  perPlate('Trinity · fake 12s SLOWER', n => triggerTrinity(n, { t3ItemIds: [...TRINITY_DEBUG_ITEMS], label: 'CORE ITEMS ACHIEVED', core: { status: 'late', time: 539, fastestTime: 527, difference: 12 } }));
   const mk = row();
   btn(mk, 'Marksman trinity (P5)', () => triggerTrinity(5, { t3ItemIds: [...MARKSMAN_TRINITY_IDS], label: 'MARKSMAN TRINITY' }), 'purple');
   perPlate('Quick swap', n => triggerSwap(n, { soldId: dbgT3s(n)[0] || '3001', boughtId: SWAP_DEBUG_BOUGHT }));

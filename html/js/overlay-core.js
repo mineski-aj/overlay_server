@@ -74,6 +74,7 @@ const T3_RECIPES = {
 const isPlayingLvl    = {};
 const isPlayingItem   = {};
 const itemQueue       = {};
+/* Sky Piercer state (isPlayingSkyPiercer/skyPiercerQueue) lives in overlay-skypiercer.js */
 const isPlayingTrinity = {};
 const trinityQueue    = {};
 const trinityFired    = {};
@@ -237,7 +238,7 @@ function setAllSlotTriggers(disabled) {
 
 function isAnyPlaying(i) {
   const side = i === 4 ? 'left' : i === 9 ? 'right' : null;
-  return !!(isPlayingTrinity[i] || isPlayingSwap[i] || isPlayingItem[i] || isPlayingLvl[i] || (side && isPlayingConceal[side]));
+  return !!(isPlayingTrinity[i] || isPlayingSwap[i] || isPlayingItem[i] || (typeof isPlayingSkyPiercer !== 'undefined' && isPlayingSkyPiercer[i]) || isPlayingLvl[i] || (side && isPlayingConceal[side]));
 }
 
 function playNextQueued(i) {
@@ -251,6 +252,9 @@ function playNextQueued(i) {
   } else if (itemQueue[i] && !isPlayingItem[i]) {
     const q = itemQueue[i]; itemQueue[i] = null;
     setTimeout(() => triggerItem(i, q.itemId, q.timeStr), 300);
+  } else if (typeof skyPiercerQueue !== 'undefined' && skyPiercerQueue[i] && !isPlayingSkyPiercer[i]) {
+    const q = skyPiercerQueue[i]; skyPiercerQueue[i] = null;
+    setTimeout(() => triggerSkyPiercer(i, q.stacks), 300);
   } else if (lvl15Queue[i] && !isPlayingLvl[i]) {
     const q = lvl15Queue[i]; lvl15Queue[i] = null;
     setTimeout(() => triggerLvl15(i, q.timeStr, q.heroId), 300);
@@ -273,6 +277,8 @@ const ROLE_ICONS = {
 const featureEnabled = {
   killevents: true,
   items:      true,
+  skypiercer: true,
+  lordadv:    true,
   trinity:    true,
   swap:       true,
   lvl15:      true,
@@ -301,6 +307,7 @@ function resetGameState() {
     delete prevLevel[i];
     delete prevEquipState[i];
     delete itemQueue[i];
+    if (typeof skyPiercerQueue !== 'undefined') { delete skyPiercerQueue[i]; delete prevSkyPiercerMilestone[i]; }
     delete trinityQueue[i];
     delete lvl15Queue[i];
     delete swapQueue[i];

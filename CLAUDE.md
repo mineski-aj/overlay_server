@@ -248,6 +248,18 @@ with draft cards. Both are Control-tab entries with `previewSize: [2532, 1024]`
 `/led/home|swap`. Not wired on either: Edit-tab positioning, Control-tab Preview
 buttons. `routes/led.js` holds every `/led/*` route.
 
+**Auto side from the Match Board (`html/js/led-autoside.js`).** Match Board
+HOME is ALWAYS the left LED square, AWAY the right, regardless of which game
+camp (blue/red) each is on that game — but only when BOTH game-feed camps match
+the Match Board's two teams (`team_simple_name`/`team_name` vs `/match/state`
+`home|away` `short`/`name`, case-insensitive). `LedAutoSide.resolve(camp_list)`
+returns swapped / not swapped / `null` (can't tell; `/match/state` refreshed every
+3s). Both pages keep `manualSwap` (HOME/SWAP buttons, SSE `led_side`, localStorage)
+and `autoSwap`; `applySwap()` uses `autoSwap` when non-null, else `manualSwap`, so
+the buttons only matter when the teams don't match. Each page's `pollSubInfo()`
+calls `resolve()` every tick. Team spellings must match between the Match Board
+and the game API or it silently falls back to manual.
+
 **PENDING SERVER RESTART (as of the end of the session that wrote this).** These
 server edits are NOT live until the user restarts (ask first — it's their
 terminal): `lib/state.js` (`led_*` feature toggles, `checkOverlays.led_draftpred`,
@@ -313,6 +325,16 @@ the old standalone `MPL_LED/led_events.html`:
   `test_reveal|test_slot` → `dpTestReveal()/dpTestSlot()` on the LED page(s). These
   hit the REAL instance, unlike the preview-only originals. Polling is suspended 15s
   per click; the fixture demo hands the screen back to the real feed afterwards.
+- **Ported from mploverlay_v7 later** (same data paths/rules as "mploverlay_v7 features added
+  later"; unverified against a live feed): **Sky Piercer stacks** (`led_skypiercer`, kind
+  `skypiercer`, stack 3/5/7…, `triggerSkyPiercer`, prev milestone per SEAT) and the
+  **phase 2 core-item timing** on First Item Priority (`first_item`, arrow + seconds over the
+  title strip) and Trinity (`core_item`, time over arrow + seconds in the title column).
+  `runCard(..., p2fn)` checks `p2fn` at 1.5s; a view model → `.led-p2` on the clip and hold
+  to 4200ms, null → leaves at 2400ms as before. `timingFor()` reads the latest poll for that
+  plate's seat (`seatToPlate` is its own inverse) unless the payload carries `core` (debug).
+  Lord Advantage was NOT ported (it hangs off the v7 scoreboard, which LED doesn't have).
+  `led_skypiercer` also needs the pending server restart (`VALID_FEATURES`, `lib/state.js`).
 - Debug panel (`` ` ``): per-event / per-plate trigger buttons (plates only),
   side-panel Show/Hide, DP test picks.
 
@@ -848,6 +870,40 @@ next to it are bespoke, one-off dashboard blocks built specifically for
 kill events' fixed enumerable video list — not a reusable pattern to
 copy for a different feature.
 
+### mploverlay_v7 features added later (all unverified against a live feed unless noted)
+
+- **Sky Piercer Stacks** (`js/overlay-skypiercer.js`, Shape 2 reactive effect, key
+  `skypiercer`, armable via `featureToggles`): Item Pickup card (label SKY PIERCER,
+  `Items/2014.png`, "N STACKS" in the time slot, `.skp-label/.skp-time` CSS) per
+  player at stack 3, 5, 7… (milestone = largest odd ≥3 ≤ stack; a drop re-arms; first
+  poll is baseline only). Stack read from `player.extra_param.sky_piercer_stack.stack`
+  (fallback `player.sky_piercer_stack`) — `getSkyPiercerStack()`; the real path was
+  never confirmed. Wired into `isAnyPlaying`/`playNextQueued`/`resetGameState`
+  (guarded with `typeof` because the file loads after core), debug tab + `iframeTest` +
+  dashboard Preview Tester entry.
+- **Lord Advantage** (`js/overlay-lordadv.js`, key `lordadv`, armable): white panel under
+  each camp's tricode (`#lordadv-c1` left 338 / `#lordadv-c2` left 1218, top 78, 290x58),
+  inserted as `#scoreboard-overlay`'s FIRST child so it sits behind the scoreboard art and
+  slides with it; top shadow via `::before`. Shows +GOLD / KILLS / TURRET for 7s once per
+  (camp, `begin_time`) when `camp_list[].kill_lord_advantage.end_time` is set (also reads
+  `data.kill_lord_advantage[campid]`). Gold = API `gold`; KILLS/TURRET are the camp's
+  `score` / `kill_tower` diffs between per-poll snapshots at begin/end time (the API only
+  has tower HP). Lord icon gold both sides, "ADVANTAGE" title blue/red, bar follows theme
+  accent (gold in playoffs). Edges measured off `assets/ingame/playoffs/ingamepng2.png`
+  (gold logo box starts x=338, gold match-info box x=1508, bar art ends y=80). NOT in the
+  dashboard Edit tab. Debug tab has GOLD/KILLS/TURRET inputs + show/hide per side.
+- **Trinity + First Item Priority "phase 2"** (core-item timing): after 1.5s the title fades
+  to a timing line, then holds to ~4.2s. Trinity: `time ▲/▼ 33s FASTER/SLOWER` from
+  `player.extra_param.core_item` (or `player.core_item`); First Item Priority: arrow +
+  seconds only (`.trn-p2-notime`, the time is already on the card) from `first_item`
+  (`FIRST_ITEM_KEYS`). Shared `coreItemPhase2()` in `overlay-trinity.js`: `no_data` / zero
+  times / zero diff → null → card leaves at 2.4s exactly as before; `late` = slower, else
+  `time > fastestTime`; seconds = |difference|. Data is looked up from `lastData` at the
+  1.5s swap moment (feed may publish a poll late). Green is dark (`#0b6b2a`) on purpose —
+  lighter greens vanish on the card. Shared CSS: `.trn-p2*`, `.trn-phase2`, `.trn-slower`.
+  Debug tabs (TRINITY, ITEM PICKUP) have a "PHASE 2" dropdown (live / fake faster / fake
+  slower / fake no data). `core_item`'s real parent path was never confirmed.
+
 ## Control-tab Preview — keep it fully isolated from real broadcast state
 
 The Control tab's `#preview-iframe` lets you see a scene without
@@ -1258,6 +1314,11 @@ expanded map panel, Draft's player plate backs / hero name banners / picking
 webms (Regular art still), playoffs Post H2H sponsor rework, ban-selection red
 glow and `bluepickbg1/redpickbg1.webm` in Draft (still blue/red), real playoffs
 team photos for `photos/Playoffs Sched/` (APBR, TWIS missing → placeholder).
+
+**Server restart also pending for `skypiercer` + `lordadv`:** `routes/overlay.js`
+(`VALID_FEATURES`) and `lib/state.js` (`featureToggles`) — without it the dashboard
+arm/disarm toggles for Sky Piercer Stacks and Lord Advantage don't work (overlay + debug
+buttons do). Ask the user first, it's their terminal.
 
 **Server restart still pending?** Two route edits only take effect after a
 restart, which needs the user's explicit OK: `routes/overlay.js` (schedule
