@@ -1315,7 +1315,12 @@
     z-index: 50;
     pointer-events: none;
     display: none;
+    transition: transform 350ms ease-out;
   }
+  /* Live Team Fight (overlay-teamfightcheck.js) is on screen — lift the
+     whole kill-event layer by that panel's height (158px) so they don't
+     overlap. */
+  #kill-event-overlay.ke-shift-up { transform: translateY(-158px); }
   #kill-event-video {
     width: 100%; height: 100%;
     display: block;
@@ -1625,6 +1630,100 @@
     color: #000;
     white-space: nowrap;
   }
+
+  /* ── [FEATURE: teamfight-check] ─────────────────────────────────
+     "Live Team Fight" damage bar. Same width (887px) and fixed-clip /
+     sliding-inner pattern as item-check, bottom flush with the scene.
+     Stack, top→bottom: label container 0..50 (blue total · title · red
+     total), bar 50..106, portraits 114..158 (flush with the bottom edge of the 1080 scene). Blue/red match the
+     side-check camp colours (#274FFF / #FF3838). Segment left/width and
+     portrait left are driven from overlay-teamfightcheck.js and glide
+     via the transitions below. */
+  #teamfight-check-clip {
+    position: absolute;
+    left: 516px; top: 922px;
+    width: 887px; height: 158px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 60;   /* above kill events (#kill-event-overlay is 50) */
+  }
+  #teamfight-check-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 887px; height: 158px;
+    transform: translateY(158px);
+    transition: transform 350ms ease-in;
+  }
+  #teamfight-check-overlay.tfc-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .tfc-label {
+    position: absolute;
+    left: 163px; top: 0;
+    width: 561px; height: 50px;
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    gap: 22px;
+    /* Playoffs gold (#edc555 → #d0a43e), black text */
+    background: linear-gradient(180deg, #edc555 0%, #d0a43e 100%);
+    font-family: 'Anton', sans-serif;
+  }
+  .tfc-title {
+    font-size: 22px; letter-spacing: 2px;
+    color: #0a0a0a;
+    white-space: nowrap;
+  }
+  .tfc-total {
+    width: 140px;
+    font-size: 34px; line-height: 1;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+  }
+  .tfc-total-blue { text-align: right; color: #1534D6; }
+  .tfc-total-red  { text-align: left;  color: #D61F1F; }
+  .tfc-bar {
+    position: absolute;
+    left: 0; top: 50px;
+    width: 887px; height: 56px;
+    background: #0a0a0a;
+    overflow: hidden;
+  }
+  .tfc-seg {
+    position: absolute; top: 0;
+    left: 0; width: 0;
+    height: 56px;
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    box-shadow: inset -1px 0 0 rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.35);
+    transition: left 450ms ease-out, width 450ms ease-out;
+  }
+  .tfc-seg.tfc-blue { background: linear-gradient(180deg, #6E92FF 0%, #274FFF 48%, #1530C0 100%); }
+  .tfc-seg.tfc-red  { background: linear-gradient(180deg, #FF7878 0%, #FF3838 48%, #C41C1C 100%); }
+  .tfc-seg-txt {
+    font-family: 'General Sans', sans-serif; font-weight: 700;
+    font-size: 20px; color: #fff;
+    white-space: nowrap;
+    transition: opacity 200ms;
+  }
+  .tfc-portrait {
+    position: absolute; top: 114px;
+    left: 0;
+    width: 44px; height: 44px;
+    box-sizing: border-box;
+    border-radius: 50%;
+    border: 3px solid;
+    object-fit: cover;
+    background: #0a0a0a;
+    opacity: 0;
+    transition: left 450ms ease-out, opacity 250ms;
+  }
+  .tfc-portrait.tfc-blue { border-color: #3D6BFF; }
+  .tfc-portrait.tfc-red  { border-color: #FF4545; }
+  .tfc-portrait.tfc-dead { filter: grayscale(1) brightness(0.7); }
+  .tfc-notrans, .tfc-notrans.tfc-seg, .tfc-notrans.tfc-portrait { transition: none !important; }
 
   /* ── [FEATURE: emblem-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check, but the

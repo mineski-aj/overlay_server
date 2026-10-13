@@ -530,6 +530,10 @@
     --camp: #1f4fd8; --camp2: #2d62f5; --glow: 30,100,255;
   }
   .dr-camp.camp-red { --camp: #d4121c; --camp2: #ee2a33; --glow: 255,50,50; }
+  /* Picking glow colour = whatever Draft.html's .pick-gradient uses for the active theme
+     (Regular: camp blue/red · 10th Anniversary: orange · Playoffs: gold, both sides). */
+  [data-theme="10th_anniversary"] .dr-camp, [data-theme="10th_anniversary"] .dr-camp.camp-red { --glow: 255,163,68; }
+  [data-theme="playoffs"] .dr-camp, [data-theme="playoffs"] .dr-camp.camp-red { --glow: 237,197,85; }
   .dr-camp.side-left  { left: 12px;  right: auto; }
   .dr-camp.side-right { right: 12px; left: auto; }
 
@@ -583,12 +587,14 @@
     mix-blend-mode: screen; animation: dr-grad-pulse 1.4s ease-in-out infinite;
   }
   @keyframes dr-grad-pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
-  /* "PICKING" animation — alpha-baked copies (assets/led/draft/picking*_alpha.webm) so the lettering stays solid on the gold */
+  /* "PICKING" animation — Draft.html's own default files, used as-is (see ensurePickAnim) */
   .dr-pickanim {
     position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill;
     opacity: 0; transition: opacity 0.5s ease; pointer-events: none; z-index: 1;
   }
   .dr-pickanim.on { opacity: 1; }
+  /* same fix Draft.html applies for the 10th Anniversary theme: black contributes nothing */
+  [data-theme="10th_anniversary"] .dr-pickanim { mix-blend-mode: screen; }
 
   /* player photo — Draft.html sizes (333 / 300 over a 168 plate) scaled x1.19 for a 200 slot */
   .dr-photo {
@@ -626,17 +632,6 @@
   @keyframes dr-picked-glow { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
   .dr-flash.picked::before { animation: dr-picked-glow 0.9s ease-out forwards; }
 
-  /* role icon: pops in the middle on the player's picking turn, then flies to the corner */
-  .dr-role {
-    position: absolute; left: calc(50% - 35px); top: calc(50% - 35px); width: 70px; height: 70px;
-    object-fit: contain; z-index: 4; pointer-events: none; opacity: 0;
-    transform-origin: center; transform: scale(0.4);
-    filter: brightness(0) invert(1) brightness(0.086);
-    transition: transform 0.9s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
-  }
-  .dr-role.pop    { opacity: 1; transform: scale(1); transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease; }
-  .dr-role.corner { opacity: 1; transform: translate(-83px, -119.5px) scale(0.343); }
-  .dr-role.gone   { opacity: 0; }
 
   /* hero name pop-up — a strip that rises from the bottom edge */
   .dr-hname {
@@ -911,22 +906,8 @@
   /* ─────────────── Part B — draft cards ─────────────── */
   const PHOTO_W = 396;          // .dr-photo / .dr-photo-cvs width
   const HERO_W  = 200;          // .dr-hero-vid / .dr-hero-cvs width (= slot width)
-  const ROLE_MAP = {
-    'exp_laner':  'role/EXP LANER.png',  'jungler':    'role/JUNGLER.png',
-    'mid_laner':  'role/MID LANER.png',  'roamer':     'role/ROAMER.png',
-    'gold_laner': 'role/GOLD LANER.png',
-  };
-  const ALL_ROLES = ['exp_laner', 'jungler', 'mid_laner', 'roamer', 'gold_laner'];
-  const ROLE_ALIASES = {
-    'exp_laner': 'exp_laner', 'exp': 'exp_laner', 'exp laner': 'exp_laner',
-    'jungler': 'jungler', 'jungle': 'jungler',
-    'mid_laner': 'mid_laner', 'mid': 'mid_laner', 'mid laner': 'mid_laner',
-    'roamer': 'roamer', 'roam': 'roamer', 'support': 'roamer',
-    'gold_laner': 'gold_laner', 'gold': 'gold_laner', 'gold laner': 'gold_laner', 'marksman': 'gold_laner',
-  };
   const PHOTO_FRONT_HOLD_MS = 700;    // FRONT stays up this long after the picking turn starts
   const PHOTO_QUICKOUT_MS   = 150;    // matches .quickout
-  const ROLE_POP_MS = 450, ROLE_FLY_MS = 900;
 
   let PLAYER_PHOTO_NAMES = [], PLAYER_PHOTO_LOOKUP = {};
   fetch('/api/player-photos', { cache: 'no-store' }).then(r => r.json()).then(d => {
@@ -941,7 +922,7 @@
   fetch('/led/draft-photo-mode', { cache: 'no-store' }).then(r => r.json())
     .then(d => { if (d.mode) draftPhotoMode = d.mode; }).catch(() => {});
 
-  let playerRoles = {}, localDraftRoles = {}, localDraftRolesBattleId = null, usingDraftInfoOnlyFormat = false;
+  let usingDraftInfoOnlyFormat = false;
 
   const slotEls = {};   // "campid_i" → element refs
   const prev = {};      // "campid_i" → previous-poll state
@@ -977,14 +958,13 @@
       const hvid  = mk('video', 'dr-hero-vid', slot); hvid.loop = true; hvid.muted = true; hvid.playsInline = true; hvid.preload = 'none';
       const hcvs  = mk('canvas', 'dr-hero-cvs', slot); hcvs.width = HERO_W; hcvs.height = 319;
       const flash = mk('div', 'dr-flash', slot);
-      const role  = mk('img', 'dr-role', slot); role.alt = '';
       const hname = mk('div', 'dr-hname', slot); const hnameTxt = mk('span', '', hname);
       slotEls[key] = { key, campid, seatIdx: i, slot, glow, photo, pcvs, pctx: pcvs.getContext('2d'),
-        hvid, hcvs, hctx: hcvs.getContext('2d'), flash, role, hname, hnameTxt,
+        hvid, hcvs, hctx: hcvs.getContext('2d'), flash, hname, hnameTxt,
         pickAnim: null, matteVid: null, heroMatteVid: null, photoH: null };
-      prev[key] = { lastName: '', heroid: undefined, picking: false, matteActive: false, assignedRole: undefined,
+      prev[key] = { lastName: '', heroid: undefined, picking: false, matteActive: false,
         photoName: undefined, photoPhase: 'none', photoErasing: false, idleName: undefined,
-        t0: null, t1: null, t2: null, roleTimer: null, pickAnimTimer: null, rolePhase: 'none' };
+        t0: null, t1: null, t2: null, pickAnimTimer: null };
     }
   }
   [1, 2].forEach(buildCamp);
@@ -1003,7 +983,10 @@
     if (e.pickAnim) return;
     e.pickAnim = mk('video', 'dr-pickanim');
     e.slot.insertBefore(e.pickAnim, e.slot.firstChild.nextSibling);   // above the glow's slot, below the photo
-    e.pickAnim.src = e.campid === 1 ? 'assets/led/draft/pickingblue_alpha.webm' : 'assets/led/draft/pickingred_alpha.webm';
+    const anniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';   // Draft.html's isAnniversaryTheme()
+    e.pickAnim.src = anniv
+      ? (e.campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
+      : (e.campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
     e.pickAnim.loop = true; e.pickAnim.muted = true; e.pickAnim.playsInline = true; e.pickAnim.preload = 'none';
   }
 
@@ -1144,14 +1127,6 @@
     clearTimeout(p.pickAnimTimer); p.pickAnimTimer = null;
     if (e.pickAnim) { e.pickAnim.classList.remove('on'); e.pickAnim.pause(); }
   }
-  function roleStart(e, p) {                         // press in the middle, then fly to the corner
-    clearTimeout(p.roleTimer);
-    if (!e.role.getAttribute('src')) return;
-    e.role.className = 'dr-role'; void e.role.offsetWidth;
-    e.role.classList.add('pop'); p.rolePhase = 'pop';
-    p.roleTimer = setTimeout(() => { e.role.className = 'dr-role corner'; p.rolePhase = 'corner'; }, ROLE_POP_MS + 150);
-  }
-  function roleEnd(e, p) { clearTimeout(p.roleTimer); e.role.className = 'dr-role gone'; p.rolePhase = 'none'; }
 
   /* ── Matte reveal over the hero video (ported from Draft.html startMatteReveal) ── */
   function startMatteReveal(e, p) {
@@ -1169,7 +1144,7 @@
       prev[e.key].matteActive = false;
       cvs.style.opacity = '0'; cvs.classList.remove('brightening');
       heroMatteVid.pause();
-      hidePickAnim(e, p); e.glow.style.display = 'none'; roleEnd(e, p);
+      hidePickAnim(e, p); e.glow.style.display = 'none';
       heroVid.style.display = 'block';
       if (p.photoErasing) finishPhotoErase(e, p);
       fireGlow();
@@ -1223,13 +1198,6 @@
     const heroid = seat.heroid || 0, pick = !!seat.picking;
     p.lastName = seat.name || '';
 
-    // role icon follows the player (roleid, or name for the draft-info-only feed)
-    const roleid = seat.roleid || 0;
-    const assigned = (roleid && playerRoles[roleid]) || (seat.name && localDraftRoles[seat.name]) || null;
-    if (assigned !== p.assignedRole) {
-      if (assigned && ROLE_MAP[assigned]) e.role.src = ROLE_MAP[assigned];
-      p.assignedRole = assigned;
-    }
 
     const heroName = (seat.hero_name && seat.hero_name[0]) ? String(seat.hero_name[0]).toUpperCase() : '';
     if (heroName && e.hnameTxt._t !== heroName) { setText(e.hnameTxt, heroName); fitHeroName(e, heroName); }
@@ -1252,7 +1220,7 @@
         e.hvid.pause(); e.hvid.removeAttribute('src'); e.hvid.style.display = 'none'; e.hvid.classList.remove('brightening');
         e.hcvs.style.opacity = '0'; e.hcvs.classList.remove('brightening'); e.hctx.clearRect(0, 0, e.hcvs.width, e.hcvs.height);
         e.flash.classList.remove('picked'); e.glow.style.display = 'none';
-        hidePickAnim(e, p); roleEnd(e, p); resetPlayerPhoto(e, p);
+        hidePickAnim(e, p); resetPlayerPhoto(e, p);
       }
       p.heroid = heroid;
     }
@@ -1262,13 +1230,11 @@
     if (pick && !p.picking) {                         // this seat's picking turn starts
       e.glow.style.display = 'block';
       showPickAnimDelayed(e, p);
-      roleStart(e, p);
       if (!p.photoName) showIdlePhoto(e, p, seat.name);
       advancePhotoToVictory(e, p);
     } else if (!pick && p.picking) {                  // turn ended
       e.glow.style.display = 'none';
       if (!p.matteActive) { hidePickAnim(e, p); }
-      if (heroid === 0) { roleEnd(e, p); }
     }
     p.picking = pick;
   }
@@ -1293,28 +1259,6 @@
     });
     return { code: 0, data: { battleid: raw.BattleID || null, state_left_time: raw.state_time || 0, camp_list: campList } };
   }
-  function assignLocalDraftRoles(camp1, camp2) {
-    const result = {};
-    [camp1, camp2].forEach(camp => {
-      if (!camp) return;
-      const seats = [];
-      for (let s = 1; s <= 5; s++) { const seat = camp['seat_' + s]; if (seat && seat.name) seats.push(seat); }
-      if (!seats.length) return;
-      const claimed = {};
-      seats.forEach(seat => { const m = ROLE_ALIASES[(seat.role || '').toLowerCase().trim()]; if (m && !claimed[m]) { claimed[m] = true; result[seat.name] = m; } });
-      const remaining = ALL_ROLES.filter(r => !claimed[r]);
-      for (let j = remaining.length - 1; j > 0; j--) { const k = Math.floor(Math.random() * (j + 1)); [remaining[j], remaining[k]] = [remaining[k], remaining[j]]; }
-      let ri = 0;
-      seats.forEach(seat => { if (!result[seat.name]) result[seat.name] = remaining[ri++]; });
-    });
-    return result;
-  }
-  function fetchAndApplyRoles(bid) {
-    fetch('/api/draft-roles', { cache: 'no-store' }).then(r => r.json()).then(d => {
-      if (d.battleid === bid && d.roles && Object.keys(d.roles).length) { playerRoles = d.roles; Object.keys(prev).forEach(k => { prev[k].assignedRole = undefined; }); }
-    }).catch(() => {});
-  }
-
   let currentBattleId = null;
   function applyDraft(json) {
     json = normalizeDraftPayload(json);
@@ -1327,9 +1271,6 @@
     const campList = json.data.camp_list || [];
     const camp1 = campList.find(c => c.campid === 1), camp2 = campList.find(c => c.campid === 2);
     setHeader(1, camp1); setHeader(2, camp2);
-    if (usingDraftInfoOnlyFormat) {
-      if (localDraftRolesBattleId !== currentBattleId) { localDraftRoles = assignLocalDraftRoles(camp1, camp2); localDraftRolesBattleId = currentBattleId; }
-    } else if (!Object.keys(playerRoles).length && currentBattleId) fetchAndApplyRoles(currentBattleId);
     for (let i = 1; i <= 5; i++) {
       if (camp1 && camp1['seat_' + i]) updateSeat(1, i - 1, camp1['seat_' + i]);
       if (camp2 && camp2['seat_' + i]) updateSeat(2, i - 1, camp2['seat_' + i]);

@@ -61,6 +61,9 @@ caller expected, until the restart actually happened.
   `Draft.html`, `DraftIndex.html`, `mploverlay_v7.html`) goes through
   this — use `createOverlaySSE()` for any new page, never
   `new EventSource(...)` directly.
+- `html/led_overlay.html`, `html/Led_draft.html`, `html/js/led-events.js` — the
+  2532x1024 LED-wall pages (player plates / draft cards + mid panels) and their
+  shared event/panel engine. See "LED wall pages" below.
 - `html/DraftIndexV2.html` — Draft Index with player strips + hero reveal (see "Playoffs theme — working notes"). `html/js/hero-web.js` — WebP hero portraits with PNG fallback for `mplfs.html` / `mploverlay_v7.html`.
 - `html/js/theme-apply.js` — applies the global broadcast theme
   (Regular/10th Anniversary/Playoffs, Settings page picker) as
@@ -230,67 +233,162 @@ behind), click the real Control-tab toggle button, and confirm a
 looked fine under `curl` and only showed up when someone actually
 pressed the button in a real, already-open browser tab.
 
-## LED Overlay — `html/led_overlay.html` + `html/js/led-events.js`
+## LED wall pages — `html/led_overlay.html`, `html/Led_draft.html`, `html/js/led-events.js`
 
-2532x1024 LED-wall page (10 player plates + two mid panels). Always-on
-browser source: Control tab entry `led-overlay` (`previewSize: [2532, 1024]`
-— `scalePreview()` honors a per-overlay size). Data comes same-origin:
-`/api/gamedata-proxy` (game data), `/feed` (BPM), `/api/winrate-probability`
-(proxy in `routes/proxy.js`), `/proxy/predictions`. HOME/SWAP is `led_side`
-via `/led/home|swap`.
+Two always-on 2532x1024 browser sources for the LED wall: a gold-framed 1024
+square on each side (`assets/led/goldborder.png`, 12px ring, transparent
+centre) and two 242px **mid panels** between them (`#mid-left` / `#mid-right`:
+team logo + tricode + 4 stat boxes, art `assets/led/sidebacker.png`).
+**LED Overlay** fills the squares with 10 player plates; **LED Draft** fills them
+with draft cards. Both are Control-tab entries with `previewSize: [2532, 1024]`
+(`scalePreview()` honours a per-overlay size) and the same `extraActions`
+(HOME/SWAP + the four mid-panel Show/Hide pairs). Same-origin data: game feed
+`/api/gamedata-proxy`, BPM `/feed`, `/api/winrate-probability` (proxy in
+`routes/proxy.js`), `/proxy/predictions`. HOME/SWAP = SSE `led_side` via
+`/led/home|swap`. Not wired on either: Edit-tab positioning, Control-tab Preview
+buttons. `routes/led.js` holds every `/led/*` route.
 
-`led-events.js` (an IIFE — the page's inline script reuses global names)
-holds everything ported from the old standalone `led_events.html`:
+**PENDING SERVER RESTART (as of the end of the session that wrote this).** These
+server edits are NOT live until the user restarts (ask first — it's their
+terminal): `lib/state.js` (`led_*` feature toggles, `checkOverlays.led_draftpred`,
+`ledDraftPhotoMode`), `routes/overlay.js` (`VALID_FEATURES` +5 `led_*`),
+`routes/proxy.js` (`/api/winrate-probability`), `routes/led.js`
+(`/led/draftpredtest-reveal|slot`, `/led/draft-photo-mode[/:mode]`, draft-pred
+state). Symptoms before restart: LED event toggles dead, Win Probability empty,
+Draft Predict not restored on reload, test buttons / photo-source buttons 404.
+No `KNOWN_EVENTS` / `OVERLAY_WORKER_VERSION` change was needed for any of it —
+everything rides existing events (`led_side|led_health|led_win|led_fight|
+led_draftpred|featuretoggle|theme`), new behaviour is new `action` values.
+**Keep it that way** (and make listeners ignore unknown actions — an old `else →
+hide` fall-through in the `led_draftpred` listener once hid the panel on every
+photo-mode toggle).
+
+### `led-events.js` (an IIFE — the pages' inline scripts reuse global names)
+Fed by `LedEvents.onData(gameData)` / `LedEvents.setSwapped(bool)`. Ported from
+the old standalone `MPL_LED/led_events.html`:
 - **Plate events** (First Item Priority, Trinity, Quick Swap, Level 15,
-  Conceal) in the mploverlay_v7 "eventer" style (edge wipe-in card, label +
-  value, sheen, per-player queue). Armed/disarmed by their OWN feature keys
-  `led_items|led_trinity|led_swap|led_lvl15|led_conceal` (`state.featureToggles`
-  + `VALID_FEATURES` in `routes/overlay.js` + the entry's `featureToggles`)
-  so the LED wall is independent of v7's `items|trinity|…` flags. Previous
-  state is tracked per SEAT (not plate) so a HOME/SWAP flip can't fire
-  false events.
-- **Mid panels** Team Health / Win Probability / Team Fight / Draft Predict,
-  shown/hidden by `led_health|led_win|led_fight|led_draftpred` SSE events
-  (`routes/led.js`; buttons are `extraActions` on the dashboard entry).
-- **Draft Predict** runs Draft.html's **v3 engine** (`dp*` in `led-events.js`
-  mirrors `dp3*`): art from `candidates[].heroName` via `heronames.json`; picks/
-  bans read from the same `/proxy/predictions` response's `draftState` and
-  matched to prediction slots by elimination; active prediction derived from
-  draftState counts (not `currentSlot`); polls from page load (hidden or not)
-  so Show never replays history; shown state remembered server-side
-  (`state.checkOverlays.led_draftpred`, set by `/led/draftpredshow|hide`,
-  restored via `/overlay/check-overlays`). Not ported (Draft.html-only): the
-  plate gate and the AI rationale bubble.
-- Debug panel (`` ` ``) gets per-event / per-plate trigger buttons.
-The page feeds it via `LedEvents.onData(data)` / `LedEvents.setSwapped(bool)`.
-Not wired: Edit-tab positioning, Control-tab preview buttons.
+  Conceal): mploverlay_v7 "eventer" style — one 502x89 card per plate over the
+  item row (art `assets/led/eventback.png`), wipes in from the plate's outer edge,
+  items right-aligned at 83px (label/time in a left column so item art fills the
+  card height), sheen sweep, one-at-a-time per plate with a per-type queue,
+  safety-net timeout, `runCard()` is the shared runner. **Right plates' item bar is
+  16px further right than the left's** (257..759 vs 241..743 — measured off
+  `plateright.png` / `plateleft.png`), hence `.camp2 .led-evt-clip { left: 257px }`.
+  Armed by their OWN keys `led_items|led_trinity|led_swap|led_lvl15|led_conceal`
+  (independent of v7's `items|trinity|…`; dashboard `featureToggles`). Previous
+  state is tracked per SEAT, not plate, so a HOME/SWAP flip can't fire false events.
+  `runCard` no-ops when `#plate-N` is absent (Led_draft has no plates).
+- **Mid-panel features**: Team Health / Win Probability / Team Fight / Draft
+  Predict, shown via SSE `led_health|led_win|led_fight|led_draftpred`. The panels
+  start `display:none` set INLINE at init (several guards test
+  `style.display === 'none'`, which is false for a CSS-only hide — that bug had
+  hidden panels polling forever).
+- **Team Health** is a transform-only bar (no canvas, no rAF): `.thp-fill` slides
+  by (1-hp)*650px while `.thp-fill-in` counter-slides so the gradient stays pinned;
+  red damage trail (`.thp-ghost`) lags a hit; green flash on heal; colour state
+  ok/mid/low via CSS vars on the track.
+- **Mid-panel "reel"** (in/out animation of the four features): only the LOWER
+  region (y 357..1024, the stat boxes) reels; logo + tricode never move. Features
+  live in `#led-reel-window` (clip, top:357px, 667px tall) and drop in from the top
+  pushing the default `.mp-stats-inner` down; exit keeps going down while the
+  default drops back in from the top. Same keyframe times offset by exactly 667px
+  keep the seam glued (`ledReelIn/Out`, `ledMidOut/Back`). A MutationObserver in
+  `led-events.js` watches the four panels and toggles `led-mid-out/back` on the mid
+  panels + `led-reel-on` (a 3px gold cap hiding the notch above the feature art,
+  which is opaque only from y=360). The baked divider lines/triangles in
+  `sidebacker.png` are covered by `.mid-panel::after` (`sidebacker_plain.png`, a
+  line-free tile) while the reel runs and removed when the default is back.
+- **Draft Predict** = Draft.html's **v3 engine** (`dp*` mirrors `dp3*`): hero art
+  from `candidates[].heroName` via `heronames.json`; reveals read from the same
+  `/proxy/predictions` response's `draftState`, matched to slots by elimination;
+  active prediction derived from draftState counts; polls from page load so Show
+  never replays history; **Show stays up until Hide** (`dpPickToShow()` falls back
+  to the current/last slot instead of v3's auto-hide); both columns cleared on new
+  draft / Show / SWAP; reel only spins while visible; shown state remembered
+  server-side (`checkOverlays.led_draftpred`, restored via `/overlay/check-overlays`).
+  Not ported: plate gate, AI rationale bubble. **Dashboard test relay**: the Draft
+  Overlay card's "▶ Test Draft Predict v3" button and per-slot ▶ Show / ✓ Settle grid
+  also fire `/led/draftpredtest-reveal|slot` (checkbox "Also send to LED Overlay
+  (live)", default on, persisted in localStorage) → SSE `led_draftpred`
+  `test_reveal|test_slot` → `dpTestReveal()/dpTestSlot()` on the LED page(s). These
+  hit the REAL instance, unlike the preview-only originals. Polling is suspended 15s
+  per click; the fixture demo hands the screen back to the real feed afterwards.
+- Debug panel (`` ` ``): per-event / per-plate trigger buttons (plates only),
+  side-panel Show/Hide, DP test picks.
 
-## LED Draft — `html/Led_draft.html`
+### LED Overlay specifics (`led_overlay.html`)
+KDA columns on the plates: left centres 295.7 / 376.2 / 456.7, right is the exact
+mirror (right offsets 406.7 / 326.2 / 245.7 on a 1000px plate). Items update with the
+ingame_blue/red `item-pop` (no combine animation, in-place slots). Mid panels fall
+back to `assets/mpl2026logo.png` when `logos/<TEAM>.png` is missing (tracked via a
+dataset flag — `cache-bust.js` appends `?v=` to every `img.src`, so never compare
+`img.src`).
 
-Duplicate of the LED Overlay shell (2532x1024, gold frames, mid-column panels
-incl. Draft Predict / Team Health via `led-events.js`) with the two 1024x1024
-side containers replaced by **draft cards**: per camp a 1000x1000 box at (12,12)
-= header 163 (logo · slanted tricode block · series-score bars) + transparent
-middle 564 + player row 273 (5 slots x 200). Colour follows the CAMP (blue =
-camp 1, red = camp 2); layout follows the SIDE (`.side-left/.side-right`,
-flipped by HOME/SWAP; the right side is the left mirrored, seat 1 on the outer
-edge). Data = Draft.html's feed (`/api/draft-url`, draft-info-only format,
-`normalizeDraftPayload`), `/match/state` for the bars, game feed for mid stats.
-Player slots port Draft.html's pipeline: FRONT photo idle → on the picking turn
-role icon pops + flies to the corner, PICKING anim, FRONT → VICTORY → on pick the
-`HERO_PICK_DRAFT_<id>.webm` matte-wipe reveal erases the photo, glow, and the
-hero-name strip pops up. Matte/PICKING videos are created lazily per slot.
-`assets/led/draft/picking*_alpha.webm` are alpha-baked copies of
-`assets/motion/picking*.webm` (black bg → real alpha) so the lettering stays solid
-on gold. The gold-stripe slot background is CSS (no asset existed). **Player photo source** is
-LED-Draft-only (`state.ledDraftPhotoMode`, `/led/draft-photo-mode[/:mode]`, SSE
-`led_draftpred` action `photo_mode`; dashboard: LED Draft card → Player Photo
-Source) — `live` matches seat names to photos, `placeholder` gives every seat a
-fixed stand-in (sorted photo pool, camp 1 → 0-4, camp 2 → 5-9) regardless of the
-draft API lineup. Deliberately NOT Draft.html's shared `/overlay/draft-photo-mode`. Debug panel
-(`` ` ``) has a draft sim that drives the same `applyDraft()` path. Not ported
-from Draft.html: ban plates, timer bar, status text, map bug, coach row, Draft
-Stats / buff badges (not in the LED design).
+### Performance rules learned (headless trace, then fixed) — keep them
+- **Raster, not JS, was the cost.** Anything that repaints every frame on the shared
+  page layer dirties big tiles (plate art, portraits, borders) → ~230ms/s GPU.
+  Per-frame things (EKG line, heart pulse) need their OWN compositor layers
+  (`will-change: transform` on BOTH `.ekg-zone-led` and `.heart-bpm` — either alone
+  does nothing). 200→100 EKG points (same time span) was free.
+- Death-timer: write text only when the displayed second changes and toggle the
+  class only on state change (it was rewriting `class` for all 10 players every frame
+  and re-rasterising filtered portraits).
+- Poll paths write-if-changed (`setText`), cache image `src` in `dataset.src`
+  (the `endsWith(src)` check never matched because of cache-bust → 120 src writes/5s),
+  squeeze names only when the name changes, skip `setHP` when unchanged.
+- No canvas / rAF loops for hidden panels; no always-on `<video>` decoding; create
+  media lazily.
+- Measure with: `Tracing` categories `devtools.timeline,disabled-by-default-
+  devtools.timeline,cc,gpu` (GPUTask / RendererRasterWorker / BeginMainFrame per
+  second), `Profiler` for JS self time, a MutationObserver counting attribute writes
+  per frame, and `Paint` event clips. Hiding a suspected element and re-tracing is
+  the fastest bisect — but re-test after each fix, early results get confounded.
+
+### LED Draft (`Led_draft.html`)
+Same shell; the two squares become **draft cards**: per camp a 1000x1000 box at
+(12,12) = header 163 (team logo · slanted tricode block with gold edges ·
+series-score bars) + transparent middle 564 + player row 273 (5 slots x 200).
+Colour follows the CAMP (blue = camp 1, red = camp 2), layout follows the SIDE
+(`.side-left/.side-right`, flipped by HOME/SWAP; the right side is the left
+mirrored via `scaleX(-1)` on the header with logo/tricode un-flipped; seat 1 on the
+outer edge). Data = Draft.html's feed (`/api/draft-url`, draft-info-only format,
+`normalizeDraftPayload`, a changed `BattleID` reloads the page), `/match/state` for
+the bars (always filled from the inner edge), game feed for the mid stats.
+Player slots port Draft.html: idle FRONT photo on a CSS gold-stripe plate (no asset
+existed) → on the picking turn the PICKING video + glow play (NO role icon — the user
+removed it from LED Draft, along with the role-assignment code and `/api/draft-roles`
+fetch; don't re-add), FRONT → VICTORY → on pick the `HERO_PICK_DRAFT_<id>.webm`
+matte-wipe reveal (GPU canvas composite) erases the photo, glow, then the hero-name
+strip (Anton, bottom 50px) pops up. Matte/PICKING videos are created lazily.
+**The picking glow and "PICKING" video are Draft.html's own per-theme defaults**
+(glow: Regular camp blue/red, 10th Anniversary orange, Playoffs gold; video:
+`assets/motion/picking{blue,red}.webm` — which already have real alpha — with the
+anniversary variants and screen blend only for anniversary). Do NOT re-tint or
+re-bake them (a baked-alpha + screen-blend attempt looked wrong and was reverted).
+**Player photo source** is LED-Draft-only (`state.ledDraftPhotoMode`,
+`/led/draft-photo-mode[/:mode]`, SSE `led_draftpred` action `photo_mode`; dashboard:
+LED Draft card → Player Photo Source): `live` matches seat names to photos,
+`placeholder` gives every seat a fixed stand-in (sorted photo pool, camp 1 → 0-4,
+camp 2 → 5-9) regardless of the draft-API lineup. Deliberately NOT Draft.html's
+shared `/overlay/draft-photo-mode`. Debug panel (`` ` ``): photo-source buttons +
+a draft sim (`__drSim`) driving the same `applyDraft()` path (the sim must reuse the
+live battle id or the page reloads). Not ported from Draft.html (not in the LED
+design): ban plates, timer bar, status text, map bug, coach row, Draft Stats / buff
+badges — easy follow-ups if wanted (ban plates need a home in the transparent middle).
+`Led_draft.html` was assembled from `led_overlay.html` pieces plus new CSS/JS, but
+the generator was throwaway: **edit the file directly now**.
+
+### Testing LED pages without a live feed (what worked)
+Throwaway Node mock of the server (static repo files + mutable `/api/gamedata-proxy`,
+`/proxy/predictions`, `/api/draft-url` + a draft payload, `/match/state`,
+`/api/player-photos` (only names with BOTH FRONT and VICTORY files), `/led/*`,
+`/__push?event=&data=` to emit SSE) + headless Edge on a debugging port driven over
+raw CDP (see "Verifying changes with a real browser"). Replay
+`predictions_test.json` slot by slot for Draft Predict; `sub-info_sample.json`
+(contains U+00A0 / U+2028 — split/join them out before `JSON.parse`) for game data.
+Gotchas: `pkill -f` must match how the mock was launched (a stale mock silently kept
+the port); never `curl` a big JSON without `| head`; when writing JS regexes via a
+heredoc, ` ` can turn into the literal character — re-escape it.
 
 ## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
 

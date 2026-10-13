@@ -405,6 +405,13 @@ masterPoll();
       if (d.action === 'hide') icAnimateOut();
     } catch {}
   });
+  sse.addEventListener('teamfightcheck', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') tfcAnimateIn();
+      if (d.action === 'hide') tfcAnimateOut();
+    } catch {}
+  });
   sse.addEventListener('stolengold', function(e) {
     try {
       var d = JSON.parse(e.data);

@@ -2431,7 +2431,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'teamfightcheck'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2858,6 +2858,7 @@
         { name: 'Scoreboard',        key: 'scoreboard'       },
         { name: 'Player UI',         key: 'playerui'         },
         { name: 'Item Check',        key: 'itemcheck'        },
+        { name: 'Live Team Fight',   key: 'teamfightcheck'   },
         { name: 'Emblem Check',      key: 'emblemcheck'      },
         { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
         { name: 'Gold Graph Check',  key: 'goldgraphcheck'   },
@@ -5930,6 +5931,7 @@
     '#mv-photo':        { left: 953,  top: 74,  width: 867,  height: 470 },
     '#mv-ofthegame':    { left: 1086, top: 562, width: 304,  height: 57,  fontSize: 50 },
     '#mv-matchbox':     { left: 1402, top: 562, width: 224,  height: 57  },
+    '#mv-po-matchgame': { left: 1122, top: 78,  width: 448,  height: 64,  fontSize: 56 },
     '#mv-spell-title':  { left: 1029, top: 672, width: 62,   height: 24  },
     '#mv-spell':        { left: 1029, top: 707, width: 62,   height: 62  },
     '#mv-emblem-title': { left: 1142, top: 672, width: 212,  height: 24  },
@@ -5962,6 +5964,7 @@
     { group: 'Signature Photo', id: '#mv-photo',  name: 'Signature Photo' },
     { group: 'Title Row', id: '#mv-ofthegame',    name: 'Of The Game Text' },
     { group: 'Title Row', id: '#mv-matchbox',     name: 'Season / Match Box' },
+    { group: 'Playoffs Match Title', id: '#mv-po-matchgame', name: 'Playoffs Match / Game Title' },
     { group: 'Icons',     id: '#mv-spell-title',  name: 'Spell Label' },
     { group: 'Icons',     id: '#mv-spell',        name: 'Spell Icon' },
     { group: 'Icons',     id: '#mv-emblem-title', name: 'Emblem Label' },

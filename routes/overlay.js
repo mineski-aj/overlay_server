@@ -224,6 +224,20 @@ router.get('/overlay/itemcheck/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/teamfightcheck/show — Live Team Fight damage bar (mploverlay_v7)
+router.get('/overlay/teamfightcheck/show', (req, res) => {
+  state.checkOverlays.teamfightcheck = true;
+  state.overlayClients.forEach(c => { try { c.write('event: teamfightcheck\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/teamfightcheck/hide
+router.get('/overlay/teamfightcheck/hide', (req, res) => {
+  state.checkOverlays.teamfightcheck = false;
+  state.overlayClients.forEach(c => { try { c.write('event: teamfightcheck\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/emblemcheck/show
 router.get('/overlay/emblemcheck/show', (req, res) => {
   state.checkOverlays.emblemcheck = true;
@@ -511,6 +525,7 @@ router.get('/overlay/bottomoverlays/hide', (req, res) => {
   state.checkOverlays.emblemcheck    = false;
   state.checkOverlays.golddiffcheck  = false;
   state.checkOverlays.goldgraphcheck = false;
+  state.checkOverlays.teamfightcheck = false;
   state.fightsPendingAction = { action: "hide", ts: Date.now() };
   state.overlayClients.forEach(c => {
     try {
@@ -518,6 +533,7 @@ router.get('/overlay/bottomoverlays/hide', (req, res) => {
       c.write('event: emblemcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: golddiffcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: goldgraphcheck\ndata: {"action":"hide"}\n\n');
+      c.write('event: teamfightcheck\ndata: {"action":"hide"}\n\n');
       c.write('event: fights\ndata: {"action":"hide"}\n\n');
     } catch {}
   });

@@ -2190,6 +2190,21 @@
     }
     [data-theme="playoffs"] #mv-matchbox-season,
     [data-theme="playoffs"] #mv-matchbox-game { color: #0a0a0a; opacity: 1; }
+    /* Playoffs — "MATCH n - GAME n" now sits as a big Anton line ABOVE the
+       MVP word (playoffs_mvpscenereference.png). "OF THE GAME" and the gold
+       season/match plate are hidden here, NOT removed (markup, JS and
+       Edit rows are all intact) — delete these two display:none rules to
+       bring them back. #mv-po-matchgame is playoffs-only, filled from the
+       same match-state read as #mv-matchbox-game. */
+    [data-theme="playoffs"] #mv-ofthegame,
+    [data-theme="playoffs"] #mv-matchbox { display: none; }
+    #mv-po-matchgame { display: none; }
+    [data-theme="playoffs"] #mv-po-matchgame {
+      position: absolute; left: 1122px; top: 78px; width: 448px; height: 64px; z-index: 13;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 56px; line-height: 1;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
     /* Playoffs — lower-left graphic drawn over the hero art (same z tier as
        #mv-hero-img, later in the DOM), still behind the player photo. */
     #mv-po-herofronter { display: none; }
@@ -7042,6 +7057,7 @@
       <img id="mv-photo" src="" alt="" onerror="this.style.display='none'">
 
       <div id="mv-ofthegame">OF THE GAME</div>
+      <div id="mv-po-matchgame">MATCH 1 - GAME 1</div>
       <div id="mv-matchbox">
         <div id="mv-matchbox-season">REGULAR SEASON</div>
         <div id="mv-matchbox-game">MATCH 1 - GAME 1</div>
@@ -8635,6 +8651,7 @@
     const MV_BOX_BG_SRC = '/assets/mvp/mvptext.webm';
     const MV_BOX_BG_SRC_BY_THEME = {
       '10th_anniversary': '/assets/mvp/anniversary/mvptext.webm',
+      'playoffs': '/assets/mvp/playoffs/MVP%20TEXT_1270x726.webm',
     };
     function applyMvBoxBgTheme() {
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
@@ -11150,6 +11167,7 @@
       const awayScore = (ms && ms.away && ms.away.score) || 0;
       const gameNum   = homeScore + awayScore;
       document.getElementById('mv-matchbox-game').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
+      document.getElementById('mv-po-matchgame').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
     }
 
     function mvApply(player, ms) {
