@@ -1,0 +1,1398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<base href="/">
+<script src="html/js/cache-bust.js"></script>
+<script src="html/js/theme-apply.js"></script>
+<script src="html/js/overlay-sse-shim.js"></script>
+<title>LED Draft</title>
+<style>
+  @font-face { font-family: 'Anton'; font-weight: 400; src: url('fonts/Anton-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('fonts/GeneralSans-Bold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('fonts/GeneralSans-Semibold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('fonts/GeneralSans-Medium.otf') format('opentype'); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 2532px;
+    height: 1024px;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .canvas {
+    position: relative;
+    width: 2532px;
+    height: 1024px;
+  }
+
+  .gold-border {
+    position: absolute;
+    width: 1024px;
+    height: 1024px;
+    background-image: url('assets/led/goldborder.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    top: 0;
+    z-index: 0;
+  }
+
+  #gold-left  { left: 0; }
+  #gold-right { right: 0; }
+
+  /* ── Side panels (Team HP / Win Prob / Team Fight / Draft Predict) ── */
+/* ── Feature 1: Team HP Bar ── */
+#feature-teamhp {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none;
+}
+.thp-track {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#thp-track-left  { left:8px; }
+#thp-track-right { left:250px; }
+/* Team Health bar — transform-only (no canvas, no per-frame JS).
+   .thp-fill is a window that slides down by (1-hp)*650px; .thp-fill-in is the
+   gradient layer inside it, counter-slid by the same amount so the gradient
+   stays pinned to the track while the window edge moves. .thp-ghost is the
+   red damage trail that lags a hit. State colour (ok / mid / low) is two CSS
+   variables on the track. */
+.thp-track { --c1:#35e070; --c2:#0b7a3a; }
+.thp-track.thp-mid { --c1:#ffcc33; --c2:#a85f00; }
+.thp-track.thp-low { --c1:#ff5547; --c2:#7d0d12; }
+.thp-ghost {
+  position:absolute; left:0; top:0; width:100%; height:650px;
+  background:linear-gradient(to bottom, #ff6a5e, #c4211a);
+  opacity:0.9; will-change:transform; z-index:0;
+}
+.thp-fill {
+  position:absolute; left:0; top:0; width:100%; height:650px;
+  overflow:hidden; will-change:transform; z-index:1;
+}
+.thp-fill-in {
+  position:absolute; left:0; top:0; width:100%; height:650px; will-change:transform;
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.38), rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.04) 50%, rgba(0,0,0,0.30)),
+    linear-gradient(to bottom, var(--c1), var(--c2));
+}
+.thp-edge {
+  position:absolute; left:0; top:0; width:100%; height:6px;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+.thp-ticks {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(to bottom, transparent 0, transparent 64px, rgba(0,0,0,0.5) 64px, rgba(0,0,0,0.5) 65px);
+  box-shadow:inset 0 0 20px rgba(0,0,0,0.55);
+}
+.thp-flash {
+  position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0;
+  background:linear-gradient(to top, rgba(120,255,160,0.0), rgba(180,255,200,0.75));
+}
+@keyframes thpFlash { 0% { opacity:0; } 35% { opacity:1; } 100% { opacity:0; } }
+.thp-flash.thp-flashing { animation:thpFlash 0.55s ease-out; }
+.thp-pct.thp-pct-low { color:#ff7a6e; }
+.thp-label-top {
+  position:absolute; width:226px;
+  font-family:'Anton',sans-serif; font-size:34px; color:#fff; line-height:1;
+  text-align:center; white-space:nowrap; top:378px; z-index:3;
+  text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#thp-label-left  { left:8px; }
+#thp-label-right { left:250px; }
+.thp-pct {
+  position:absolute; width:226px;
+  font-family:'Anton',sans-serif; font-size:80px; color:#fff; line-height:1;
+  text-align:center; white-space:nowrap; top:926px; z-index:3;
+  text-shadow:3px 3px 12px rgba(0,0,0,0.85);
+}
+#thp-pct-left  { left:8px; }
+#thp-pct-right { left:250px; }
+/* Mid-panel in/out: a "reel" over the LOWER region only (y 363..1024 — the
+   stat boxes). The logo + team-name block above it never moves. The feature
+   panel drops in from the top of that region and pushes the default stat
+   boxes down out of the bottom; on exit it keeps going down while the
+   default stat boxes drop back in from the top. Both use the same keyframe
+   times/easing, offset by exactly the region height (667px), so their seam
+   stays glued together the whole way. Clipping: #led-reel-window (features)
+   and .mp-stats (default stat boxes). The defaults are driven by the
+   MutationObserver in led-events.js. */
+@keyframes ledReelIn  { 0% { transform: translateY(-667px); } 82% { transform: translateY(14px); } 100% { transform: translateY(0); } }
+@keyframes ledReelOut { 0% { transform: translateY(0); } 18% { transform: translateY(-14px); } 100% { transform: translateY(667px); } }
+@keyframes ledMidOut  { 0% { transform: translateY(0); } 82% { transform: translateY(681px); } 100% { transform: translateY(667px); } }
+@keyframes ledMidBack { 0% { transform: translateY(-667px); } 18% { transform: translateY(-681px); } 100% { transform: translateY(0); } }
+.mid-panel.led-mid-out  .mp-stats-inner { animation: ledMidOut  0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.mid-panel.led-mid-back .mp-stats-inner { animation: ledMidBack 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+/* Fixed clip window over the lower region; features keep their original
+   coordinates (top:-363px cancels the window's own offset). */
+/* The divider lines + notches are baked into sidebacker.png, so they'd sit
+   still under the moving stat boxes. While the reel runs (and the default
+   boxes are parked), cover the stats area with a line-free slice of the same
+   art (sidebacker_plain.png); it comes off the moment the default panel is
+   back in position (led-mid-back is removed on animationend). Stops short
+   of the bottom 4px so the panel's own bottom border stays. */
+.mid-panel::after {
+  content: ''; display: none; position: absolute; left: 0; top: 357px; width: 100%; height: 663px;
+  background: url('assets/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
+  z-index: 0; pointer-events: none;
+}
+.mid-panel.led-mid-out::after, .mid-panel.led-mid-back::after { display: block; }
+#led-reel-window { position: absolute; left: 1024px; top: 357px; width: 484px; height: 667px; overflow: hidden; z-index: 20; pointer-events: none; }
+#led-reel-window > div { left: 0 !important; top: -357px !important; }
+/* The feature art (teamHPbar.png) only turns opaque at y=360; rows 357-359 of
+   the default panel (white + the gold notch tip) would peek through above it.
+   While a feature is up, cap them with the frame's own gold. */
+#led-reel-window::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: #d6ab42; opacity: 0; }
+#led-reel-window.led-reel-on::before { opacity: 1; }
+.thp-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.thp-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 2: Win Probability ── */
+#feature-winrate {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.wpr-track {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#wpr-track-left  { left:8px; }
+#wpr-track-right { left:250px; }
+.wpr-ghost {
+  position:absolute; bottom:0; left:0; width:100%; height:50%; z-index:0;
+}
+#wpr-ghost-left  { background:#004499; }
+#wpr-ghost-right { background:#990018; }
+.wpr-bar {
+  position:absolute; bottom:0; left:0; width:100%; height:50%;
+  z-index:1; transition:height 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+#wpr-bar-left {
+  background:linear-gradient(to top, #000e1f 0%, #002a7a 30%, #0066cc 65%, #00aaff 85%, #44ccff 100%);
+  box-shadow:0 0 20px rgba(0,160,255,0.55), inset 0 0 12px rgba(80,200,255,0.15);
+}
+#wpr-bar-right {
+  background:linear-gradient(to top, #1a0008 0%, #7a001a 30%, #cc0033 65%, #ff0044 85%, #ff4466 100%);
+  box-shadow:0 0 20px rgba(255,0,60,0.55), inset 0 0 12px rgba(255,80,100,0.15);
+}
+.wpr-label-wrap {
+  position:absolute; width:226px; top:373px; z-index:3;
+  text-align:center; text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#wpr-label-left  { left:8px; }
+#wpr-label-right { left:250px; }
+.wpr-label-win {
+  display:block; font-family:'Anton',sans-serif; font-size:34px; color:#fff;
+  letter-spacing:0.03em; line-height:1; white-space:nowrap;
+}
+.wpr-label-prob {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:16px; color:#ccc; letter-spacing:0.13em; text-transform:uppercase;
+  line-height:1; white-space:nowrap; margin-top:3px;
+}
+.wpr-pct {
+  position:absolute; width:226px; font-family:'Anton',sans-serif; font-size:80px;
+  color:#fff; line-height:1; text-align:center; white-space:nowrap;
+  top:926px; z-index:3; text-shadow:3px 3px 12px rgba(0,0,0,0.85);
+}
+#wpr-pct-left  { left:8px; }
+#wpr-pct-right { left:250px; }
+@keyframes wprGainBlue {
+  0%  { box-shadow:inset 0 0  0px rgba(0,160,255,0),   0 0  0px rgba(0,160,255,0); }
+  40% { box-shadow:inset 0 0 28px rgba(0,160,255,0.8), 0 0 22px rgba(0,160,255,0.65); }
+  100%{ box-shadow:inset 0 0  0px rgba(0,160,255,0),   0 0  0px rgba(0,160,255,0); }
+}
+@keyframes wprGainRed {
+  0%  { box-shadow:inset 0 0  0px rgba(255,0,50,0),   0 0  0px rgba(255,0,50,0); }
+  40% { box-shadow:inset 0 0 28px rgba(255,0,50,0.8), 0 0 22px rgba(255,0,50,0.65); }
+  100%{ box-shadow:inset 0 0  0px rgba(255,0,50,0),   0 0  0px rgba(255,0,50,0); }
+}
+.wpr-gain-blue { animation:wprGainBlue 0.55s ease forwards; }
+.wpr-gain-red  { animation:wprGainRed  0.55s ease forwards; }
+.wpr-entering  { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.wpr-leaving   { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 3: Teamfight Damage ── */
+#feature-teamfight {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.tfd-col {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#tfd-col-left  { left:8px; }
+#tfd-col-right { left:250px; }
+.tfd-seg {
+  position:absolute; width:100%; bottom:0; height:0; overflow:hidden;
+  border-top:1px solid rgba(0,0,0,0.45);
+  transition:height 0.5s cubic-bezier(0.22,1,0.36,1),
+             bottom 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.tfd-left .tfd-seg {
+  background:linear-gradient(to top, #000e1f 0%, #002a7a 25%, #0066cc 60%, #00aaff 85%, #44ccff 100%);
+  box-shadow:0 0 14px rgba(0,160,255,0.35), inset 0 0 8px rgba(80,200,255,0.1);
+}
+.tfd-right .tfd-seg {
+  background:linear-gradient(to top, #1a0008 0%, #7a001a 25%, #cc0033 60%, #ff0044 85%, #ff4466 100%);
+  box-shadow:0 0 14px rgba(255,0,60,0.35), inset 0 0 8px rgba(255,80,100,0.1);
+}
+.tfd-seg-hero {
+  position:absolute; left:8px; top:8px;
+  width:48px; height:48px;
+  border-radius:50%; object-fit:cover; object-position:center top;
+  z-index:2; border:2px solid rgba(255,255,255,0.4);
+  opacity:0; transition:opacity 0.3s ease;
+}
+.tfd-seg-hero.dead { filter:grayscale(0.85) brightness(0.55); }
+.tfd-seg-dmg {
+  position:absolute; right:10px; bottom:8px;
+  font-family:'Anton',sans-serif; font-size:28px; color:#fff; line-height:1;
+  z-index:2; white-space:nowrap; letter-spacing:0.02em;
+  text-shadow:1px 1px 8px rgba(0,0,0,0.95);
+  opacity:0; transition:opacity 0.3s ease;
+}
+.tfd-label-wrap {
+  position:absolute; width:226px; top:373px; z-index:3;
+  text-align:center; text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#tfd-label-left  { left:8px; }
+#tfd-label-right { left:250px; }
+.tfd-label-title {
+  display:block; font-family:'Anton',sans-serif; font-size:34px; color:#fff;
+  letter-spacing:0.03em; line-height:1; white-space:nowrap;
+}
+.tfd-label-sub {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:16px; color:#ccc; letter-spacing:0.13em; text-transform:uppercase;
+  line-height:1; white-space:nowrap; margin-top:3px;
+}
+.tfd-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.tfd-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 4: Draft Predict ── */
+@keyframes shimmer { 0%{transform:translateX(-110%)} 100%{transform:translateX(210%)} }
+#feature-draftpredict {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.dp-col {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#dp-col-left  { left:8px; }
+#dp-col-right { left:250px; }
+.dp-col-hdr {
+  position:absolute; top:0; left:0; right:0; z-index:4; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.96) 60%, transparent 100%);
+  padding:10px 0 22px; text-align:center;
+}
+.dp-hdr-title {
+  display:block; font-family:'Anton',sans-serif; font-size:30px; color:#fff; line-height:1;
+}
+.dp-hdr-team {
+  display:block; font-family:'Anton',sans-serif; font-size:14px;
+  margin-top:3px; letter-spacing:0.06em;
+}
+.dp-hdr-type {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:11px; color:rgba(255,255,255,0.45); letter-spacing:0.13em;
+  text-transform:uppercase; margin-top:2px;
+}
+#dp-col-left  .dp-hdr-team { color:#44aaff; }
+#dp-col-right .dp-hdr-team { color:#ff4455; }
+.dp-card {
+  position:absolute; width:226px; height:70px;
+  background:#1a1a1a; display:flex; align-items:stretch;
+  border-bottom:1px solid rgba(255,255,255,0.04); will-change:transform;
+}
+.dp-card-portrait {
+  height:70px; width:auto; flex-shrink:0; position:relative; background:#0e0e0e;
+}
+.dp-card-portrait img {
+  height:100%; width:auto; display:block;
+}
+.dp-card.dp-chosen::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
+  background:linear-gradient(105deg, transparent 30%, rgba(240,192,64,0.15) 50%, transparent 70%);
+  animation:shimmer 1.5s ease infinite;
+}
+.dp-rank-badge {
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; z-index:2; flex-shrink:0;
+}
+.dp-rank-badge.rank-top { background:#004dd5; }
+.dp-rank-badge.rank-low { background:rgba(0,0,0,0.7); }
+#dp-col-right .dp-rank-badge.rank-top { background:#c81400; }
+.dp-rank-num { font-family:'Anton',sans-serif; font-size:15px; color:#fff; line-height:1; }
+.dp-card-body {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:0 38px 0 10px; overflow:hidden;
+}
+.dp-card-pct { font-family:'Anton',sans-serif; font-size:19px; line-height:1; }
+#dp-col-left  .dp-card-pct { color:#44aaff; }
+#dp-col-right .dp-card-pct { color:#ff4455; }
+.dp-card.dp-dimmed { opacity:0.12; filter:grayscale(1) brightness(0.4); }
+.dp-card.dp-pressing {
+  transform:translateY(var(--ty,0px)) scaleY(0.93) !important;
+  transition:transform 0.07s ease-in !important;
+}
+.dp-card.dp-chosen {
+  z-index:10;
+  box-shadow:inset 3px 0 0 #f0c040, 0 0 16px rgba(240,192,64,0.4);
+  transform:translateY(var(--ty,0px)) scaleY(1.06) !important;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.dp-card.dp-chosen .dp-card-pct { color:#f0c040 !important; }
+.dp-fade-bot {
+  position:absolute; bottom:0; left:0; right:0; height:55px; z-index:3; pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,0.28), transparent);
+}
+.dp-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.dp-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+
+  /* ── Debug panel ── */
+  #debug-panel {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(12,12,12,0.96);
+    border: 1px solid rgba(80,80,80,0.5);
+    border-radius: 6px;
+    padding: 14px 16px;
+    z-index: 9999;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+    min-width: 280px;
+  }
+  #debug-panel.visible { display: block; }
+  .dbg-title {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+  .dbg-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .dbg-btn {
+    flex: 1;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #444;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .dbg-btn:active { opacity: 0.7; }
+  .dbg-btn.green  { background: #0a1a0a; color: #00e375; border-color: #008452; }
+  .dbg-btn.purple { background: #12001a; color: #c87aff; border-color: #7a00cc; }
+  .dbg-btn.red    { background: #1a0004; color: #ff6666; border-color: #aa0010; }
+  .dbg-btn.orange { background: #1a0e00; color: #ffaa33; border-color: #aa6600; }
+  .dbg-hint { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 8px; text-align: center; }
+  #dbg-url-input {
+    flex: 1;
+    padding: 5px 6px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 9px;
+    font-family: monospace;
+    min-width: 0;
+  }
+
+  /* ── Mid panels ── */
+  .mid-panel {
+    position: absolute;
+    width: 242px;
+    height: 1024px;
+    top: 0;
+    background-image: url('assets/led/sidebacker.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
+  #mid-left  { left: 1024px; }
+  #mid-right { right: 1024px; }
+
+  /* ── Mid panel content ── */
+  .mp-logo-wrap {
+    flex: 0 0 207px;
+    margin-top: 36px;
+    width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .mp-logo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .mp-logo[src=""], .mp-logo:not([src]) { visibility: hidden; }
+  .mp-team-name {
+    flex: 0 0 71px;
+    margin-top: 40px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 60px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .mp-stats {
+    flex: 1;
+    margin-top: 9px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .mp-stats { overflow: hidden; position: relative; z-index: 1; }   /* clip window for the reel (see ledReel* keyframes) */
+  .mp-stats-inner { flex: 1; width: 100%; display: flex; flex-direction: column; }
+  .mp-stat-group {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+  }
+  .mp-stat-title {
+    font-family: 'General Sans', sans-serif;
+    font-weight: bold;
+    font-size: 21px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .mp-stat-value {
+    font-family: 'Anton', sans-serif;
+    font-size: 63px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Right plates — P6 to P10, stacked from top-right */
+  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/led/plateright.png'); }
+  #plate-7  { right: 12px; top: 212px; background-image: url('assets/led/plateright.png'); }
+  #plate-8  { right: 12px; top: 412px; background-image: url('assets/led/plateright.png'); }
+  #plate-9  { right: 12px; top: 612px; background-image: url('assets/led/plateright.png'); }
+  #plate-10 { right: 12px; top: 812px; background-image: url('assets/led/plateright.png'); }
+
+  /* ── Swap mode buttons ── */
+  .dbg-btn.active-home { background: #0a1a0a; color: #00e375; border-color: #008452; }
+  .dbg-btn.active-swap { background: #001a0a; color: #4dff88; border-color: #00aa44; }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     LED DRAFT — the two 1024x1024 side containers
+     Each camp is a 1000x1000 card inside the gold frame (12px ring):
+       header 163 · transparent middle 564 · player row 273 (5 x 200).
+     Team colour follows the CAMP (blue = camp 1, red = camp 2); layout follows
+     the SIDE it's on (.side-left / .side-right — HOME/SWAP flips these).
+     The right side is the left side mirrored (header scaleX(-1), un-flipped
+     text/logo; seat 1 on the outer edge on both).
+     ═══════════════════════════════════════════════════════════════════ */
+  .dr-camp {
+    position: absolute; top: 12px; width: 1000px; height: 1000px;
+    z-index: 1; pointer-events: none;
+    --camp: #1f4fd8; --camp2: #2d62f5; --glow: 30,100,255;
+  }
+  .dr-camp.camp-red { --camp: #d4121c; --camp2: #ee2a33; --glow: 255,50,50; }
+  .dr-camp.side-left  { left: 12px;  right: auto; }
+  .dr-camp.side-right { right: 12px; left: auto; }
+
+  /* ── Header ── */
+  .dr-header {
+    position: absolute; left: 0; top: 0; width: 1000px; height: 163px;
+    background: linear-gradient(90deg, #ececed 0%, #f2f2f3 38%, #ebebec 62%, #d3d3d5 100%);
+    overflow: hidden;
+  }
+  .dr-camp.side-right .dr-header { transform: scaleX(-1); }
+  .dr-name-bg { position: absolute; left: 228px; top: 0; width: 429px; height: 163px; display: block; }
+  .dr-name-fill { fill: var(--camp); }
+  .dr-name-edge { stroke: #d9a92a; stroke-width: 2; }
+  .dr-name {
+    position: absolute; left: 228px; top: 0; width: 429px; height: 163px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif; font-size: 119px; line-height: 1; color: #fff;
+    white-space: nowrap; letter-spacing: 0.01em;
+  }
+  .dr-logo {
+    position: absolute; left: 66px; top: 31px; width: 100px; height: 100px;
+    object-fit: contain; display: none;
+  }
+  .dr-camp.side-right .dr-name, .dr-camp.side-right .dr-logo { transform: scaleX(-1); }
+  .dr-bars {
+    position: absolute; right: 91px; top: 28px; height: 106px;
+    display: flex; gap: 9px; align-items: stretch; justify-content: flex-end;
+  }
+  .dr-bar { width: 32px; background: #000; }
+  .dr-bar.scored { background: linear-gradient(to bottom, var(--camp2), var(--camp)); }
+
+  /* ── Player row ── */
+  .dr-players {
+    position: absolute; left: 0; top: 727px; width: 1000px; height: 273px;
+    display: flex; background: #d9aa2b;
+    box-shadow: inset 0 0 0 1px #e8c24a;
+  }
+  .dr-camp.side-right .dr-players { flex-direction: row-reverse; }
+  .dr-slot {
+    position: relative; flex: 0 0 200px; width: 200px; height: 273px; overflow: hidden;
+    background:
+      repeating-linear-gradient(112deg, rgba(255,255,255,0) 0 26px, rgba(255,255,255,0.20) 26px 58px, rgba(255,255,255,0) 58px 96px),
+      linear-gradient(180deg, #f7dc5e 0%, #f0c63f 52%, #e5b22d 100%);
+    box-shadow: inset 1px 0 0 #e0b232, inset -1px 0 0 #e0b232;
+  }
+
+  /* picking glow (same blue/red pulse as Draft.html's .pick-gradient) */
+  .dr-glow-pick {
+    position: absolute; inset: 0; display: none; z-index: 2; pointer-events: none;
+    background: linear-gradient(to top, rgba(var(--glow),0.85) 0%, transparent 70%);
+    mix-blend-mode: screen; animation: dr-grad-pulse 1.4s ease-in-out infinite;
+  }
+  @keyframes dr-grad-pulse { 0%,100% { opacity: 0.25; } 50% { opacity: 0.9; } }
+  /* "PICKING" animation — alpha-baked copies (assets/led/draft/picking*_alpha.webm) so the lettering stays solid on the gold */
+  .dr-pickanim {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: fill;
+    opacity: 0; transition: opacity 0.5s ease; pointer-events: none; z-index: 1;
+  }
+  .dr-pickanim.on { opacity: 1; }
+
+  /* player photo — Draft.html sizes (333 / 300 over a 168 plate) scaled x1.19 for a 200 slot */
+  .dr-photo {
+    position: absolute; left: 50%; top: 8px; width: 396px; height: auto;
+    transform: translateX(-50%) translateY(36px); opacity: 0; display: none; z-index: 1; pointer-events: none;
+  }
+  .dr-photo.front { width: 357px; }
+  .dr-photo.settled { opacity: 1; transform: translateX(-50%) translateY(0); }
+  @keyframes dr-photo-up    { from { opacity: 0; transform: translateX(-50%) translateY(36px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+  @keyframes dr-photo-out   { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes dr-photo-bounce{ 0% { opacity: 0; transform: translateX(-50%) scale(0.7); } 60% { opacity: 1; transform: translateX(-50%) scale(1.06); } 100% { opacity: 1; transform: translateX(-50%) scale(1); } }
+  .dr-photo.entering { animation: dr-photo-up 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+  .dr-photo.quickout { animation: dr-photo-out 0.15s ease-in forwards; }
+  .dr-photo.bouncein { animation: dr-photo-bounce 0.45s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+  .dr-photo-cvs {
+    position: absolute; left: 50%; top: 8px; width: 396px; transform: translateX(-50%);
+    opacity: 0; z-index: 1; pointer-events: none;
+  }
+
+  /* hero video + matte-reveal canvas (same position) */
+  .dr-hero-vid, .dr-hero-cvs {
+    position: absolute; left: 0; top: 0; width: 200px; height: auto; pointer-events: none;
+  }
+  .dr-hero-vid { display: none; z-index: 1; }
+  .dr-hero-cvs { opacity: 0; z-index: 2; }
+  @keyframes dr-brighten { 0% { filter: brightness(1); } 25% { filter: brightness(2); } 100% { filter: brightness(1); } }
+  .dr-hero-vid.brightening, .dr-hero-cvs.brightening { animation: dr-brighten 0.9s ease-out forwards; }
+
+  /* post-pick glow (static shadow, animated opacity — compositor only) */
+  .dr-flash { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+  .dr-flash::before {
+    content: ''; position: absolute; inset: 0; opacity: 0;
+    box-shadow: inset 0 0 0 3px rgba(255,215,80,1), inset 0 0 50px 20px rgba(255,200,60,0.75);
+  }
+  @keyframes dr-picked-glow { 0% { opacity: 0; } 25% { opacity: 1; } 100% { opacity: 0; } }
+  .dr-flash.picked::before { animation: dr-picked-glow 0.9s ease-out forwards; }
+
+  /* role icon: pops in the middle on the player's picking turn, then flies to the corner */
+  .dr-role {
+    position: absolute; left: calc(50% - 35px); top: calc(50% - 35px); width: 70px; height: 70px;
+    object-fit: contain; z-index: 4; pointer-events: none; opacity: 0;
+    transform-origin: center; transform: scale(0.4);
+    filter: brightness(0) invert(1) brightness(0.086);
+    transition: transform 0.9s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease;
+  }
+  .dr-role.pop    { opacity: 1; transform: scale(1); transition: transform 0.45s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease; }
+  .dr-role.corner { opacity: 1; transform: translate(-83px, -119.5px) scale(0.343); }
+  .dr-role.gone   { opacity: 0; }
+
+  /* hero name pop-up — a strip that rises from the bottom edge */
+  .dr-hname {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 50px; z-index: 5; pointer-events: none;
+    background: linear-gradient(180deg, #fbe97a 0%, #f4d24c 100%);
+    box-shadow: inset 0 1px 0 #e6b92e, inset 0 0 0 1px rgba(230,185,46,0.6);
+    display: flex; align-items: center; justify-content: center;
+    transform: translateY(105%); transition: transform 0.42s cubic-bezier(0.34,1.45,0.64,1);
+  }
+  .dr-hname.slide-in { transform: translateY(0); }
+  .dr-hname span {
+    font-family: 'Anton', sans-serif; font-size: 36px; line-height: 1; color: #161616;
+    text-transform: uppercase; white-space: nowrap; letter-spacing: 0.01em;
+  }
+</style>
+</head>
+
+<body>
+<div class="canvas">
+
+  <!-- Gold border containers (behind plates) -->
+  <div class="gold-border" id="gold-left"></div>
+  <div class="gold-border" id="gold-right"></div>
+
+  <!-- Mid panels -->
+  <div class="mid-panel" id="mid-left">
+    <div class="mp-logo-wrap">
+      <img class="mp-logo" id="mp-left-logo" src="" onerror="this.onerror=null">
+    </div>
+    <div class="mp-team-name" id="mp-left-name"></div>
+    <div class="mp-stats"><div class="mp-stats-inner">
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE DEALT</div>
+        <div class="mp-stat-value" id="mp-left-dmg">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE TAKEN</div>
+        <div class="mp-stat-value" id="mp-left-taken">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>CONTROL TIME</div>
+        <div class="mp-stat-value" id="mp-left-ctrl">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>GOLD</div>
+        <div class="mp-stat-value" id="mp-left-gold">--</div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="mid-panel" id="mid-right">
+    <div class="mp-logo-wrap">
+      <img class="mp-logo" id="mp-right-logo" src="" onerror="this.onerror=null">
+    </div>
+    <div class="mp-team-name" id="mp-right-name"></div>
+    <div class="mp-stats"><div class="mp-stats-inner">
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE DEALT</div>
+        <div class="mp-stat-value" id="mp-right-dmg">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE TAKEN</div>
+        <div class="mp-stat-value" id="mp-right-taken">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>CONTROL TIME</div>
+        <div class="mp-stat-value" id="mp-right-ctrl">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>GOLD</div>
+        <div class="mp-stat-value" id="mp-right-gold">--</div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  
+  <!-- Feature panels (Team HP / Win Probability / Team Fight / Draft Predict) over the mid columns -->
+  <div id="led-reel-window">
+  <!-- Feature 1: Team HP Bar -->
+  <div id="feature-teamhp">
+    <span class="thp-label-top" id="thp-label-left">TEAM HEALTH</span>
+    <div class="thp-track" id="thp-track-left">
+      <div class="thp-ghost" id="thp-ghost-left"></div>
+      <div class="thp-fill" id="thp-fill-left"><div class="thp-fill-in" id="thp-fillin-left"></div><div class="thp-edge"></div></div>
+      <div class="thp-ticks"></div>
+      <div class="thp-flash" id="thp-flash-left"></div>
+    </div>
+    <div class="thp-pct" id="thp-pct-left">100%</div>
+    <span class="thp-label-top" id="thp-label-right">TEAM HEALTH</span>
+    <div class="thp-track" id="thp-track-right">
+      <div class="thp-ghost" id="thp-ghost-right"></div>
+      <div class="thp-fill" id="thp-fill-right"><div class="thp-fill-in" id="thp-fillin-right"></div><div class="thp-edge"></div></div>
+      <div class="thp-ticks"></div>
+      <div class="thp-flash" id="thp-flash-right"></div>
+    </div>
+    <div class="thp-pct" id="thp-pct-right">100%</div>
+  </div>
+
+  <!-- Feature 2: Win Probability -->
+  <div id="feature-winrate">
+    <div class="wpr-label-wrap" id="wpr-label-left">
+      <span class="wpr-label-win">WIN</span>
+      <span class="wpr-label-prob">PROBABILITY</span>
+    </div>
+    <div class="wpr-track" id="wpr-track-left">
+      <div class="wpr-ghost" id="wpr-ghost-left"></div>
+      <div class="wpr-bar"   id="wpr-bar-left"></div>
+    </div>
+    <div class="wpr-pct" id="wpr-pct-left">50%</div>
+    <div class="wpr-label-wrap" id="wpr-label-right">
+      <span class="wpr-label-win">WIN</span>
+      <span class="wpr-label-prob">PROBABILITY</span>
+    </div>
+    <div class="wpr-track" id="wpr-track-right">
+      <div class="wpr-ghost" id="wpr-ghost-right"></div>
+      <div class="wpr-bar"   id="wpr-bar-right"></div>
+    </div>
+    <div class="wpr-pct" id="wpr-pct-right">50%</div>
+  </div>
+
+  <!-- Feature 3: Teamfight Damage -->
+  <div id="feature-teamfight">
+    <div class="tfd-label-wrap" id="tfd-label-left">
+      <span class="tfd-label-title">TEAM</span>
+      <span class="tfd-label-sub">FIGHT</span>
+    </div>
+    <div class="tfd-col tfd-left" id="tfd-col-left"></div>
+    <div class="tfd-label-wrap" id="tfd-label-right">
+      <span class="tfd-label-title">TEAM</span>
+      <span class="tfd-label-sub">FIGHT</span>
+    </div>
+    <div class="tfd-col tfd-right" id="tfd-col-right"></div>
+  </div>
+
+  <!-- Feature 4: Draft Predict -->
+  <div id="feature-draftpredict">
+    <div class="dp-col" id="dp-col-left">
+      <div class="dp-col-hdr">
+        <span class="dp-hdr-title">DRAFT</span>
+        <span class="dp-hdr-team" id="dp-team-left">PREDICT</span>
+        <span class="dp-hdr-type" id="dp-type-left"></span>
+      </div>
+      <div class="dp-fade-bot"></div>
+    </div>
+    <div class="dp-col" id="dp-col-right">
+      <div class="dp-col-hdr">
+        <span class="dp-hdr-title">DRAFT</span>
+        <span class="dp-hdr-team" id="dp-team-right">PREDICT</span>
+        <span class="dp-hdr-type" id="dp-type-right"></span>
+      </div>
+      <div class="dp-fade-bot"></div>
+    </div>
+  </div>
+
+
+  </div><!-- /led-reel-window -->
+
+</div>
+
+<!-- Debug panel — toggle with ` -->
+<div id="debug-panel">
+  <div class="dbg-title">Layout</div>
+  <div class="dbg-row">
+    <div class="dbg-btn active-home" id="btn-home" onclick="setSwap(false)">HOME</div>
+    <div class="dbg-btn"             id="btn-swap" onclick="setSwap(true)">SWAP</div>
+  </div>
+  <div class="dbg-title" style="margin-top:12px">Draft sim (drives the same code path as the live feed)</div>
+  <div id="dbg-sim"></div>
+  <div id="dbg-status" style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;text-align:center">—</div>
+  <div class="dbg-hint">` to toggle</div>
+</div>
+
+<script src="html/js/led-events.js"></script>
+<script>
+  /* ═══════════════════════════════════════════════════════════════════
+     LED DRAFT — page script
+     Part A: shared LED plumbing (HOME/SWAP, SSE, mid-panel team stats).
+     Part B: the draft cards — header + five player slots per camp, ported
+             from Draft.html (normalizeDraftPayload / poll / updatePickSeat /
+             photo sequence / matte reveal), re-laid-out for 200x273 slots.
+     Not ported from Draft.html (not in the LED design): ban plates, timer bar,
+     status text, map bug, coach row, Draft Stats / buff badges.
+     ═══════════════════════════════════════════════════════════════════ */
+  const POLL_MS = 1000;
+
+  /* Write-if-changed text (a textContent set replaces the node even when equal). */
+  function setText(el, v) {
+    const s = String(v);
+    if (el._t !== s) { el._t = s; el.textContent = s; }
+  }
+
+  /* ─────────────── Part A — shared plumbing ─────────────── */
+  let isSwapped = false;
+  const campsEl = {};          // campid → .dr-camp wrapper (built below)
+
+  function sideOf(campid) {    // which 1024 container a camp lives in right now
+    return (campid === 1) !== isSwapped ? 'left' : 'right';
+  }
+  function applySides() {
+    [1, 2].forEach(c => {
+      const el = campsEl[c];
+      if (!el) return;
+      const side = sideOf(c);
+      el.classList.toggle('side-left',  side === 'left');
+      el.classList.toggle('side-right', side === 'right');
+    });
+  }
+
+  function setSwap(swap) {
+    const changed = swap !== isSwapped;
+    isSwapped = swap;
+    if (window.LedEvents) LedEvents.setSwapped(swap);
+    try { localStorage.setItem('ledSwap', swap ? '1' : '0'); } catch (e) {}
+    document.getElementById('btn-home').className = swap ? 'dbg-btn'             : 'dbg-btn active-home';
+    document.getElementById('btn-swap').className = swap ? 'dbg-btn active-swap' : 'dbg-btn';
+    applySides();
+    if (changed) pollSubInfo();
+  }
+
+  const sse = createOverlaySSE();
+  sse.addEventListener('led_side', e => {
+    try { const d = JSON.parse(e.data); setSwap(d.side === 'swap'); } catch {}
+  });
+  sse.addEventListener('theme', e => { try { applyTheme(JSON.parse(e.data).theme); } catch {} });
+
+  /* ── Mid panel team stats (same as led_overlay.html) ── */
+  function fmtTeamStat(n) {
+    if (n <= 0) return '--';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return (n / 1000).toFixed(1) + 'K';
+    return String(n);
+  }
+  const MPL_LOGO = 'assets/mpl2026logo.png';
+  function _updateMidPanel(side, campList, campId, fallback) {
+    const camp = campList.find(c => c.campid === campId);
+    if (!camp) return;
+    const players = ['seat_1','seat_2','seat_3','seat_4','seat_5'].map(k => camp[k]).filter(Boolean);
+    const teamName = camp.team_simple_name || fallback;
+    const logoEl = document.getElementById(`mp-${side}-logo`);
+    if (logoEl && logoEl.dataset.team !== teamName) {
+      logoEl.dataset.team = teamName;
+      logoEl.onerror = () => { logoEl.onerror = null; logoEl.src = MPL_LOGO; };
+      logoEl.src = `logos/${teamName}.png`;
+    }
+    const nameEl = document.getElementById(`mp-${side}-name`);
+    if (nameEl) setText(nameEl, teamName);
+    let dmg = 0, taken = 0, ctrl = 0, gold = 0;
+    players.forEach(p => { dmg += p.total_damage || 0; taken += p.total_hurt || 0; ctrl += p.control_time_ms || 0; gold += p.gold || 0; });
+    const se = (id, val) => { const el = document.getElementById(id); if (el) setText(el, val); };
+    se(`mp-${side}-dmg`,   fmtTeamStat(dmg));
+    se(`mp-${side}-taken`, fmtTeamStat(taken));
+    se(`mp-${side}-ctrl`,  ctrl > 0 ? (ctrl / 1000).toFixed(2) + 's' : '--');
+    se(`mp-${side}-gold`,  fmtTeamStat(gold));
+  }
+  async function pollSubInfo() {
+    let json;
+    try {
+      const res = await fetch('/api/gamedata-proxy', { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      json = JSON.parse((await res.text()).replace(/[\u00A0\u2028\u2029]/g, ' '));
+    } catch (e) { dbgStatus('game feed: ' + e.message); return; }
+    if (!json || json.code !== 0 || !json.data || !Array.isArray(json.data.camp_list)) { dbgStatus('game feed: bad response'); return; }
+    const cl = json.data.camp_list;
+    _updateMidPanel('left',  cl, isSwapped ? 2 : 1, 'TLPH');
+    _updateMidPanel('right', cl, isSwapped ? 1 : 2, 'RORA');
+    if (window.LedEvents) LedEvents.onData(json.data);
+    dbgStatus('game feed ok');
+  }
+  function dbgStatus(msg) { const el = document.getElementById('dbg-status'); if (el) setText(el, msg); }
+
+  /* ─────────────── Part B — draft cards ─────────────── */
+  const PHOTO_W = 396;          // .dr-photo / .dr-photo-cvs width
+  const HERO_W  = 200;          // .dr-hero-vid / .dr-hero-cvs width (= slot width)
+  const ROLE_MAP = {
+    'exp_laner':  'role/EXP LANER.png',  'jungler':    'role/JUNGLER.png',
+    'mid_laner':  'role/MID LANER.png',  'roamer':     'role/ROAMER.png',
+    'gold_laner': 'role/GOLD LANER.png',
+  };
+  const ALL_ROLES = ['exp_laner', 'jungler', 'mid_laner', 'roamer', 'gold_laner'];
+  const ROLE_ALIASES = {
+    'exp_laner': 'exp_laner', 'exp': 'exp_laner', 'exp laner': 'exp_laner',
+    'jungler': 'jungler', 'jungle': 'jungler',
+    'mid_laner': 'mid_laner', 'mid': 'mid_laner', 'mid laner': 'mid_laner',
+    'roamer': 'roamer', 'roam': 'roamer', 'support': 'roamer',
+    'gold_laner': 'gold_laner', 'gold': 'gold_laner', 'gold laner': 'gold_laner', 'marksman': 'gold_laner',
+  };
+  const PHOTO_FRONT_HOLD_MS = 700;    // FRONT stays up this long after the picking turn starts
+  const PHOTO_QUICKOUT_MS   = 150;    // matches .quickout
+  const ROLE_POP_MS = 450, ROLE_FLY_MS = 900;
+
+  let PLAYER_PHOTO_NAMES = [], PLAYER_PHOTO_LOOKUP = {};
+  fetch('/api/player-photos', { cache: 'no-store' }).then(r => r.json()).then(d => {
+    PLAYER_PHOTO_NAMES = (d.names || []).slice().sort();   // sorted → placeholder seats are stable across reloads
+    PLAYER_PHOTO_NAMES.forEach(n => { PLAYER_PHOTO_LOOKUP[n.toLowerCase()] = n; });
+  }).catch(() => {});
+  /* Photo source — this page's OWN switch (Control tab → LED Draft → Player Photo Source),
+     deliberately not Draft.html's shared /overlay/draft-photo-mode.
+       'live'        match each seat's name (from the draft API) to a real photo
+       'placeholder' ignore the lineup: every seat gets a fixed stand-in photo */
+  let draftPhotoMode = 'live';
+  fetch('/led/draft-photo-mode', { cache: 'no-store' }).then(r => r.json())
+    .then(d => { if (d.mode) draftPhotoMode = d.mode; }).catch(() => {});
+
+  let playerRoles = {}, localDraftRoles = {}, localDraftRolesBattleId = null, usingDraftInfoOnlyFormat = false;
+
+  const slotEls = {};   // "campid_i" → element refs
+  const prev = {};      // "campid_i" → previous-poll state
+
+  function mk(tag, cls, parent) { const e = document.createElement(tag); if (cls) e.className = cls; if (parent) parent.appendChild(e); return e; }
+
+  function buildCamp(campid) {
+    const root = mk('div', 'dr-camp ' + (campid === 1 ? 'camp-blue' : 'camp-red'), document.querySelector('.canvas'));
+    root.id = 'dr-camp-' + campid;
+    campsEl[campid] = root;
+
+    const hd = mk('div', 'dr-header', root);
+    hd.insertAdjacentHTML('beforeend',
+      '<svg class="dr-name-bg" viewBox="0 0 429 163" preserveAspectRatio="none">' +
+        '<polygon class="dr-name-fill" points="0,0 386,0 429,163 38,163"/>' +
+        '<line class="dr-name-edge" x1="0" y1="0" x2="38" y2="163"/>' +
+        '<line class="dr-name-edge" x1="386" y1="0" x2="429" y2="163"/></svg>');
+    const logo = mk('img', 'dr-logo', hd); logo.alt = '';
+    logo.onload  = () => { logo.style.display = 'block'; };
+    logo.onerror = () => { logo.style.display = 'none'; };
+    const name = mk('div', 'dr-name', hd);
+    const bars = mk('div', 'dr-bars', hd);
+    root._hdr = { logo, name, bars };
+
+    const players = mk('div', 'dr-players', root);
+    for (let i = 0; i < 5; i++) {
+      const key = campid + '_' + i;
+      const slot = mk('div', 'dr-slot', players);
+      slot.id = 'drs-' + key;
+      const glow  = mk('div', 'dr-glow-pick', slot);
+      const photo = mk('img', 'dr-photo', slot); photo.alt = '';
+      const pcvs  = mk('canvas', 'dr-photo-cvs', slot); pcvs.width = PHOTO_W; pcvs.height = PHOTO_W;
+      const hvid  = mk('video', 'dr-hero-vid', slot); hvid.loop = true; hvid.muted = true; hvid.playsInline = true; hvid.preload = 'none';
+      const hcvs  = mk('canvas', 'dr-hero-cvs', slot); hcvs.width = HERO_W; hcvs.height = 319;
+      const flash = mk('div', 'dr-flash', slot);
+      const role  = mk('img', 'dr-role', slot); role.alt = '';
+      const hname = mk('div', 'dr-hname', slot); const hnameTxt = mk('span', '', hname);
+      slotEls[key] = { key, campid, seatIdx: i, slot, glow, photo, pcvs, pctx: pcvs.getContext('2d'),
+        hvid, hcvs, hctx: hcvs.getContext('2d'), flash, role, hname, hnameTxt,
+        pickAnim: null, matteVid: null, heroMatteVid: null, photoH: null };
+      prev[key] = { lastName: '', heroid: undefined, picking: false, matteActive: false, assignedRole: undefined,
+        photoName: undefined, photoPhase: 'none', photoErasing: false, idleName: undefined,
+        t0: null, t1: null, t2: null, roleTimer: null, pickAnimTimer: null, rolePhase: 'none' };
+    }
+  }
+  [1, 2].forEach(buildCamp);
+  applySides();
+
+  /* The PICKING / matte videos are created on first use — ten slots would
+     otherwise carry 30+ idle <video> elements. */
+  function ensureMedia(e) {
+    if (e.matteVid) return;
+    e.matteVid = mk('video', '', e.slot); e.matteVid.src = 'assets/draft/motion/s17_matte2.webm';
+    e.matteVid.muted = true; e.matteVid.playsInline = true; e.matteVid.preload = 'none'; e.matteVid.style.display = 'none';
+    e.heroMatteVid = mk('video', '', e.slot); e.heroMatteVid.src = 'assets/draft/motion/s17_matte2_alpha.webm';
+    e.heroMatteVid.muted = true; e.heroMatteVid.playsInline = true; e.heroMatteVid.preload = 'none'; e.heroMatteVid.style.display = 'none';
+  }
+  function ensurePickAnim(e) {
+    if (e.pickAnim) return;
+    e.pickAnim = mk('video', 'dr-pickanim');
+    e.slot.insertBefore(e.pickAnim, e.slot.firstChild.nextSibling);   // above the glow's slot, below the photo
+    e.pickAnim.src = e.campid === 1 ? 'assets/led/draft/pickingblue_alpha.webm' : 'assets/led/draft/pickingred_alpha.webm';
+    e.pickAnim.loop = true; e.pickAnim.muted = true; e.pickAnim.playsInline = true; e.pickAnim.preload = 'none';
+  }
+
+  /* Switch photo source without a reload: every seat that hasn't picked yet re-resolves
+     its photo (a picked seat keeps its hero, and its erased photo is gone anyway). */
+  function setPhotoMode(mode) {
+    if (mode !== 'live' && mode !== 'placeholder') return;
+    draftPhotoMode = mode;
+    Object.keys(slotEls).forEach(key => {
+      const e = slotEls[key], p = prev[key];
+      if (p.heroid > 0 || p.matteActive) return;
+      resetPlayerPhoto(e, p);
+      showIdlePhoto(e, p, p.lastName);
+      if (p.picking) advancePhotoToVictory(e, p);
+    });
+    const live = document.getElementById('btn-photo-live'), ph = document.getElementById('btn-photo-ph');
+    if (live) live.className = 'dbg-btn' + (mode === 'live' ? ' green' : '');
+    if (ph)   ph.className   = 'dbg-btn' + (mode === 'placeholder' ? ' orange' : '');
+  }
+  sse.addEventListener('led_draftpred', e => {      // dashboard switch (routes/led.js → action 'photo_mode')
+    try { const d = JSON.parse(e.data); if (d.action === 'photo_mode') setPhotoMode(d.mode); } catch {}
+  });
+
+  /* ── Header: team tricode, logo, series score bars ── */
+  const _meas = document.createElement('canvas').getContext('2d');
+  function fitName(el, text, maxW, maxPx) {          // canvas measure — no layout dependency
+    _meas.font = `${maxPx}px Anton`;
+    const w = _meas.measureText(text).width;
+    el.style.fontSize = (w > maxW ? Math.floor(maxPx * maxW / w) : maxPx) + 'px';
+  }
+  function setHeader(campid, camp) {
+    const h = campsEl[campid]._hdr;
+    const tri = ((camp && camp.team_simple_name) || '').toUpperCase();
+    if (h.name._t !== tri) { setText(h.name, tri); fitName(h.name, tri, 340, 119); }
+    if (h.logo.dataset.team !== tri) {
+      h.logo.dataset.team = tri;
+      if (tri) { h.logo.style.display = 'none'; h.logo.src = '/logos/' + tri + '.png'; } else { h.logo.style.display = 'none'; }
+    }
+  }
+  function renderBars(campid, total, scored) {
+    const box = campsEl[campid]._hdr.bars;
+    const sig = total + ':' + scored;
+    if (box._sig === sig) return;
+    box._sig = sig; box.innerHTML = '';
+    for (let i = 0; i < total; i++) {
+      const b = mk('div', 'dr-bar', box);
+      if (i >= total - scored) b.classList.add('scored');   // fills from the inner edge on both sides
+    }
+  }
+  function pollMatchState() {
+    fetch('/match/state', { cache: 'no-store' }).then(r => r.json()).then(s => {
+      const maxWins = Math.max(1, Math.ceil(parseInt(String(s.series || 'BO3').replace('BO', '')) / 2));
+      const home = s.home || s.teamA || {}, away = s.away || s.teamB || {};
+      const swapped = s.swapped !== undefined ? s.swapped : (s.blueTeam === 'B');
+      const c1 = swapped ? away : home, c2 = swapped ? home : away;
+      renderBars(1, maxWins, c1.score || 0);
+      renderBars(2, maxWins, c2.score || 0);
+    }).catch(() => {});
+  }
+
+  /* ── Photo sequence: FRONT (idle) → quick-out → VICTORY bounce-in on the picking turn ── */
+  function clearPhotoTimers(p) { ['t0', 't1', 't2'].forEach(k => { if (p[k]) { clearTimeout(p[k]); p[k] = null; } }); }
+  function resetPlayerPhoto(e, p) {
+    clearPhotoTimers(p);
+    e.photo.className = 'dr-photo'; e.photo.style.display = 'none'; e.photo.style.opacity = '0'; e.photo.style.transform = '';
+    e.photo.removeAttribute('src');
+    e.pcvs.style.opacity = '0'; e.pctx.clearRect(0, 0, e.pcvs.width, e.pcvs.height);
+    e.photoH = null; p.photoName = undefined; p.photoPhase = 'none'; p.photoErasing = false; p.idleName = undefined;
+  }
+  function photoNameFor(playerName, e) {
+    if (draftPhotoMode === 'placeholder') {       // seat order: camp 1 → photos 0-4, camp 2 → 5-9 (all different)
+      const n = PLAYER_PHOTO_NAMES;
+      return n.length ? n[((e.campid - 1) * 5 + e.seatIdx) % n.length] : null;
+    }
+    return PLAYER_PHOTO_LOOKUP[(playerName || '').trim().toLowerCase()] || null;
+  }
+  /* Idle state (the mock): every not-yet-picked seat shows its player's FRONT photo on the gold. */
+  function showIdlePhoto(e, p, playerName) {
+    if (p.photoPhase === 'victory' || p.photoErasing) return;
+    const name = photoNameFor(playerName, e);
+    if (!name || p.idleName === name) return;
+    resetPlayerPhoto(e, p);
+    p.idleName = name; p.photoName = name; p.photoPhase = 'front';
+    e.photo.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    e.photo.className = 'dr-photo front'; e.photo.style.display = 'block'; e.photo.style.opacity = '';
+    void e.photo.offsetWidth;
+    e.photo.classList.add('entering');
+    p.t0 = setTimeout(() => { e.photo.classList.remove('entering'); e.photo.classList.add('settled'); }, 620);
+  }
+  /* Picking turn: hold FRONT briefly, then quick-out and bounce VICTORY in. */
+  function advancePhotoToVictory(e, p) {
+    if (!p.photoName) return;
+    clearPhotoTimers(p);
+    p.t1 = setTimeout(() => {
+      const img = e.photo;
+      img.classList.remove('entering', 'settled');
+      img.style.transform = 'translateX(-50%) translateY(0)';
+      img.classList.add('quickout');
+      p.t2 = setTimeout(() => {
+        img.src = 'photos/VICTORY/' + p.photoName + '_VICTORY_resized.png';
+        img.className = 'dr-photo'; img.style.transform = ''; img.style.opacity = '0';
+        void img.offsetWidth;
+        img.classList.add('bouncein');
+        p.photoPhase = 'victory';
+      }, PHOTO_QUICKOUT_MS);
+    }, PHOTO_FRONT_HOLD_MS);
+  }
+  function preparePhotoErase(e, p) {
+    if (!p.photoName || p.photoPhase === 'none') { resetPlayerPhoto(e, p); return; }
+    p.photoErasing = true;
+    const natW = e.photo.naturalWidth || PHOTO_W, natH = e.photo.naturalHeight || PHOTO_W;
+    const Hp = Math.round(natH * PHOTO_W / natW);
+    e.photoH = Hp; e.pcvs.width = PHOTO_W; e.pcvs.height = Hp; e.pcvs.style.height = Hp + 'px';
+    updatePhotoErase(e, null);
+    e.pcvs.style.opacity = '1'; e.photo.style.opacity = '0';
+  }
+  function updatePhotoErase(e, maskVid) {            // GPU composite: photo minus the matte's alpha
+    if (!e.photoH) return;
+    const ctx = e.pctx, Hp = e.photoH;
+    ctx.clearRect(0, 0, PHOTO_W, Hp);
+    ctx.drawImage(e.photo, 0, 0, PHOTO_W, Hp);
+    if (maskVid) { ctx.globalCompositeOperation = 'destination-out'; ctx.drawImage(maskVid, 0, 0, PHOTO_W, Hp); ctx.globalCompositeOperation = 'source-over'; }
+  }
+  function finishPhotoErase(e, p) {
+    p.photoErasing = false; e.photoH = null;
+    e.pcvs.style.opacity = '0'; e.photo.style.display = 'none';
+    e.pctx.clearRect(0, 0, e.pcvs.width, e.pcvs.height);
+    p.photoName = undefined; p.photoPhase = 'none'; p.idleName = undefined;
+  }
+
+  /* ── Picking-turn visuals ── */
+  function showPickAnimDelayed(e, p) {
+    ensurePickAnim(e);
+    clearTimeout(p.pickAnimTimer);
+    p.pickAnimTimer = setTimeout(() => { e.pickAnim.currentTime = 0; e.pickAnim.play().catch(() => {}); e.pickAnim.classList.add('on'); }, 600);
+  }
+  function hidePickAnim(e, p) {
+    clearTimeout(p.pickAnimTimer); p.pickAnimTimer = null;
+    if (e.pickAnim) { e.pickAnim.classList.remove('on'); e.pickAnim.pause(); }
+  }
+  function roleStart(e, p) {                         // press in the middle, then fly to the corner
+    clearTimeout(p.roleTimer);
+    if (!e.role.getAttribute('src')) return;
+    e.role.className = 'dr-role'; void e.role.offsetWidth;
+    e.role.classList.add('pop'); p.rolePhase = 'pop';
+    p.roleTimer = setTimeout(() => { e.role.className = 'dr-role corner'; p.rolePhase = 'corner'; }, ROLE_POP_MS + 150);
+  }
+  function roleEnd(e, p) { clearTimeout(p.roleTimer); e.role.className = 'dr-role gone'; p.rolePhase = 'none'; }
+
+  /* ── Matte reveal over the hero video (ported from Draft.html startMatteReveal) ── */
+  function startMatteReveal(e, p) {
+    ensureMedia(e);
+    const cvs = e.hcvs, ctx = e.hctx, matteVid = e.matteVid, heroMatteVid = e.heroMatteVid, heroVid = e.hvid;
+    let rafId = null;
+    function fireGlow() {
+      e.flash.classList.remove('picked'); cvs.classList.remove('brightening'); heroVid.classList.remove('brightening');
+      void e.flash.offsetWidth;
+      e.flash.classList.add('picked'); cvs.classList.add('brightening'); heroVid.classList.add('brightening');
+      setTimeout(() => { e.hname.classList.add('slide-in'); }, 700);      // the hero name pops up
+    }
+    function done() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      prev[e.key].matteActive = false;
+      cvs.style.opacity = '0'; cvs.classList.remove('brightening');
+      heroMatteVid.pause();
+      hidePickAnim(e, p); e.glow.style.display = 'none'; roleEnd(e, p);
+      heroVid.style.display = 'block';
+      if (p.photoErasing) finishPhotoErase(e, p);
+      fireGlow();
+    }
+    function compositeFrame(H) {
+      ctx.drawImage(heroVid, 0, 0, HERO_W, H);
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.drawImage(heroMatteVid, 0, 0, HERO_W, H);
+      ctx.globalCompositeOperation = 'source-over';
+      if (p.photoErasing) updatePhotoErase(e, heroMatteVid);
+    }
+    function composite(H) {
+      if (matteVid.ended) { done(); return; }
+      try { compositeFrame(H); } catch (err) { done(); return; }
+      rafId = requestAnimationFrame(() => composite(H));
+    }
+    function beginComposite() {
+      const natW = heroVid.videoWidth || 198, natH = heroVid.videoHeight || 316;
+      const H = Math.round(natH * HERO_W / natW);
+      cvs.width = HERO_W; cvs.height = H; cvs.style.height = H + 'px';
+      cvs.style.opacity = '1';
+      matteVid.currentTime = 0;
+      matteVid.addEventListener('ended', done, { once: true });
+      heroMatteVid.currentTime = 0; heroMatteVid.play().catch(() => {});
+      preparePhotoErase(e, p);
+      matteVid.play().then(() => {
+        if ('requestVideoFrameCallback' in matteVid) {
+          (function onVF() {
+            if (matteVid.ended) return;
+            try { compositeFrame(H); } catch (err) { done(); return; }
+            matteVid.requestVideoFrameCallback(onVF);
+          }());
+        } else { composite(H); }
+      }).catch(done);
+    }
+    if (heroVid.readyState >= 1) { heroVid.play().catch(() => {}); beginComposite(); }
+    else {
+      heroVid.addEventListener('loadedmetadata', () => { heroVid.play().catch(() => {}); beginComposite(); }, { once: true });
+      heroVid.load();
+    }
+  }
+
+  /* ── Per-seat update (ported from Draft.html updatePickSeat) ── */
+  function fitHeroName(e, text) {
+    _meas.font = '36px Anton';
+    const w = _meas.measureText(text).width;
+    e.hnameTxt.style.fontSize = (w > 176 ? Math.floor(36 * 176 / w) : 36) + 'px';
+  }
+  function updateSeat(campid, seatIdx, seat) {
+    const key = campid + '_' + seatIdx, e = slotEls[key], p = prev[key];
+    const heroid = seat.heroid || 0, pick = !!seat.picking;
+    p.lastName = seat.name || '';
+
+    // role icon follows the player (roleid, or name for the draft-info-only feed)
+    const roleid = seat.roleid || 0;
+    const assigned = (roleid && playerRoles[roleid]) || (seat.name && localDraftRoles[seat.name]) || null;
+    if (assigned !== p.assignedRole) {
+      if (assigned && ROLE_MAP[assigned]) e.role.src = ROLE_MAP[assigned];
+      p.assignedRole = assigned;
+    }
+
+    const heroName = (seat.hero_name && seat.hero_name[0]) ? String(seat.hero_name[0]).toUpperCase() : '';
+    if (heroName && e.hnameTxt._t !== heroName) { setText(e.hnameTxt, heroName); fitHeroName(e, heroName); }
+
+    if (heroid !== p.heroid) {
+      if (heroid > 0) {
+        e.hvid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+        e.hvid.currentTime = 0;
+        if (p.heroid !== undefined) {                // live pick → matte reveal drives play() + display
+          e.hvid.style.display = 'none';
+          p.matteActive = true;
+          startMatteReveal(e, p);
+        } else {                                      // first load → show straight away, no matte
+          e.hvid.style.display = 'block'; e.hvid.play().catch(() => {});
+          resetPlayerPhoto(e, p);
+          e.hname.style.transition = 'none'; e.hname.classList.add('slide-in'); void e.hname.offsetWidth; e.hname.style.transition = '';
+        }
+      } else {                                        // slot reset
+        e.hname.classList.remove('slide-in'); setText(e.hnameTxt, '');
+        e.hvid.pause(); e.hvid.removeAttribute('src'); e.hvid.style.display = 'none'; e.hvid.classList.remove('brightening');
+        e.hcvs.style.opacity = '0'; e.hcvs.classList.remove('brightening'); e.hctx.clearRect(0, 0, e.hcvs.width, e.hcvs.height);
+        e.flash.classList.remove('picked'); e.glow.style.display = 'none';
+        hidePickAnim(e, p); roleEnd(e, p); resetPlayerPhoto(e, p);
+      }
+      p.heroid = heroid;
+    }
+
+    if (heroid === 0 && !pick) showIdlePhoto(e, p, seat.name);
+
+    if (pick && !p.picking) {                         // this seat's picking turn starts
+      e.glow.style.display = 'block';
+      showPickAnimDelayed(e, p);
+      roleStart(e, p);
+      if (!p.photoName) showIdlePhoto(e, p, seat.name);
+      advancePhotoToVictory(e, p);
+    } else if (!pick && p.picking) {                  // turn ended
+      e.glow.style.display = 'none';
+      if (!p.matteActive) { hidePickAnim(e, p); }
+      if (heroid === 0) { roleEnd(e, p); }
+    }
+    p.picking = pick;
+  }
+
+  /* ── Draft feed ── */
+  function normalizeDraftPayload(raw) {
+    if (!raw || !Array.isArray(raw.camp_list) || !raw.camp_list.length || !raw.camp_list[0].player_list) {
+      usingDraftInfoOnlyFormat = false; return raw;
+    }
+    usingDraftInfoOnlyFormat = true;
+    const campList = raw.camp_list.map((camp, idx) => {
+      const players = camp.player_list || [];
+      const out = { campid: (players[0] && players[0].campid) || (idx + 1), team_simple_name: camp.team_name_simple || camp.team_name || '', coach_in: camp.coach_in || '', state: camp.state || '' };
+      players.forEach((p, i) => {
+        out['seat_' + (i + 1)] = {
+          name: p.name || '', campid: p.campid, heroid: p.heroid || 0, hero_name: p.hero_name ? [p.hero_name] : [],
+          ban_heroid: p.ban_heroid || 0, banning: !!p.banning, picking: !!p.picking, role: p.role || '',
+          ban_order: p.ban_order || 0, pick_order: p.pick_order || 0,
+        };
+      });
+      return out;
+    });
+    return { code: 0, data: { battleid: raw.BattleID || null, state_left_time: raw.state_time || 0, camp_list: campList } };
+  }
+  function assignLocalDraftRoles(camp1, camp2) {
+    const result = {};
+    [camp1, camp2].forEach(camp => {
+      if (!camp) return;
+      const seats = [];
+      for (let s = 1; s <= 5; s++) { const seat = camp['seat_' + s]; if (seat && seat.name) seats.push(seat); }
+      if (!seats.length) return;
+      const claimed = {};
+      seats.forEach(seat => { const m = ROLE_ALIASES[(seat.role || '').toLowerCase().trim()]; if (m && !claimed[m]) { claimed[m] = true; result[seat.name] = m; } });
+      const remaining = ALL_ROLES.filter(r => !claimed[r]);
+      for (let j = remaining.length - 1; j > 0; j--) { const k = Math.floor(Math.random() * (j + 1)); [remaining[j], remaining[k]] = [remaining[k], remaining[j]]; }
+      let ri = 0;
+      seats.forEach(seat => { if (!result[seat.name]) result[seat.name] = remaining[ri++]; });
+    });
+    return result;
+  }
+  function fetchAndApplyRoles(bid) {
+    fetch('/api/draft-roles', { cache: 'no-store' }).then(r => r.json()).then(d => {
+      if (d.battleid === bid && d.roles && Object.keys(d.roles).length) { playerRoles = d.roles; Object.keys(prev).forEach(k => { prev[k].assignedRole = undefined; }); }
+    }).catch(() => {});
+  }
+
+  let currentBattleId = null;
+  function applyDraft(json) {
+    json = normalizeDraftPayload(json);
+    if (!json || json.code !== 0 || !json.data) throw new Error('unexpected payload');
+    const bid = json.data.battleid || null;
+    if (bid && bid !== currentBattleId) {
+      if (currentBattleId !== null) { window.location.reload(); return; }   // new draft → clean slate (same as Draft.html)
+      currentBattleId = bid;
+    }
+    const campList = json.data.camp_list || [];
+    const camp1 = campList.find(c => c.campid === 1), camp2 = campList.find(c => c.campid === 2);
+    setHeader(1, camp1); setHeader(2, camp2);
+    if (usingDraftInfoOnlyFormat) {
+      if (localDraftRolesBattleId !== currentBattleId) { localDraftRoles = assignLocalDraftRoles(camp1, camp2); localDraftRolesBattleId = currentBattleId; }
+    } else if (!Object.keys(playerRoles).length && currentBattleId) fetchAndApplyRoles(currentBattleId);
+    for (let i = 1; i <= 5; i++) {
+      if (camp1 && camp1['seat_' + i]) updateSeat(1, i - 1, camp1['seat_' + i]);
+      if (camp2 && camp2['seat_' + i]) updateSeat(2, i - 1, camp2['seat_' + i]);
+    }
+  }
+
+  let draftApiUrl = null, pollInFlight = false;
+  function pollDraft() {
+    if (!draftApiUrl || pollInFlight || window.__drSimActive) return;
+    pollInFlight = true;
+    fetch(draftApiUrl, { cache: 'no-store', signal: AbortSignal.timeout(8000) })
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(applyDraft).catch(() => {}).finally(() => { pollInFlight = false; });
+  }
+  fetch('/api/draft-url').then(r => r.json()).then(d => { draftApiUrl = d.url || null; pollDraft(); }).catch(() => {});
+
+  /* ─────────────── Debug sim — drives the SAME applyDraft() path ─────────────── */
+  const sim = { battle: 'SIM-' + Date.now(), camps: null };
+  function simInit() {
+    const names = PLAYER_PHOTO_NAMES.length ? PLAYER_PHOTO_NAMES.slice() : ['Player'];
+    const mkPlayers = (campid, off) => ['exp_laner','jungler','mid_laner','roamer','gold_laner'].map((role, i) => ({
+      name: names[(off + i) % names.length], campid, heroid: 0, hero_name: '', ban_heroid: 0, banning: false, picking: false, role, ban_order: 0, pick_order: 0 }));
+    sim.camps = [
+      { team_name_simple: 'TLPH', player_list: mkPlayers(1, 0) },
+      { team_name_simple: 'RORA', player_list: mkPlayers(2, 5) },
+    ];
+  }
+  /* Reuse the live battle id when there is one — a changed id reloads the page (as in Draft.html). */
+  function simApply() { window.__drSimActive = true; applyDraft({ BattleID: currentBattleId || sim.battle, camp_list: sim.camps }); }
+  window.__drSim = {
+    reset() { simInit(); simApply(); },
+    picking(campid, seat) { if (!sim.camps) simInit(); sim.camps[campid - 1].player_list[seat].picking = true; simApply(); },
+    pick(campid, seat, heroid, heroName) {
+      if (!sim.camps) simInit();
+      const pl = sim.camps[campid - 1].player_list[seat]; pl.picking = false; pl.heroid = heroid; pl.hero_name = heroName; simApply();
+    },
+    live() { window.__drSimActive = false; },
+  };
+
+  /* ── Debug panel ── */
+  document.addEventListener('keydown', e => { if (e.key === '`') document.getElementById('debug-panel').classList.toggle('visible'); });
+  (function buildSimUI() {
+    const wrap = document.getElementById('dbg-sim'); if (!wrap) return;
+    let heroes = [[1, 'Miya']];
+    fetch('/heronames.json', { cache: 'no-store' }).then(r => r.json()).then(l => { heroes = (l || []).filter(h => h && h.id <= 133).map(h => [h.id, h.name]); }).catch(() => {});
+    const row = () => { const d = document.createElement('div'); d.className = 'dbg-row'; wrap.appendChild(d); return d; };
+    const btn = (r, t, fn, cls) => { const b = document.createElement('div'); b.className = 'dbg-btn ' + (cls || ''); b.textContent = t; b.addEventListener('click', fn); r.appendChild(b); return b; };
+    let r = row(); r.id = 'dbg-photo-row';
+    btn(r, 'Photos: LIVE', () => setPhotoMode('live'), 'green').id = 'btn-photo-live';
+    btn(r, 'Photos: PLACEHOLDER', () => setPhotoMode('placeholder')).id = 'btn-photo-ph';
+    r = row(); btn(r, 'SIM: reset draft', () => __drSim.reset(), 'orange'); btn(r, 'back to LIVE feed', () => __drSim.live(), 'green');
+    [[1,'blue','']].concat([[2,'red','red']]).forEach(([c, nm, cls]) => {
+      r = row(); r.style.flexWrap = 'wrap';
+      for (let s = 0; s < 5; s++) btn(r, nm[0].toUpperCase() + (s + 1) + ' picking', () => __drSim.picking(c, s), cls);
+      r = row(); r.style.flexWrap = 'wrap';
+      for (let s = 0; s < 5; s++) btn(r, nm[0].toUpperCase() + (s + 1) + ' picks', () => { const h = heroes[Math.floor(Math.random() * heroes.length)]; __drSim.pick(c, s, h[0], h[1]); }, cls);
+    });
+  })();
+
+  pollSubInfo(); setInterval(pollSubInfo, POLL_MS * 2);
+  pollMatchState(); setInterval(pollMatchState, 3000);
+  setInterval(pollDraft, POLL_MS);
+  setSwap((() => { try { return localStorage.getItem('ledSwap') === '1'; } catch (e) { return false; } })());
+</script>
+</body>
+</html>

@@ -46,6 +46,23 @@ router.get('/proxy/predictions', async (req, res) => {
   }
 });
 
+// GET /api/winrate-probability — LED Overlay's Win Probability panel. The
+// game API host (same host as the Game API URL in Settings, whichever
+// LIVE/WEB/DEBUG mode is active) serves /api/winrate-probability/ next to
+// /api/sub-info/; proxied here so the page stays same-origin.
+const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
+router.get('/api/winrate-probability', async (req, res) => {
+  try {
+    const gameUrl = readUrlForMode(GAME_URL_FILE, '').trim();
+    if (!gameUrl) return res.status(404).json({ error: 'no game URL configured' });
+    const r    = await fetch(new URL(gameUrl).origin + '/api/winrate-probability/', { signal: AbortSignal.timeout(5000) });
+    const data = await r.json();
+    res.set('Cache-Control', 'no-store').json(data);
+  } catch (e) {
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // GET /proxy/richguy?host=theapi.dpdns.org — server-side proxy to avoid CORS
 router.get('/proxy/richguy', async (req, res) => {
   const host = req.query.host || "theapi.dpdns.org";

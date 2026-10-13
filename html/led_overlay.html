@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<base href="/">
+<script src="html/js/cache-bust.js"></script>
+<script src="html/js/theme-apply.js"></script>
+<script src="html/js/overlay-sse-shim.js"></script>
+<title>LED Overlay</title>
+<style>
+  @font-face { font-family: 'Anton'; font-weight: 400; src: url('fonts/Anton-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('fonts/GeneralSans-Bold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('fonts/GeneralSans-Semibold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('fonts/GeneralSans-Medium.otf') format('opentype'); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 2532px;
+    height: 1024px;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .canvas {
+    position: relative;
+    width: 2532px;
+    height: 1024px;
+  }
+
+  .gold-border {
+    position: absolute;
+    width: 1024px;
+    height: 1024px;
+    background-image: url('assets/led/goldborder.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    top: 0;
+    z-index: 0;
+  }
+
+  #gold-left  { left: 0; }
+  #gold-right { right: 0; }
+
+  .plate {
+    position: absolute;
+    width: 1000px;
+    height: 200px;
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
+
+  /* Left plates — P1 to P5, stacked from top-left */
+  #plate-1  { left: 12px; top: 12px;   background-image: url('assets/led/plateleft.png'); }
+  #plate-2  { left: 12px; top: 212px;  background-image: url('assets/led/plateleft.png'); }
+  #plate-3  { left: 12px; top: 412px;  background-image: url('assets/led/plateleft.png'); }
+  #plate-4  { left: 12px; top: 612px;  background-image: url('assets/led/plateleft.png'); }
+  #plate-5  { left: 12px; top: 812px;  background-image: url('assets/led/plateleft.png'); }
+
+  /* ── Item slots ── */
+  .item-slot {
+    position: absolute;
+    width: 69px;
+    height: 69px;
+    top: 118px;
+    overflow: visible;
+  }
+  .item-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 4px;
+  }
+  [id$="-item-1"] { left: 271px; }
+  [id$="-item-2"] { left: 346px; }
+  [id$="-item-3"] { left: 421px; }
+  [id$="-item-4"] { left: 496px; }
+  [id$="-item-5"] { left: 571px; }
+  [id$="-item-6"] { left: 646px; }
+
+  /* Same pop as ingame_blue/ingame_red — applied to the item <img> itself. */
+  @keyframes item-pop {
+    0%   { transform: scale(0.45); opacity: 0; filter: drop-shadow(0 0 0px  rgba(255,200,30,0));    }
+    50%  { transform: scale(1.15); opacity: 1; filter: drop-shadow(0 0 8px  rgba(255,200,30,0.85)); }
+    75%  { transform: scale(0.96);             filter: drop-shadow(0 0 4px  rgba(255,200,30,0.3));  }
+    100% { transform: scale(1);    opacity: 1; filter: drop-shadow(0 0 0px  rgba(255,200,30,0));    }
+  }
+  .item-pop { animation: item-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+
+  /* ── Plate events — mploverlay_v7 "eventer" look at LED size ──
+     One 502x89 card per plate (built by led-events.js) sitting over the
+     item row. Wipes in from the plate's outer edge (home: left, away:
+     right) like v7's .evt-clip/.evt-card, label on top, value or item
+     boxes below. Art: assets/led/eventback.png. */
+  .led-evt-clip {
+    position: absolute; left: 241px; top: 109px;
+    width: 502px; height: 89px;
+    overflow: hidden; display: none; pointer-events: none;
+    z-index: 60;
+  }
+  .led-evt-card {
+    position: absolute; left: 0; top: 0; width: 502px; height: 89px;
+    transform: translateX(-502px);
+    transition: transform 350ms ease-in;
+  }
+  .camp2 .led-evt-clip { left: 257px; }   /* plateright.png's item bar sits 16px further right (257..759) than plateleft's (241..743) */
+  .camp2 .led-evt-card { transform: translateX(502px); }
+  .led-evt-clip.evt-in .led-evt-card {
+    transition: transform 400ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(0);
+  }
+  .led-evt-bg { position: absolute; left: 0; top: 0; width: 502px; height: 89px; }
+  .led-evt-label {
+    position: absolute; left: 0; top: 0; width: 502px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'General Sans','Arial Black',sans-serif;
+    font-weight: 700; font-size: 17px; color: #333;
+    letter-spacing: 0.03em; text-transform: uppercase; line-height: 1;
+  }
+  .led-evt-label.big { font-size: 20px; }
+  .led-evt-value {
+    position: absolute; left: 0; top: 30px; width: 502px; height: 59px;
+    display: none; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif; font-size: 46px; color: #111;
+    letter-spacing: 0.01em; line-height: 1;
+  }
+  .led-evt-time {
+    position: absolute; left: 0; top: 30px; width: 363px; height: 59px;
+    display: none; align-items: center; justify-content: center; gap: 6px;
+    white-space: nowrap;
+  }
+  .led-evt-time-num { font-family: 'Anton', sans-serif; font-size: 40px; color: #111; letter-spacing: 0.01em; line-height: 1; }
+  .led-evt-time-unit { font-family: 'General Sans','Arial Black',sans-serif; font-weight: 700; font-size: 15px; color: #111; letter-spacing: 0.02em; line-height: 1; }
+  /* Item art fills the card height (83px of 89) — the label lives in a
+     left column instead of a strip on top, so nothing steals item size. */
+  .led-evt-box { position: absolute; top: 3px; width: 83px; height: 83px; overflow: hidden; display: none; }
+  .led-evt-icon { position: absolute; left: 0; top: 0; width: 83px; height: 83px; object-fit: contain; display: block; }
+  .led-evt-icon.dimmed { filter: brightness(0.8); }
+  .led-evt-sheen {
+    position: absolute; top: -20%; left: -60%; width: 40%; height: 140%;
+    background: linear-gradient(115deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.95) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-15deg); opacity: 0; pointer-events: none;
+  }
+  .led-evt-sheen.sweep { animation: ledEvtSheen 0.75s ease-out forwards; }
+  @keyframes ledEvtSheen {
+    0%   { left: -60%; opacity: 1; }
+    70%  { opacity: 1; }
+    100% { left: 140%; opacity: 0; }
+  }
+  .led-evt-swapicon {
+    position: absolute; left: 375px; top: 30px; width: 30px; height: 30px;
+    display: none; pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .led-evt-swapicon.swap-out { opacity: 0; transform: scale(0.6); }
+
+  /* per-kind layout — items right-aligned (14px margin), label/time in the
+     left column; lvl15 has no item so it keeps the full-width label + value */
+  [data-kind="item"] .led-evt-label, [data-kind="conceal"] .led-evt-label { width: 395px; height: 38px; font-size: 20px; }
+  [data-kind="item"] .led-evt-time, [data-kind="conceal"] .led-evt-time { display: flex; top: 38px; width: 395px; height: 51px; }
+  [data-kind="item"] .led-evt-time-num, [data-kind="conceal"] .led-evt-time-num { font-size: 44px; }
+  [data-kind="item"] .led-evt-box[data-i="0"], [data-kind="conceal"] .led-evt-box[data-i="0"] { display: block; left: 405px; }
+  [data-kind="lvl15"] .led-evt-value { display: flex; }
+  [data-kind="trinity"] .led-evt-label { width: 215px; height: 89px; font-size: 21px; line-height: 1.15; text-align: center; padding: 0 14px; }
+  [data-kind="trinity"] .led-evt-label.big { font-size: 24px; }
+  [data-kind="trinity"] .led-evt-box[data-i="0"] { display: block; left: 223px; }
+  [data-kind="trinity"] .led-evt-box[data-i="1"] { display: block; left: 314px; }
+  [data-kind="trinity"] .led-evt-box[data-i="2"] { display: block; left: 405px; }
+  [data-kind="swap"] .led-evt-label { width: 282px; height: 89px; font-size: 26px; }
+  [data-kind="swap"] .led-evt-box[data-i="0"] { display: block; left: 292px; transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.4,0,0.6,1); }
+  [data-kind="swap"] .led-evt-box[data-i="1"] { display: block; left: 405px; transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+  [data-kind="swap"] .led-evt-box[data-i="0"].swap-out { opacity: 0; transform: scale(0.4); }
+  [data-kind="swap"] .led-evt-box[data-i="1"].swap-center { transform: translateX(-56px); }
+  [data-kind="swap"] .led-evt-swapicon { display: block; }
+
+  /* ── Side panels (Team HP / Win Prob / Team Fight / Draft Predict) ── */
+/* ── Feature 1: Team HP Bar ── */
+#feature-teamhp {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none;
+}
+.thp-track {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#thp-track-left  { left:8px; }
+#thp-track-right { left:250px; }
+/* Team Health bar — transform-only (no canvas, no per-frame JS).
+   .thp-fill is a window that slides down by (1-hp)*650px; .thp-fill-in is the
+   gradient layer inside it, counter-slid by the same amount so the gradient
+   stays pinned to the track while the window edge moves. .thp-ghost is the
+   red damage trail that lags a hit. State colour (ok / mid / low) is two CSS
+   variables on the track. */
+.thp-track { --c1:#35e070; --c2:#0b7a3a; }
+.thp-track.thp-mid { --c1:#ffcc33; --c2:#a85f00; }
+.thp-track.thp-low { --c1:#ff5547; --c2:#7d0d12; }
+.thp-ghost {
+  position:absolute; left:0; top:0; width:100%; height:650px;
+  background:linear-gradient(to bottom, #ff6a5e, #c4211a);
+  opacity:0.9; will-change:transform; z-index:0;
+}
+.thp-fill {
+  position:absolute; left:0; top:0; width:100%; height:650px;
+  overflow:hidden; will-change:transform; z-index:1;
+}
+.thp-fill-in {
+  position:absolute; left:0; top:0; width:100%; height:650px; will-change:transform;
+  background:
+    linear-gradient(to right, rgba(0,0,0,0.38), rgba(255,255,255,0.10) 28%, rgba(255,255,255,0.04) 50%, rgba(0,0,0,0.30)),
+    linear-gradient(to bottom, var(--c1), var(--c2));
+}
+.thp-edge {
+  position:absolute; left:0; top:0; width:100%; height:6px;
+  background:linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0));
+}
+.thp-ticks {
+  position:absolute; inset:0; z-index:2; pointer-events:none;
+  background:repeating-linear-gradient(to bottom, transparent 0, transparent 64px, rgba(0,0,0,0.5) 64px, rgba(0,0,0,0.5) 65px);
+  box-shadow:inset 0 0 20px rgba(0,0,0,0.55);
+}
+.thp-flash {
+  position:absolute; inset:0; z-index:3; pointer-events:none; opacity:0;
+  background:linear-gradient(to top, rgba(120,255,160,0.0), rgba(180,255,200,0.75));
+}
+@keyframes thpFlash { 0% { opacity:0; } 35% { opacity:1; } 100% { opacity:0; } }
+.thp-flash.thp-flashing { animation:thpFlash 0.55s ease-out; }
+.thp-pct.thp-pct-low { color:#ff7a6e; }
+.thp-label-top {
+  position:absolute; width:226px;
+  font-family:'Anton',sans-serif; font-size:34px; color:#fff; line-height:1;
+  text-align:center; white-space:nowrap; top:378px; z-index:3;
+  text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#thp-label-left  { left:8px; }
+#thp-label-right { left:250px; }
+.thp-pct {
+  position:absolute; width:226px;
+  font-family:'Anton',sans-serif; font-size:80px; color:#fff; line-height:1;
+  text-align:center; white-space:nowrap; top:926px; z-index:3;
+  text-shadow:3px 3px 12px rgba(0,0,0,0.85);
+}
+#thp-pct-left  { left:8px; }
+#thp-pct-right { left:250px; }
+/* Mid-panel in/out: a "reel" over the LOWER region only (y 363..1024 — the
+   stat boxes). The logo + team-name block above it never moves. The feature
+   panel drops in from the top of that region and pushes the default stat
+   boxes down out of the bottom; on exit it keeps going down while the
+   default stat boxes drop back in from the top. Both use the same keyframe
+   times/easing, offset by exactly the region height (667px), so their seam
+   stays glued together the whole way. Clipping: #led-reel-window (features)
+   and .mp-stats (default stat boxes). The defaults are driven by the
+   MutationObserver in led-events.js. */
+@keyframes ledReelIn  { 0% { transform: translateY(-667px); } 82% { transform: translateY(14px); } 100% { transform: translateY(0); } }
+@keyframes ledReelOut { 0% { transform: translateY(0); } 18% { transform: translateY(-14px); } 100% { transform: translateY(667px); } }
+@keyframes ledMidOut  { 0% { transform: translateY(0); } 82% { transform: translateY(681px); } 100% { transform: translateY(667px); } }
+@keyframes ledMidBack { 0% { transform: translateY(-667px); } 18% { transform: translateY(-681px); } 100% { transform: translateY(0); } }
+.mid-panel.led-mid-out  .mp-stats-inner { animation: ledMidOut  0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.mid-panel.led-mid-back .mp-stats-inner { animation: ledMidBack 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+/* Fixed clip window over the lower region; features keep their original
+   coordinates (top:-363px cancels the window's own offset). */
+/* The divider lines + notches are baked into sidebacker.png, so they'd sit
+   still under the moving stat boxes. While the reel runs (and the default
+   boxes are parked), cover the stats area with a line-free slice of the same
+   art (sidebacker_plain.png); it comes off the moment the default panel is
+   back in position (led-mid-back is removed on animationend). Stops short
+   of the bottom 4px so the panel's own bottom border stays. */
+.mid-panel::after {
+  content: ''; display: none; position: absolute; left: 0; top: 357px; width: 100%; height: 663px;
+  background: url('assets/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
+  z-index: 0; pointer-events: none;
+}
+.mid-panel.led-mid-out::after, .mid-panel.led-mid-back::after { display: block; }
+#led-reel-window { position: absolute; left: 1024px; top: 357px; width: 484px; height: 667px; overflow: hidden; z-index: 20; pointer-events: none; }
+#led-reel-window > div { left: 0 !important; top: -357px !important; }
+/* The feature art (teamHPbar.png) only turns opaque at y=360; rows 357-359 of
+   the default panel (white + the gold notch tip) would peek through above it.
+   While a feature is up, cap them with the frame's own gold. */
+#led-reel-window::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: #d6ab42; opacity: 0; }
+#led-reel-window.led-reel-on::before { opacity: 1; }
+.thp-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.thp-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 2: Win Probability ── */
+#feature-winrate {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.wpr-track {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#wpr-track-left  { left:8px; }
+#wpr-track-right { left:250px; }
+.wpr-ghost {
+  position:absolute; bottom:0; left:0; width:100%; height:50%; z-index:0;
+}
+#wpr-ghost-left  { background:#004499; }
+#wpr-ghost-right { background:#990018; }
+.wpr-bar {
+  position:absolute; bottom:0; left:0; width:100%; height:50%;
+  z-index:1; transition:height 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+#wpr-bar-left {
+  background:linear-gradient(to top, #000e1f 0%, #002a7a 30%, #0066cc 65%, #00aaff 85%, #44ccff 100%);
+  box-shadow:0 0 20px rgba(0,160,255,0.55), inset 0 0 12px rgba(80,200,255,0.15);
+}
+#wpr-bar-right {
+  background:linear-gradient(to top, #1a0008 0%, #7a001a 30%, #cc0033 65%, #ff0044 85%, #ff4466 100%);
+  box-shadow:0 0 20px rgba(255,0,60,0.55), inset 0 0 12px rgba(255,80,100,0.15);
+}
+.wpr-label-wrap {
+  position:absolute; width:226px; top:373px; z-index:3;
+  text-align:center; text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#wpr-label-left  { left:8px; }
+#wpr-label-right { left:250px; }
+.wpr-label-win {
+  display:block; font-family:'Anton',sans-serif; font-size:34px; color:#fff;
+  letter-spacing:0.03em; line-height:1; white-space:nowrap;
+}
+.wpr-label-prob {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:16px; color:#ccc; letter-spacing:0.13em; text-transform:uppercase;
+  line-height:1; white-space:nowrap; margin-top:3px;
+}
+.wpr-pct {
+  position:absolute; width:226px; font-family:'Anton',sans-serif; font-size:80px;
+  color:#fff; line-height:1; text-align:center; white-space:nowrap;
+  top:926px; z-index:3; text-shadow:3px 3px 12px rgba(0,0,0,0.85);
+}
+#wpr-pct-left  { left:8px; }
+#wpr-pct-right { left:250px; }
+@keyframes wprGainBlue {
+  0%  { box-shadow:inset 0 0  0px rgba(0,160,255,0),   0 0  0px rgba(0,160,255,0); }
+  40% { box-shadow:inset 0 0 28px rgba(0,160,255,0.8), 0 0 22px rgba(0,160,255,0.65); }
+  100%{ box-shadow:inset 0 0  0px rgba(0,160,255,0),   0 0  0px rgba(0,160,255,0); }
+}
+@keyframes wprGainRed {
+  0%  { box-shadow:inset 0 0  0px rgba(255,0,50,0),   0 0  0px rgba(255,0,50,0); }
+  40% { box-shadow:inset 0 0 28px rgba(255,0,50,0.8), 0 0 22px rgba(255,0,50,0.65); }
+  100%{ box-shadow:inset 0 0  0px rgba(255,0,50,0),   0 0  0px rgba(255,0,50,0); }
+}
+.wpr-gain-blue { animation:wprGainBlue 0.55s ease forwards; }
+.wpr-gain-red  { animation:wprGainRed  0.55s ease forwards; }
+.wpr-entering  { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.wpr-leaving   { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 3: Teamfight Damage ── */
+#feature-teamfight {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.tfd-col {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#tfd-col-left  { left:8px; }
+#tfd-col-right { left:250px; }
+.tfd-seg {
+  position:absolute; width:100%; bottom:0; height:0; overflow:hidden;
+  border-top:1px solid rgba(0,0,0,0.45);
+  transition:height 0.5s cubic-bezier(0.22,1,0.36,1),
+             bottom 0.5s cubic-bezier(0.22,1,0.36,1);
+}
+.tfd-left .tfd-seg {
+  background:linear-gradient(to top, #000e1f 0%, #002a7a 25%, #0066cc 60%, #00aaff 85%, #44ccff 100%);
+  box-shadow:0 0 14px rgba(0,160,255,0.35), inset 0 0 8px rgba(80,200,255,0.1);
+}
+.tfd-right .tfd-seg {
+  background:linear-gradient(to top, #1a0008 0%, #7a001a 25%, #cc0033 60%, #ff0044 85%, #ff4466 100%);
+  box-shadow:0 0 14px rgba(255,0,60,0.35), inset 0 0 8px rgba(255,80,100,0.1);
+}
+.tfd-seg-hero {
+  position:absolute; left:8px; top:8px;
+  width:48px; height:48px;
+  border-radius:50%; object-fit:cover; object-position:center top;
+  z-index:2; border:2px solid rgba(255,255,255,0.4);
+  opacity:0; transition:opacity 0.3s ease;
+}
+.tfd-seg-hero.dead { filter:grayscale(0.85) brightness(0.55); }
+.tfd-seg-dmg {
+  position:absolute; right:10px; bottom:8px;
+  font-family:'Anton',sans-serif; font-size:28px; color:#fff; line-height:1;
+  z-index:2; white-space:nowrap; letter-spacing:0.02em;
+  text-shadow:1px 1px 8px rgba(0,0,0,0.95);
+  opacity:0; transition:opacity 0.3s ease;
+}
+.tfd-label-wrap {
+  position:absolute; width:226px; top:373px; z-index:3;
+  text-align:center; text-shadow:2px 3px 10px rgba(0,0,0,0.75);
+}
+#tfd-label-left  { left:8px; }
+#tfd-label-right { left:250px; }
+.tfd-label-title {
+  display:block; font-family:'Anton',sans-serif; font-size:34px; color:#fff;
+  letter-spacing:0.03em; line-height:1; white-space:nowrap;
+}
+.tfd-label-sub {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:16px; color:#ccc; letter-spacing:0.13em; text-transform:uppercase;
+  line-height:1; white-space:nowrap; margin-top:3px;
+}
+.tfd-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.tfd-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+/* ── Feature 4: Draft Predict ── */
+@keyframes shimmer { 0%{transform:translateX(-110%)} 100%{transform:translateX(210%)} }
+#feature-draftpredict {
+  position:absolute; left:1024px; top:0; width:484px; height:1024px;
+  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  z-index:20; pointer-events:none; display:none; transform-origin:center center;
+}
+.dp-col {
+  position:absolute; width:226px; height:650px; top:366px;
+  background:rgba(0,0,0,0.28); overflow:hidden;
+}
+#dp-col-left  { left:8px; }
+#dp-col-right { left:250px; }
+.dp-col-hdr {
+  position:absolute; top:0; left:0; right:0; z-index:4; pointer-events:none;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.96) 60%, transparent 100%);
+  padding:10px 0 22px; text-align:center;
+}
+.dp-hdr-title {
+  display:block; font-family:'Anton',sans-serif; font-size:30px; color:#fff; line-height:1;
+}
+.dp-hdr-team {
+  display:block; font-family:'Anton',sans-serif; font-size:14px;
+  margin-top:3px; letter-spacing:0.06em;
+}
+.dp-hdr-type {
+  display:block; font-family:'General Sans',sans-serif; font-weight:700;
+  font-size:11px; color:rgba(255,255,255,0.45); letter-spacing:0.13em;
+  text-transform:uppercase; margin-top:2px;
+}
+#dp-col-left  .dp-hdr-team { color:#44aaff; }
+#dp-col-right .dp-hdr-team { color:#ff4455; }
+.dp-card {
+  position:absolute; width:226px; height:70px;
+  background:#1a1a1a; display:flex; align-items:stretch;
+  border-bottom:1px solid rgba(255,255,255,0.04); will-change:transform;
+}
+.dp-card-portrait {
+  height:70px; width:auto; flex-shrink:0; position:relative; background:#0e0e0e;
+}
+.dp-card-portrait img {
+  height:100%; width:auto; display:block;
+}
+.dp-card.dp-chosen::before {
+  content:''; position:absolute; inset:0; pointer-events:none; z-index:5;
+  background:linear-gradient(105deg, transparent 30%, rgba(240,192,64,0.15) 50%, transparent 70%);
+  animation:shimmer 1.5s ease infinite;
+}
+.dp-rank-badge {
+  position:absolute; right:8px; top:50%; transform:translateY(-50%);
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; z-index:2; flex-shrink:0;
+}
+.dp-rank-badge.rank-top { background:#004dd5; }
+.dp-rank-badge.rank-low { background:rgba(0,0,0,0.7); }
+#dp-col-right .dp-rank-badge.rank-top { background:#c81400; }
+.dp-rank-num { font-family:'Anton',sans-serif; font-size:15px; color:#fff; line-height:1; }
+.dp-card-body {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:0 38px 0 10px; overflow:hidden;
+}
+.dp-card-pct { font-family:'Anton',sans-serif; font-size:19px; line-height:1; }
+#dp-col-left  .dp-card-pct { color:#44aaff; }
+#dp-col-right .dp-card-pct { color:#ff4455; }
+.dp-card.dp-dimmed { opacity:0.12; filter:grayscale(1) brightness(0.4); }
+.dp-card.dp-pressing {
+  transform:translateY(var(--ty,0px)) scaleY(0.93) !important;
+  transition:transform 0.07s ease-in !important;
+}
+.dp-card.dp-chosen {
+  z-index:10;
+  box-shadow:inset 3px 0 0 #f0c040, 0 0 16px rgba(240,192,64,0.4);
+  transform:translateY(var(--ty,0px)) scaleY(1.06) !important;
+  transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1) !important;
+}
+.dp-card.dp-chosen .dp-card-pct { color:#f0c040 !important; }
+.dp-fade-bot {
+  position:absolute; bottom:0; left:0; right:0; height:55px; z-index:3; pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,0.28), transparent);
+}
+.dp-entering { animation: ledReelIn 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+.dp-leaving  { animation: ledReelOut 0.85s cubic-bezier(0.6,0,0.25,1) forwards; }
+
+
+  /* ── Debug panel ── */
+  #debug-panel {
+    display: none;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(12,12,12,0.96);
+    border: 1px solid rgba(80,80,80,0.5);
+    border-radius: 6px;
+    padding: 14px 16px;
+    z-index: 9999;
+    color: #fff;
+    font-family: 'Segoe UI', sans-serif;
+    font-size: 11px;
+    min-width: 280px;
+  }
+  #debug-panel.visible { display: block; }
+  .dbg-title {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 10px;
+  }
+  .dbg-row { display: flex; gap: 6px; margin-bottom: 6px; }
+  .dbg-btn {
+    flex: 1;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 4px;
+    background: #2a2a2a;
+    color: #ccc;
+    border: 1px solid #444;
+    font-size: 10px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .dbg-btn:active { opacity: 0.7; }
+  .dbg-btn.green  { background: #0a1a0a; color: #00e375; border-color: #008452; }
+  .dbg-btn.purple { background: #12001a; color: #c87aff; border-color: #7a00cc; }
+  .dbg-btn.red    { background: #1a0004; color: #ff6666; border-color: #aa0010; }
+  .dbg-btn.orange { background: #1a0e00; color: #ffaa33; border-color: #aa6600; }
+  .dbg-hint { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 8px; text-align: center; }
+  #dbg-url-input {
+    flex: 1;
+    padding: 5px 6px;
+    background: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #ccc;
+    font-size: 9px;
+    font-family: monospace;
+    min-width: 0;
+  }
+
+  /* ── Plate 1 elements ── */
+  ._20900 {
+    font-size: 25px;
+    font-family: "Anton";
+    color: rgb(0, 0, 0);
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    width: 100px;
+    -moz-transform:    matrix(2.36183299892145,4.47777920346021e-15,1.48222216644607e-15,2.36220025642401,0,0);
+    -webkit-transform: matrix(2.36183299892145,4.47777920346021e-15,1.48222216644607e-15,2.36220025642401,0,0);
+    -ms-transform:     matrix(2.36183299892145,4.47777920346021e-15,1.48222216644607e-15,2.36220025642401,0,0);
+    position: absolute;
+    left: 601.386px;
+    top: 53.5px;
+    z-index: 38;
+  }
+
+  /* shared mixin for KDA label/value alignment:
+     same left + same width = same visual center regardless of scale */
+  .KILL, ._kill-val   { left: 245.727px; }
+  .DEATH, ._death-val { left: 326.221px; }
+  .ASSIST, ._31       { left: 406.715px; }
+
+  .KILL, .DEATH, .ASSIST {
+    font-size: 25px;
+    font-family: "General Sans";
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    width: 100px;
+    transform-origin: center center;
+    -webkit-transform: matrix(0.73394743086303,0,0,0.73406155734894,0,0);
+    transform:         matrix(0.73394743086303,0,0,0.73406155734894,0,0);
+    position: absolute;
+    z-index: 29;
+  }
+  .KILL  { top: 7px;   z-index: 29; }
+  .DEATH { top: 7px;   z-index: 32; }
+  .ASSIST{ top: 7.5px; z-index: 34; }
+
+  ._kill-val, ._death-val, ._31 {
+    font-size: 25px;
+    font-family: "Anton";
+    color: rgb(0, 0, 0);
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-align: center;
+    width: 100px;
+    transform-origin: center center;
+    -webkit-transform: matrix(2.06324753826674,0,0,2.06356836668196,0,0);
+    transform:         matrix(2.06324753826674,0,0,2.06356836668196,0,0);
+    position: absolute;
+    top: 54px;
+  }
+  ._kill-val  { z-index: 26; }
+  ._death-val { z-index: 31; }
+  ._31        { z-index: 33; }
+
+  /* ── Damage Taken stat ── */
+  .damage-taken-label {
+    font-size: 19.58px;
+    font-family: "General Sans";
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 14px;
+    text-align: center;
+    white-space: nowrap;
+    width: 214px;
+    height: 14px;
+    position: absolute;
+    left: 11px;
+    top: 14px;
+    z-index: 25;
+  }
+
+  .damage-taken-val {
+    font-size: 25px;
+    font-family: "Anton";
+    color: rgb(0, 0, 0);
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-align: center;
+    width: 100px;
+    -moz-transform:    matrix(2.06324753826674,3.91169355439619e-15,1.29483805056529e-15,2.06356836668196,0,0);
+    -webkit-transform: matrix(2.06324753826674,3.91169355439619e-15,1.29483805056529e-15,2.06356836668196,0,0);
+    -ms-transform:     matrix(2.06324753826674,3.91169355439619e-15,1.29483805056529e-15,2.06356836668196,0,0);
+    transform:         matrix(2.06324753826674,3.91169355439619e-15,1.29483805056529e-15,2.06356836668196,0,0);
+    position: absolute;
+    left: 68px;
+    top: 54px;
+    z-index: 24;
+  }
+
+  .SUPERMARCO {
+    font-size: 16px;
+    font-family: "General Sans";
+    color: rgb(22, 22, 22);
+    font-weight: bold;
+    text-transform: uppercase;
+    line-height: 0.984;
+    text-align: center;
+    width: 190px;
+    -moz-transform:    matrix(1.54312829321249,-2.31489020101742e-16,0,1.53969372351891,0,0);
+    -webkit-transform: matrix(1.54312829321249,-2.31489020101742e-16,0,1.53969372351891,0,0);
+    -ms-transform:     matrix(1.54312829321249,-2.31489020101742e-16,0,1.53969372351891,0,0);
+    transform-origin: center center;
+    position: absolute;
+    left: 801.676px;
+    top: 174.057px;
+    z-index: 53;
+  }
+
+  /* squeeze container — only active when JS detects name exceeds 190px */
+  .name-inner {
+    display: inline-block;
+    white-space: nowrap;
+    transform-origin: left center;
+  }
+
+  /* Perf: the EKG line and heart repaint every frame. On the shared page layer
+     each repaint dirtied big tiles (plate art, portraits, borders) and
+     re-rasterized them — ~230ms/s of GPU work. Own compositor layers keep the
+     repaint to a 62x28 / 32x32 area. Both are needed: either one alone still
+     dirties the shared tiles. */
+  .ekg-zone-led, .heart-bpm { will-change: transform; }
+  .heart-bpm {
+    position: absolute;
+    left: 114px;
+    top: 141px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: rgb(255, 1, 1);
+    z-index: 22;
+  }
+
+  .ekg-zone-led {
+    position: absolute;
+    left: 43px;
+    top: 141px;
+    width: 62px;
+    height: 28px;
+    z-index: 22;
+    mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 6%, black 94%, transparent);
+  }
+  .path-line {
+    vector-effect: non-scaling-stroke;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    will-change: d;
+  }
+
+  /* BPM value */
+  ._999 {
+    font-size: 16px;
+    font-family: "Anton";
+    color: rgb(255, 1, 1);
+    text-transform: uppercase;
+    line-height: 0.984;
+    text-align: center;
+    -moz-transform:    matrix(2.93033008800352,0,0,2.93033008800352,0,0);
+    -webkit-transform: matrix(2.93033008800352,0,0,2.93033008800352,0,0);
+    -ms-transform:     matrix(2.93033008800352,0,0,2.93033008800352,0,0);
+    position: absolute;
+    left: 176.455px;
+    top: 149.557px;
+    z-index: 23;
+  }
+
+  /* ── Role icon ── */
+  .role-icon {
+    position: absolute;
+    left: 754px;
+    top: 170px;
+    width: 25px;
+    height: 25px;
+    z-index: 40;
+  }
+  .role-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: invert(1);
+  }
+
+  /* ── Level circle ── */
+  .level-circle {
+    position: absolute;
+    left: 935px;
+    top: 9px;
+    width: 58px;
+    height: 58px;
+    z-index: 15;
+  }
+  .level-arc {
+    transition: stroke-dashoffset 0.5s ease-out;
+  }
+
+  /* ── Hero icon ── */
+  .hero-icon {
+    position: absolute;
+    left: 745px;
+    top: 0;
+    width: 255px;
+    height: 147px;
+    background: rgba(60,60,60,0.35);
+    overflow: hidden;
+    z-index: 10;
+  }
+  .hero-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .hero-icon.dead img {
+    filter: grayscale(100%) brightness(0.5);
+  }
+
+  @keyframes hero-death {
+    0%   { filter: brightness(1);                                }
+    6%   { filter: brightness(8) saturate(0);                   }
+    18%  { filter: brightness(3) saturate(0) grayscale(100%);   }
+    55%  { filter: brightness(0.8) grayscale(100%);             }
+    100% { filter: grayscale(100%) brightness(0.5);             }
+  }
+  @keyframes hero-revive {
+    0%   { filter: grayscale(100%) brightness(0.5);             }
+    12%  { filter: brightness(7) saturate(3);                   }
+    40%  { filter: brightness(1.6) saturate(1.4);               }
+    75%  { filter: brightness(1.05) saturate(1.05);             }
+    100% { filter: brightness(1) saturate(1);                   }
+  }
+  .hero-icon.dying img    { animation: hero-death  0.65s ease-out forwards; }
+  .hero-icon.reviving img { animation: hero-revive 0.9s  ease-out forwards; }
+
+  .death-timer {
+    display: none;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 72px;
+    color: rgb(220, 30, 30);
+    text-shadow: 0 2px 12px rgba(0,0,0,1), 0 0 24px rgba(220,30,30,0.6);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .death-timer.active { display: flex; }
+
+  /* ── Spell icon ── */
+  .spell-icon {
+    position: absolute;
+    left: 753px;
+    top: 92px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(60,60,60,0.5);
+    overflow: hidden;
+    z-index: 11;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.75));
+  }
+  .spell-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ── HP bar ── */
+  .hp-bar-wrap {
+    position: absolute;
+    left: 745px;
+    top: 147px;
+    width: 255px;
+    height: 15px;
+    background: #0a0a0a;
+    border-radius: 2px;
+    overflow: hidden;
+    z-index: 12;
+  }
+  .hp-bar-wrap::after {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 2px;
+    box-shadow: inset 0 0 6px rgba(0,0,0,0.75),
+                inset 0  1px 4px rgba(0,0,0,0.5),
+                inset 0 -1px 4px rgba(0,0,0,0.5);
+    pointer-events: none;
+    z-index: 10;
+  }
+  .hp-ghost {
+    position: absolute; top: 0; bottom: 0; left: 0;
+    background: linear-gradient(to right, #7a0900, #d2001e);
+    will-change: width;
+  }
+  .hp-fill {
+    position: absolute; top: 0; bottom: 0; left: 0;
+    background: linear-gradient(to right, #008452, #00e375);
+    will-change: width;
+  }
+
+  /* ── Camp 2 mirror overrides ── */
+  .camp2 .hero-icon   { left: 0px; }
+  .camp2 .spell-icon  { left: 199px; }
+  .camp2 .level-circle { left: 7px; }
+  .camp2 .role-icon   { left: 221px; }
+  .camp2 .hp-bar-wrap { left: 0px; }
+  .camp2 .hp-bar-wrap .hp-ghost {
+    left: auto; right: 0;
+    background: linear-gradient(to left, #7a0900, #d2001e);
+  }
+  .camp2 .hp-bar-wrap .hp-fill {
+    left: auto; right: 0;
+    background: linear-gradient(to left, #008452, #00e375);
+  }
+
+  /* ── Camp 2 stats/EKG mirror ── */
+  .camp2 .damage-taken-label { left: auto; right: 11px; }
+  .camp2 .damage-taken-val   { left: auto; right: 68px; }
+  .camp2 .KILL,
+  .camp2 ._kill-val           { left: auto; right: 406.715px; }
+  .camp2 .DEATH,
+  .camp2 ._death-val          { left: auto; right: 326.221px; }
+  .camp2 .ASSIST,
+  .camp2 ._31                 { left: auto; right: 245.727px; }
+  .camp2 ._20900              { left: auto; right: 601.386px; }
+  .camp2 .ekg-zone-led {
+    left: auto; right: 43px;
+    mask-image: linear-gradient(to left, transparent, black 6%, black 94%, transparent);
+    -webkit-mask-image: linear-gradient(to left, transparent, black 6%, black 94%, transparent);
+  }
+  .camp2 .heart-bpm  { left: auto; right: 114px; }
+  .camp2 ._999       { left: auto; right: 176.455px; }
+  .camp2 .SUPERMARCO { left: auto; right: 801.676px; }
+
+  /* ── Mid panels ── */
+  .mid-panel {
+    position: absolute;
+    width: 242px;
+    height: 1024px;
+    top: 0;
+    background-image: url('assets/led/sidebacker.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+  }
+  #mid-left  { left: 1024px; }
+  #mid-right { right: 1024px; }
+
+  /* ── Mid panel content ── */
+  .mp-logo-wrap {
+    flex: 0 0 207px;
+    margin-top: 36px;
+    width: 150px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .mp-logo-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .mp-logo[src=""], .mp-logo:not([src]) { visibility: hidden; }
+  .mp-team-name {
+    flex: 0 0 71px;
+    margin-top: 40px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Anton', sans-serif;
+    font-size: 60px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .mp-stats {
+    flex: 1;
+    margin-top: 9px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  .mp-stats { overflow: hidden; position: relative; z-index: 1; }   /* clip window for the reel (see ledReel* keyframes) */
+  .mp-stats-inner { flex: 1; width: 100%; display: flex; flex-direction: column; }
+  .mp-stat-group {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+  }
+  .mp-stat-title {
+    font-family: 'General Sans', sans-serif;
+    font-weight: bold;
+    font-size: 21px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .mp-stat-value {
+    font-family: 'Anton', sans-serif;
+    font-size: 63px;
+    color: #161616;
+    text-align: center;
+    line-height: 1;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Right plates — P6 to P10, stacked from top-right */
+  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/led/plateright.png'); }
+  #plate-7  { right: 12px; top: 212px; background-image: url('assets/led/plateright.png'); }
+  #plate-8  { right: 12px; top: 412px; background-image: url('assets/led/plateright.png'); }
+  #plate-9  { right: 12px; top: 612px; background-image: url('assets/led/plateright.png'); }
+  #plate-10 { right: 12px; top: 812px; background-image: url('assets/led/plateright.png'); }
+
+  /* ── Swap mode buttons ── */
+  .dbg-btn.active-home { background: #0a1a0a; color: #00e375; border-color: #008452; }
+  .dbg-btn.active-swap { background: #001a0a; color: #4dff88; border-color: #00aa44; }
+</style>
+</head>
+<body>
+<div class="canvas">
+
+  <!-- Gold border containers (behind plates) -->
+  <div class="gold-border" id="gold-left"></div>
+  <div class="gold-border" id="gold-right"></div>
+
+  <!-- Mid panels -->
+  <div class="mid-panel" id="mid-left">
+    <div class="mp-logo-wrap">
+      <img class="mp-logo" id="mp-left-logo" src="" onerror="this.onerror=null">
+    </div>
+    <div class="mp-team-name" id="mp-left-name"></div>
+    <div class="mp-stats"><div class="mp-stats-inner">
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE DEALT</div>
+        <div class="mp-stat-value" id="mp-left-dmg">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE TAKEN</div>
+        <div class="mp-stat-value" id="mp-left-taken">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>CONTROL TIME</div>
+        <div class="mp-stat-value" id="mp-left-ctrl">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>GOLD</div>
+        <div class="mp-stat-value" id="mp-left-gold">--</div>
+      </div>
+    </div>
+    </div>
+  </div>
+  <div class="mid-panel" id="mid-right">
+    <div class="mp-logo-wrap">
+      <img class="mp-logo" id="mp-right-logo" src="" onerror="this.onerror=null">
+    </div>
+    <div class="mp-team-name" id="mp-right-name"></div>
+    <div class="mp-stats"><div class="mp-stats-inner">
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE DEALT</div>
+        <div class="mp-stat-value" id="mp-right-dmg">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>DAMAGE TAKEN</div>
+        <div class="mp-stat-value" id="mp-right-taken">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>CONTROL TIME</div>
+        <div class="mp-stat-value" id="mp-right-ctrl">--</div>
+      </div>
+      <div class="mp-stat-group">
+        <div class="mp-stat-title">TOTAL<br>GOLD</div>
+        <div class="mp-stat-value" id="mp-right-gold">--</div>
+      </div>
+    </div>
+    </div>
+  </div>
+
+  <!-- Left column: Players 1–5 -->
+  <div class="plate" id="plate-1">
+    <div class="_20900"    id="p1-gold">--</div>
+    <div class="KILL">KILL</div>
+    <div class="DEATH">DEATH</div>
+    <div class="ASSIST">ASSIST</div>
+    <div class="_kill-val"  id="p1-kills">--</div>
+    <div class="_death-val" id="p1-deaths">--</div>
+    <div class="_31"        id="p1-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p1-name">--</span></div>
+    <div class="damage-taken-label">DAMAGE TAKEN</div>
+    <div class="damage-taken-val" id="p1-dmg-taken">--</div>
+    <div class="ekg-zone-led">
+      <svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none">
+        <path id="p1-ekg-path" class="path-line" d=""/>
+      </svg>
+    </div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p1-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999"       id="p1-bpm"></div>
+    <div class="hero-icon" id="p1-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p1-death-timer"></div></div>
+    <div class="spell-icon" id="p1-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p1-hp-wrap">
+      <div class="hp-ghost" id="p1-hp-ghost" style="width:0"></div>
+      <div class="hp-fill"  id="p1-hp-fill"  style="width:0"></div>
+    </div>
+    <div class="level-circle" id="p1-level">
+      <svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/>
+        <circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6"
+          stroke-dasharray="163.36" stroke-dashoffset="163.36"
+          class="level-arc" id="p1-level-arc" transform="rotate(-90 29 29)"/>
+        <circle cx="29" cy="29" r="21" fill="white"/>
+        <text x="29" y="29" text-anchor="middle" dominant-baseline="central"
+          fill="#161616" font-family="Anton" font-size="28" id="p1-level-text"></text>
+      </svg>
+    </div>
+    <div class="role-icon"><img src="role/EXP LANER.png" alt=""></div>
+    <div class="item-slot" id="p1-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate" id="plate-2">
+    <div class="_20900" id="p2-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p2-kills">--</div>
+    <div class="_death-val" id="p2-deaths">--</div>
+    <div class="_31" id="p2-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p2-name">--</span></div>
+    <div class="damage-taken-label">GOLD PER MINUTE</div>
+    <div class="damage-taken-val" id="p2-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p2-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p2-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p2-bpm">--</div>
+    <div class="hero-icon" id="p2-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p2-death-timer"></div></div>
+    <div class="spell-icon" id="p2-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p2-hp-wrap"><div class="hp-ghost" id="p2-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p2-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p2-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p2-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p2-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/JUNGLER.png" alt=""></div>
+    <div class="item-slot" id="p2-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate" id="plate-3">
+    <div class="_20900" id="p3-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p3-kills">--</div>
+    <div class="_death-val" id="p3-deaths">--</div>
+    <div class="_31" id="p3-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p3-name">--</span></div>
+    <div class="damage-taken-label">DAMAGE DEALT</div>
+    <div class="damage-taken-val" id="p3-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p3-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p3-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p3-bpm">--</div>
+    <div class="hero-icon" id="p3-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p3-death-timer"></div></div>
+    <div class="spell-icon" id="p3-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p3-hp-wrap"><div class="hp-ghost" id="p3-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p3-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p3-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p3-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p3-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/MID LANER.png" alt=""></div>
+    <div class="item-slot" id="p3-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate" id="plate-4">
+    <div class="_20900" id="p4-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p4-kills">--</div>
+    <div class="_death-val" id="p4-deaths">--</div>
+    <div class="_31" id="p4-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p4-name">--</span></div>
+    <div class="damage-taken-label" id="p4-ctrl-label">CONTROL TIME</div>
+    <div class="damage-taken-val" id="p4-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p4-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p4-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p4-bpm">--</div>
+    <div class="hero-icon" id="p4-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p4-death-timer"></div></div>
+    <div class="spell-icon" id="p4-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p4-hp-wrap"><div class="hp-ghost" id="p4-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p4-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p4-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p4-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p4-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/ROAMER.png" alt=""></div>
+    <div class="item-slot" id="p4-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate" id="plate-5">
+    <div class="_20900" id="p5-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p5-kills">--</div>
+    <div class="_death-val" id="p5-deaths">--</div>
+    <div class="_31" id="p5-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p5-name">--</span></div>
+    <div class="damage-taken-label">GOLD PER MINUTE</div>
+    <div class="damage-taken-val" id="p5-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p5-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p5-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p5-bpm">--</div>
+    <div class="hero-icon" id="p5-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p5-death-timer"></div></div>
+    <div class="spell-icon" id="p5-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p5-hp-wrap"><div class="hp-ghost" id="p5-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p5-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p5-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p5-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p5-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/GOLD LANER.png" alt=""></div>
+    <div class="item-slot" id="p5-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+
+  <!-- Right column: Players 6–10 -->
+  <div class="plate camp2" id="plate-6">
+    <div class="_20900" id="p6-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p6-kills">--</div>
+    <div class="_death-val" id="p6-deaths">--</div>
+    <div class="_31" id="p6-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p6-name">--</span></div>
+    <div class="damage-taken-label">DAMAGE TAKEN</div>
+    <div class="damage-taken-val" id="p6-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p6-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p6-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p6-bpm">--</div>
+    <div class="hero-icon" id="p6-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p6-death-timer"></div></div>
+    <div class="spell-icon" id="p6-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p6-hp-wrap"><div class="hp-ghost" id="p6-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p6-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p6-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p6-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p6-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/EXP LANER.png" alt=""></div>
+    <div class="item-slot" id="p6-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate camp2" id="plate-7">
+    <div class="_20900" id="p7-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p7-kills">--</div>
+    <div class="_death-val" id="p7-deaths">--</div>
+    <div class="_31" id="p7-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p7-name">--</span></div>
+    <div class="damage-taken-label">GOLD PER MINUTE</div>
+    <div class="damage-taken-val" id="p7-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p7-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p7-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p7-bpm">--</div>
+    <div class="hero-icon" id="p7-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p7-death-timer"></div></div>
+    <div class="spell-icon" id="p7-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p7-hp-wrap"><div class="hp-ghost" id="p7-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p7-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p7-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p7-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p7-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/JUNGLER.png" alt=""></div>
+    <div class="item-slot" id="p7-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate camp2" id="plate-8">
+    <div class="_20900" id="p8-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p8-kills">--</div>
+    <div class="_death-val" id="p8-deaths">--</div>
+    <div class="_31" id="p8-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p8-name">--</span></div>
+    <div class="damage-taken-label">DAMAGE DEALT</div>
+    <div class="damage-taken-val" id="p8-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p8-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p8-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p8-bpm">--</div>
+    <div class="hero-icon" id="p8-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p8-death-timer"></div></div>
+    <div class="spell-icon" id="p8-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p8-hp-wrap"><div class="hp-ghost" id="p8-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p8-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p8-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p8-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p8-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/MID LANER.png" alt=""></div>
+    <div class="item-slot" id="p8-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate camp2" id="plate-9">
+    <div class="_20900" id="p9-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p9-kills">--</div>
+    <div class="_death-val" id="p9-deaths">--</div>
+    <div class="_31" id="p9-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p9-name">--</span></div>
+    <div class="damage-taken-label" id="p9-ctrl-label">CONTROL TIME</div>
+    <div class="damage-taken-val" id="p9-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p9-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p9-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p9-bpm">--</div>
+    <div class="hero-icon" id="p9-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p9-death-timer"></div></div>
+    <div class="spell-icon" id="p9-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p9-hp-wrap"><div class="hp-ghost" id="p9-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p9-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p9-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p9-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p9-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/ROAMER.png" alt=""></div>
+    <div class="item-slot" id="p9-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+  <div class="plate camp2" id="plate-10">
+    <div class="_20900" id="p10-gold">--</div>
+    <div class="KILL">KILL</div><div class="DEATH">DEATH</div><div class="ASSIST">ASSIST</div>
+    <div class="_kill-val" id="p10-kills">--</div>
+    <div class="_death-val" id="p10-deaths">--</div>
+    <div class="_31" id="p10-assists">--</div>
+    <div class="SUPERMARCO"><span class="name-inner" id="p10-name">--</span></div>
+    <div class="damage-taken-label">GOLD PER MINUTE</div>
+    <div class="damage-taken-val" id="p10-dmg-taken">--</div>
+    <div class="ekg-zone-led"><svg width="100%" height="28" viewBox="0 0 400 28" preserveAspectRatio="none"><path id="p10-ekg-path" class="path-line" d=""/></svg></div>
+    <div class="heart-bpm"><svg viewBox="0 0 32 29.6" width="20" height="20"><path id="p10-heart-path" fill="rgb(255,1,1)" d="M16 29.6C16 29.6 0 19 0 9.4A9.4 9.4 0 0 1 16 3.5 9.4 9.4 0 0 1 32 9.4C32 19 16 29.6 16 29.6Z"/></svg></div>
+    <div class="_999" id="p10-bpm">--</div>
+    <div class="hero-icon" id="p10-hero"><img src="" alt="" onerror="this.style.display='none'"><div class="death-timer" id="p10-death-timer"></div></div>
+    <div class="spell-icon" id="p10-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
+    <div class="hp-bar-wrap" id="p10-hp-wrap"><div class="hp-ghost" id="p10-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p10-hp-fill" style="width:255px"></div></div>
+    <div class="level-circle" id="p10-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p10-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p10-level-text">1</text></svg></div>
+    <div class="role-icon"><img src="role/GOLD LANER.png" alt=""></div>
+    <div class="item-slot" id="p10-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+  </div>
+
+
+  <div id="led-reel-window">
+  <!-- Feature 1: Team HP Bar -->
+  <div id="feature-teamhp">
+    <span class="thp-label-top" id="thp-label-left">TEAM HEALTH</span>
+    <div class="thp-track" id="thp-track-left">
+      <div class="thp-ghost" id="thp-ghost-left"></div>
+      <div class="thp-fill" id="thp-fill-left"><div class="thp-fill-in" id="thp-fillin-left"></div><div class="thp-edge"></div></div>
+      <div class="thp-ticks"></div>
+      <div class="thp-flash" id="thp-flash-left"></div>
+    </div>
+    <div class="thp-pct" id="thp-pct-left">100%</div>
+    <span class="thp-label-top" id="thp-label-right">TEAM HEALTH</span>
+    <div class="thp-track" id="thp-track-right">
+      <div class="thp-ghost" id="thp-ghost-right"></div>
+      <div class="thp-fill" id="thp-fill-right"><div class="thp-fill-in" id="thp-fillin-right"></div><div class="thp-edge"></div></div>
+      <div class="thp-ticks"></div>
+      <div class="thp-flash" id="thp-flash-right"></div>
+    </div>
+    <div class="thp-pct" id="thp-pct-right">100%</div>
+  </div>
+
+  <!-- Feature 2: Win Probability -->
+  <div id="feature-winrate">
+    <div class="wpr-label-wrap" id="wpr-label-left">
+      <span class="wpr-label-win">WIN</span>
+      <span class="wpr-label-prob">PROBABILITY</span>
+    </div>
+    <div class="wpr-track" id="wpr-track-left">
+      <div class="wpr-ghost" id="wpr-ghost-left"></div>
+      <div class="wpr-bar"   id="wpr-bar-left"></div>
+    </div>
+    <div class="wpr-pct" id="wpr-pct-left">50%</div>
+    <div class="wpr-label-wrap" id="wpr-label-right">
+      <span class="wpr-label-win">WIN</span>
+      <span class="wpr-label-prob">PROBABILITY</span>
+    </div>
+    <div class="wpr-track" id="wpr-track-right">
+      <div class="wpr-ghost" id="wpr-ghost-right"></div>
+      <div class="wpr-bar"   id="wpr-bar-right"></div>
+    </div>
+    <div class="wpr-pct" id="wpr-pct-right">50%</div>
+  </div>
+
+  <!-- Feature 3: Teamfight Damage -->
+  <div id="feature-teamfight">
+    <div class="tfd-label-wrap" id="tfd-label-left">
+      <span class="tfd-label-title">TEAM</span>
+      <span class="tfd-label-sub">FIGHT</span>
+    </div>
+    <div class="tfd-col tfd-left" id="tfd-col-left"></div>
+    <div class="tfd-label-wrap" id="tfd-label-right">
+      <span class="tfd-label-title">TEAM</span>
+      <span class="tfd-label-sub">FIGHT</span>
+    </div>
+    <div class="tfd-col tfd-right" id="tfd-col-right"></div>
+  </div>
+
+  <!-- Feature 4: Draft Predict -->
+  <div id="feature-draftpredict">
+    <div class="dp-col" id="dp-col-left">
+      <div class="dp-col-hdr">
+        <span class="dp-hdr-title">DRAFT</span>
+        <span class="dp-hdr-team" id="dp-team-left">PREDICT</span>
+        <span class="dp-hdr-type" id="dp-type-left"></span>
+      </div>
+      <div class="dp-fade-bot"></div>
+    </div>
+    <div class="dp-col" id="dp-col-right">
+      <div class="dp-col-hdr">
+        <span class="dp-hdr-title">DRAFT</span>
+        <span class="dp-hdr-team" id="dp-team-right">PREDICT</span>
+        <span class="dp-hdr-type" id="dp-type-right"></span>
+      </div>
+      <div class="dp-fade-bot"></div>
+    </div>
+  </div>
+
+
+  </div><!-- /led-reel-window -->
+</div>
+
+<!-- Debug panel — toggle with ` -->
+<div id="debug-panel">
+  <div class="dbg-title">Layout</div>
+  <div class="dbg-row">
+    <div class="dbg-btn active-home" id="btn-home" onclick="setSwap(false)">HOME</div>
+    <div class="dbg-btn"             id="btn-swap" onclick="setSwap(true)">SWAP</div>
+  </div>
+
+  <div class="dbg-title" style="margin-top:12px">Sub-Info URL</div>
+  <div class="dbg-row">
+    <input id="dbg-url-input" type="text" placeholder="Sub-info URL">
+    <div class="dbg-btn" onclick="applyLiveUrl()" style="flex:0 0 auto">Apply</div>
+  </div>
+
+  <div class="dbg-title" style="margin-top:10px">Server (BPM) URL</div>
+  <div class="dbg-row">
+    <input id="dbg-feed-input" type="text" placeholder="Feed URL">
+    <div class="dbg-btn" onclick="applyFeedUrl()" style="flex:0 0 auto">Apply</div>
+  </div>
+  <div id="dbg-status" style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:6px;word-break:break-all;">—</div>
+
+  <div class="dbg-row" style="margin-top:6px">
+    <div class="dbg-btn" onclick="updateLevelCircle(document.getElementById('p1-level-arc'),document.getElementById('p1-level-text'),14,33)" style="background:#001a33;color:#66aaff;border-color:#0055cc">Test Level (14 / 33%)</div>
+  </div>
+
+  <div class="dbg-title" style="margin-top:12px">HP Debug — P1</div>
+  <div class="dbg-row">
+    <div class="dbg-btn red" onclick="debugHP(0.05)">−5% HP</div>
+    <div class="dbg-btn red" onclick="debugHP(0.10)">−10% HP</div>
+  </div>
+  <div class="dbg-row">
+    <div class="dbg-btn red" onclick="debugHP(0.25)">−25% HP</div>
+    <div class="dbg-btn red" onclick="debugHP(0.50)">−50% HP</div>
+  </div>
+  <div class="dbg-row">
+    <div class="dbg-btn green" onclick="debugHPReset()">RESET HP</div>
+  </div>
+
+  <div class="dbg-title" style="margin-top:12px">Item Debug — P1</div>
+  <div class="dbg-row">
+    <div class="dbg-btn green"  onclick="debugAddItem()">+ Add Next Item</div>
+  </div>
+  <div class="dbg-row">
+    <div class="dbg-btn red"    onclick="debugClearItems()">Clear Items</div>
+  </div>
+  <div class="dbg-title" style="margin-top:12px">Death Timer Debug</div>
+  <div class="dbg-row">
+    <select id="dbg-death-plate" style="flex:1;padding:5px 6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#ccc;font-size:9px;font-family:monospace">
+      <option value="1">Plate 1</option><option value="2">Plate 2</option><option value="3">Plate 3</option>
+      <option value="4">Plate 4</option><option value="5">Plate 5</option><option value="6">Plate 6</option>
+      <option value="7">Plate 7</option><option value="8">Plate 8</option><option value="9">Plate 9</option>
+      <option value="10">Plate 10</option>
+    </select>
+    <input id="dbg-death-secs" type="number" value="10" min="1" max="60" style="width:48px;padding:5px 6px;background:#1a1a1a;border:1px solid #444;border-radius:4px;color:#ccc;font-size:9px;font-family:monospace">
+  </div>
+  <div class="dbg-row">
+    <div class="dbg-btn red"   onclick="debugDeath()">Kill (start timer)</div>
+    <div class="dbg-btn green" onclick="debugRevive()">Revive (clear)</div>
+  </div>
+  <div id="dbg-death-status" style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:4px;text-align:center">—</div>
+
+  <div class="dbg-hint">` to toggle</div>
+</div>
+
+<script src="html/js/led-events.js"></script>
+<script>
+  /* Same-origin: the server's own cached game data (follows the Settings API mode) and BPM feed. */
+  const DEFAULT_SUB_INFO_URL = '/api/gamedata-proxy';
+  const DEFAULT_FEED_URL     = '/feed';
+  const POLL_MS = 1000;
+
+  let liveSubInfoUrl = DEFAULT_SUB_INFO_URL;
+  let liveFeedUrl    = DEFAULT_FEED_URL;
+  document.getElementById('dbg-url-input').value  = liveSubInfoUrl;
+  document.getElementById('dbg-feed-input').value = liveFeedUrl;
+
+  function applyLiveUrl() {
+    const val = document.getElementById('dbg-url-input').value.trim();
+    if (val) liveSubInfoUrl = val;
+    pollSubInfo();
+  }
+
+  function applyFeedUrl() {
+    const val = document.getElementById('dbg-feed-input').value.trim();
+    if (val) liveFeedUrl = val;
+    pollFeed();
+  }
+
+  /* Write-if-changed text. Setting textContent replaces the text node and
+     dirties paint even with an identical string; the poll runs every second
+     for ~60 elements, so skip the no-ops. */
+  function setText(el, v) {
+    const s = String(v);
+    if (el._t !== s) { el._t = s; el.textContent = s; }
+  }
+
+  /* ── Swap state ── */
+  let isSwapped = false;
+
+  function setSwap(swap) {
+    const changed = swap !== isSwapped;
+    isSwapped = swap;
+    if (window.LedEvents) LedEvents.setSwapped(swap);
+    localStorage.setItem('ledSwap', swap ? '1' : '0');
+    document.getElementById('btn-home').className = swap ? 'dbg-btn'             : 'dbg-btn active-home';
+    document.getElementById('btn-swap').className = swap ? 'dbg-btn active-swap' : 'dbg-btn';
+    if (changed) {
+      for (let i = 1; i <= 5; i++) {
+        const l = ekgStates[i], r = ekgStates[i + 5];
+        if (!l || !r) continue;
+        [l.bpm,      r.bpm]      = [r.bpm,      l.bpm];
+        [l.connected,r.connected]= [r.connected, l.connected];
+        [l.points,   r.points]   = [r.points,    l.points];
+        [l.phase,    r.phase]    = [r.phase,      l.phase];
+        [l.scrollBuffer, r.scrollBuffer] = [r.scrollBuffer, l.scrollBuffer];
+      }
+      setEkgDisplay();
+    }
+    pollSubInfo();
+    pollFeed();
+  }
+
+  /* apply persisted swap state on load */
+  setSwap(localStorage.getItem('ledSwap') === '1');
+
+  /* ── SSE — remote HOME/SWAP via /led/home and /led/swap ── */
+  const sse = createOverlaySSE();
+  sse.addEventListener('led_side', e => {
+    try { const d = JSON.parse(e.data); setSwap(d.side === 'swap'); } catch {}
+  });
+  sse.addEventListener('theme', e => { try { applyTheme(JSON.parse(e.data).theme); } catch {} });
+
+  const HP_BAR_W = 255;
+
+  /* ── Player states (1–10) ── */
+  function makePlayerState(n) {
+    return {
+      n,
+      equipState: Array(6).fill('9999'),
+      barSide: n >= 6 ? 'right' : 'left',
+      itemSlots: [1,2,3,4,5,6].map(s => document.getElementById(`p${n}-item-${s}`)),
+      hpCurrent: 1.0,
+      hpGhost: 1.0,
+      ghostTimer: null,
+      maxHp: 1000,
+      hpFillEl:  document.getElementById(`p${n}-hp-fill`),
+      hpGhostEl: document.getElementById(`p${n}-hp-ghost`),
+      dead:            false,
+      deathAnchorGame: null,
+      deathAnchorWall: null,
+      deathDriftRate:  0,
+      prevDead:        false,
+      deathTimerEl:    document.getElementById(`p${n}-death-timer`),
+      heroIconEl:      document.getElementById(`p${n}-hero`),
+    };
+  }
+  const playerStates = Array.from({length: 11}, (_, n) => n === 0 ? null : makePlayerState(n));
+
+  /* ── Item system ── */
+  /* Item logic — pop animation only (same as ingame_blue/ingame_red). */
+  function updateItems(p, equipList) {
+    const newState = [];
+    for (let i = 0; i < 6; i++) {
+      const item = equipList && equipList[i];
+      const val  = item ? item.value : 9999;
+      newState.push((!val || val === 9999) ? '9999' : String(val));
+    }
+    if (newState.join(',') === p.equipState.join(',')) return;
+    newState.forEach((newId, i) => {
+      if (newId === p.equipState[i]) return;
+      const imgEl = p.itemSlots[i].querySelector('img');
+      imgEl.dataset.itemId = newId;
+      imgEl.src = newId === '9999' ? 'items/99999.png' : `items/${newId}.png`;
+      imgEl.onerror = () => { imgEl.src = 'items/99999.png'; };
+      if (newId !== '9999') {
+        imgEl.classList.remove('item-pop');
+        void imgEl.offsetWidth;
+        imgEl.classList.add('item-pop');
+        setTimeout(() => imgEl.classList.remove('item-pop'), 500);
+      }
+    });
+    p.equipState = newState;
+  }
+
+  /* ── Helpers ── */
+  function squeezeName(innerEl, maxPx) {
+    innerEl.style.transform = '';
+    const w = innerEl.scrollWidth;
+    if (w > maxPx) {
+      innerEl.style.transformOrigin = 'center center';
+      innerEl.style.transform = `scaleX(${maxPx / w})`;
+    }
+  }
+
+  const LEVEL_CIRC = 163.36; /* 2π * r=26 */
+  function updateLevelCircle(arcEl, textEl, level, percent) {
+    setText(textEl, level ?? '--');
+    const off = String(LEVEL_CIRC * (1 - Math.max(0, Math.min(100, percent ?? 0)) / 100));
+    if (arcEl._o !== off) { arcEl._o = off; arcEl.setAttribute('stroke-dashoffset', off); }
+  }
+
+  function setHP(state, curHp, maxHp) {
+    if (!state.hpFillEl || maxHp <= 0) return;
+    const newFrac = Math.max(0, Math.min(1, curHp / maxHp));
+    if (Math.abs(newFrac - state.hpCurrent) <= 0.001 && state.maxHp === maxHp && state.hpInit) return;
+    state.hpInit = true;
+    if (newFrac < state.hpCurrent - 0.001) {
+      state.hpGhost   = Math.max(state.hpGhost, state.hpCurrent);
+      state.hpCurrent = newFrac;
+      state.hpFillEl.style.transition  = 'none';
+      state.hpFillEl.style.width       = (newFrac * HP_BAR_W) + 'px';
+      state.hpGhostEl.style.transition = 'none';
+      state.hpGhostEl.style.width      = (state.hpGhost * HP_BAR_W) + 'px';
+      clearTimeout(state.ghostTimer);
+      state.ghostTimer = setTimeout(() => {
+        state.hpGhostEl.style.transition = 'width 0.45s ease-in';
+        state.hpGhostEl.style.width      = (state.hpCurrent * HP_BAR_W) + 'px';
+        state.hpGhost = state.hpCurrent;
+      }, 550);
+    } else {
+      state.hpCurrent = newFrac;
+      state.hpGhost   = newFrac;
+      clearTimeout(state.ghostTimer);
+      state.hpFillEl.style.transition  = 'none';
+      state.hpFillEl.style.width       = (newFrac * HP_BAR_W) + 'px';
+      state.hpGhostEl.style.transition = 'none';
+      state.hpGhostEl.style.width      = (newFrac * HP_BAR_W) + 'px';
+    }
+    state.maxHp = maxHp;
+  }
+
+  function getSeats(camp) {
+    return ['seat_1','seat_2','seat_3','seat_4','seat_5']
+      .map(k => camp[k])
+      .filter(s => s && !s.judger);
+  }
+
+  function findPlayer(campList, seatNum) {
+    const campId  = seatNum <= 5 ? 1 : 2;
+    const seatKey = seatNum <= 5 ? `seat_${seatNum}` : `seat_${seatNum - 5}`;
+    const camp    = campList.find(c => c.campid === campId);
+    return camp?.[seatKey] ?? null;
+  }
+
+  /* ── Per-plate special stat config ── */
+  const _ct = p => { const ms = p.control_time_ms; return ms != null ? (ms / 1000).toFixed(2) + 's' : '--'; };
+  const PLATE_STAT = [
+    null,
+    p => p.total_hurt          ?? '--',   // plate 1 — Damage Taken
+    p => p.extra_param?.gpm    ?? '--',   // plate 2 — Gold Per Minute
+    p => p.total_damage        ?? '--',   // plate 3 — Damage Dealt
+    _ct,                                  // plate 4 — Control Time
+    p => p.extra_param?.gpm    ?? '--',   // plate 5 — Gold Per Minute
+    p => p.total_hurt          ?? '--',   // plate 6 — Damage Taken
+    p => p.extra_param?.gpm    ?? '--',   // plate 7 — Gold Per Minute
+    p => p.total_damage        ?? '--',   // plate 8 — Damage Dealt
+    _ct,                                  // plate 9 — Control Time
+    p => p.extra_param?.gpm    ?? '--',   // plate 10 — Gold Per Minute
+  ];
+
+  /* ── Poll ── */
+  function applyPlayerData(n, player) {
+    const state = playerStates[n];
+    setText(document.getElementById(`p${n}-gold`),    player.gold       ?? '--');
+    setText(document.getElementById(`p${n}-kills`),   player.kill_num   ?? '--');
+    setText(document.getElementById(`p${n}-deaths`),  player.dead_num   ?? '--');
+    setText(document.getElementById(`p${n}-assists`), player.assist_num ?? '--');
+    if (n === 4 || n === 9) {
+      const ctrl = player.control_time_ms || 0;
+      const heal = player.total_heal || 0;
+      const lblEl = document.getElementById(`p${n}-ctrl-label`);
+      if (ctrl === 0 && heal > 0) {
+        if (lblEl) setText(lblEl, 'TOTAL HEALING');
+        setText(document.getElementById(`p${n}-dmg-taken`), heal);
+      } else {
+        if (lblEl) setText(lblEl, 'CONTROL TIME');
+        setText(document.getElementById(`p${n}-dmg-taken`), _ct(player));
+      }
+    } else {
+      setText(document.getElementById(`p${n}-dmg-taken`), PLATE_STAT[n]?.(player) ?? '--');
+    }
+
+    const nameEl = document.getElementById(`p${n}-name`);
+    const pName = String(player.name ?? '');
+    if (nameEl._t !== pName) { setText(nameEl, pName); squeezeName(nameEl, 190); }
+
+    updateItems(state, (player.equip_list || []).slice(0, 6));
+
+    const heroImg = document.getElementById(`p${n}-hero`).querySelector('img');
+    const heroSrc = `posthero/${player.heroid}_POST_HERO.png`;
+    if (heroImg.dataset.src !== heroSrc) { heroImg.dataset.src = heroSrc; heroImg.style.display = ''; heroImg.src = heroSrc; }
+
+    const spellImg = document.getElementById(`p${n}-spell`).querySelector('img');
+    const spellSrc = `assets/led/skill/${player.skillid}.png`;
+    if (spellImg.dataset.src !== spellSrc) { spellImg.dataset.src = spellSrc; spellImg.style.display = ''; spellImg.src = spellSrc; }
+
+    updateLevelCircle(
+      document.getElementById(`p${n}-level-arc`),
+      document.getElementById(`p${n}-level-text`),
+      player.level, player.level_percent
+    );
+
+    if (player.max_health_point) {
+      setHP(state, player.cur_health_point ?? state.maxHp, player.max_health_point);
+    }
+
+    /* ── Death timer anchor (smooth countdown) ── */
+    if (player.dead && player.revive_left_time > 0) {
+      const apiMs = player.revive_left_time * 1000;
+      const now   = Date.now();
+      if (state.deathAnchorGame === null) {
+        state.deathAnchorGame = apiMs;
+        state.deathAnchorWall = now;
+        state.deathDriftRate  = 0;
+      } else {
+        const elapsed = now - state.deathAnchorWall;
+        const localMs = state.deathAnchorGame - elapsed * (1 + state.deathDriftRate);
+        const drift   = localMs - apiMs;
+        if (Math.abs(drift) > 3000) {
+          state.deathAnchorGame = apiMs;
+          state.deathAnchorWall = now;
+          state.deathDriftRate  = 0;
+        } else {
+          state.deathDriftRate  = Math.max(-0.02, Math.min(0.02, drift / 1000));
+          state.deathAnchorGame = apiMs;
+          state.deathAnchorWall = now;
+        }
+      }
+      state.dead = true;
+    } else {
+      state.dead            = false;
+      state.deathAnchorGame = null;
+      state.deathAnchorWall = null;
+      state.deathDriftRate  = 0;
+    }
+  }
+
+  function dbgStatus(msg) {
+    const el = document.getElementById('dbg-status');
+    if (el) el.textContent = msg;
+  }
+
+  /* ── Mid panel team stats ── */
+  function fmtTeamStat(n) {
+    if (n <= 0) return '--';
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+    if (n >= 1000)    return (n / 1000).toFixed(1) + 'K';
+    return String(n);
+  }
+
+  const MPL_LOGO = 'assets/mpl2026logo.png';
+  function _updateMidPanel(side, campList, campId, fallback) {
+    const camp = campList.find(c => c.campid === campId);
+    if (!camp) return;
+
+    const players = ['seat_1','seat_2','seat_3','seat_4','seat_5']
+      .map(k => camp[k]).filter(Boolean);
+
+    const teamName = camp.team_simple_name || fallback;
+
+    const logoEl = document.getElementById(`mp-${side}-logo`);
+    if (logoEl) {
+      /* cache-bust.js rewrites img.src, so track the applied team in a dataset flag. */
+      if (logoEl.dataset.team !== teamName) {
+        logoEl.dataset.team = teamName;
+        logoEl.onerror = () => { logoEl.onerror = null; logoEl.src = MPL_LOGO; };
+        logoEl.src = `logos/${teamName}.png`;
+      }
+    }
+
+    const nameEl = document.getElementById(`mp-${side}-name`);
+    if (nameEl) setText(nameEl, teamName);
+
+    let totalDmg = 0, totalTaken = 0, totalCtrl = 0, totalGold = 0;
+    players.forEach(p => {
+      totalDmg   += p.total_damage    || 0;
+      totalTaken += p.total_hurt      || 0;
+      totalCtrl  += p.control_time_ms || 0;
+      totalGold  += p.gold            || 0;
+    });
+
+    const se = (id, val) => { const el = document.getElementById(id); if (el) setText(el, val); };
+    se(`mp-${side}-dmg`,   fmtTeamStat(totalDmg));
+    se(`mp-${side}-taken`, fmtTeamStat(totalTaken));
+    se(`mp-${side}-ctrl`,  totalCtrl > 0 ? (totalCtrl / 1000).toFixed(2) + 's' : '--');
+    se(`mp-${side}-gold`,  fmtTeamStat(totalGold));
+  }
+
+  function updateMidPanels(campList) {
+    _updateMidPanel('left',  campList, isSwapped ? 2 : 1, 'TLPH');
+    _updateMidPanel('right', campList, isSwapped ? 1 : 2, 'RORA');
+  }
+
+  let lastBattleId = null;
+
+  async function pollSubInfo() {
+    let json;
+    try {
+      const res = await fetch(liveSubInfoUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const text = await res.text();
+      json = JSON.parse(text.replace(/[\u00A0\u2028\u2029]/g, ' '));
+    } catch(e) {
+      dbgStatus(`fetch error: ${e.message}`);
+      return;
+    }
+    if (!json || json.code !== 0 || !json.data) {
+      dbgStatus(`bad response: code=${json?.code}`); return;
+    }
+
+    const battleId = json.data.battleid;
+    if (battleId && battleId !== lastBattleId) {
+      lastBattleId = battleId;
+      for (let n = 1; n <= 10; n++) {
+        const ps = playerStates[n];
+        if (!ps) continue;
+        ps.equipState = Array(6).fill('9999');
+        ps.itemSlots.forEach(slot => {
+          const img = slot.querySelector('img');
+          img.dataset.itemId = '9999';
+          img.src = 'items/99999.png';
+        });
+      }
+    }
+
+    const campList = json.data.camp_list;
+    if (!Array.isArray(campList)) { dbgStatus('camp_list missing'); return; }
+
+    for (let i = 1; i <= 5; i++) {
+      const leftSeat  = isSwapped ? i + 5 : i;
+      const rightSeat = isSwapped ? i     : i + 5;
+      const lp = findPlayer(campList, leftSeat);
+      const rp = findPlayer(campList, rightSeat);
+      if (lp) applyPlayerData(i,     lp);
+      if (rp) applyPlayerData(i + 5, rp);
+    }
+
+    updateMidPanels(campList);
+    if (window.LedEvents) LedEvents.onData(json.data);
+
+    const ref = findPlayer(campList, isSwapped ? 6 : 1);
+    dbgStatus(ref ? `ok — level=${ref.level} hp=${ref.cur_health_point}/${ref.max_health_point}` : 'seat_1 not found');
+  }
+
+  pollSubInfo();
+  setInterval(pollSubInfo, POLL_MS);
+
+  /* ── Debug ── */
+  function debugHP(reduction) {
+    const s = playerStates[1];
+    setHP(s, Math.max(0, (s.hpCurrent - reduction) * s.maxHp), s.maxHp);
+  }
+  function debugHPReset() {
+    const s = playerStates[1];
+    setHP(s, s.maxHp, s.maxHp);
+  }
+
+  const DBG_ITEMS         = [2302, 3105, 3101, 2101, 1104, 1103];
+  let dbgEquip = Array(6).fill({ value: 9999 });
+
+  function debugAddItem() {
+    const emptyIdx = dbgEquip.findIndex(item => item.value === 9999);
+    if (emptyIdx === -1) return;
+    dbgEquip = [...dbgEquip];
+    dbgEquip[emptyIdx] = { value: DBG_ITEMS[emptyIdx % DBG_ITEMS.length] };
+    updateItems(playerStates[1], dbgEquip);
+  }
+
+  function debugClearItems() {
+    dbgEquip = Array(6).fill({ value: 9999 });
+    updateItems(playerStates[1], dbgEquip);
+  }
+
+  /* ── Death timer debug ── */
+  let _deathDebugInterval = null;
+
+  function _dbgDeathStatus(msg) {
+    const el = document.getElementById('dbg-death-status');
+    if (el) el.textContent = msg;
+  }
+
+  function debugDeath() {
+    const n    = parseInt(document.getElementById('dbg-death-plate').value);
+    const secs = parseInt(document.getElementById('dbg-death-secs').value) || 10;
+    const s    = playerStates[n];
+    if (!s) return;
+
+    // Anchor the countdown now
+    s.dead            = true;
+    s.deathAnchorGame = secs * 1000;
+    s.deathAnchorWall = Date.now();
+    s.deathDriftRate  = 0;
+    _dbgDeathStatus(`P${n} dying — ${secs}s`);
+
+    // Simulate API ticks decrementing revive_left_time
+    clearInterval(_deathDebugInterval);
+    let remaining = secs;
+    _deathDebugInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(_deathDebugInterval);
+        debugRevive(n);
+        return;
+      }
+      // Re-apply smooth correction exactly as applyPlayerData would
+      const apiMs  = remaining * 1000;
+      const now    = Date.now();
+      const elapsed = now - s.deathAnchorWall;
+      const localMs = s.deathAnchorGame - elapsed * (1 + s.deathDriftRate);
+      const drift   = localMs - apiMs;
+      if (Math.abs(drift) > 3000) {
+        s.deathAnchorGame = apiMs; s.deathAnchorWall = now; s.deathDriftRate = 0;
+      } else {
+        s.deathDriftRate  = Math.max(-0.02, Math.min(0.02, drift / 1000));
+        s.deathAnchorGame = apiMs; s.deathAnchorWall = now;
+      }
+      _dbgDeathStatus(`P${n} dying — ${remaining}s (drift ${drift.toFixed(0)}ms)`);
+    }, 1000);
+  }
+
+  function debugRevive(n) {
+    n = n || parseInt(document.getElementById('dbg-death-plate').value);
+    const s = playerStates[n];
+    if (!s) return;
+    clearInterval(_deathDebugInterval);
+    s.dead = false; s.deathAnchorGame = null; s.deathAnchorWall = null; s.deathDriftRate = 0;
+    _dbgDeathStatus(`P${n} revived`);
+  }
+
+  /* ── EKG ── */
+  const EKG_FREQ  = 1.975;   /* samples per 1/60s; PATH_LEN halved, so same time span as before */
+  const EKG_LW    = 1.5;
+  const PATH_LEN  = 100;
+  const pathParts = new Array(PATH_LEN);
+
+  const ekgStates = Array.from({length: 11}, (_, n) => {
+    if (n === 0) return null;
+    return {
+      bpm: 90, connected: true,
+      phase: Math.random(),
+      points: Array(PATH_LEN).fill(14),
+      scrollBuffer: 0,
+      reversed: n >= 6,
+      pathEl:  document.getElementById(`p${n}-ekg-path`),
+      heartEl: document.getElementById(`p${n}-heart-path`),
+      valEl:   document.getElementById(`p${n}-bpm`),
+      lastStroke: null,
+    };
+  });
+  ekgStates.forEach(p => { if (p && p.pathEl) p.pathEl.setAttribute('stroke-width', EKG_LW); });
+
+  const bpmColorCache = {};
+  function bpmColor(bpm) {
+    const key = bpm | 0;
+    if (bpmColorCache[key]) return bpmColorCache[key];
+    const green  = { r:10,  g:146, b:0   };
+    const orange = { r:230, g:100, b:0   };
+    const red    = { r:210, g:0,   b:30  };
+    const t = Math.max(0, Math.min(1, (bpm - 60) / 60));
+    const a = t < 0.5 ? green  : orange;
+    const b = t < 0.5 ? orange : red;
+    const u = t < 0.5 ? t * 2  : (t - 0.5) * 2;
+    const result = `rgb(${Math.round(a.r+(b.r-a.r)*u)},${Math.round(a.g+(b.g-a.g)*u)},${Math.round(a.b+(b.b-a.b)*u)})`;
+    bpmColorCache[key] = result;
+    return result;
+  }
+
+  function getHeartY(phase, bpm) {
+    const b = 14;
+    if (bpm <= 0) return b;
+    if (phase > 0.10 && phase < 0.20)
+      return b - Math.sin((phase - 0.10) * 10 * Math.PI) * 3;
+    if (phase > 0.22 && phase < 0.30) {
+      const q = (phase - 0.22) / 0.08;
+      return b - Math.sin(q * 2 * Math.PI) * 13;
+    }
+    if (phase > 0.45 && phase < 0.65)
+      return b - Math.sin((phase - 0.45) * 5 * Math.PI) * 4;
+    return b;
+  }
+
+  function buildEkgPath(pts) {
+    pathParts[0] = `M 0 ${pts[0]}`;
+    const step = 400 / (PATH_LEN - 1);
+    for (let i = 1; i < PATH_LEN; i++)
+      pathParts[i] = `L ${(i * step).toFixed(1)} ${pts[i]}`;
+    return pathParts.join(' ');
+  }
+
+  function setEkgDisplay() {
+    for (let n = 1; n <= 10; n++) {
+      const p = ekgStates[n];
+      const active = p.bpm > 0 && p.connected;
+      const col = active ? bpmColor(p.bpm) : '#2a2a2a';
+      setText(p.valEl, active ? p.bpm : '--');
+      if (col !== p.lastStroke) {      // colour only changes with the BPM band; skip the rest of the writes
+        p.valEl.style.color = col;
+        p.heartEl.setAttribute('fill', col);
+        p.pathEl.setAttribute('stroke', col);
+        p.lastStroke = col;
+      }
+    }
+  }
+
+  let ekgLast = 0;
+  function animateEkg(ts) {
+    const dt = (ts - (ekgLast || ts)) / 1000;
+    ekgLast = ts;
+    for (let n = 1; n <= 10; n++) {
+      const p = ekgStates[n];
+      if (!p || !p.pathEl) continue;
+      const active = p.bpm > 0 && p.connected;
+      if (active) p.phase = (p.phase + (p.bpm / 60) * dt) % 1;
+      p.scrollBuffer += dt * 60 * EKG_FREQ;
+      while (p.scrollBuffer >= 1) {
+        const y = getHeartY(p.phase, active ? p.bpm : 0);
+        if (p.reversed) { p.points.unshift(y); p.points.pop(); }
+        else             { p.points.push(y);   p.points.shift(); }
+        p.scrollBuffer -= 1;
+      }
+      p.pathEl.setAttribute('d', buildEkgPath(p.points));
+      const col = active ? bpmColor(p.bpm) : '#2a2a2a';
+      if (col !== p.lastStroke) {
+        p.pathEl.setAttribute('stroke', col);
+        p.lastStroke = col;
+      }
+      let beat = 0;
+      if (active && p.phase >= 0.22 && p.phase <= 0.50)
+        beat = Math.pow(1 - (p.phase - 0.22) / 0.28, 4);
+      /* heart pulse: only touch the style when the (rounded) scale changed */
+      if (!p.heartSvg) p.heartSvg = p.heartEl && p.heartEl.closest('svg');
+      if (p.heartSvg) {
+        const sc = (1 + beat * 0.4).toFixed(2);
+        if (sc !== p.lastScale) { p.lastScale = sc; p.heartSvg.style.transform = `scale(${sc})`; }
+      }
+    }
+
+    /* ── Death timer render ── */
+    const now = Date.now();
+    for (let n = 1; n <= 10; n++) {
+      const ds = playerStates[n];
+      if (!ds || !ds.deathTimerEl || !ds.heroIconEl) continue;
+
+      let isDead = false;
+      if (ds.deathAnchorGame !== null) {
+        const revMs = ds.deathAnchorGame - (now - ds.deathAnchorWall) * (1 + ds.deathDriftRate);
+        if (revMs > 100) {
+          isDead = true;
+          const secs = Math.ceil(revMs / 1000);
+          if (ds.shownSecs !== secs) { ds.shownSecs = secs; ds.deathTimerEl.textContent = secs; }
+        }
+      }
+
+      if (isDead !== ds.prevDead) {
+        if (isDead) {
+          ds.heroIconEl.classList.add('dead');
+          ds.heroIconEl.classList.remove('reviving');
+          void ds.heroIconEl.offsetWidth;
+          ds.heroIconEl.classList.add('dying');
+          setTimeout(() => ds.heroIconEl.classList.remove('dying'), 650);
+        } else {
+          ds.heroIconEl.classList.remove('dying', 'dead');
+          void ds.heroIconEl.offsetWidth;
+          ds.heroIconEl.classList.add('reviving');
+          setTimeout(() => ds.heroIconEl.classList.remove('reviving'), 900);
+        }
+        ds.prevDead = isDead;
+        ds.deathTimerEl.classList.toggle('active', isDead);
+      }
+    }
+
+    requestAnimationFrame(animateEkg);
+  }
+  requestAnimationFrame(animateEkg);
+
+  async function pollFeed() {
+    try {
+      const res = await fetch(liveFeedUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error();
+      const feed = await res.json();
+      if (Array.isArray(feed)) {
+        for (let i = 1; i <= 10; i++) {
+          const entry = feed.find(e => e.slot === `player${i}`);
+          if (!entry) continue;
+          /* always assign to fixed plates — swap is handled by setSwap's in-place ekgStates swap */
+          const plateNum = i <= 5 ? i : (11 - i) + 5;  // camp2 reversed: 6→10, 7→9, 8→8, 9→7, 10→6
+          const ekg = ekgStates[plateNum];
+          if (!ekg) continue;
+          ekg.bpm       = parseInt(entry.bpm) || 0;
+          ekg.connected = entry.status === 'ok';
+        }
+        setEkgDisplay();
+      }
+    } catch {}
+  }
+  setEkgDisplay();
+  pollFeed();
+  setInterval(pollFeed, POLL_MS);
+
+  /* ── Debug panel toggle ── */
+  document.addEventListener('keydown', e => {
+    if (e.key === '`') {
+      document.getElementById('debug-panel').classList.toggle('visible');
+    }
+  });
+</script>
+</body>
+</html>

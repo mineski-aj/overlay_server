@@ -2901,6 +2901,60 @@
       ingameHrmControls: 'red',
     },
     {
+      id: 'led-overlay',
+      name: 'LED Overlay',
+      file: 'led_overlay.html',
+      previewSize: [2532, 1024],
+      /* Always-on browser source (2532x1024). Controls: HOME/SWAP + the four
+         mid-column panels (fire-and-forget SSE, routes/led.js) and per-event
+         arm/disarm for the plate events (feature toggles led_*, same
+         mechanism as mploverlay_v7's Item Pickup / Trinity / ...). */
+      extraActionsLabel: 'LED panels',
+      extraActions: [
+        { label: 'Side: HOME',            action: '/led/home' },
+        { label: 'Side: SWAP',            action: '/led/swap' },
+        { label: 'Team Health: Show',     action: '/led/healthshow' },
+        { label: 'Team Health: Hide',     action: '/led/healthhide' },
+        { label: 'Win Probability: Show', action: '/led/winshow' },
+        { label: 'Win Probability: Hide', action: '/led/winhide' },
+        { label: 'Team Fight: Show',      action: '/led/fightshow' },
+        { label: 'Team Fight: Hide',      action: '/led/fighthide' },
+        { label: 'Draft Predict: Show',   action: '/led/draftpredshow' },
+        { label: 'Draft Predict: Hide',   action: '/led/draftpredhide' },
+      ],
+      featureToggles: [
+        { name: 'First Item Priority', feature: 'led_items'   },
+        { name: 'Trinity',             feature: 'led_trinity' },
+        { name: 'Quick Swap',          feature: 'led_swap'    },
+        { name: 'Level 15',            feature: 'led_lvl15'   },
+        { name: 'Conceal',             feature: 'led_conceal' },
+      ],
+    },
+    {
+      id: 'led-draft',
+      name: 'LED Draft',
+      file: 'Led_draft.html',
+      previewSize: [2532, 1024],
+      ledDraftPhotoMode: true,   /* Player Photo Source: Live API / Placeholders (Led_draft only) */
+      /* Always-on 2532x1024 browser source: the LED layout with the two
+         1024 side containers replaced by draft cards (team header + the five
+         player slots from Draft.html). The mid-column panels are the same
+         ones LED Overlay has, so the same controls apply. */
+      extraActionsLabel: 'LED panels',
+      extraActions: [
+        { label: 'Side: HOME',            action: '/led/home' },
+        { label: 'Side: SWAP',            action: '/led/swap' },
+        { label: 'Team Health: Show',     action: '/led/healthshow' },
+        { label: 'Team Health: Hide',     action: '/led/healthhide' },
+        { label: 'Win Probability: Show', action: '/led/winshow' },
+        { label: 'Win Probability: Hide', action: '/led/winhide' },
+        { label: 'Team Fight: Show',      action: '/led/fightshow' },
+        { label: 'Team Fight: Hide',      action: '/led/fighthide' },
+        { label: 'Draft Predict: Show',   action: '/led/draftpredshow' },
+        { label: 'Draft Predict: Hide',   action: '/led/draftpredhide' },
+      ],
+    },
+    {
       id: 'bpm-status',
       name: 'BPM Status',
       url: '/bpm/status',
@@ -3110,11 +3164,14 @@
 
   function scalePreview() {
     var wrap = document.getElementById('preview-frame-wrap');
-    var scaleX = wrap.clientWidth  / 1920;
-    var scaleY = wrap.clientHeight / 1080;
-    var scale  = Math.min(scaleX, scaleY);
-    var scaledW = Math.round(1920 * scale);
-    var scaledH = Math.round(1080 * scale);
+    /* Most overlays are 1920x1080; an entry can override with previewSize: [w, h]. */
+    var size = (lastOverlay && lastOverlay.previewSize) || [1920, 1080];
+    var pw = size[0], ph = size[1];
+    previewIframe.style.width  = pw + 'px';
+    previewIframe.style.height = ph + 'px';
+    var scale  = Math.min(wrap.clientWidth / pw, wrap.clientHeight / ph);
+    var scaledW = Math.round(pw * scale);
+    var scaledH = Math.round(ph * scale);
     previewIframe.style.transform = 'scale(' + scale + ')';
     previewIframe.style.left = Math.round((wrap.clientWidth  - scaledW) / 2) + 'px';
     previewIframe.style.top  = Math.round((wrap.clientHeight - scaledH) / 2) + 'px';
@@ -3998,6 +4055,36 @@
     body.appendChild(row);
   }
 
+  /* ── LED Draft player photo source. Its own switch (routes/led.js
+     /led/draft-photo-mode) — NOT the shared Draft.html one above, so it can't
+     change what Draft.html shows. "Placeholders" gives every seat a fixed
+     stand-in photo regardless of the lineup the draft API reports. ── */
+  function buildLedDraftPhotoModeControl(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Player Photo Source'));
+
+    var row = el('div', 'btn-row');
+    var btnLive = el('button', 'btn btn-action', 'Live API');
+    var btnPh   = el('button', 'btn btn-action', 'Placeholders');
+
+    function applyStyle(mode) {
+      btnLive.style.cssText = mode === 'live'        ? 'background:#001a00;color:#0a9200;border-color:#0a9200;' : '';
+      btnPh.style.cssText   = mode === 'placeholder' ? 'background:#1a1200;color:#ffcc00;border-color:#ffcc00;' : '';
+    }
+    fetch('/led/draft-photo-mode', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (d) { applyStyle(d.mode || 'live'); }).catch(function () {});
+
+    btnLive.addEventListener('click', function () { applyStyle('live');        fetch('/led/draft-photo-mode/live').catch(function () {}); });
+    btnPh.addEventListener('click',   function () { applyStyle('placeholder'); fetch('/led/draft-photo-mode/placeholder').catch(function () {}); });
+
+    row.appendChild(btnLive);
+    row.appendChild(btnPh);
+    body.appendChild(row);
+    var note = el('div', '', 'Placeholders: each seat shows a fixed stand-in photo, ignoring the lineup from the draft API.');
+    note.style.cssText = 'font-size:11px;color:#8a8fa3;margin-top:4px;';
+    body.appendChild(note);
+  }
+
   /* ── MPL Full Screen playerboard photo source (same 'debugphotos' feature
      toggle underneath, styled the same as the Draft Overlay control above) ── */
   function buildDebugPhotosControl(body) {
@@ -4167,17 +4254,43 @@
            see html/Draft.html). dp3InvokePreview (declared just below,
            once this if(ov.deferredPreview) block closes) also backs the
            per-slot test grid right under this row. */
+        /* These tests normally touch only the preview iframe. "Also send to LED
+           Overlay" additionally fires the same test on the REAL LED page(s) via
+           the server (routes/led.js → led_draftpred SSE), so it is a deliberate,
+           visible, persisted opt-in — default on. dp3SendLed is also used by the
+           per-slot grid below. */
+        var DP3_LED_KEY = 'dp3_also_led';
+        var dp3AlsoLed = true;
+        try { var storedLed = localStorage.getItem(DP3_LED_KEY); if (storedLed !== null) dp3AlsoLed = storedLed === '1'; } catch (e) {}
+        var dp3SendLed = function (path) {
+          if (dp3AlsoLed) fetch(path, { cache: 'no-store' }).catch(function () {});
+        };
+
         if (ov.draftPredict3TestButton) {
           var dptb3 = document.createElement('button');
           dptb3.className = 'btn btn-action';
           dptb3.textContent = '▶ Test Draft Predict v3';
           dptb3.addEventListener('click', function () {
+            dp3SendLed('/led/draftpredtest-reveal');
             dp3InvokePreview(function () {
               var iw = previewIframe.contentWindow;
               if (iw && typeof iw.__dp3TestReveal === 'function') iw.__dp3TestReveal();
             });
           });
           row.appendChild(dptb3);
+
+          var dp3LedLabel = document.createElement('label');
+          dp3LedLabel.style.cssText = 'display:flex; align-items:center; gap:5px; font-size:11px; color:#8a8fa3; cursor:pointer;';
+          var dp3LedBox = document.createElement('input');
+          dp3LedBox.type = 'checkbox';
+          dp3LedBox.checked = dp3AlsoLed;
+          dp3LedBox.addEventListener('change', function () {
+            dp3AlsoLed = dp3LedBox.checked;
+            try { localStorage.setItem(DP3_LED_KEY, dp3AlsoLed ? '1' : '0'); } catch (e) {}
+          });
+          dp3LedLabel.appendChild(dp3LedBox);
+          dp3LedLabel.appendChild(document.createTextNode('Also send to LED Overlay (live)'));
+          row.appendChild(dp3LedLabel);
         }
       }
       body.appendChild(row);
@@ -4210,6 +4323,8 @@
         }
       };
       function dp3InvokePreviewForSlot(slotNum, action) {
+        /* action is 'show' | 'settle' — the LED route takes the same two modes */
+        dp3SendLed('/led/draftpredtest-slot?slot=' + encodeURIComponent(slotNum) + '&mode=' + encodeURIComponent(action));
         dp3InvokePreview(function () {
           var iw = previewIframe.contentWindow;
           if (iw && typeof iw.__dp3TestSlot === 'function') iw.__dp3TestSlot(slotNum, action);
@@ -4252,7 +4367,7 @@
         function dp3ApplyCollapsed() {
           dp3Body.style.display = dp3GridCollapsed ? 'none' : 'flex';
           dp3HeadingBtn.textContent = (dp3GridCollapsed ? '▸ ' : '▾ ') +
-            'DRAFT PREDICT V3 — SLOT TEST CONTROLS (uses live API data, Preview only)';
+            'DRAFT PREDICT V3 — SLOT TEST CONTROLS (live API data · preview + LED if ticked above)';
         }
         dp3HeadingBtn.addEventListener('click', function () {
           dp3GridCollapsed = !dp3GridCollapsed;
@@ -4693,6 +4808,11 @@
     /* Draft photo source toggle */
     if (ov.photoModeToggle) {
       buildDraftPhotoModeControl(body);
+    }
+
+    /* LED Draft player photo source (Live API / Placeholders) */
+    if (ov.ledDraftPhotoMode) {
+      buildLedDraftPhotoModeControl(body);
     }
 
     /* MPL Full Screen playerboard photo source toggle */

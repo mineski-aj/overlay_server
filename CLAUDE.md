@@ -61,6 +61,7 @@ caller expected, until the restart actually happened.
   `Draft.html`, `DraftIndex.html`, `mploverlay_v7.html`) goes through
   this — use `createOverlaySSE()` for any new page, never
   `new EventSource(...)` directly.
+- `html/DraftIndexV2.html` — Draft Index with player strips + hero reveal (see "Playoffs theme — working notes"). `html/js/hero-web.js` — WebP hero portraits with PNG fallback for `mplfs.html` / `mploverlay_v7.html`.
 - `html/js/theme-apply.js` — applies the global broadcast theme
   (Regular/10th Anniversary/Playoffs, Settings page picker) as
   `data-theme` on `<html>` for every broadcast-source page (see "Theme
@@ -228,6 +229,68 @@ behind), click the real Control-tab toggle button, and confirm a
 *separate* tab/page picks up the change — the Post 4 Key bug above
 looked fine under `curl` and only showed up when someone actually
 pressed the button in a real, already-open browser tab.
+
+## LED Overlay — `html/led_overlay.html` + `html/js/led-events.js`
+
+2532x1024 LED-wall page (10 player plates + two mid panels). Always-on
+browser source: Control tab entry `led-overlay` (`previewSize: [2532, 1024]`
+— `scalePreview()` honors a per-overlay size). Data comes same-origin:
+`/api/gamedata-proxy` (game data), `/feed` (BPM), `/api/winrate-probability`
+(proxy in `routes/proxy.js`), `/proxy/predictions`. HOME/SWAP is `led_side`
+via `/led/home|swap`.
+
+`led-events.js` (an IIFE — the page's inline script reuses global names)
+holds everything ported from the old standalone `led_events.html`:
+- **Plate events** (First Item Priority, Trinity, Quick Swap, Level 15,
+  Conceal) in the mploverlay_v7 "eventer" style (edge wipe-in card, label +
+  value, sheen, per-player queue). Armed/disarmed by their OWN feature keys
+  `led_items|led_trinity|led_swap|led_lvl15|led_conceal` (`state.featureToggles`
+  + `VALID_FEATURES` in `routes/overlay.js` + the entry's `featureToggles`)
+  so the LED wall is independent of v7's `items|trinity|…` flags. Previous
+  state is tracked per SEAT (not plate) so a HOME/SWAP flip can't fire
+  false events.
+- **Mid panels** Team Health / Win Probability / Team Fight / Draft Predict,
+  shown/hidden by `led_health|led_win|led_fight|led_draftpred` SSE events
+  (`routes/led.js`; buttons are `extraActions` on the dashboard entry).
+- **Draft Predict** runs Draft.html's **v3 engine** (`dp*` in `led-events.js`
+  mirrors `dp3*`): art from `candidates[].heroName` via `heronames.json`; picks/
+  bans read from the same `/proxy/predictions` response's `draftState` and
+  matched to prediction slots by elimination; active prediction derived from
+  draftState counts (not `currentSlot`); polls from page load (hidden or not)
+  so Show never replays history; shown state remembered server-side
+  (`state.checkOverlays.led_draftpred`, set by `/led/draftpredshow|hide`,
+  restored via `/overlay/check-overlays`). Not ported (Draft.html-only): the
+  plate gate and the AI rationale bubble.
+- Debug panel (`` ` ``) gets per-event / per-plate trigger buttons.
+The page feeds it via `LedEvents.onData(data)` / `LedEvents.setSwapped(bool)`.
+Not wired: Edit-tab positioning, Control-tab preview buttons.
+
+## LED Draft — `html/Led_draft.html`
+
+Duplicate of the LED Overlay shell (2532x1024, gold frames, mid-column panels
+incl. Draft Predict / Team Health via `led-events.js`) with the two 1024x1024
+side containers replaced by **draft cards**: per camp a 1000x1000 box at (12,12)
+= header 163 (logo · slanted tricode block · series-score bars) + transparent
+middle 564 + player row 273 (5 slots x 200). Colour follows the CAMP (blue =
+camp 1, red = camp 2); layout follows the SIDE (`.side-left/.side-right`,
+flipped by HOME/SWAP; the right side is the left mirrored, seat 1 on the outer
+edge). Data = Draft.html's feed (`/api/draft-url`, draft-info-only format,
+`normalizeDraftPayload`), `/match/state` for the bars, game feed for mid stats.
+Player slots port Draft.html's pipeline: FRONT photo idle → on the picking turn
+role icon pops + flies to the corner, PICKING anim, FRONT → VICTORY → on pick the
+`HERO_PICK_DRAFT_<id>.webm` matte-wipe reveal erases the photo, glow, and the
+hero-name strip pops up. Matte/PICKING videos are created lazily per slot.
+`assets/led/draft/picking*_alpha.webm` are alpha-baked copies of
+`assets/motion/picking*.webm` (black bg → real alpha) so the lettering stays solid
+on gold. The gold-stripe slot background is CSS (no asset existed). **Player photo source** is
+LED-Draft-only (`state.ledDraftPhotoMode`, `/led/draft-photo-mode[/:mode]`, SSE
+`led_draftpred` action `photo_mode`; dashboard: LED Draft card → Player Photo
+Source) — `live` matches seat names to photos, `placeholder` gives every seat a
+fixed stand-in (sorted photo pool, camp 1 → 0-4, camp 2 → 5-9) regardless of the
+draft API lineup. Deliberately NOT Draft.html's shared `/overlay/draft-photo-mode`. Debug panel
+(`` ` ``) has a draft sim that drives the same `applyDraft()` path. Not ported
+from Draft.html: ban plates, timer bar, status text, map bug, coach row, Draft
+Stats / buff badges (not in the LED design).
 
 ## ENTVC.html — the EN broadcast mirror of Waiting TVC/Lobby
 
@@ -1055,6 +1118,122 @@ added to the pairs list passed to `addPlayoffsSponsorEdit` in the
 stays its normal per-scene "Sponsor Box" row — only the internals are
 universal.
 
+### Playoffs theme — working notes (read before touching any playoffs scene)
+
+**Playoffs is allowed to be a full re-layout, per scene.** The "themes are purely
+cosmetic" rule above has a deliberate, user-stated exception here: the user
+supplies a reference image + an asset folder (`assets/<scene>/playoffs/`, or
+`photos/...`) and asks for a complete overhaul of that one scene under
+`data-theme="playoffs"` (new layout, forced match counts, new text fields…).
+Do it, scoped to `[data-theme="playoffs"]`; Regular and 10th Anniversary must
+stay exactly as they were. Behavior the user spells out (e.g. "playoffs always
+shows exactly 2 matches", "Tomorrow's shows 1 match when match 1 is GRAND
+FINALS") is intentional, not a bug.
+
+**Conventions that kept working**
+- Assets live in a `playoffs/` sub-folder with the **same filenames** as Regular.
+  Swap them with `content: url('/assets/<scene>/playoffs/x.png')` on a static
+  `<img>`, a `background-image` rule, or (JS-built art) a theme-picked directory
+  (see `gdcAssetDir` in `overlay-golddiffcheck.js`, `icAssetDir` in
+  `overlay-itemcheck.js`, `mbAsset()` in `mplfs.html`). Check the new file's
+  pixel size against the old one first — usually identical, so no layout change.
+- **Gold** = `#edc555` → `#d0a43e` (vertical gradient). Black text on gold/white
+  plates, white text on blue/red plates; remove any dark glow when text turns
+  black.
+- **Seed positions in the playoffs Edit bucket.** Regular's saved Edit-tab
+  overrides (`overlay_styles.json`, `!important`) are the per-selector fallback
+  for playoffs, so a playoffs `left/top/width/height` in plain CSS silently
+  loses. Seed `"<file>::playoffs"` (`mplfs::playoffs`, `Draft::playoffs`, …).
+  Symptom of forgetting: the CSS rule is correct but computed style shows the
+  Regular value (this cost a round trip on Draft's map icon/name).
+- Wiring a new playoffs asset into JS-built panels (v7 check panels, mpltag
+  Map Selection, Draft ban slots) reads `data-theme` **once at build time** —
+  a theme switch applies on the next reload there (same as Gold Diff Check).
+- Universal sponsor box: see the section above. Known exceptions: Consolidated
+  Post 2's `#cp2-sponsor` and the left box on `sponsors.html` use the standard
+  side-by-side layout (gold category plate + logo area), not the header strip.
+
+**Open / not provided yet (don't invent art)** — star-match scoreboard art
+(`ingamepng2_<SUFFIX>.png` in `assets/ingame/playoffs/`), the Side Selection
+card (`blueselect/redselect.png`) in mpltag, `mapdetail_v2.png` for Draft's
+expanded map panel, Draft's player plate backs / hero name banners / picking
+webms (Regular art still), playoffs Post H2H sponsor rework, ban-selection red
+glow and `bluepickbg1/redpickbg1.webm` in Draft (still blue/red), real playoffs
+team photos for `photos/Playoffs Sched/` (APBR, TWIS missing → placeholder).
+
+**Server restart still pending?** Two route edits only take effect after a
+restart, which needs the user's explicit OK: `routes/overlay.js` (schedule
+highlight cycle uses 2 matches under playoffs) and `routes/devapi.js`
+(`superfan_text` default + POST whitelist for the Dynamic-tab Superfan ticker).
+Ask whether they have restarted before assuming either works.
+
+**Scenes already reworked for playoffs (mplfs.html unless noted)** — MVP Scene,
+MVP Highlights, Team Hexagon, Today's / Tomorrow's Schedule (forced 2 rows,
+stage label + open-house fields on the Match Board, per-team photos
+`photos/Playoffs Sched/<TRI>_sched.png`, animated `GOLD BG W HOLDER` webm that
+plays only while shown), Waiting TVC (+ ENTVC mirror; corner HUD removed — it is
+baked into the looping webm now; SUPERFAN ticker driven by the Dynamic tab's own
+"Superfan Ticker" panel) and Waiting Lobby (mplfs only; player bottom feather),
+Team Line-Up Blue/Red (feather PNG, per-team `photos/groupbg_playoffs/` wordmarks),
+Bracket (background swaps to `playoffsbg_theme.webm` + sponsor fades while off its
+base pose), Final Team, Consolidated Post 2 (pages 1-3, gold stat tracks, page-3
+seam fix), Post Match Board VICTORY plaques; `mploverlay_v7` scoreboard /
+match-info (stage label from Match Board) / gold-diff / item / emblem / side-stat
+checks / player UI / event-pickup backgrounds; `Draft.html` (background, triangles,
+ban icon that fades out when a hero is banned, gold timer + pick glow, gradient-map
+Draft Stats, `#121212` role icons, map container); `DraftIndex.html`;
+`sponsors.html`, `sponsortv.html`, `ingame_blue/red.html`, `mpltag.html` Map Selection.
+
+**Things that bit us (check these first when something looks wrong)**
+- **Removing a CSS block with a script can leave orphan declarations.** A python
+  edit that deleted the selector line of the old HUD rules left its body behind;
+  the browser dropped the *next* rule (the SUPERFAN ticker's `position:absolute`)
+  and the ticker jumped to top-left. After any bulk CSS/markup removal, render
+  the scene and diff the neighbours — don't trust the syntax check (it only
+  parses JS).
+- **Apostrophes in asset paths** (`/assets/Today's Schedule/...`) break a path
+  placed inside an inline `onerror="...'...'"` attribute → write `%27`.
+- **Re-assigning an `<img src>` to a file that doesn't exist every poll** makes
+  it flicker (blank 404 → fallback → repeat every 3s). `sbSetImgWithFallback`
+  in `overlay-scoreboard.js` now remembers applied/missing URLs; any new
+  "try star art, fall back to plain art" code must do the same.
+- **cache-bust.js appends `?v=` to every image src**, so never compare
+  `img.src` to a literal; use a flag/dataset (see `mvSetImgWithFallback`,
+  `hero-web.js`).
+- **`transform` on a clipped parent doesn't change layout** — for scaled
+  groups (`#stv-matches`, mpltag Map Selection at 6-7 games) set the layout box
+  at native size and scale around a fixed origin.
+- **mpltag Map Selection scales down for games 6-7** (`applyMapselScale`,
+  origin 29px/1028px, 0.84 at 6, 0.72 at 7) because blocks sit side by side.
+- **Stat overlay "gradient map" in Draft Stats** is `backdrop-filter:
+  url(#po-gradmap)` (SVG feColorMatrix + feComponentTransfer). Works in Chromium
+  / Edge; if vMix's browser source ever fails to show it, fall back to a
+  `grayscale() sepia()` filter chain.
+- **Waiting Lobby edits stay mplfs-only**; Waiting TVC edits must be mirrored in
+  `ENTVC.html` (existing rule above) — hand-port, don't assume it shares CSS.
+
+**Hero art for the overlays**: `hero_web/HERO_<id>_KOTAK.webp` (512px, ~25KB)
+replaces the 1000px `hero/` PNGs in `mplfs.html` and `mploverlay_v7` via
+`html/js/hero-web.js` (`heroWebUrl(id)` + a capture-phase `error` listener that
+falls back to the PNG when a WebP is missing). **`Draft.html` deliberately keeps
+`hero/thumb/` (200px PNG)** for the whole page — fewer decoded pixels during the
+busy draft. Regenerate `hero/thumb` whenever a new hero is added or Draft falls
+back to the full 1000px PNG for it. Other pages (`mploverlay_v5/v6`, `fights.html`,
+`mpltag.html`, `arrangement-dashboard.html`) still use the PNGs.
+
+**`html/DraftIndexV2.html`** — copy of Draft Index with player strips + hero
+reveal. It listens to the **same** `draftindex` SSE event / `/overlay/draftindex-state`
+as `DraftIndex.html` (so the Draft Index Show/Hide drives whichever page is
+loaded; the dashboard's "Draft Index v2" entry has the same two routes). Its
+saved Edit-tab styles still come from the `DraftIndex` bucket. Strips are
+role-icon + name cells (EXP, JUNGLE, MID, ROAM, GOLD = seat_1..5), heroes are
+`posthero/<heroid>_POST_HERO.png` (226×130, shown at their natural 326×188, the
+rest of each card is a blurred copy so no gap shows over the camera feed), reveal
+2s after show, hold 4s, then the "windows close". `DV2_SHOW_CHROME` (top of its
+script) is **false** for now: the webm band and the blue/red container art are
+transparent; set it true to bring them back (then the webm plays only while shown).
+Heroes/strip contents never wait on phase 2's data.
+
 ### The dashboard's Edit tab is theme-scoped — a drag/resize under one theme never affects another
 
 `overlay_styles.json` (`routes/overlayStyles.js`, `GET`/`POST
@@ -1557,6 +1736,14 @@ yellow / red = success / warning / crucial.
 - Pages loaded with `?preview=1` report as `preview` (Control/Edit
   iframes); the Control-tab status shows Live and Preview separately so a
   preview click never looks like the real broadcast.
+
+## Extra verification tips learned on the playoffs work
+
+- **Preview mode renders real data.** `mplfs.html?preview=1` + `window.previewTrigger(event,'show')` (event = the SSE event name, e.g. `final_team`, `consolidated_post_2`, `today_schedule`) gives a safe render of a scene against the current debug game feed. `Draft.html?preview=1` works the same (`previewTrigger('draft','show')`). `DraftIndex*.html` has no preview mode — it restores from the real `/overlay/draftindex-state`, so a reload while the server says "active" comes up shown.
+- **mpltag.html**: `<script>` extraction by regex fails on a comment containing `<script` (false "Unexpected token '--'" — also fails on `HEAD`, ignore it). To drive its internals, slice the IIFE by `indexOf` and append `window.__t = {...}` before `restore(); connectSSE();`.
+- **Stubbing fetches for a test**: `Page.addScriptToEvaluateOnNewDocument` can replace `window.fetch` for specific URLs so a page doesn't restore real state.
+- **Jump straight to a scene's end state** by adding the CSS class the animation would add (`dstats-in`, `ft-reveal`…) instead of waiting out timers; capture crops with `Page.captureScreenshot` `clip` and upscale with PIL to judge alignment.
+- **Frame-time check** for "it stutters": a `requestAnimationFrame` gap logger over the whole sequence. Headless Edge showed no >40ms frames even when the user saw a hitch, so treat it as "no big main-thread stalls", not proof of smoothness in vMix.
 
 ## Verifying changes with a real browser, without a Playwright/puppeteer dependency
 
