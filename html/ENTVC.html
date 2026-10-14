@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/po-gold-text.js"></script>
   <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
   <title>ENTVC — Waiting TVC (EN)</title>
@@ -644,7 +645,7 @@
     [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
     [data-theme="playoffs"] #ws-header img {
       width: 924px; height: 158px;
-      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs_notext.png'); /* title is drawn gold by po-gold-text.js */
     }
     /* Chip text lives on the header art's own bar (art y 123–158): phase on
        the black part (white), DAY n on the gold part (dark). */
@@ -1010,6 +1011,7 @@
        WAITING SCREEN TVC
     ════════════════════════════════════════════════ */
     const wsPage  = document.getElementById('waiting-screen-page');
+    PoGoldText.imageHeader(document.getElementById('ws-header')); /* playoffs gold title — po-gold-text.js */
 
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';

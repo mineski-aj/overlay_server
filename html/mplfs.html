@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/po-gold-text.js"></script>
   <script src="html/js/hero-web.js"></script>
   <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
@@ -1539,7 +1540,7 @@
     [data-theme="playoffs"] #wl-header { left: 30px; top: 60px; width: 924px; height: 158px; }
     [data-theme="playoffs"] #wl-header img {
       width: 924px; height: 158px;
-      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs_notext.png'); /* title is drawn gold by po-gold-text.js */
     }
     [data-theme="playoffs"] #wl-week-label {
       left: 0; top: 123px; width: 735px; height: 35px;
@@ -4375,7 +4376,7 @@
     [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
     [data-theme="playoffs"] #ws-header img {
       width: 924px; height: 158px;
-      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs.png');
+      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs_notext.png'); /* title is drawn gold by po-gold-text.js */
     }
     /* Chip text lives on the header art's own bar (art y 123–158): phase on
        the black part (white), DAY n on the gold part (dark). */
@@ -9582,6 +9583,22 @@
       }
     }
     fitTitleText(document.getElementById('ts-title'), 80, 40);
+
+    /* Playoffs gold header text (po-gold-text.js; every layer is hidden under other themes). */
+    PoGoldText.imageHeader(document.getElementById('ws-header'));
+    PoGoldText.imageHeader(document.getElementById('wl-header'));
+    PoGoldText.textTitle(document.getElementById('ts-title'));
+    PoGoldText.textTitle(document.getElementById('tw-title'));
+    PoGoldText.textTitle(document.getElementById('hl-title'));
+    PoGoldText.textTitle(document.getElementById('hm-title'));
+
+    /* Playoffs corner-shapes overlay on top of the player photos (po-gold-text.js):
+       Waiting Lobby (above the photos z1/2, under the nameboxes z3 — DOM-ordered before them),
+       Team Line-Up blue/red (photos z2-5, nametags z20), MVP Scene (photo z12, UI z13+). */
+    PoShapes.attach(document.getElementById('waiting-lobby-page'), 3, document.querySelector('#waiting-lobby-page .wl-namebox-blue'));
+    PoShapes.attach(document.getElementById('team-lineup-blue-page'), 10);
+    PoShapes.attach(document.getElementById('team-lineup-red-page'), 10);
+    PoShapes.attach(document.getElementById('mvp-page'), 12, document.getElementById('mv-photo').nextSibling);
 
     /* Tomorrow's Schedule title is a sign-off line, not "Tomorrow's
        Matches" — it reads the CURRENT day from the Match Board: Day 3
