@@ -1080,6 +1080,18 @@ router.get('/overlay/cp2-page', (req, res) => {
   res.set({ 'Cache-Control': 'no-store' }).json({ page: state.cp2Page });
 });
 
+// GET /overlay/p2hpage/1 and /2 — flip Post H2H between its role stats (1)
+// and the gold-distribution page (2). GET /overlay/p2hpage (no arg) reads it.
+router.get('/overlay/p2hpage', (req, res) => {
+  res.set({ 'Cache-Control': 'no-store' }).json({ page: state.p2hPage });
+});
+router.get('/overlay/p2hpage/:page', (req, res) => {
+  const page = req.params.page === '2' ? 2 : 1;
+  state.p2hPage = page;
+  state.overlayClients.forEach(c => { try { c.write(`event: p2hpage\ndata: {"page":${page}}\n\n`); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, page });
+});
+
 // GET /overlay/cp2page/1, /2 and /3 — flip Consolidated Post 2 between
 // Runes/Items (1), Damage Dealt/Taken (2) and Average/Peak/Clash BPM (3),
 // scene-wide across all 10 rows.
@@ -1109,6 +1121,43 @@ router.get('/overlay/post4key/show', (req, res) => {
 router.get('/overlay/post4key/hide', (req, res) => {
   state.mplfsScene.activeFeature = null;
   state.overlayClients.forEach(c => { try { c.write('event: post4key\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/post_golddistri/show — Post Gold Distribution (mplfs.html).
+// Same board handling as post4key: matchboard shows, middle/player boards are
+// hidden client-side by transitionTo().
+router.get('/overlay/post_golddistri/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'golddistri';
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post_golddistri\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_golddistri/hide
+router.get('/overlay/post_golddistri/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_golddistri\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
+// GET /overlay/post_killevents/show — Post Kill Events (mplfs.html). Same board
+// handling as post4key / post_golddistri.
+router.get('/overlay/post_killevents/show', (req, res) => {
+  state.mplfsScene.matchboard = true;
+  state.mplfsScene.activeFeature = 'killevents';
+  state.overlayClients.forEach(c => {
+    try { c.write('event: post_killevents\ndata: {"action":"show"}\n\n'); } catch {}
+  });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+
+// GET /overlay/post_killevents/hide
+router.get('/overlay/post_killevents/hide', (req, res) => {
+  state.mplfsScene.activeFeature = null;
+  state.overlayClients.forEach(c => { try { c.write('event: post_killevents\ndata: {"action":"hide"}\n\n'); } catch {} });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 

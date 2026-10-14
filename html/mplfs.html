@@ -4489,6 +4489,185 @@
     #post4key-page.p4k-on { display: block; }
     #post4key-page.p4k-visible { opacity: 1; }
 
+
+    /* ════════════════════════════════════════════════
+       POST KILL EVENTS — objectives recap (TURTLE / LORD / TURRET / PURPLE /
+       ORANGE / LITHO, each: both teams' counts, a split bar, and the kill
+       times of each team) on the left, a large Kill Map on the right with
+       circular hero portraits as the kill markers. Header = the shared
+       Matchboard (compact layout, same board handling as Post 4 Key).
+       Objectives come from the Post-Info API's camp_list (counts + *_time_list
+       arrays; "purple" = blue_buff, "orange" = red_buff, "litho" = crab),
+       kills from this server's /events + /positions logs (same source and
+       game→map transform as Consolidated Post 2's Kill Map), map art =
+       assets/postkill/killmap.webp (consomap.png upscaled 4x with Magnific).
+    ════════════════════════════════════════════════ */
+    #pke-page {
+      --pke-blue: #1e64ff; --pke-red: #ff3232;
+      position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+      display: none; overflow: visible; background: transparent;
+      opacity: 0; transition: opacity 400ms ease;
+    }
+    #pke-page.pke-on { display: block; }
+    #pke-page.pke-visible { opacity: 1; }
+    [data-theme="10th_anniversary"] #pke-page { --pke-blue: #0195fc; --pke-red: #ff243e; }
+    #pke-left {
+      position: absolute; left: 60px; top: 176px; width: 900px; height: 852px;
+      background: rgba(255,255,255,0.9); border-radius: 14px;
+      box-shadow: inset 4px 0 0 var(--pke-blue), inset -4px 0 0 var(--pke-red), 0 6px 18px rgba(0,0,0,0.18);
+      font-family: 'General Sans', sans-serif; color: #0a0a0a;
+      opacity: 0; transform: translateX(-30px);
+      transition: opacity 450ms ease, transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    [data-theme="playoffs"] #pke-left { box-shadow: inset 4px 0 0 var(--pke-blue), inset -4px 0 0 var(--pke-red), inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
+    #pke-left.pke-in { opacity: 1; transform: translateX(0); }
+    .pke-head { position: absolute; left: 0; top: 14px; width: 100%; height: 40px; }
+    .pke-head .pke-tri { position: absolute; top: 0; height: 40px; line-height: 40px; font-family: 'Anton', sans-serif; font-size: 34px; letter-spacing: 0.02em; }
+    .pke-head .pke-tri-l { left: 26px; color: var(--pke-blue); }
+    .pke-head .pke-tri-r { right: 26px; color: var(--pke-red); }
+    .pke-head .pke-obj { position: absolute; left: 50%; top: 0; width: 240px; margin-left: -120px; height: 40px; line-height: 40px; text-align: center; font-weight: 800; font-size: 20px; letter-spacing: 0.14em; color: #3e4452; }
+    #pke-rows { position: absolute; left: 0; top: 66px; width: 100%; height: 770px; display: flex; flex-direction: column; justify-content: space-between; }
+    .pke-row { position: relative; width: 100%; flex: 0 0 auto; padding: 0 106px; box-sizing: border-box; text-align: center; }
+    .pke-lbl { height: 22px; line-height: 22px; font-weight: 800; font-size: 17px; letter-spacing: 0.12em; color: #3e4452; }
+    .pke-bar { position: relative; height: 24px; margin: 4px 0 6px; border-radius: 4px; overflow: hidden; display: flex; background: rgba(10,10,10,0.08); }
+    .pke-seg { display: block; height: 100%; width: 50%; transition: width 800ms cubic-bezier(0.22, 1, 0.36, 1); }
+    .pke-seg-l { background: var(--pke-blue); } .pke-seg-r { background: var(--pke-red); }
+    .pke-seg.pke-dim { opacity: 0.22; }
+    #pke-left:not(.pke-in) .pke-seg { width: 0 !important; }
+    .pke-cnt { position: absolute; top: 16px; width: 100px; height: 60px; line-height: 60px; font-family: 'Anton', sans-serif; font-size: 58px; }
+    .pke-cnt-l { left: 0; color: var(--pke-blue); } .pke-cnt-r { right: 0; color: var(--pke-red); }
+    .pke-cnt.pke-cnt-dim { opacity: 0.5; }
+    .pke-times { min-height: 25px; line-height: 25px; font-family: 'Anton', sans-serif; font-size: 22px; letter-spacing: 0.02em; }
+    .pke-times span { margin: 0 7px; white-space: nowrap; }
+    .pke-times-l { color: var(--pke-blue); } .pke-times-r { color: var(--pke-red); }
+
+    #pke-map {
+      position: absolute; left: 990px; top: 176px; width: 870px; height: 852px;
+      opacity: 0; transform: translateX(30px);
+      transition: opacity 450ms ease, transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    #pke-map.pke-in { opacity: 1; transform: translateX(0); }
+    .pke-map-title { position: absolute; left: 0; top: 0; width: 100%; height: 64px; display: flex; align-items: center; justify-content: center; gap: 14px;
+      font-family: 'Anton', sans-serif; font-size: 40px; letter-spacing: 0.04em; color: #0a0a0a; text-transform: uppercase; }
+    .pke-map-title img { width: 52px; height: 52px; object-fit: contain; }
+    .pke-board { position: absolute; left: 55px; top: 74px; width: 760px; height: 760px; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.25); background: #3a3f42; }
+    .pke-board > img.pke-map-img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+    #pke-kills { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+    .pke-kill {
+      position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; box-sizing: border-box;
+      border: 3px solid var(--pke-blue); background: #cfd3da center / cover no-repeat;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.55), 0 2px 5px rgba(0,0,0,0.45);
+      transform: scale(0); transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .pke-kill.pke-kill-red { border-color: var(--pke-red); }
+    #pke-map.pke-in .pke-kill { transform: scale(1); transition-delay: var(--kd, 0ms); }
+
+    /* ════════════════════════════════════════════════
+       POST GOLD DISTRIBUTION — five lane matchups (EXP / JUNGLE / MID /
+       ROAM / GOLD), blue camp 1 on the left of each column, red camp 2 on
+       the right: hero cards, names, GPM, total gold, then one split bar per
+       gold source. Header is the shared Matchboard (compact layout, same
+       board handling as Post 4 Key: middle/player boards off). Data = the
+       Post-Info API's hero_list[].gold_map (sector keys — same ones
+       mploverlay_v7's Side Gold Distri reads: 1 minions, 2 jungle creeps,
+       3 turtle+lord, 4 turrets, 5 roam equip, 6 kills+assists, 9 roam
+       vision), lane/role from the game feed by player name.
+    ════════════════════════════════════════════════ */
+    #pgd-page {
+      --pgd-blue: #1e64ff; --pgd-red: #ff3232;
+      position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+      display: none; overflow: visible;
+      background: transparent;
+      opacity: 0; transition: opacity 400ms ease;
+    }
+    #pgd-page.pgd-on { display: block; }
+    #pgd-page.pgd-visible { opacity: 1; }
+    [data-theme="10th_anniversary"] #pgd-page { --pgd-blue: #0195fc; --pgd-red: #ff243e; }
+    #pgd-cols {
+      position: absolute; left: 60px; top: 190px; width: 1800px; height: 840px;
+      display: flex; gap: 17px;
+    }
+    .pgd-col {
+      position: relative; flex: 0 0 auto; width: 347px; height: 840px;
+      background: rgba(255,255,255,0.9);
+      border-radius: 14px;
+      box-shadow: inset 4px 0 0 var(--pgd-blue), inset -4px 0 0 var(--pgd-red), 0 6px 18px rgba(0,0,0,0.18);
+      opacity: 0; transform: translateY(26px);
+      transition: opacity 400ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: 'General Sans', sans-serif; color: #0a0a0a;
+    }
+    .pgd-col.pgd-in { opacity: 1; transform: translateY(0); }
+    [data-theme="playoffs"] .pgd-col { box-shadow: inset 4px 0 0 var(--pgd-blue), inset -4px 0 0 var(--pgd-red), inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
+    .pgd-hero {
+      position: absolute; top: 18px; width: 112px; height: 148px; object-fit: cover; object-position: 50% 18%;
+      border-radius: 6px; background: #d9dce3;
+    }
+    .pgd-hero-l { left: 18px;  border: 2px solid var(--pgd-blue); }
+    .pgd-hero-r { right: 18px; border: 2px solid var(--pgd-red); }
+    /* role icon only, as large as the gap between the two hero cards allows, dark gold (the PNG is just the mask shape) */
+    .pgd-role {
+      position: absolute; left: 50%; top: 59px; width: 70px; height: 70px; margin-left: -35px;
+      background: #a87a12;
+      -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+      -webkit-mask-position: center; mask-position: center;
+    }
+    .pgd-name {
+      position: absolute; top: 174px; width: 112px; height: 28px; line-height: 28px;
+      display: flex; align-items: center; justify-content: center;   /* centred even if the text is wider than the box */
+      font-weight: 800; font-size: 17px; text-transform: uppercase; white-space: nowrap; transform-origin: center;
+      color: #0a0a0a; border-radius: 4px;
+      background: linear-gradient(to bottom, #edc555, #d0a43e);   /* same gold as the playoffs gold plates */
+    }
+    .pgd-name span { flex: none; white-space: nowrap; }
+    .pgd-name-l { left: 18px; }
+    .pgd-name-r { right: 18px; }
+    .pgd-gpm {
+      position: absolute; top: 216px; width: 126px; height: 28px; text-align: center; line-height: 28px; white-space: nowrap;
+    }
+    .pgd-gpm-l { left: 11px; color: var(--pgd-blue); }
+    .pgd-gpm-r { right: 11px; color: var(--pgd-red); }
+    .pgd-gpm b { font-family: 'Anton', sans-serif; font-weight: 400; font-size: 22px; letter-spacing: 0.01em; }
+    .pgd-gpm i { font-style: normal; font-weight: 700; font-size: 10px; margin-left: 4px; opacity: 0.8; }
+    .pgd-total {
+      position: absolute; left: 0; top: 260px; width: 100%; height: 40px;
+    }
+    .pgd-total .pgd-tv {
+      position: absolute; top: 0; width: 126px; height: 40px; line-height: 40px; text-align: center;
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 32px; letter-spacing: 0.01em;
+    }
+    .pgd-total .pgd-tv-l { left: 11px; color: var(--pgd-blue); }
+    .pgd-total .pgd-tv-r { right: 11px; color: var(--pgd-red); }
+    .pgd-total .pgd-tl {
+      position: absolute; left: 50%; top: 0; width: 70px; margin-left: -35px; height: 40px; line-height: 40px; text-align: center;
+      font-weight: 700; font-size: 11px; letter-spacing: 0.06em; color: #5b6270;
+    }
+    .pgd-rows { position: absolute; left: 14px; top: 314px; width: 319px; }
+    .pgd-row { position: relative; height: 74px; }
+    .pgd-row-top { position: relative; height: 38px; }
+    .pgd-row-top b {
+      position: absolute; top: 0; height: 38px; line-height: 38px; font-family: 'Anton', sans-serif; font-weight: 400;
+      font-size: 20px; letter-spacing: 0.01em; color: #0a0a0a;
+    }
+    .pgd-row-top b.pgd-v-l { left: 2px; } .pgd-row-top b.pgd-v-r { right: 2px; }
+    .pgd-row-top span {
+      position: absolute; left: 50%; top: 0; width: 136px; margin-left: -68px; height: 38px;
+      display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
+      font-weight: 700; font-size: 15px; line-height: 1.12; letter-spacing: 0.04em; color: #3e4452; text-transform: uppercase;
+    }
+    .pgd-bar { position: relative; height: 30px; border-radius: 4px; background: rgba(10,10,10,0.1); overflow: hidden; }
+    .pgd-fill {
+      position: absolute; top: 0; height: 100%; width: 0;
+      display: flex; align-items: center; justify-content: center;
+      transition: width 700ms cubic-bezier(0.22, 1, 0.36, 1);
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 19px; letter-spacing: 0.02em; color: #fff; white-space: nowrap;
+    }
+    .pgd-fill.pgd-f-blue { left: 0;  background: var(--pgd-blue); }
+    .pgd-fill.pgd-f-red  { right: 0; background: var(--pgd-red); }
+    .pgd-col.pgd-in .pgd-fill { width: var(--w, 0%); transition-delay: var(--d, 0ms); }
+    .pgd-fill.pgd-tie { display: none; }
+    .pgd-bar .pgd-tie-lbl { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; font-family: 'Anton', sans-serif; font-size: 19px; color: #5b6270; }
+    .pgd-bar.pgd-is-tie .pgd-tie-lbl { display: flex; }
+
     /* Deal-in: each card starts off-position (as if still in a dealer's
        hand below-center) and slides/rotates flat into place. --deal-dx/
        --deal-rot are per-card so the four converge toward one shared
@@ -5396,7 +5575,8 @@
       position: absolute; left: 960px; top: 192px; width: 309px; height: 54px;
       transform: translateX(-50%);
       background: #fff;
-      display: flex; align-items: center; justify-content: center; gap: 12px;
+      /* label + value share one text BASELINE (they are different sizes); wrap + align-content centres that line vertically */
+      display: flex; flex-wrap: wrap; align-content: center; align-items: baseline; justify-content: center; gap: 0 12px;
       font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 13px;
       color: #0a0a0a; text-transform: uppercase;
     }
@@ -5431,6 +5611,18 @@
     .p2h-row-2 { top: 180px; }
     .p2h-row-3 { top: 270px; }
     .p2h-row-4 { top: 360px; }
+    .p2h-row-5 { top: 450px; }
+    .p2h-row-6 { top: 540px; }
+    .p2h-row.p2h-row-off { display: none; }
+    /* Page 2 (gold distribution) with 7 rows (roamer: + ROAM EQUIP / ROAM VISION): tighter
+       row pitch, and the sponsor box drops below the longer stack with room to breathe. */
+    #p2h-page.p2h-dense .p2h-row-1 { top: 80px !important; }
+    #p2h-page.p2h-dense .p2h-row-2 { top: 160px !important; }
+    #p2h-page.p2h-dense .p2h-row-3 { top: 240px !important; }
+    #p2h-page.p2h-dense .p2h-row-4 { top: 320px !important; }
+    #p2h-page.p2h-dense .p2h-row-5 { top: 400px !important; }
+    #p2h-page.p2h-dense .p2h-row-6 { top: 480px !important; }
+    #p2h-page.p2h-dense #p2h-sponsor { top: 966px !important; }
     .p2h-row-label {
       position: absolute; left: 0; top: 0; width: 100%; height: 24px;
       display: flex; align-items: center; justify-content: center;
@@ -5524,6 +5716,11 @@
       transition: opacity 320ms ease, transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
       opacity: 1; transform: translateY(0);
     }
+    /* Page flip (p2hPageSwitch): only the middle column (title + stat rows) fades/drops out, swaps, and
+       fades back in; the player cards are never touched. The sponsor glides to its new y when the
+       7-row roamer layout kicks in/out. */
+    .p2h-mid.p2h-mid-in.p2h-swap-out { opacity: 0; transform: translateY(14px); transition: opacity 200ms ease, transform 200ms ease-in; }
+    #p2h-sponsor { transition: top 450ms cubic-bezier(0.16, 1, 0.3, 1); }
     .p2h-photobg {
       position: absolute; left: 0; top: 0; width: 485px; height: 672px;
       object-fit: cover; object-position: 50% 0%; display: block;
@@ -6336,6 +6533,22 @@
     </div>
 
     <div class="feature-card">
+      <div class="feature-card-label">Post Kill Events</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostKillEvents()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostKillEvents()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-killevents" onclick="toggleLocalPreview('killevents', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-card-label">Post Gold Distribution</div>
+      <div class="feature-card-btns">
+        <button class="dbg-btn show" onclick="showPostGoldDistri()">▶ SHOW</button>
+        <button class="dbg-btn hide" onclick="hidePostGoldDistri()">■ HIDE</button>
+        <button class="dbg-btn preview" id="preview-golddistri" onclick="toggleLocalPreview('golddistri', this)">◈ PREVIEW</button>
+      </div>
+    </div>
+    <div class="feature-card">
       <div class="feature-card-label">Post 4 Key</div>
       <div class="feature-card-btns">
         <button class="dbg-btn show" onclick="showPost4Key()">▶ SHOW</button>
@@ -6384,6 +6597,19 @@
     <video id="scene-video-1" loop muted playsinline preload="auto"></video>
     <!-- post_hearts containers injected by JS -->
     <div id="post-richguy-page"></div>
+    <div id="pke-page">
+      <div id="pke-left">
+        <div class="pke-head"><span class="pke-tri pke-tri-l" id="pke-tri-l"></span><span class="pke-obj">OBJECTIVES</span><span class="pke-tri pke-tri-r" id="pke-tri-r"></span></div>
+        <div id="pke-rows"></div>
+      </div>
+      <div id="pke-map">
+        <div class="pke-map-title"><img id="pke-map-icon" src="" alt="" onerror="this.style.display='none'"><span id="pke-map-name"></span></div>
+        <div class="pke-board"><img class="pke-map-img" src="/assets/postkill/killmap.webp" alt=""><div id="pke-kills"></div></div>
+      </div>
+    </div>
+    <div id="pgd-page">
+      <div id="pgd-cols"></div>
+    </div>
     <div id="post4key-page">
       <div id="p4k-card-1" class="p4k-card">
         <img class="p4k-bg" id="p4k-1-bg" alt="">
@@ -6928,6 +7154,22 @@
             <div class="p2h-bar-fill" id="p2h-row-4-fill"></div>
             <div class="p2h-value-home" id="p2h-row-4-home"></div>
             <div class="p2h-value-away" id="p2h-row-4-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-5 p2h-row-off" id="p2h-row-5">
+          <div class="p2h-row-label" id="p2h-row-5-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-5-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-5-home"></div>
+            <div class="p2h-value-away" id="p2h-row-5-away"></div>
+          </div>
+        </div>
+        <div class="p2h-row p2h-row-6 p2h-row-off" id="p2h-row-6">
+          <div class="p2h-row-label" id="p2h-row-6-label"></div>
+          <div class="p2h-bar-track">
+            <div class="p2h-bar-fill" id="p2h-row-6-fill"></div>
+            <div class="p2h-value-home" id="p2h-row-6-home"></div>
+            <div class="p2h-value-away" id="p2h-row-6-away"></div>
           </div>
         </div>
       </div>
@@ -7745,6 +7987,11 @@
       /* Dashboard's Post H2H Controls role selector — see p2hLiveRefresh
          below. */
       sseSource.addEventListener('h2h_config', () => { p2hLiveRefresh(); });
+      sseSource.addEventListener('p2hpage', (e) => {
+        const msg = JSON.parse(e.data);
+        p2hPageNum = msg.page === 2 ? 2 : 1;
+        p2hPageSwitch();
+      });
 
       sseSource.addEventListener('post_carry', (e) => {
         const msg = JSON.parse(e.data);
@@ -7778,6 +8025,22 @@
       sseSource.addEventListener('cp2page', (e) => {
         const msg = JSON.parse(e.data);
         applyCp2Page(msg.page, true);
+      });
+
+      sseSource.addEventListener('post_killevents', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostKillEvents, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
+      });
+
+      sseSource.addEventListener('post_golddistri', (e) => {
+        const msg = JSON.parse(e.data);
+        if (msg.action === 'show') {
+          document.getElementById('config-bar').classList.remove('debug-open');
+          setTimeout(showPostGoldDistri, 100);
+        } else if (msg.action === 'hide') hideActiveFeature();
       });
 
       sseSource.addEventListener('post4key', (e) => {
@@ -8569,6 +8832,8 @@
       consolidated_post: '/assets/bgloopwaves2.webm',
       consolidated_post_2: '/assets/bgloopwaves2.webm',
       post4key:   '/assets/bgloopwaves2.webm',
+      golddistri: '/assets/bgloopwaves2.webm',
+      killevents: '/assets/bgloopwaves2.webm',
       post_h2h:   '/assets/bgloopwaves2.webm',
       post_carry: '/assets/bgloopwaves2.webm',
       hearts:     '/assets/bgloopwaves2.webm',
@@ -8602,6 +8867,8 @@
         mvp:        '/assets/phase2_annivloopwavesnosun.webm',
         highlights: '/assets/phase2_annivloop.webm',
         post4key:   '/assets/phase2_annivloop.webm',
+        golddistri: '/assets/phase2_annivloopwavesnosun.webm',
+        killevents: '/assets/phase2_annivloopwavesnosun.webm',
         credits:    '/assets/phase2_annivloopwavesnosun.webm',
         post_carry: '/assets/phase2_annivloopwavesnosun.webm',
         heatmap:    '/assets/phase2_annivloopwavesnosun.webm',
@@ -13372,13 +13639,13 @@
        wanted at all (see showPostCarry/hidePostCarry, neither of which
        touch it), so it goes through the plain else branch below like
        heatmap/highlights/mvp do. */
-    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h']);
+    const POST_FEATURES = new Set(['hearts', 'timeline', 'emblems', 'items', 'stats', 'consolidated_post', 'consolidated_post_2', 'post4key', 'post_h2h', 'golddistri', 'killevents']);
 
     /* Post scenes that use Matchboard's shorter "compact" layout (camp
        boxes moved up 36px, tournament logo swapped for the smaller
        #mb-tournament-cp — see the .cp-compact CSS rules). Everything
        else in POST_FEATURES uses the regular, taller layout. */
-    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h']);
+    const COMPACT_MATCHBOARD_FEATURES = new Set(['consolidated_post', 'consolidated_post_2', 'post_h2h', 'golddistri', 'killevents']);
 
     /* Flips #match-board's .cp-compact class — but fades #mb-camp1/
        #mb-camp2/the tournament-logo pair out first when Matchboard is
@@ -13501,7 +13768,7 @@
           syncBoard('playerboard', false);
           hideMiddleBoard(); hidePlayerBoard();
         }
-        else if (newFeature === 'post4key' || newFeature === 'post_h2h') {
+        else if (newFeature === 'post4key' || newFeature === 'post_h2h' || newFeature === 'golddistri' || newFeature === 'killevents') {
           syncBoard('middleboard', false);
           syncBoard('playerboard', false);
           hideMiddleBoard(); hidePlayerBoard(); /* own full-bleed two-card layout + own header/sponsor loop already shown — and must actively turn these off in case they're still on from a prior Post scene */
@@ -13575,6 +13842,8 @@
       if (prev === 'consolidated_post') return hideConsolidatedPost();
       if (prev === 'consolidated_post_2') return hideConsolidatedPost2();
       if (prev === 'post4key') return hidePost4Key();
+      if (prev === 'golddistri') return hidePostGoldDistri();
+      if (prev === 'killevents') return hidePostKillEvents();
       if (prev === 'post_h2h') return hidePostH2H();
       if (prev === 'post_carry') return hidePostCarry();
       return Promise.resolve();
@@ -15104,6 +15373,382 @@
       }, 420));
     }
 
+
+    /* ════════════════════════════════════════════════
+       POST KILL EVENTS — see the CSS block above #pke-page.
+    ════════════════════════════════════════════════ */
+    /* purple = the API's blue_buff, orange = red_buff (same mapping as Consolidated
+       Post's cmb-purplebuff/redbuff rows), litho = crab. */
+    const PKE_ROWS = [
+      { label: 'TURTLE', num: 'kill_totoise',  times: 'kill_tortoise_time_list' },   /* "totoise" (sic) in the Post-Info API */
+      { label: 'LORD',   num: 'kill_lord',     times: 'kill_lord_time_list' },
+      { label: 'TURRET', num: 'kill_tower',    times: 'kill_tower_time_list' },
+      { label: 'PURPLE', num: 'blue_buff_num', times: 'blue_buff_time_list' },
+      { label: 'ORANGE', num: 'red_buff_num',  times: 'red_buff_time_list' },
+      { label: 'LITHO',  num: 'crab_kill_num', times: 'kill_crab_time_list' },
+    ];
+    let pkeVisible = false;
+    let pkeTimers  = [];
+
+    function pkeFmtTime(sec) {
+      sec = Math.max(0, Math.round(sec || 0));
+      return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0');
+    }
+
+    function pkeBuild() {
+      const rows = document.getElementById('pke-rows');
+      if (!rows) return;
+      PKE_ROWS.forEach((r, i) => {
+        const el = document.createElement('div');
+        el.className = 'pke-row';
+        el.innerHTML =
+          `<div class="pke-cnt pke-cnt-l" id="pke-${i}-cl"></div>` +
+          `<div class="pke-lbl">${r.label}</div>` +
+          `<div class="pke-bar"><i class="pke-seg pke-seg-l" id="pke-${i}-sl"></i><i class="pke-seg pke-seg-r" id="pke-${i}-sr"></i></div>` +
+          `<div class="pke-times pke-times-l" id="pke-${i}-tl"></div><div class="pke-times pke-times-r" id="pke-${i}-tr"></div>` +
+          `<div class="pke-cnt pke-cnt-r" id="pke-${i}-cr"></div>`;
+        rows.appendChild(el);
+      });
+    }
+    pkeBuild();
+
+    function pkeApplyObjectives(pi) {
+      const camps = pi.camp_list || [];
+      const c1 = camps.find(c => c.campid === 1), c2 = camps.find(c => c.campid === 2);
+      if (!c1 || !c2) return;
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+      set('pke-tri-l', (c1.team_simple_name || '').toUpperCase());
+      set('pke-tri-r', (c2.team_simple_name || '').toUpperCase());
+      PKE_ROWS.forEach((r, i) => {
+        const t1 = Array.isArray(c1[r.times]) ? c1[r.times] : [], t2 = Array.isArray(c2[r.times]) ? c2[r.times] : [];
+        const n1 = c1[r.num] != null ? c1[r.num] : t1.length, n2 = c2[r.num] != null ? c2[r.num] : t2.length;
+        set(`pke-${i}-cl`, n1); set(`pke-${i}-cr`, n2);
+        document.getElementById(`pke-${i}-tl`).innerHTML = t1.map(t => `<span>${pkeFmtTime(t)}</span>`).join('');
+        document.getElementById(`pke-${i}-tr`).innerHTML = t2.map(t => `<span>${pkeFmtTime(t)}</span>`).join('');
+        /* split bar: each side's share of the pair; the leader is bright, the trailing side dimmed (both dim on a tie) */
+        const sum = n1 + n2, lw = sum ? n1 / sum * 100 : 50;
+        const sl = document.getElementById(`pke-${i}-sl`), sr = document.getElementById(`pke-${i}-sr`);
+        sl.style.width = lw.toFixed(1) + '%'; sr.style.width = (100 - lw).toFixed(1) + '%';
+        sl.classList.toggle('pke-dim', n1 <= n2); sr.classList.toggle('pke-dim', n2 <= n1);
+        document.getElementById(`pke-${i}-cl`).classList.toggle('pke-cnt-dim', n1 === 0);
+        document.getElementById(`pke-${i}-cr`).classList.toggle('pke-cnt-dim', n2 === 0);
+      });
+    }
+
+    async function pkeApplyMap() {
+      try {
+        const [msR, mapSelR] = await Promise.all([
+          fetch(buildUrl('/match/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/mapselection/state'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const ms = msR || {};
+        /* same resolution as fetchCmbData: this game's own Map Selection slot, else the Match Board's map */
+        const gameNum = Math.max(1, (ms.game || 1) - 1);
+        const entry = mapSelR && Array.isArray(mapSelR.games) ? mapSelR.games[gameNum - 1] : null;
+        const isNone = ms.map === 'NONE' || (entry && entry.map === 'NONE');
+        const mapName = isNone ? '' : ((entry && entry.map) || ms.map || '');
+        const icon = document.getElementById('pke-map-icon');
+        icon.style.display = '';
+        icon.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
+        document.getElementById('pke-map-name').textContent = mapName.toUpperCase();
+      } catch {}
+    }
+
+    /* Kill markers: /events kills × /positions nearest tick → ckmGameToLocal (Consolidated Post 2's
+       exact transform, in its 205×211 space) → scaled to the big square map; icon = the killer's hero. */
+    async function pkeApplyKills(gd) {
+      const host = document.getElementById('pke-kills');
+      host.innerHTML = '';
+      try {
+        const [evR, posR] = await Promise.all([
+          fetch(buildUrl('/events'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/positions'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const kills = ((evR && evR.events) || []).filter(e => e.type === 'kill');
+        const posLog = (posR && posR.positions) || [];
+        if (!kills.length) return;
+        const byKey = {};
+        posLog.forEach(p => { (byKey[`${p.camp}-${p.seat}`] ||= []).push(p); });
+        Object.values(byKey).forEach(a => a.sort((x, y) => x.game_time_s - y.game_time_s));
+        const nearest = (camp, seat, t) => {
+          const arr = byKey[`${camp}-${seat}`];
+          if (!arr || !arr.length) return null;
+          let lo = 0, hi = arr.length - 1, best = arr[0];
+          while (lo <= hi) { const mid = (lo + hi) >> 1; if (arr[mid].game_time_s <= t) { best = arr[mid]; lo = mid + 1; } else hi = mid - 1; }
+          return best;
+        };
+        const heroOf = {};
+        ((gd && gd.camp_list) || []).forEach(c => ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].forEach((k, i) => {
+          if (c[k] && c[k].heroid) heroOf[`${c.campid}-${i + 1}`] = c[k].heroid;
+        }));
+        const B = { left: 0, top: 0, width: CKM_ORIG_W, height: CKM_ORIG_H };
+        const frag = document.createDocumentFragment();
+        let n = 0;
+        kills.sort((a, b) => a.time_s - b.time_s).forEach(k => {
+          const camp = k.camp === 'camp1' ? 1 : k.camp === 'camp2' ? 2 : null;
+          if (!camp) return;
+          const pos = nearest(camp, k.seat, k.time_s);
+          if (!pos || (pos.x === 0 && pos.y === 0)) return;
+          const l = ckmGameToLocal(pos.x, pos.y, B);
+          const d = document.createElement('div');
+          d.className = 'pke-kill' + (camp === 2 ? ' pke-kill-red' : '');
+          d.style.left = (l.x / CKM_ORIG_W * 100).toFixed(2) + '%';
+          d.style.top  = (l.y / CKM_ORIG_H * 100).toFixed(2) + '%';
+          d.style.setProperty('--kd', Math.min(1100, n * 22) + 'ms');
+          const hid = heroOf[`${camp}-${k.seat}`];
+          if (hid) d.style.backgroundImage = `url('${buildUrl('/' + heroWebUrl(hid))}')`;
+          frag.appendChild(d); n++;
+        });
+        host.appendChild(frag);
+      } catch {}
+    }
+
+    async function fetchPostKillEventsData() {
+      try {
+        const [piR, gdR] = await Promise.all([
+          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const pi = piR && (piR.data || piR);
+        if (pi && Array.isArray(pi.camp_list)) pkeApplyObjectives(pi);
+        await Promise.all([pkeApplyMap(), pkeApplyKills(gdR && gdR.data)]);
+      } catch {}
+    }
+
+    function pkePlay() {
+      pkeTimers.forEach(clearTimeout); pkeTimers = [];
+      const left = document.getElementById('pke-left'), map = document.getElementById('pke-map');
+      left.classList.remove('pke-in'); map.classList.remove('pke-in');
+      void left.offsetWidth;
+      pkeTimers.push(setTimeout(() => { if (pkeVisible) left.classList.add('pke-in'); }, 120));
+      pkeTimers.push(setTimeout(() => { if (pkeVisible) map.classList.add('pke-in'); }, 280));
+    }
+
+    async function showPostKillEvents() {
+      if (pkeVisible) return;
+      const page = document.getElementById('pke-page');
+      const dataPromise = fetchPostKillEventsData();
+      await transitionTo('killevents');
+      await dataPromise;
+      if (activeFeature !== 'killevents') return; /* superseded while awaiting data */
+      await preloadMedia(page.querySelectorAll('img'), 1800);
+      if (activeFeature !== 'killevents') return; /* superseded while preloading */
+      pkeVisible = true;
+      showSceneVideo('killevents');
+      page.classList.add('pke-on');
+      void page.offsetWidth;
+      page.classList.add('pke-visible');
+      pkePlay();
+    }
+
+    function hidePostKillEvents() {
+      if (!pkeVisible) return Promise.resolve();
+      pkeVisible = false;
+      pkeTimers.forEach(clearTimeout); pkeTimers = [];
+      const page = document.getElementById('pke-page');
+      page.classList.remove('pke-visible');
+      return new Promise(resolve => setTimeout(() => {
+        page.classList.remove('pke-on');
+        document.getElementById('pke-left').classList.remove('pke-in');
+        document.getElementById('pke-map').classList.remove('pke-in');
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
+    /* ════════════════════════════════════════════════
+       POST GOLD DISTRIBUTION — see the CSS block above #pgd-page.
+       Columns are built once (pgdBuild); fetchPostGoldDistriData() fills
+       them from /api/postinfo-proxy (hero_list[].gold_map) + the game feed
+       (lane by player name). campid 1 = blue/left, 2 = red/right.
+    ════════════════════════════════════════════════ */
+    const PGD_LANES = [
+      { role: 'exp_laner',  label: 'EXP LANE'  },
+      { role: 'jungler',    label: 'JUNGLE'    },
+      { role: 'mid_laner',  label: 'MID LANE'  },
+      { role: 'roamer',     label: 'ROAM'      },
+      { role: 'gold_laner', label: 'GOLD LANE' },
+    ];
+    /* gold_map sector keys — same ones overlay-sidegolddistricheck.js reads
+       (SGDC_STATS), in the order of the reference layout. The roamer's column
+       additionally shows ROAM EQUIP (5) and ROAM VISION (9). */
+    const PGD_BASE_ROWS  = [
+      { k: '1', l: 'MINIONS' }, { k: '2', l: 'JUNGLE\nCREEPS' }, { k: '3', l: 'TURTLE +\nLORD' },
+      { k: '4', l: 'TURRETS' }, { k: '6', l: 'KILLS +\nASSISTS' },
+    ];
+    const PGD_ROAM_ROWS  = [
+      { k: '1', l: 'MINIONS' }, { k: '2', l: 'JUNGLE\nCREEPS' }, { k: '3', l: 'TURTLE +\nLORD' },
+      { k: '4', l: 'TURRETS' }, { k: '5', l: 'ROAM EQUIP' }, { k: '6', l: 'KILLS +\nASSISTS' }, { k: '9', l: 'ROAM VISION' },
+    ];
+    let pgdVisible = false;
+    let pgdTimers  = [];
+
+    function pgdFmt(v) {
+      v = Math.round(v || 0);
+      return v >= 1000 ? (v / 1000).toFixed(1) + 'K' : String(v);
+    }
+
+    function pgdBuild() {
+      const root = document.getElementById('pgd-cols');
+      if (!root) return;
+      PGD_LANES.forEach((lane, i) => {
+        const rows = lane.role === 'roamer' ? PGD_ROAM_ROWS : PGD_BASE_ROWS;
+        const col = document.createElement('div');
+        col.className = 'pgd-col';
+        col.id = 'pgd-col-' + (i + 1);
+        col.innerHTML =
+          `<img class="pgd-hero pgd-hero-l" id="pgd-${i+1}-hero-l" src="" alt="" onerror="this.style.visibility='hidden'">` +
+          `<img class="pgd-hero pgd-hero-r" id="pgd-${i+1}-hero-r" src="" alt="" onerror="this.style.visibility='hidden'">` +
+          `<div class="pgd-role" style="-webkit-mask-image:url('/role/${encodeURIComponent(roleFile(lane.role))}.png');mask-image:url('/role/${encodeURIComponent(roleFile(lane.role))}.png')"></div>` +
+          `<div class="pgd-name pgd-name-l" id="pgd-${i+1}-name-l"><span></span></div><div class="pgd-name pgd-name-r" id="pgd-${i+1}-name-r"><span></span></div>` +
+          `<div class="pgd-gpm pgd-gpm-l" id="pgd-${i+1}-gpm-l"></div><div class="pgd-gpm pgd-gpm-r" id="pgd-${i+1}-gpm-r"></div>` +
+          `<div class="pgd-total"><div class="pgd-tv pgd-tv-l" id="pgd-${i+1}-total-l"></div><div class="pgd-tl">TOTAL</div><div class="pgd-tv pgd-tv-r" id="pgd-${i+1}-total-r"></div></div>` +
+          `<div class="pgd-rows">` + rows.map((r, j) =>
+            `<div class="pgd-row"><div class="pgd-row-top"><b class="pgd-v-l" id="pgd-${i+1}-${j}-vl"></b><span>${r.l}</span><b class="pgd-v-r" id="pgd-${i+1}-${j}-vr"></b></div>` +
+            `<div class="pgd-bar" id="pgd-${i+1}-${j}-bar"><div class="pgd-fill" id="pgd-${i+1}-${j}-fill" style="--d:${j * 70}ms"></div><div class="pgd-tie-lbl">+0</div></div></div>`
+          ).join('') + `</div>`;
+        root.appendChild(col);
+      });
+    }
+    pgdBuild();
+
+    /* Auto-scale long names to fit the gold box (the box keeps its size, the
+       text's font-size shrinks proportionally). Measured with canvas measureText, never DOM
+       layout — the scene is display:none when data arrives (see CLAUDE.md,
+       "Never size/fit content by measuring a possibly-hidden element"). */
+    let _pgdMeasureCtx = null;
+    const PGD_NAME_BOX_W = 112, PGD_NAME_PAD = 22;
+    function pgdFitName(el) {
+      const t = el.firstElementChild;
+      if (!t) return;
+      if (!_pgdMeasureCtx) _pgdMeasureCtx = document.createElement('canvas').getContext('2d');
+      _pgdMeasureCtx.font = "800 17px 'General Sans'";
+      const w = _pgdMeasureCtx.measureText((t.textContent || '').toUpperCase()).width;
+      const avail = PGD_NAME_BOX_W - PGD_NAME_PAD;
+      /* uniform shrink (font-size), not a horizontal squeeze */
+      t.style.fontSize = w > avail ? (17 * avail / w).toFixed(2) + 'px' : '';
+    }
+    function pgdFitAllNames() { document.querySelectorAll('#pgd-cols .pgd-name').forEach(pgdFitName); }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(pgdFitAllNames);
+
+    /* info = { lanes: [ { l: player|null, r: player|null } x5 ] }, player =
+       { name, heroid, total, gpm, gm } */
+    function pgdApply(info) {
+      info.lanes.forEach((lane, idx) => {
+        const i = idx + 1;
+        const rows = PGD_LANES[idx].role === 'roamer' ? PGD_ROAM_ROWS : PGD_BASE_ROWS;
+        ['l', 'r'].forEach(side => {
+          const p = lane[side];
+          const hero = document.getElementById(`pgd-${i}-hero-${side}`);
+          hero.style.visibility = '';
+          hero.src = (p && p.heroid) ? buildUrl('/' + heroWebUrl(p.heroid)) : '';
+          document.getElementById(`pgd-${i}-name-${side}`).firstElementChild.textContent = p ? (p.name || '') : '';
+          pgdFitName(document.getElementById(`pgd-${i}-name-${side}`));
+          document.getElementById(`pgd-${i}-gpm-${side}`).innerHTML = p ? `<b>${Math.round(p.gpm || 0)}</b><i>GPM</i>` : '';
+          document.getElementById(`pgd-${i}-total-${side}`).textContent = p ? pgdFmt(p.total) : '';
+        });
+        rows.forEach((r, j) => {
+          const lv = lane.l ? (lane.l.gm[r.k] || 0) : 0, rv = lane.r ? (lane.r.gm[r.k] || 0) : 0;
+          document.getElementById(`pgd-${i}-${j}-vl`).textContent = pgdFmt(lv);
+          document.getElementById(`pgd-${i}-${j}-vr`).textContent = pgdFmt(rv);
+          const bar = document.getElementById(`pgd-${i}-${j}-bar`), fill = document.getElementById(`pgd-${i}-${j}-fill`);
+          const sum = lv + rv, diff = Math.abs(lv - rv);
+          bar.classList.toggle('pgd-is-tie', diff === 0);
+          fill.classList.toggle('pgd-tie', diff === 0);
+          if (diff === 0) { fill.style.setProperty('--w', '0%'); fill.textContent = ''; return; }
+          const leftLeads = lv > rv;
+          fill.classList.toggle('pgd-f-blue', leftLeads);
+          fill.classList.toggle('pgd-f-red', !leftLeads);
+          fill.style.setProperty('--w', (Math.max(lv, rv) / sum * 100).toFixed(1) + '%');   /* leader's share of the pair, from the leader's own side */
+          fill.textContent = '+' + pgdFmt(diff);
+        });
+      });
+    }
+
+    async function fetchPostGoldDistriData() {
+      try {
+        const [piR, gdR] = await Promise.all([
+          fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+          fetch(buildUrl('/api/gamedata-proxy'), { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+        ]);
+        const pi = piR && (piR.data || piR);
+        if (!pi || !Array.isArray(pi.hero_list)) return;
+        const minutes = Math.max(1, (pi.game_time || 0) / 60);
+
+        /* lane per player name from the game feed (seat.role); seat order is the fallback */
+        const roleByName = {};
+        const gd = gdR && gdR.data;
+        if (gd) (gd.camp_list || []).forEach(camp => {
+          ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].forEach((k, si) => {
+            const st = camp[k];
+            if (st && st.name) roleByName[String(st.name).toLowerCase()] = PGD_LANES.findIndex(l => l.role === st.role) >= 0
+              ? PGD_LANES.findIndex(l => l.role === st.role) : si;
+          });
+        });
+
+        const lanes = PGD_LANES.map(() => ({ l: null, r: null }));
+        const leftover = { 1: [], 2: [] };
+        pi.hero_list.filter(h => h && (h.campid === 1 || h.campid === 2) && !h.judger).forEach(h => {
+          const player = {
+            name: h.name, heroid: h.heroid, total: h.total_money || 0,
+            gpm: (h.total_money || 0) / minutes, gm: h.gold_map || {},
+          };
+          const li = roleByName[String(h.name || '').toLowerCase()];
+          const side = h.campid === 1 ? 'l' : 'r';
+          if (li != null && li >= 0 && !lanes[li][side]) lanes[li][side] = player;
+          else leftover[h.campid].push(player);
+        });
+        /* anyone the game feed couldn't place fills the remaining lanes in order */
+        [1, 2].forEach(c => {
+          const side = c === 1 ? 'l' : 'r';
+          leftover[c].forEach(pl => { const slot = lanes.find(L => !L[side]); if (slot) slot[side] = pl; });
+        });
+        pgdApply({ lanes });
+      } catch {}
+    }
+
+    function pgdPlay() {
+      pgdTimers.forEach(clearTimeout); pgdTimers = [];
+      const cols = document.querySelectorAll('#pgd-cols .pgd-col');
+      cols.forEach(c => { c.classList.remove('pgd-in'); c.style.transitionDelay = ''; });
+      void document.getElementById('pgd-cols').offsetWidth;
+      cols.forEach((c, i) => {
+        pgdTimers.push(setTimeout(() => { if (pgdVisible) c.classList.add('pgd-in'); }, 120 + i * 110));
+      });
+    }
+
+    async function showPostGoldDistri() {
+      if (pgdVisible) return;
+      const page = document.getElementById('pgd-page');
+      const dataPromise = fetchPostGoldDistriData();
+      await transitionTo('golddistri');
+      await dataPromise;
+      if (activeFeature !== 'golddistri') return; /* superseded while awaiting data */
+      await preloadMedia(page.querySelectorAll('img'), 1500);
+      if (activeFeature !== 'golddistri') return; /* superseded while preloading */
+      pgdVisible = true;
+      showSceneVideo('golddistri');
+      page.classList.add('pgd-on');
+      void page.offsetWidth;
+      pgdFitAllNames();   /* re-fit now that fonts are surely loaded */
+      page.classList.add('pgd-visible');
+      pgdPlay();
+    }
+
+    function hidePostGoldDistri() {
+      if (!pgdVisible) return Promise.resolve();
+      pgdVisible = false;
+      pgdTimers.forEach(clearTimeout); pgdTimers = [];
+      const page = document.getElementById('pgd-page');
+      page.classList.remove('pgd-visible');
+      return new Promise(resolve => setTimeout(() => {
+        page.classList.remove('pgd-on');
+        document.querySelectorAll('#pgd-cols .pgd-col').forEach(c => c.classList.remove('pgd-in'));
+        hideSceneVideo();
+        resolve();
+      }, 420));
+    }
+
     /* ════════════════════════════════════════════════
        POST HEATMAP — thermal player-movement map + a single focused
        player's card. Migrated from the standalone mlbb_heatmap.html
@@ -16065,18 +16710,25 @@
       }, midDelay);
     }
 
-    function p2hApply(cfg, gameData, matchState) {
+    function p2hApply(cfg, gameData, matchState, postInfo, midOnly) {   /* midOnly: page flip — leave header, game time and both player cards alone */
       const role = (cfg && cfg.role) || 'gold_laner';
+      const isGoldPage = p2hPageNum === 2;
 
       /* Same "just-finished game" fix as Consolidated Post 2's #cmb-game-label
          (see fetchMiddleBoardData / cmb-board above) — matchState.game is the
          live/current game number, already advanced by the time this recap
          is shown, so subtract 1. */
       const p2hGameNum = Math.max(1, ((matchState && matchState.game) || 1) - 1);
-      document.getElementById('p2h-header').textContent =
+      if (!midOnly) document.getElementById('p2h-header').textContent =
         'MATCH ' + ((matchState && matchState.match) || 1) + ' - GAME ' + p2hGameNum;
-      document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
-      document.getElementById('p2h-title').textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + ' HEAD TO HEAD';
+      if (!midOnly) document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
+      const p2hTitleEl = document.getElementById('p2h-title');
+      p2hTitleEl.textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + (isGoldPage ? ' GOLD DISTRIBUTION' : ' HEAD TO HEAD');
+      /* long page-2 title: shrink the font to fit the room between the two cards (canvas-measured — scene may be hidden) */
+      if (isGoldPage) {
+        const w = annivTextWidth(p2hTitleEl.textContent.toUpperCase(), "900 44px 'General Sans'");
+        p2hTitleEl.style.fontSize = w > 740 ? (44 * 740 / w).toFixed(1) + 'px' : '';
+      } else p2hTitleEl.style.fontSize = '';
 
       const camps  = (gameData && gameData.camp_list) || [];
       const camp1  = camps.find(c => c.campid === 1) || null; /* home/blue/left */
@@ -16087,14 +16739,27 @@
       const teamHomeSeats = extractSeats(camp1);
       const teamAwaySeats = extractSeats(camp2);
 
-      p2hApplyCard('home', seatHome, camp1);
-      p2hApplyCard('away', seatAway, camp2);
+      if (!midOnly) {
+        p2hApplyCard('home', seatHome, camp1);
+        p2hApplyCard('away', seatAway, camp2);
+      }
 
-      const stats = H2H_ROLE_STATS[role] || H2H_ROLE_STATS.gold_laner;
+      let stats, goldMapHome = null, goldMapAway = null;
+      if (isGoldPage) {
+        const defs = role === 'roamer' ? P2H_GOLD_ROWS_ROAM : P2H_GOLD_ROWS;
+        goldMapHome = p2hGoldMap(postInfo, seatHome && { ...seatHome, campid: 1 });
+        goldMapAway = p2hGoldMap(postInfo, seatAway && { ...seatAway, campid: 2 });
+        stats = defs.map(d => ({ label: d.label, fmt: p2hFmtGoldSector,
+          get: (s, team, side) => ((side === 'home' ? goldMapHome : goldMapAway) || {})[d.key] || 0 }));
+      } else {
+        stats = H2H_ROLE_STATS[role] || H2H_ROLE_STATS.gold_laner;
+      }
+      p2hPage.classList.toggle('p2h-dense', isGoldPage && stats.length > 5);
+      for (let i = 0; i < 7; i++) document.getElementById('p2h-row-' + i).classList.toggle('p2h-row-off', i >= stats.length);
       const rows = [];
       stats.forEach((stat, i) => {
-        const homeRaw = seatHome ? stat.get(seatHome, teamHomeSeats) : null;
-        const awayRaw = seatAway ? stat.get(seatAway, teamAwaySeats) : null;
+        const homeRaw = seatHome ? stat.get(seatHome, teamHomeSeats, 'home') : null;
+        const awayRaw = seatAway ? stat.get(seatAway, teamAwaySeats, 'away') : null;
         const homeNum = typeof homeRaw === 'number' ? homeRaw : 0;
         const awayNum = typeof awayRaw === 'number' ? awayRaw : 0;
         const totalNum = homeNum + awayNum;
@@ -16146,6 +16811,46 @@
     const p2hSponsorLoop = makeSponsorLoop('p2h-sponsor-img', 'p2h-sponsor-cat');
 
     let p2hVisible = false;
+    let p2hPageNum = 1;   /* 1 = role stats, 2 = gold distribution (SSE 'p2hpage', routes/overlay.js) */
+
+    /* Page 2 — gold distribution from the Post-Info API's hero_list[].gold_map (same sector keys as
+       Post Gold Distribution / v7's Side Gold Distri). The roamer additionally gets ROAM EQUIP (5) and
+       ROAM VISION (9), making 7 rows (see .p2h-dense). */
+    function p2hFmtGoldSector(v) {
+      v = Math.round(v || 0);
+      return v >= 1000 ? (v / 1000).toFixed(1) + 'k' : String(v);
+    }
+    const P2H_GOLD_ROWS = [
+      { label: 'Minions',          key: '1' },
+      { label: 'Jungle Creeps',    key: '2' },
+      { label: 'Turtle + Lord',    key: '3' },
+      { label: 'Turrets',          key: '4' },
+      { label: 'Kills + Assists',  key: '6' },
+    ];
+    const P2H_GOLD_ROWS_ROAM = [
+      { label: 'Minions',          key: '1' },
+      { label: 'Jungle Creeps',    key: '2' },
+      { label: 'Turtle + Lord',    key: '3' },
+      { label: 'Turrets',          key: '4' },
+      { label: 'Roam Equip',       key: '5' },
+      { label: 'Kills + Assists',  key: '6' },
+      { label: 'Roam Vision',      key: '9' },
+    ];
+    async function fetchH2HPostInfo() {
+      try {
+        const r = await fetch(buildUrl('/api/postinfo-proxy'), { cache: 'no-store' });
+        if (!r.ok) return null;
+        const j = await r.json();
+        return (j && (j.data || j)) || null;
+      } catch { return null; }
+    }
+    function p2hGoldMap(postInfo, seat) {
+      if (!postInfo || !Array.isArray(postInfo.hero_list) || !seat) return null;
+      const name = String(seat.name || '').toLowerCase();
+      const h = postInfo.hero_list.find(x => String(x.name || '').toLowerCase() === name)
+             || postInfo.hero_list.find(x => x.heroid === seat.heroid && x.campid === seat.campid);
+      return h ? (h.gold_map || {}) : null;
+    }
 
     async function showPostH2H() {
       const cfgPromise = fetchH2HConfig();
@@ -16154,6 +16859,8 @@
       // cp-compact is handled by transitionToImpl's setMatchBoardCompact
       // (see showConsolidatedPost) — nothing to do here.
       await transitionTo('post_h2h');
+      p2hPageNum = 1;   /* every show starts on page 1 (like Consolidated Post 2) */
+      if (!isPreviewFrame) fetch(buildUrl('/overlay/p2hpage/1')).catch(() => {});   /* keep server state in sync — never from the preview iframe (it broadcasts) */
       const [cfg, gameData, matchState] = await Promise.all([cfgPromise, gdPromise, msPromise]);
       if (activeFeature !== 'post_h2h') return; /* superseded while awaiting data */
       /* Fill the matchboard from data we already have, instead of leaving
@@ -16167,7 +16874,7 @@
          were already in flight before transitionTo even started, so
          applying them now beats that redundant fetch to the punch. */
       applyMatchBoardData(gameData, matchState);
-      const rows = p2hApply(cfg, gameData, matchState);
+      const rows = p2hApply(cfg, gameData, matchState, null);
       /* 900ms, not 1500 — matches Consolidated Post/Post 2's own budget for
          equivalent per-player photo/hero/item art, which is what makes
          those feel snappy transitioning in; 1500 was pure MVP-Scene-style
@@ -16210,6 +16917,23 @@
       }, 420));
     }
 
+    /* Page 1 <-> 2 flip: fade the title + stat rows out, swap their content, fade back in and grow the
+       bars. Header, game time and the player cards are untouched (p2hApply midOnly). */
+    let p2hSwitchToken = 0;
+    async function p2hPageSwitch() {
+      if (!p2hVisible) return;
+      const tok = ++p2hSwitchToken;
+      const mids = [document.getElementById('p2h-title'), p2hPage.querySelector('.p2h-stats')];
+      mids.forEach(el => el.classList.add('p2h-swap-out'));
+      const dataP = Promise.all([fetchH2HConfig(), fetchH2HGameData(), fetchH2HMatchState(), p2hPageNum === 2 ? fetchH2HPostInfo() : Promise.resolve(null)]);
+      const [[cfg, gameData, matchState, postInfo]] = await Promise.all([dataP, new Promise(r => setTimeout(r, 230))]);
+      if (tok !== p2hSwitchToken) return;   /* a newer flip took over */
+      if (!p2hVisible || activeFeature !== 'post_h2h') { mids.forEach(el => el.classList.remove('p2h-swap-out')); return; }
+      const rows = p2hApply(cfg, gameData, matchState, postInfo, true);
+      mids.forEach(el => el.classList.remove('p2h-swap-out'));
+      setTimeout(() => { if (p2hVisible && tok === p2hSwitchToken) p2hAnimateBars(rows); }, 140);
+    }
+
     /* Dashboard's Post H2H Controls role selector hits /api/h2h-config,
        which broadcasts 'h2h_config' — if this tab is the one actually
        showing the scene right now, pull the new role in immediately
@@ -16217,9 +16941,9 @@
        hmLiveRefresh above. */
     async function p2hLiveRefresh() {
       if (!p2hVisible) return;
-      const [cfg, gameData, matchState] = await Promise.all([fetchH2HConfig(), fetchH2HGameData(), fetchH2HMatchState()]);
+      const [cfg, gameData, matchState, postInfo] = await Promise.all([fetchH2HConfig(), fetchH2HGameData(), fetchH2HMatchState(), p2hPageNum === 2 ? fetchH2HPostInfo() : Promise.resolve(null)]);
       if (!p2hVisible || activeFeature !== 'post_h2h') return;
-      const rows = p2hApply(cfg, gameData, matchState);
+      const rows = p2hApply(cfg, gameData, matchState, postInfo);
       p2hAnimateBars(rows);
     }
 
@@ -17782,6 +18506,8 @@
           else if (scene.activeFeature === 'consolidated_post') showConsolidatedPost();
           else if (scene.activeFeature === 'consolidated_post_2') showConsolidatedPost2();
           else if (scene.activeFeature === 'post4key') showPost4Key();
+          else if (scene.activeFeature === 'golddistri') showPostGoldDistri();
+          else if (scene.activeFeature === 'killevents') showPostKillEvents();
           else if (scene.activeFeature === 'post_h2h') showPostH2H();
           else if (scene.activeFeature === 'post_carry') showPostCarry();
           else if (scene.activeFeature === 'richguy')  fetchAndShowRichguy();
@@ -17851,6 +18577,8 @@
         if (feature === 'consolidated_post') showConsolidatedPost();
         if (feature === 'consolidated_post_2') showConsolidatedPost2();
         if (feature === 'post4key') showPost4Key();
+        if (feature === 'golddistri') showPostGoldDistri();
+        if (feature === 'killevents') showPostKillEvents();
         if (feature === 'heatmap') showPostHeatmap();
         if (feature === 'post_h2h') showPostH2H();
         if (feature === 'post_carry') showPostCarry();
@@ -17860,7 +18588,7 @@
     window.previewTrigger = function(event, action) {
       document.querySelectorAll('.dbg-btn.preview').forEach(b => b.classList.remove('active'));
       if (action === 'show') {
-        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h', post_carry: 'preview-post_carry', bracket: 'preview-bracket' };
+        const btnMap = { post_hearts: 'preview-hearts', post_itemline: 'preview-timeline', post_richguy: 'preview-richguy', post_emblems: 'preview-emblems', post_items: 'preview-items', waiting_tvc: 'preview-waiting', waiting_lobby: 'preview-lobby', today_schedule: 'preview-schedule', tomorrow_schedule: 'preview-tomorrowschedule', standings: 'preview-standings', team_hexagon: 'preview-hexagon', highlights: 'preview-highlights', mvp: 'preview-mvp', final_team: 'preview-finalteam', team_lineup_blue: 'preview-lineupblue', team_lineup_red: 'preview-lineupred', post4key: 'preview-post4key', post_heatmap: 'preview-heatmap', post_h2h: 'preview-post_h2h', post_carry: 'preview-post_carry', bracket: 'preview-bracket', post_golddistri: 'preview-golddistri', post_killevents: 'preview-killevents' };
         const btn = document.getElementById(btnMap[event]);
         if (btn) btn.classList.add('active');
       }
@@ -17882,6 +18610,8 @@
         if (event === 'post_emblems')  showPostEmblems();
         if (event === 'post_items')    showPostItems();
         if (event === 'post4key')      showPost4Key();
+        if (event === 'post_golddistri') showPostGoldDistri();
+        if (event === 'post_killevents') showPostKillEvents();
         if (event === 'post_stats')    showPostStats();
         if (event === 'post_heatmap')  showPostHeatmap();
         if (event === 'post_h2h')      showPostH2H();
@@ -18008,6 +18738,8 @@
         post_h2h:            { fn: 'showPostH2H',           label: 'Post H2H',             active: 'post_h2h' },
         post_carry:          { fn: 'showPostCarry',         label: 'Post Carry',           active: 'post_carry' },
         post4key:            { fn: 'showPost4Key',          label: 'Post 4 Key',           active: 'post4key' },
+        post_golddistri:     { fn: 'showPostGoldDistri',    label: 'Post Gold Distribution', active: 'golddistri' },
+        post_killevents:     { fn: 'showPostKillEvents',    label: 'Post Kill Events',       active: 'killevents' },
         consolidated_post:   { fn: 'showConsolidatedPost',  label: 'Consolidated Post',    active: 'consolidated_post' },
         consolidated_post_2: { fn: 'showConsolidatedPost2', label: 'Consolidated Post 2',  active: 'consolidated_post_2' },
         waiting_tvc:         { fn: 'showWaitingScreen',     label: 'Waiting Screen TVC',   active: 'waiting' },

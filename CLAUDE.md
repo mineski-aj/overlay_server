@@ -904,6 +904,41 @@ copy for a different feature.
   Debug tabs (TRINITY, ITEM PICKUP) have a "PHASE 2" dropdown (live / fake faster / fake
   slower / fake no data). `core_item`'s real parent path was never confirmed.
 
+### Post Gold Distribution (mplfs.html, route/event `post_golddistri`, internal `golddistri`)
+
+Post-family scene (Matchboard compact header, middle/player boards off — same board handling as
+Post 4 Key; in `POST_FEATURES` + `COMPACT_MATCHBOARD_FEATURES`). Five lane columns (EXP / JUNGLE / MID /
+ROAM / GOLD), camp 1 blue left, camp 2 red right: hero card, name, GPM, TOTAL, then one split bar per
+gold source. Data: `/api/postinfo-proxy` `hero_list[].gold_map` (same sector keys as v7's Side Gold Distri:
+1 minions, 2 jungle creeps, 3 turtle+lord, 4 turrets, 5 roam equip, 6 kills+assists, 9 roam vision; roam
+column shows 5 and 9), `total_money`, GPM = total_money / game minutes. The lane of each player comes from
+the game feed's `seat.role` matched by NAME (falls back to feed seat order, then leftover order) — if the
+two feeds spell a name differently the lanes can end up wrong. Edit config `mplfs_golddistri` moves the
+five columns as one unit (`#pgd-cols`). Server restart needed for `/overlay/post_golddistri/*`.
+
+### Post Kill Events (mplfs.html, route/event `post_killevents`, internal `killevents`)
+
+Same Post-family board handling as Post Gold Distribution. Left: OBJECTIVES (TURTLE / LORD / TURRET / PURPLE /
+ORANGE / LITHO) from the Post-Info `camp_list` — counts (`kill_totoise` (sic), `kill_lord`, `kill_tower`,
+`blue_buff_num` = purple, `red_buff_num` = orange, `crab_kill_num` = litho) + the matching `*_time_list` arrays,
+split bar (leader bright, trailer dim). Right: big Kill Map = `assets/postkill/killmap.webp` (consomap.png
+upscaled 4x with the Magnific connector, 512 -> 2048, saved as a 1600px WebP) with circular hero portraits
+(killer's hero from the game feed seat) at kill positions computed exactly like Consolidated Post 2
+(`/events` kills x `/positions` -> `ckmGameToLocal` in its 205x211 space, scaled to the square). Map name/icon
+resolve like fetchCmbData's (Map Selection game slot, else Match Board map). Edit config `mplfs_killevents`
+(objectives panel + map as two units). Server restart needed for `/overlay/post_killevents/*`.
+
+### Post H2H page 2 — gold distribution (mplfs.html)
+
+Post H2H has two pages now: 1 = the role stats (unchanged), 2 = gold distribution for the SAME role's
+two players, in the same bar rows: MINIONS / JUNGLE CREEPS / TURTLE + LORD / TURRETS / KILLS + ASSISTS
+(+ ROAM EQUIP / ROAM VISION for the roamer = 7 rows -> `#p2h-page.p2h-dense`: 80px row pitch and
+`#p2h-sponsor` dropped to y=966). Data: `hero_list[].gold_map` from `/api/postinfo-proxy` matched to the two
+seats by NAME (then heroid). Page switch = `GET /overlay/p2hpage/1|2` (state `p2hPage`, SSE `p2hpage`,
+dashboard buttons next to the Consolidated Post 2 page buttons); every fresh show resets to page 1
+(not from `?preview=1`). Title is "<ROLE> GOLD DISTRIBUTION", font-fitted by canvas measure. Rows 5/6 are
+extra markup (`p2h-row-off` when unused). Server restart needed for `/overlay/p2hpage*`.
+
 ### Live Win Rate (`html/js/overlay-livewinrate.js`, mploverlay_v7, checkOverlays key `livewinrate`)
 
 Gold Graph Check's shell (same art/slot/glide technique, `lwr-`/`#live-winrate-*` copies of its CSS)

@@ -2205,6 +2205,8 @@
     consolidated_post: 'consolidated_post',
     consolidated_post_2: 'consolidated_post_2',
     post4key:       'post4key',
+    post_golddistri: 'golddistri',
+    post_killevents: 'killevents',
     post_heatmap:   'heatmap',
     post_carry:     'post_carry',
     bracket:        'bracket',
@@ -2221,7 +2223,7 @@
     mvp: 'MVP Scene', credits: 'Credit Reel', finalteam: 'Final Team',
     lineupblue: 'Team Line-Up — Blue', lineupred: 'Team Line-Up — Red',
     consolidated_post: 'Consolidated Post', consolidated_post_2: 'Consolidated Post 2',
-    post4key: 'Post 4 Key', heatmap: 'Post Heatmap', post_h2h: 'Post H2H',
+    post4key: 'Post 4 Key', golddistri: 'Post Gold Distribution', killevents: 'Post Kill Events', heatmap: 'Post Heatmap', post_h2h: 'Post H2H',
     post_carry: 'Post Carry', bracket: 'Bracket',
   };
 
@@ -2762,6 +2764,8 @@
         { name: 'Consolidated Post', show: '/overlay/consolidated_post/show', hide: '/overlay/consolidated_post/hide' },
         { name: 'Consolidated Post 2', show: '/overlay/consolidated_post_2/show', hide: '/overlay/consolidated_post_2/hide' },
         { name: 'Post 4 Key',    show: '/overlay/post4key/show',        hide: '/overlay/post4key/hide'        },
+        { name: 'Post Gold Distribution', show: '/overlay/post_golddistri/show', hide: '/overlay/post_golddistri/hide' },
+        { name: 'Post Kill Events', show: '/overlay/post_killevents/show', hide: '/overlay/post_killevents/hide' },
         { name: 'Rich Guy',      show: '/overlay/post_richguy/show',  hide: '/overlay/post_richguy/hide'  },
         { name: 'Waiting Screen TVC', show: '/overlay/waiting_tvc/show', hide: '/overlay/waiting_tvc/hide' },
         { name: 'Waiting Lobby', show: '/overlay/waiting_lobby/show', hide: '/overlay/waiting_lobby/hide' },
@@ -2816,6 +2820,8 @@
         { label: 'Consolidated Post 2: Page 1', action: '/overlay/cp2page/1' },
         { label: 'Consolidated Post 2: Page 2', action: '/overlay/cp2page/2' },
         { label: 'Consolidated Post 2: Page 3', action: '/overlay/cp2page/3' },
+        { label: 'Post H2H: Page 1 (Role Stats)', action: '/overlay/p2hpage/1' },
+        { label: 'Post H2H: Page 2 (Gold Distribution)', action: '/overlay/p2hpage/2' },
       ],
       featureToggles: [
         { name: 'Secondary Role — Blue Line-Up', feature: 'lineupsecrole_blue' },
@@ -6442,6 +6448,23 @@
      own id selector (card 2's was removed entirely, replaced by the
      Visa tag) so every remaining header can be repositioned on its own
      instead of moving as one shared group. */
+  /* Post Gold Distribution — the five lane columns move/resize as ONE unit
+     (their internal layout is a fixed designed grid, like #cmb-board). */
+  var PGD_DEFAULTS = {
+    '#pgd-cols': { left: 60, top: 190, width: 1800, height: 840 },
+  };
+  var PGD_ELEMENTS = [
+    { group: 'Post Gold Distribution', id: '#pgd-cols', name: 'Lane Columns (all 5)' },
+  ];
+  /* Post Kill Events — the objectives panel and the kill map are two units. */
+  var PKE_DEFAULTS = {
+    '#pke-left': { left: 60,  top: 176, width: 900, height: 852 },
+    '#pke-map':  { left: 990, top: 176, width: 870, height: 852 },
+  };
+  var PKE_ELEMENTS = [
+    { group: 'Post Kill Events · Objectives', id: '#pke-left', name: 'Objectives Panel' },
+    { group: 'Post Kill Events · Map',        id: '#pke-map',  name: 'Kill Map' },
+  ];
   var P4K_DEFAULTS = {
     '#p4k-card-1': { left: 100,  top: 373, width: 416, height: 509 },
     '#p4k-card-2': { left: 527,  top: 373, width: 416, height: 509 },
@@ -6726,6 +6749,24 @@
       elements:    CP2_ELEMENTS,
       defaults:    CP2_DEFAULTS,
       showFn:      'showConsolidatedPost2',
+    },
+    mplfs_killevents: {
+      label:       'Post Kill Events · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_killevents',
+      elements:    PKE_ELEMENTS,
+      defaults:    PKE_DEFAULTS,
+      showFn:      'showPostKillEvents',
+    },
+    mplfs_golddistri: {
+      label:       'Post Gold Distribution · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_golddistri',
+      elements:    PGD_ELEMENTS,
+      defaults:    PGD_DEFAULTS,
+      showFn:      'showPostGoldDistri',
     },
     mplfs_post4key: {
       label:       'Post 4 Key · mplfs',
