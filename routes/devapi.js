@@ -553,6 +553,52 @@ router.post('/api/post-info-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Winrate API base URL — GET to read, POST { url } to update. Same
+// { live, web, debug } file shape as every other per-API URL; all three
+// modes start on the same endpoint. Setting only for now (no consumer yet).
+const WINRATE_URL_FILE    = path.join(__dirname, '..', 'winrate_api_url.json');
+const WINRATE_URL_DEFAULT = 'https://mlbb.mrf5.net/api/winrate/';
+
+router.get('/api/winrate-url', (req, res) => {
+  res.json({ url: readUrlForMode(WINRATE_URL_FILE, WINRATE_URL_DEFAULT) });
+});
+
+router.post('/api/winrate-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(WINRATE_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Server-side proxy for the Live Win Rate overlay (mploverlay_v7) — fetches
+// the Winrate API above ({ camp1: [%...], camp2: [%...], time: [s...] }, one
+// sample per 10s of game time) with a 1s in-memory cache so several open
+// overlay pages don't each hit the upstream.
+// The upstream can take several seconds, so concurrent requests share one
+// in-flight fetch (winrateInFlight) instead of stacking up.
+let winrateCache = { t: 0, body: null };
+let winrateInFlight = null;
+router.get('/api/winrate-proxy', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (winrateCache.body && Date.now() - winrateCache.t < 1000) return res.json(winrateCache.body);
+  try {
+    const url = readUrlForMode(WINRATE_URL_FILE, WINRATE_URL_DEFAULT).trim();
+    if (!url) return res.status(404).json({ error: 'no winrate URL configured' });
+    if (!winrateInFlight) {
+      winrateInFlight = fetch(url, { signal: AbortSignal.timeout(9500) })
+        .then(async r => {
+          if (!r.ok) throw new Error('upstream HTTP ' + r.status);
+          winrateCache = { t: Date.now(), body: await r.json() };
+        })
+        .finally(() => { winrateInFlight = null; });
+    }
+    await winrateInFlight;
+    res.json(winrateCache.body);
+  } catch (e) {
+    if (winrateCache.body) return res.json(winrateCache.body); // stale beats blank
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // Server-side proxy — serves the post-info payload lib/pollers.js polls
 // (state.lastPostInfoData), same caching pattern as /api/gamedata-proxy.
 router.get('/api/postinfo-proxy', async (req, res) => {

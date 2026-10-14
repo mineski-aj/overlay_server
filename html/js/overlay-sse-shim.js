@@ -10,7 +10,7 @@
 // Bump on every change to overlay-shared-worker.js (new KNOWN_EVENTS entry,
 // logic change, etc.) — see the comment at its `new SharedWorker(...)` call
 // below for why this exists. Current bump: added 'matchcard'.
-const OVERLAY_WORKER_VERSION = 30; // 30: added 'teamfightcheck' (Live Team Fight check panel) to KNOWN_EVENTS; 29: added 'bracket' (Bracket scene) to KNOWN_EVENTS; 28: removed 'draftpredict'/'draftpredict2' (Draft Predict v1/v2) from KNOWN_EVENTS; 27: removed 'mapdetail' (Map Detail v1) from KNOWN_EVENTS; 26: added 'mapdetailv2' (Draft.html Map Detail v2) to KNOWN_EVENTS; 25: 'mapdetail'
+const OVERLAY_WORKER_VERSION = 31; // 31: added 'livewinrate' (Live Win Rate panel) to KNOWN_EVENTS; 30: added 'teamfightcheck' (Live Team Fight check panel) to KNOWN_EVENTS; 29: added 'bracket' (Bracket scene) to KNOWN_EVENTS; 28: removed 'draftpredict'/'draftpredict2' (Draft Predict v1/v2) from KNOWN_EVENTS; 27: removed 'mapdetail' (Map Detail v1) from KNOWN_EVENTS; 26: added 'mapdetailv2' (Draft.html Map Detail v2) to KNOWN_EVENTS; 25: 'mapdetail'
 
 function createOverlaySSE() {
   if (typeof SharedWorker === 'undefined') {

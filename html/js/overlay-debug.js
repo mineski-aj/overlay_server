@@ -455,6 +455,13 @@ masterPoll();
       if (d.action === 'hide') ggcAnimateOut();
     } catch {}
   });
+  sse.addEventListener('livewinrate', function(e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') lwrAnimateIn();
+      if (d.action === 'hide') lwrAnimateOut();
+    } catch {}
+  });
   sse.addEventListener('bpmmeter', function(e) {
     try {
       var d = JSON.parse(e.data);

@@ -2178,6 +2178,118 @@
   .ggc-diff-dot { r: 5px; stroke-width: 2px; transition: cx 0.45s linear, cy 0.45s linear; }
   .ggc-time-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #fff; transition: transform 0.45s linear; } /* +50% over the original 10px, matching .ggc-timebox's own +50% */
 
+  /* ── [FEATURE: livewinrate-check] ────────────────────────────────────
+     Live Win Rate — a copy of the Gold Graph Check block above (same art,
+     same 887×342 slot at the bottom of the scene, same glide transitions;
+     see that block's comments), renamed lwr-/#live-winrate-*, plus the two
+     header win-% boxes. Both panels live in the same spot, so use one at a
+     time (or move this one from the Edit tab). */
+  #live-winrate-clip {
+    position: absolute;
+    left: 516px; top: 738px; 
+    width: 887px; height: 342px;
+    overflow: hidden;
+    display: none;
+    pointer-events: none;
+    z-index: 40;
+  }
+  #live-winrate-overlay {
+    position: absolute;
+    left: 0; top: 0;
+    width: 887px; height: 342px;
+    transform: translateY(342px);
+    transition: transform 350ms ease-in;
+  }
+  #live-winrate-overlay.lwr-in {
+    transition: transform 350ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(0);
+  }
+  .lwr-bg {
+    position: absolute; left: 0; top: 60px;
+    width: 887px; height: 282px;
+  }
+  .lwr-rect {
+    position: absolute;
+    left: 15px; top: 75px;
+    width: 857px; height: 253px;
+    background-color: rgb(255, 255, 255);
+  }
+  .lwr-chart { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .lwr-header-bg { position: absolute; left: 0; top: 0; width: 887px; height: 60px; }
+  .lwr-header-title {
+    position: absolute; left: 237px; top: 0; width: 414px; height: 60px;
+    overflow: hidden; 
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 30.75px;
+    color: #0a0a0a; text-align: center;
+  }
+  .lwr-header-title-sheen {
+    position: absolute;
+    top: 0; left: -60%;
+    width: 40%; height: 100%;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
+    transform: skewX(-20deg);
+    pointer-events: none;
+  }
+  @keyframes lwr-sheen-sweep {
+    from { left: -60%; }
+    to   { left: 120%; }
+  }
+  .lwr-header-title.lwr-sheen-play .lwr-header-title-sheen {
+    animation: lwr-sheen-sweep 650ms ease-out;
+  }
+  @keyframes lwr-header-title-bounce {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(0.90); }
+    65%  { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  .lwr-header-title.lwr-bounce-play {
+    animation: lwr-header-title-bounce 350ms ease-out;
+  }
+  .lwr-header-tri {
+    position: absolute; top: 0; width: 122px; height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif; font-weight: 400; font-size: 44.33px;
+    color: #fff; text-transform: uppercase; text-align: center; white-space: nowrap;
+  }
+  #lwr-header-tri-c1 { left: 95px; }
+  #lwr-header-tri-c2 { left: 669px; }
+  #lwr-header-logo-c1, #lwr-header-logo-c2 {
+    position: absolute; top: 5px; width: 50px; height: 50px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+  }
+  #lwr-header-logo-c1 { left: 21px; }
+  #lwr-header-logo-c2 { left: 817px; }
+  .lwr-header-logo-fallback { position: absolute; width: 38px; height: 38px; border-radius: 50%; }
+  #lwr-header-logo-c1 .lwr-header-logo-fallback { background: rgb(42, 0, 255); }
+  #lwr-header-logo-c2 .lwr-header-logo-fallback { background: rgb(210, 30, 30); }
+  .lwr-header-logo-img { position: absolute; width: 50px; height: 50px; object-fit: contain; }
+  #lwr-line, #lwr-area { transition: d 0.45s linear; }
+  #lwr-zeroline, .lwr-mark-gridline, #lwr-axis-zero { transition: transform 0.45s linear; }
+  .lwr-timebox { transition: x 0.45s linear; }
+  #lwr-chart.lwr-no-anim, #lwr-chart.lwr-no-anim * { transition: none !important; }
+  .lwr-axis-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 13px; fill: #555; } 
+  .lwr-diff-label {
+    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 16.5px; 
+    stroke: #fff; stroke-width: 3px; stroke-linejoin: round; paint-order: stroke fill;
+    transition: transform 0.45s linear;
+  }
+  .lwr-diff-dot { r: 5px; stroke-width: 2px; transition: cx 0.45s linear, cy 0.45s linear; }
+  .lwr-time-label { font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 15px; fill: #fff; transition: transform 0.45s linear; }
+
+  .lwr-gridline { stroke: rgba(0,0,0,0.12); stroke-width: 1; stroke-dasharray: 4 4; }
+  .lwr-header-title { left: 307px; width: 274px; font-size: 28px; }
+  .lwr-header-pct {
+    position: absolute; top: 0; width: 80px; height: 60px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Anton', sans-serif; font-weight: 400; font-size: 26px; white-space: nowrap;
+    -webkit-text-stroke: 0; pointer-events: none;
+  }
+  #lwr-header-pct-c1 { left: 227px; }
+  #lwr-header-pct-c2 { left: 581px; }
+
   /* Event rows — invisible position references only (the events
      themselves are plain SVG shapes drawn at these Y's by
      overlay-goldgraphcheck.js's ggcRowY, not these elements). Real DOM
@@ -3122,20 +3234,21 @@
   #lordadv-c1 { left: 338px; }   /* left edge = left edge of the gold logo box */
   #lordadv-c2 { left: 1218px; --lordadv-accent: #e53a2f; --lordadv-team: #e53a2f; }   /* right edge (1508) touches the gold match-info box */
   [data-theme="playoffs"] .lordadv { --lordadv-accent: #d0a43e; }
-  .lordadv-bar { position: absolute; left: 8px; top: 8px; width: 3px; height: 42px; background: var(--lordadv-accent); }
+  /* Content is nudged 3px down: the top of the panel sits under the scoreboard bar (art ends ~y=81) and its shadow, so the visible area's centre is ~y=31-32, not the box centre (29). */
+  .lordadv-bar { position: absolute; left: 8px; top: 11px; width: 3px; height: 42px; background: var(--lordadv-accent); }
   .lordadv-icon {
-    position: absolute; left: 20px; top: 14px; width: 30px; height: 30px;
+    position: absolute; left: 20px; top: 17px; width: 30px; height: 30px;
     background: var(--lordadv-gold);
     -webkit-mask: url('/assets/postgame/lord.png') center / contain no-repeat;
             mask: url('/assets/postgame/lord.png') center / contain no-repeat;
   }
   .lordadv-title {
-    position: absolute; left: 58px; top: 0; height: 58px; display: flex; align-items: center;
+    position: absolute; left: 58px; top: 3px; height: 58px; display: flex; align-items: center;
     font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 10px; letter-spacing: 0.04em;
     color: var(--lordadv-team);
   }
   .lordadv-stat {
-    position: absolute; top: 0; height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    position: absolute; top: 3px; height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   }
   .lordadv-gold   { left: 142px; width: 56px; }
   .lordadv-kills  { left: 202px; width: 38px; }

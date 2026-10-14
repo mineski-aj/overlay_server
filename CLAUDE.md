@@ -904,6 +904,18 @@ copy for a different feature.
   Debug tabs (TRINITY, ITEM PICKUP) have a "PHASE 2" dropdown (live / fake faster / fake
   slower / fake no data). `core_item`'s real parent path was never confirmed.
 
+### Live Win Rate (`html/js/overlay-livewinrate.js`, mploverlay_v7, checkOverlays key `livewinrate`)
+
+Gold Graph Check's shell (same art/slot/glide technique, `lwr-`/`#live-winrate-*` copies of its CSS)
+plotting the **Winrate API** (Settings → Winrate API, `winrate_api_url.json`, `/api/winrate-url`):
+`{camp1:[%], camp2:[%], time:[s]}` every 10s of game time, camp1+camp2 = 100. Data comes through
+`/api/winrate-proxy` (`routes/devapi.js`, 1s cache). One line = camp1 % around a 50% midline (blue
+above / red below, symmetric y-axis); header shows both current %. Same wiring as any checkOverlays
+panel: `lib/state.js`, `routes/overlay.js` (+ `bottomoverlays/hide`), `KNOWN_EVENTS` (worker v31),
+`overlay-debug.js` listener, `dashboardSSE` key list, `checkToggles`, Edit config
+`mploverlay_v7_livewinrate`. Not restored on page load (same as Gold Graph). Needs a server restart
+for `/api/winrate-proxy`, the show/hide routes and the state key.
+
 ## Control-tab Preview — keep it fully isolated from real broadcast state
 
 The Control tab's `#preview-iframe` lets you see a scene without

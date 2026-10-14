@@ -1231,6 +1231,18 @@
     </div>
   </div>
 
+  <div class="settings-section">
+    <div class="settings-section-hdr">Winrate API</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="winrate-api-input">Base URL</label>
+        <input type="text" id="winrate-api-input" class="settings-input" placeholder="https://mlbb.mrf5.net/api/winrate/" spellcheck="false" autocomplete="off" />
+        <button id="winrate-api-apply" class="settings-btn">Apply</button>
+        <span id="winrate-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
 </div>
 </div>
 </div>
@@ -2004,6 +2016,34 @@
   piApiApply.addEventListener('click', savePostInfoApiUrl);
   piApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') savePostInfoApiUrl(); });
 
+  /* ── Winrate API URL ──────────────────────────────────────── */
+  var wrApiInput  = document.getElementById('winrate-api-input');
+  var wrApiApply  = document.getElementById('winrate-api-apply');
+  var wrApiStatus = document.getElementById('winrate-api-status');
+
+  fetch('/api/winrate-url').then(function(r){ return r.json(); }).then(function(d){
+    wrApiInput.value = d.url || '';
+  }).catch(function(){});
+
+  function saveWinrateApiUrl() {
+    var url = wrApiInput.value.trim();
+    fetch('/api/winrate-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url })
+    }).then(function(r){ return r.json(); }).then(function(){
+      wrApiStatus.textContent = 'Saved ✓';
+      wrApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ wrApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      wrApiStatus.textContent = 'Error';
+      wrApiStatus.style.color = '#ff4455';
+    });
+  }
+
+  wrApiApply.addEventListener('click', saveWinrateApiUrl);
+  wrApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveWinrateApiUrl(); });
+
   /* Debug Mode — persisted server-side, gates whether any overlay page's
      ` -toggled debug bar is even reachable (see debugModeEnabled in
      mplfs.html). Button label always reflects real server state, read on
@@ -2431,7 +2471,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'teamfightcheck'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'livewinrate', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'teamfightcheck'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2862,6 +2902,7 @@
         { name: 'Emblem Check',      key: 'emblemcheck'      },
         { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
         { name: 'Gold Graph Check',  key: 'goldgraphcheck'   },
+        { name: 'Live Win Rate',     key: 'livewinrate'      },
         { name: 'Side EXP Check',    key: 'sideexpcheck'     },
         { name: 'Side Taken Check',  key: 'sidetakencheck'   },
         { name: 'Side Damage Check', key: 'sidedamagecheck'  },
@@ -5019,6 +5060,25 @@
     { group: 'Chart Settings', id: '#ggc-chart', name: 'Spike Smoothing' },
   ];
 
+  /* ── Live Win Rate (mploverlay_v7.html, overlay-livewinrate.js) ─────
+     Gold Graph Check's sibling: header title + the two header win-% boxes,
+     and the on-chart % labels / point markers (class selectors shared by
+     every mark, like .ggc-diff-label). */
+  var LWR_DEFAULTS = {
+    '#lwr-header-title':  { left: 307, top: 0, width: 274, height: 60, fontSize: 28 },
+    '#lwr-header-pct-c1': { left: 227, top: 0, width: 80,  height: 60, fontSize: 26 },
+    '#lwr-header-pct-c2': { left: 581, top: 0, width: 80,  height: 60, fontSize: 26 },
+    '.lwr-diff-label':    { fontSize: 16.5, strokeWidth: 3 },
+    '.lwr-diff-dot':      { r: 5, strokeWidth: 2 },
+  };
+  var LWR_ELEMENTS = [
+    { group: 'Header', id: '#lwr-header-title',  name: 'Title (LIVE WIN RATE)' },
+    { group: 'Header Win %', id: '#lwr-header-pct-c1', name: 'Win % (Team 1)' },
+    { group: 'Header Win % 2', id: '#lwr-header-pct-c2', name: 'Win % (Team 2)' },
+    { group: 'Chart Numbers', id: '.lwr-diff-label', name: 'Win % Numbers' },
+    { group: 'Chart Numbers', id: '.lwr-diff-dot',   name: 'Win % Point Marker' },
+  ];
+
   /* ── Side-check family (mploverlay_v7.html) ───────────────────────
      Exp/Taken/Damage/Gold checks share one factory (createSideCheck in
      overlay-sidecheck-core.js) and one set of .sidecheck-* CSS classes
@@ -6504,6 +6564,15 @@
       elements:    GGC_ELEMENTS,
       defaults:    GGC_DEFAULTS,
       showFn:      'ggcAnimateIn',
+    },
+    mploverlay_v7_livewinrate: {
+      label:       'Live Win Rate · mploverlay_v7',
+      file:        'mploverlay_v7.html',
+      styleFile:   'mploverlay_v7',
+      defaultsKey: 'sb_edit_defaults_mploverlay_v7_livewinrate',
+      elements:    LWR_ELEMENTS,
+      defaults:    LWR_DEFAULTS,
+      showFn:      'lwrAnimateIn',
     },
     mploverlay_v7_itemcheck: {
       label:       'Item Check Layout · mploverlay_v7',
