@@ -6542,6 +6542,36 @@
     { group: 'Legend',       id: '.hm-legend-label',      name: 'Legend Label Text' },
   ];
 
+  /* ── Playoffs universal sponsor box — shared logo row ──────────────
+     One Edit row ("Playoffs Sponsor" › "Sponsor Logo") for the sliding
+     logo inside EVERY playoffs sponsor box in mplfs.html/ENTVC.html at
+     once — the selector hits the shared loop classes, so editing it from
+     any scene's config moves/resizes the logo in all of them. Values are
+     relative to the logo area under the gold strip (296x83 by default;
+     the logo keeps its own 6px/12px padding and stays contain-fitted).
+     html[data-theme=playoffs]-scoped (unquoted on purpose — the selector
+     doubles as an element id) so a save never touches another theme.
+     Consolidated Post 2's box is excluded (311px wide, aligned to its Kill
+     Map, so the shared 296px values would sit off-centre there). Only the
+     first matching img gets click-to-drag in the preview; the sidebar row,
+     number inputs and arrow keys work for every box. */
+  var PO_SPONSOR_LOGO_SEL =
+    'html[data-theme=playoffs] .wl-sponsor-loop img:not(#cp2-sponsor-img), ' +
+    'html[data-theme=playoffs] .ws-sponsor-loop img';
+  function addPlayoffsSponsorEdit(defaults, elements) {
+    defaults[PO_SPONSOR_LOGO_SEL] = { left: 0, top: 0, width: 296, height: 83 };
+    elements.push({ group: 'Playoffs Sponsor', id: PO_SPONSOR_LOGO_SEL, name: 'Sponsor Logo (all playoffs boxes)' });
+  }
+  [
+    [WL_DEFAULTS, WL_ELEMENTS],
+    [TS_DEFAULTS, TS_ELEMENTS], [TS_COUNT2_DEFAULTS, TS_COUNT2_ELEMENTS], [TS_COUNT3_DEFAULTS, TS_COUNT3_ELEMENTS],
+    [TW_DEFAULTS, TW_ELEMENTS], [TW_COUNT2_DEFAULTS, TW_COUNT2_ELEMENTS], [TW_COUNT3_DEFAULTS, TW_COUNT3_ELEMENTS],
+    [WS_COUNT2_DEFAULTS, WS_COUNT2_ELEMENTS], [WS_COUNT3_DEFAULTS, WS_COUNT3_ELEMENTS],
+    [P2H_DEFAULTS, P2H_ELEMENTS],
+    [MDB_DEFAULTS, MDB_ELEMENTS],
+    [BRACKET_DEFAULTS, BRACKET_ELEMENTS],
+  ].forEach(function (pair) { addPlayoffsSponsorEdit(pair[0], pair[1]); });
+
   /* ── Registry of editable overlays ───────────────────────────── */
   var EDIT_CONFIGS = {
     mploverlay_v7: {

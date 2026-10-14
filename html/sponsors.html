@@ -103,6 +103,40 @@
     }
     [data-theme="playoffs"] .ws-sponsor-loop { left: 128px; right: 8px; top: 8px; bottom: 8px; }
 
+    /* Playoffs only — 3rd box: the universal playoffs sponsor box from
+       mplfs.html (CSS-only gold category strip over the white logo area),
+       trimmed 42px off the left to 296x120; label and logo stay centred. Right of the in-game box, same vertical centre as the boxed
+       bar. Hidden (and its loop never started) under every other theme. */
+    .po-sponsor { display: none; position: absolute; left: 1002px; top: 607px; width: 296px; height: 120px; }
+    [data-theme="playoffs"] .po-sponsor { display: block; }
+    .po-sponsor .sponsor-cat-label {
+      left: 0; top: 0; width: 100%; height: 37px;
+      background: linear-gradient(to right, #fde067 0%, #f4d459 25%, #efcd52 60%, #f2d157 100%);
+      box-shadow: inset 0 -2px 0 #dfbd4e, 0 2px 7px rgba(0, 0, 0, 0.22);
+      font-weight: 800; letter-spacing: 0.02em;
+    }
+    .po-sponsor-loop {
+      position: absolute; left: 0; right: 0; top: 37px; bottom: 0; overflow: hidden;
+      background:
+        radial-gradient(ellipse 45% 75% at 0% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        radial-gradient(ellipse 45% 75% at 100% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        linear-gradient(to bottom, #ffffff 55%, #eeeeee 100%);
+    }
+    .po-sponsor-loop img {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; padding: 6px 12px;
+      object-fit: contain;
+      transform: translateX(-110%);
+    }
+    .po-sponsor-loop img.spon-in {
+      transform: translateX(0);
+      transition: transform 0.4s cubic-bezier(0.0, 0.0, 0.2, 1.0);
+    }
+    .po-sponsor-loop img.spon-out {
+      transform: translateX(110%);
+      transition: transform 0.35s cubic-bezier(0.4, 0.0, 1.0, 1.0);
+    }
+
     /* White backdrop box around the 2nd (in-game style) logo loop — 300x300,
        centered on the loop below. Checked against the boxed sponsor bar
        (.wsm-sponsor: left 115-455px) for collision: this box spans
@@ -150,7 +184,9 @@
       `<div class="sponsor-cat-label" id="ws-sponsor-cat"></div>` +
       `<div class="ws-sponsor-loop"><img id="ws-sponsor-img" src="" alt=""></div></div>` +
       `<div class="ig-sponsor-box"></div>` +
-      `<div class="ig-sponsor-loop"><img id="ig-sponsor-img" src="" alt=""></div>`;
+      `<div class="ig-sponsor-loop"><img id="ig-sponsor-img" src="" alt=""></div>` +
+      `<div class="po-sponsor"><div class="sponsor-cat-label" id="po-sponsor-cat"></div>` +
+      `<div class="po-sponsor-loop"><img id="po-sponsor-img" src="" alt=""></div></div>`;
 
     function fitSponsorCatLabel(el) {
       if (!el) return;
@@ -272,6 +308,50 @@
     }
 
     startIgSponsorLoop();
+
+    /* Playoffs-only 3rd box — its own independent loop, same
+       ?sponsorspage=1 list (so Joytify is dropped here too) and same
+       slide/hold timing as the two loops above. Only started under the
+       playoffs theme; this page has no live SSE, so a theme switch applies
+       on its next reload. */
+    let poSponsors = [], poSponsorIdx = 0;
+
+    function runPoSponsorLoop() {
+      const img = document.getElementById('po-sponsor-img');
+      if (!img) return;
+      const s = poSponsors[poSponsorIdx];
+      img.className = '';
+      img.src = s.src;
+      updateSponsorCatLabel('po-sponsor-cat', s.category);
+      void img.offsetWidth;
+      img.classList.add('spon-in');
+
+      const inHandler = (ev) => {
+        if (ev.propertyName !== 'transform') return;
+        img.removeEventListener('transitionend', inHandler);
+        setTimeout(() => {
+          img.classList.remove('spon-in');
+          img.classList.add('spon-out');
+          const outHandler = (ev2) => {
+            if (ev2.propertyName !== 'transform') return;
+            img.removeEventListener('transitionend', outHandler);
+            poSponsorIdx = (poSponsorIdx + 1) % poSponsors.length;
+            runPoSponsorLoop();
+          };
+          img.addEventListener('transitionend', outHandler);
+        }, s.dur);
+      };
+      img.addEventListener('transitionend', inHandler);
+    }
+
+    if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
+      fetch('/api/sponsors?sponsorspage=1').then(r => r.json()).then(list => {
+        if (!list || !list.length) return;
+        poSponsors = list;
+        poSponsorIdx = 0;
+        runPoSponsorLoop();
+      }).catch(() => {});
+    }
   </script>
 </body>
 </html>

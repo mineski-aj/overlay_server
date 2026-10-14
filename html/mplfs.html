@@ -1277,44 +1277,58 @@
        scoped, so they can never touch another theme. */
     [data-theme="playoffs"] .wl-sponsor-bg,
     [data-theme="playoffs"] .wsm-sponsor-bg { display: none; }
+    /* Fully CSS (no image), matched to the 338x120 reference: 37px gold
+       strip with a darker 2px bottom edge and a soft shadow falling onto the
+       white logo area, which darkens slightly toward the bottom corners. */
     [data-theme="playoffs"] .sponsor-cat-label {
-      left: 0; top: 0; width: 100%; height: 39px;
-      background: url('/assets/Waiting Screen TVC/playoffs/todays_matches.png') center / 100% 100% no-repeat;
+      left: 0; top: 0; width: 100%; height: 37px;
+      background: linear-gradient(to right, #fde067 0%, #f4d459 25%, #efcd52 60%, #f2d157 100%);
+      box-shadow: inset 0 -2px 0 #dfbd4e, 0 2px 7px rgba(0, 0, 0, 0.22);
       font-weight: 800; font-size: 22px; letter-spacing: 0.02em; color: #0a0a0a;
     }
     [data-theme="playoffs"] .wl-sponsor-loop,
     [data-theme="playoffs"] .ws-sponsor-loop {
-      left: 0; right: 0; top: 39px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
-      background: linear-gradient(to bottom, #ffffff, #e9e9ea);
+      left: 0; right: 0; top: 37px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
+      background:
+        radial-gradient(ellipse 45% 75% at 0% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        radial-gradient(ellipse 45% 75% at 100% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        linear-gradient(to bottom, #ffffff 55%, #eeeeee 100%);
     }
     [data-theme="playoffs"] .wl-sponsor-loop img,
     [data-theme="playoffs"] .ws-sponsor-loop img { padding: 6px 12px; box-sizing: border-box; }
-    /* Exception: Consolidated Post 2's #cp2-sponsor keeps the standard
-       (Regular) layout — category plate on the left, logo area on the right —
-       because the universal header-strip layout leaves too little room for
-       logos in its 310x86 box. Same structure as Regular, gold plate. */
-    [data-theme="playoffs"] #cp2-sponsor { background: linear-gradient(to bottom, #ffffff, #e9e9ea); }
-    [data-theme="playoffs"] #cp2-sponsor .sponsor-cat-label {
-      left: 0; top: 0; width: 120px; height: 100%;
-      background: linear-gradient(to bottom, #edc555, #d0a43e);
-      font-size: 15.5px; font-weight: 800; letter-spacing: 0; line-height: 1.15;
-    }
-    [data-theme="playoffs"] #cp2-sponsor .wl-sponsor-loop {
-      left: 128px; right: 8px; top: 8px; bottom: 8px; padding: 0; background: none;
-    }
-    [data-theme="playoffs"] #cp2-sponsor .wl-sponsor-loop img { padding: 0; }
-    /* Default box size for the scenes reworked for playoffs so far */
+    /* Default box size for the scenes reworked for playoffs so far: 296x120
+       (was 338 — trimmed 42px off the LEFT, right edges unchanged; the label
+       and logo are centred in whatever width the box has). */
     [data-theme="playoffs"] #wl-sponsor,
     [data-theme="playoffs"] #ts-sponsor,
     [data-theme="playoffs"] #br-sponsor,
     [data-theme="playoffs"] #tw-sponsor,
-    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 338px; height: 120px; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 296px; height: 120px; }
+    /* Post H2H, Middle Board and Consolidated Post 2 still had their
+       Regular-shaped saved boxes (340x93 / 310x86), which read far too wide
+       for the header-strip layout. !important because those saved Edit-tab
+       sizes are themselves !important (Middle Board + Consolidated Post 2
+       share one saved selector). Tops are pulled up so the taller box stays
+       on-screen; Consolidated Post 2's sits right under the Kill Map
+       (ends y 947), trimmed to the map's own width. Its Map Selection NONE
+       variant (#cp2-sponsor.cp2-map-none, later in the file) still wins on
+       top. Playoffs only. */
+    [data-theme="playoffs"] #p2h-sponsor,
+    [data-theme="playoffs"] #mdb-sponsor,
+    [data-theme="playoffs"] #cp2-sponsor { width: 338px !important; height: 120px !important; }
+    /* Trimmed to 296 like the rest (42px off the left). */
+    [data-theme="playoffs"] #p2h-sponsor,
+    [data-theme="playoffs"] #mdb-sponsor { width: 296px !important; }
+    [data-theme="playoffs"] #mdb-sponsor { left: 833px !important; top: 940px !important; }
+    /* Edges aligned with the Kill Map above it (#ckm2-board, x 805..1116). */
+    [data-theme="playoffs"] #cp2-sponsor { left: 805px !important; top: 952px !important; width: 311px !important; }
+    [data-theme="playoffs"] #p2h-page.p2h-dense #p2h-sponsor { top: 950px !important; }
     /* Bracket: same spot as Waiting TVC/Lobby's sponsor box. Lives on
        #bracket-page itself (not inside the tilting #bracket-container) so
        the 3D pose never moves it. Playoffs only. */
     #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; transition: opacity 400ms ease; }
-    [data-theme="playoffs"] #br-sponsor { display: block; }
-    [data-theme="playoffs"] #ts-sponsor { display: block; left: 1492px; top: 78px; }
+    [data-theme="playoffs"] #br-sponsor { display: block; left: 1562px; }
+    [data-theme="playoffs"] #ts-sponsor { display: block; left: 1534px; top: 78px; }
     #wl-timer {
       position: absolute;
       left: 40px; top: 862px;
@@ -3746,7 +3760,7 @@
       font-size: 34px; font-weight: 800; letter-spacing: 0; color: #fff;
     }
     [data-theme="playoffs"] #tw-week {
-      position: absolute; left: 618px; top: 123px; width: 117px; height: 35px;
+      position: absolute; left: 603px; top: 123px; width: 117px; height: 35px;
       background: none; color: #0a0a0a; font-size: 34px; font-weight: 800;
     }
     [data-theme="playoffs"] #tw-matches { gap: 22px; }
@@ -3762,7 +3776,7 @@
     [data-theme="playoffs"] #tw-matches .tsm-time  { left: 761px; }
     [data-theme="playoffs"] #tw-matches .tsm-bo    { left: 891px; width: 200px; }
     [data-theme="playoffs"] #tw-title { transform-origin: left center; white-space: nowrap; }
-    [data-theme="playoffs"] #tw-sponsor { left: 1492px; top: 78px; }
+    [data-theme="playoffs"] #tw-sponsor { left: 1534px; top: 78px; }
 
     /* ── TOMORROW'S SCHEDULE PAGE (same layout as Today's Schedule) ── */
     #tomorrow-schedule-page {
@@ -4402,7 +4416,7 @@
     /* Playoffs: "IN:" is General Sans Medium, the rest of the label stays 800 */
     [data-theme="playoffs"] #ws-timer-countdown-label .ws-cd-in { font-weight: 500; }
     [data-theme="playoffs"] #ws-timer-value { left: 0px; top: 0px; width: 571px; height: 160px; font-size: 152px; text-align: center; }
-    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1480px; top: -202px; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1522px; top: -202px; }
     /* Playoffs Today's Matches — MatchBox_REGULAR MATCH.png (playoffs/) is
        the same 571×173 canvas; per reference_MatchBox_REGULAR MATCH.png the
        tricodes and logos are larger than Regular's. Scoped to #ws-matches
@@ -5124,6 +5138,13 @@
       background: transparent;
     }
     #item-timeline-page.itl-on { display: block; }
+    /* Role icons: plain (inverted) PNG by default; under playoffs the
+       masked span takes over, filled with the theme gold gradient. */
+    .itl-role-gold { display: none; }
+    [data-theme="playoffs"] #item-timeline-page .itl-role-img { display: none; }
+    [data-theme="playoffs"] #item-timeline-page .itl-role-gold {
+      display: block; background: linear-gradient(to bottom, #edc555, #d0a43e);
+    }
 
     @keyframes itl-row-in {
       from { transform: translateX(-40px); opacity: 0; }
@@ -8248,9 +8269,18 @@
         roleEl.style.cssText = `position:absolute;left:${CX}px;top:${CY + pairY}px;width:${ROL_W}px;height:${ROW_H*2}px;display:flex;align-items:center;justify-content:center;z-index:10;overflow:hidden;animation:itl-row-in 380ms cubic-bezier(0.22,1,0.36,1) ${pairDelay}ms both`;
         const roleImg = document.createElement('img');
         roleImg.src = `role/${encodeURIComponent(ROLES[ri])}.png`;
+        roleImg.className = 'itl-role-img';
         roleImg.style.cssText = `width:${ROL_W}px;height:${ROL_W}px;object-fit:contain;filter:invert(1)`;
+        /* Playoffs: the same icon as a mask over the theme gold gradient
+           (CSS swaps this in for the img, see .itl-role-gold). */
+        const roleGold = document.createElement('span');
+        roleGold.className = 'itl-role-gold';
+        const roleMask = `url("${roleImg.src}") center / contain no-repeat`;
+        roleGold.style.cssText = `width:${ROL_W}px;height:${ROL_W}px;-webkit-mask:${roleMask};mask:${roleMask}`;
+        roleEl.appendChild(roleGold);
         roleImg.onerror = () => {
           roleImg.style.display = 'none';
+          roleGold.remove();
           const rs = document.createElement('span');
           rs.style.cssText = `font-family:Anton,sans-serif;font-size:9px;letter-spacing:1px;color:rgba(0,0,0,0.55);writing-mode:vertical-rl;transform:rotate(180deg)`;
           rs.textContent = ROLES[ri].split(' ')[0].slice(0,3).toUpperCase();

@@ -1293,7 +1293,7 @@ H2H, Consolidated Post 2 and Middle Board inherit the look automatically
 (they just haven't had their playoffs position/size reworked yet — Post
 H2H's 60px-tall box in particular will look cramped until it is).
 
-**One deliberate exception:** Consolidated Post 2's `#cp2-sponsor` (310×86 box under the Kill Map) keeps the standard side-by-side layout (gold category plate on the left, logo area on the right) with its own `[data-theme="playoffs"] #cp2-sponsor …` rules, because the universal header-strip layout left too little room for logos at that size. It does not follow the "Playoffs Sponsor" Edit rows.
+Consolidated Post 2's `#cp2-sponsor` used to be a side-by-side exception; it now uses the header-strip layout too (311×120 under the Kill Map), but is excluded from the shared logo Edit row.
 
 **When you add or rework any mplfs.html scene for playoffs that has a
 sponsor box, use this universal box — do not restyle a sponsor box for
@@ -1306,18 +1306,27 @@ in that block, and seed its position in the `mplfs::playoffs` bucket of
 otherwise win as an `!important` fallback). Also make sure its Edit config
 gets the universal rows (below).
 
-**Editing it:** every Edit config that contains a sponsor box has two extra
-rows, group "Playoffs Sponsor" — **Sponsor Header Strip** (height, font
-size) and **Sponsor Logo Area Top** — added by `addPlayoffsSponsorEdit()`
-in `dashboard.html`. They edit the shared classes, so changing them from
-ANY scene's Edit tab changes every playoffs sponsor box at once. Their
-selectors are `html[data-theme=playoffs]`-scoped (unquoted attribute value
+**Current shape:** fully CSS (no strip image): 296×120 box, 37px gold
+strip, logo area below it 296×83. Default box size rule + per-scene lefts
+in mplfs.html; Post H2H / Middle Board / Consolidated Post 2 sizes are
+`!important` (their saved Regular-shaped Edit sizes would otherwise win).
+Consolidated Post 2 is 311 wide, edge-aligned to its Kill Map.
+
+**Editing it:** every Edit config that contains a sponsor box has one extra
+row, group "Playoffs Sponsor" — **Sponsor Logo (all playoffs boxes)**
+(left/top/width/height of the sliding logo inside the logo area), added by
+`addPlayoffsSponsorEdit()` in `dashboard.html`. It edits the shared loop
+classes, so changing it from ANY scene's Edit tab changes every playoffs
+sponsor box at once (ENTVC.html too, same `mplfs` bucket) — except
+Consolidated Post 2's (`:not(#cp2-sponsor-img)`, different width). The
+selector is `html[data-theme=playoffs]`-scoped (unquoted attribute value
 on purpose, so the selector survives being used as an element id), so a
-save can never leak into another theme. A new scene's Edit config must be
-added to the pairs list passed to `addPlayoffsSponsorEdit` in the
-`forEach` right above `var EDIT_CONFIGS`. Each box's own position/size
-stays its normal per-scene "Sponsor Box" row — only the internals are
-universal.
+save can never leak into another theme. Only the first matching img is
+click-draggable in the preview; use the sidebar row / inputs / arrows. A
+new scene's Edit config must be added to the pairs list passed to
+`addPlayoffsSponsorEdit` in the `forEach` right above `var EDIT_CONFIGS`.
+Each box's own position/size stays its normal per-scene "Sponsor Box" row.
+The strip height/font size have no Edit row (CSS only).
 
 ### Playoffs theme — working notes (read before touching any playoffs scene)
 
@@ -1350,9 +1359,10 @@ FINALS") is intentional, not a bug.
 - Wiring a new playoffs asset into JS-built panels (v7 check panels, mpltag
   Map Selection, Draft ban slots) reads `data-theme` **once at build time** —
   a theme switch applies on the next reload there (same as Gold Diff Check).
-- Universal sponsor box: see the section above. Known exceptions: Consolidated
-  Post 2's `#cp2-sponsor` and the left box on `sponsors.html` use the standard
-  side-by-side layout (gold category plate + logo area), not the header strip.
+- Universal sponsor box: see the section above. `sponsors.html`'s left box still
+  uses the side-by-side layout; its playoffs-only 3rd box (`.po-sponsor`, own
+  loop, `?sponsorspage=1` so Joytify is filtered) is the header-strip one, own
+  CSS copy (sponsors.html has no Edit config).
 
 **Open / not provided yet (don't invent art)** — star-match scoreboard art
 (`ingamepng2_<SUFFIX>.png` in `assets/ingame/playoffs/`), the Side Selection

@@ -671,7 +671,7 @@
     /* Playoffs: "IN:" is General Sans Medium, the rest of the label stays 800 */
     [data-theme="playoffs"] #ws-timer-countdown-label .ws-cd-in { font-weight: 500; }
     [data-theme="playoffs"] #ws-timer-value { left: 0px; top: 0px; width: 571px; height: 160px; font-size: 152px; text-align: center; }
-    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1480px; top: -202px; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { left: 1522px; top: -202px; }
     /* Playoffs UNIVERSAL SPONSOR BOX — mirrored from mplfs.html (see its
        "PLAYOFFS UNIVERSAL SPONSOR BOX" block + CLAUDE.md): gold category
        header strip over a white logo area, written against the shared
@@ -680,16 +680,20 @@
        mplfs-bucket overrides), so editing them there updates this page too. */
     [data-theme="playoffs"] .wsm-sponsor-bg { display: none; }
     [data-theme="playoffs"] .sponsor-cat-label {
-      left: 0; top: 0; width: 100%; height: 39px;
-      background: url('/assets/Waiting Screen TVC/playoffs/todays_matches.png') center / 100% 100% no-repeat;
+      left: 0; top: 0; width: 100%; height: 37px;
+      background: linear-gradient(to right, #fde067 0%, #f4d459 25%, #efcd52 60%, #f2d157 100%);
+      box-shadow: inset 0 -2px 0 #dfbd4e, 0 2px 7px rgba(0, 0, 0, 0.22);
       font-weight: 800; font-size: 22px; letter-spacing: 0.02em; color: #0a0a0a;
     }
     [data-theme="playoffs"] .ws-sponsor-loop {
-      left: 0; right: 0; top: 39px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
-      background: linear-gradient(to bottom, #ffffff, #e9e9ea);
+      left: 0; right: 0; top: 37px; bottom: 0; padding: 6px 12px; box-sizing: border-box;
+      background:
+        radial-gradient(ellipse 45% 75% at 0% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        radial-gradient(ellipse 45% 75% at 100% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        linear-gradient(to bottom, #ffffff 55%, #eeeeee 100%);
     }
     [data-theme="playoffs"] .ws-sponsor-loop img { padding: 6px 12px; box-sizing: border-box; }
-    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 338px; height: 120px; }
+    [data-theme="playoffs"] #ws-sponsor .wsm-sponsor { width: 296px; height: 120px; }
     /* Playoffs Today's Matches — mirrored from mplfs.html. */
     /* Playoffs Today's Schedule header + Open House bars. Title bar is
        todays_matches.png (571×61, blank) with HTML text; each Open House bar
