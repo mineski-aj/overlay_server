@@ -6063,16 +6063,31 @@
   },
   "Draft::playoffs": {
     "#draft-map-logo": {
-      "left": "0px",
+      "left": "10px",
       "top": "0px",
       "width": "71px",
       "height": "71px"
     },
     "#draft-map-name": {
-      "left": "98px",
-      "top": "10px",
-      "width": "290px",
+      "left": "140px",
+      "top": "6px",
+      "width": "230px",
       "height": "50px"
+    },
+    ".draft-map-name-text": {
+      "fontSize": "37px"
+    },
+    "#mapdetail2-plate": {
+      "left": "758px",
+      "top": "655px",
+      "width": "403px",
+      "height": "125px"
+    },
+    "#mapdetail2-desc": {
+      "left": "136px",
+      "top": "65px",
+      "width": "238.4px",
+      "height": "52.8px"
     }
   },
   "mpltag::playoffs": {
