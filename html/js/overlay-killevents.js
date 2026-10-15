@@ -57,7 +57,12 @@ var KILL_EVENT_SPONSOR_LOGO = {
    Triple Kill keep their logos). previewKillEventSponsor() below picks
    its preview video based on this same theme check, so it always
    previews an event that's actually sponsored under the current theme. */
+function killEventIsPlayoffs() {
+  return document.documentElement.getAttribute('data-theme') === 'playoffs';
+}
 function killEventSponsorLogo(video) {
+  /* Playoffs — the new kill-event art has no sponsor slot. */
+  if (killEventIsPlayoffs()) return null;
   if (video === 'turtleslain.webm' && document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
     return null;
   }
@@ -112,7 +117,9 @@ var KILL_EVENT_PAUSE = {
 function killEventPauseCfg(video) {
   var cfg = KILL_EVENT_PAUSE[video];
   if (!cfg) return cfg;
-  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+  var theme = document.documentElement.getAttribute('data-theme');
+  /* Playoffs — the new webms are already longer; no freeze-and-hold. */
+  if (theme === '10th_anniversary' || theme === 'playoffs') {
     return null;
   }
   return cfg;
@@ -125,13 +132,34 @@ function killEventPauseCfg(video) {
    the now-longer video actually ends. Always reads the base config's
    pauseMs, regardless of whether killEventPauseCfg suppresses the
    video-freeze for this video/theme. */
+/* Playoffs — the popup (photo + name tag) pops out so its 300ms exit
+   finishes just as the gold centre block leaves the video (~2.95s in; the
+   gold block starts morphing out at ~2.85s of a 3.35s clip). Pop-in starts at
+   KILL_POP_DELAY_MS, so the hold timer = PLAYOFFS_POP_OUT_AT_MS - delay. */
+var KILL_PLAYOFFS_POP_OUT_AT_MS = 2650;
 function killEventHoldExtensionMs(video) {
+  if (killEventIsPlayoffs()) {
+    return KILL_PLAYOFFS_POP_OUT_AT_MS - KILL_POP_DELAY_MS - KILL_POP_HOLD_MS;
+  }
   var cfg = KILL_EVENT_PAUSE[video];
   return cfg ? cfg.pauseMs : 0;
 }
 /* 10th Anniversary — assets/motion/anniversary/ has its own version of
    every kill event video, same filenames as the regular assets/motion/. */
+var KILL_EVENT_PLAYOFFS_VIDEO = {
+  'firstblood.webm':  '1_FIRST_BLOOD_1920x1080.webm',
+  'doublekill.webm':  '2_DOUBLE_KILL_1920x1080.webm',
+  'triplekill.webm':  '3_TRIPLE_KILL_1920x1080.webm',
+  'maniac.webm':      '4_MANIAC_1920x1080.webm',
+  'savage.webm':      '5_SAVAGE_1920x1080.webm',
+  'lordslain.webm':   '6_LORD_SLAIN_1920x1080.webm',
+  'turtleslain.webm': '7_TURTLE_SLAIN_1920x1080.webm',
+  'wipedout.webm':    '8_WIPED_OUT_1920x1080.webm',
+};
 function killEventVideoPath(video) {
+  if (killEventIsPlayoffs() && KILL_EVENT_PLAYOFFS_VIDEO[video]) {
+    return 'assets/ingame/playoffs/motion/' + KILL_EVENT_PLAYOFFS_VIDEO[video];
+  }
   if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
     return 'assets/motion/anniversary/' + video;
   }
@@ -224,13 +252,17 @@ function killEventPhotoSrc(playerName) {
      regular-theme pre-resized one, so it doesn't look soft when scaled
      up. Naming differs slightly: hires/SIGNATURE/<name>_SIGNATURE.png,
      no "_resized" suffix. */
-  if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
+  var th = document.documentElement.getAttribute('data-theme');
+  if (th === '10th_anniversary' || th === 'playoffs') {
     return 'hires/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE.png';
   }
   return 'photos/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.png';
 }
 
 function killNametagBgSrc(camp) {
+  if (killEventIsPlayoffs()) {
+    return 'assets/lineup/playoffs/playoffs_' + (camp === 'red' ? 'red' : 'blue') + 'box.png';
+  }
   var file = 'kill' + (camp === 'red' ? 'red' : 'blue') + 'back.png';
   return document.documentElement.getAttribute('data-theme') === '10th_anniversary'
     ? 'assets/ingame/anniversary/' + file
@@ -241,13 +273,14 @@ function killNametagBgSrc(camp) {
    sbFitText/eccFitName/etc. elsewhere, so a long IGN never overflows
    Rectangle_3's 151×30 box. */
 function killFitNameMeasure(el) {
+  var maxW = killEventIsPlayoffs() ? 148 : KILL_NAME_MAX_W; /* playoffs name box is 160 wide */
   el.style.fontSize = '16px';
-  if (el.scrollWidth <= KILL_NAME_MAX_W) return;
+  if (el.scrollWidth <= maxW) return;
   var lo = 8, hi = 16;
   while (hi - lo > 0.5) {
     var mid = (lo + hi) / 2;
     el.style.fontSize = mid + 'px';
-    if (el.scrollWidth <= KILL_NAME_MAX_W) lo = mid; else hi = mid;
+    if (el.scrollWidth <= maxW) lo = mid; else hi = mid;
   }
   el.style.fontSize = lo + 'px';
 }
@@ -338,6 +371,8 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
    KILL_TEAMLOGO_EXTRA_HOLD_MS longer. */
 function showKillEventTeamLogo(camp, extraHoldMs, tricodeOverride) {
   extraHoldMs = extraHoldMs || 0;
+  /* Playoffs pops out on the video's own timeline (see KILL_PLAYOFFS_POP_OUT_AT_MS) — no extra hold */
+  var teamLogoExtra = killEventIsPlayoffs() ? 0 : KILL_TEAMLOGO_EXTRA_HOLD_MS;
   clearKillTimers();
   killSnapHide(killPhotoClipEl, killPhotoEl);
   killSnapHide(killNametagClipEl, killNametagBgEl);
@@ -360,10 +395,10 @@ function showKillEventTeamLogo(camp, extraHoldMs, tricodeOverride) {
     killHoldTimer = setTimeout(function() {
       killHoldTimer = null;
       killTeamLogoClipEl.classList.remove('ke-in');
-    }, KILL_POP_HOLD_MS + KILL_TEAMLOGO_EXTRA_HOLD_MS + extraHoldMs);
+    }, KILL_POP_HOLD_MS + teamLogoExtra + extraHoldMs);
   }, KILL_POP_DELAY_MS);
 
-  killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + KILL_TEAMLOGO_EXTRA_HOLD_MS + extraHoldMs + KILL_POP_EXIT_MS;
+  killPopCycleEndsAt = Date.now() + KILL_POP_DELAY_MS + KILL_POP_HOLD_MS + teamLogoExtra + extraHoldMs + KILL_POP_EXIT_MS;
 }
 
 function hideKillEventPlayer() {
@@ -439,7 +474,7 @@ function playNextKillEvent() {
      Wipe Out is the one kill event where "no playerName" doesn't just
      mean "no popup at all", so it needs its own check ahead of the
      generic playerName branch below. */
-  var isAnniversaryTheme = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
+  var isAnniversaryTheme = document.documentElement.getAttribute('data-theme') === '10th_anniversary' || killEventIsPlayoffs(); /* team-logo Wipe Out: anniversary + playoffs */
   if (entry.video === 'wipedout.webm' && isAnniversaryTheme && (entry.camp || entry.teamTricode)) {
     showKillEventTeamLogo(entry.camp, killEventHoldExtensionMs(entry.video), entry.teamTricode);
   } else if (entry.playerName) {

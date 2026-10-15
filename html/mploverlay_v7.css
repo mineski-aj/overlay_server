@@ -1468,6 +1468,41 @@
     text-transform: uppercase;
   }
 
+  /* Playoffs — gold centre block of the new webms is x 859..1062 (top, y868)
+     to 786..1134 (bottom, y1031). Photo (square signature, bottom cropped at
+     the gold's bottom edge) pops up inside it with the head poking above the
+     banner; name tag (playoffs_{blue,red}box.png, 261x47 -> 232x42) overlaps
+     the photo's bottom edge, gold square on the left holds the role icon. */
+  [data-theme="playoffs"] #kill-event-photo-clip {
+    left: 685px; top: 539px;
+    width: 550px; height: 492px;
+  }
+  /* Reference crop: head ~115px wide, bottom cut at the gold block's bottom
+     edge. The square signature is drawn at 470px (centred, nudged down a few
+     px so the hair isn't clipped flat by the clip's top edge). */
+  [data-theme="playoffs"] #kill-event-photo {
+    left: 40px; top: 196px;
+    width: 470px; height: 470px;
+    object-position: top;
+  }
+  /* Wipe Out team logo, centred in the gold block (y868..1031) */
+  [data-theme="playoffs"] #kill-event-teamlogo-clip {
+    left: 889px; top: 879px;
+    width: 144px; height: 144px;
+  }
+  [data-theme="playoffs"] #kill-event-nametag-clip {
+    left: 844px; top: 1013px;
+    width: 232px; height: 42px;
+  }
+  [data-theme="playoffs"] #kill-event-role-icon {
+    left: 10px; top: 6px;
+    width: 30px; height: 30px;
+  }
+  [data-theme="playoffs"] #kill-event-name-box {
+    left: 62px; top: 4px;
+    width: 160px; height: 34px;
+  }
+
   /* Sponsor logo — only shown for the specific kill-event videos that are
      sponsored (see KILL_EVENT_SPONSOR_LOGO in overlay-killevents.js), pops
      in/out alongside the photo/nametag using the same slide+fade pattern.
