@@ -1004,10 +1004,12 @@
       background-size: 100% 100%;
       transition: opacity .45s linear;
     }
-    [data-theme="playoffs"] #draft-map::before { background-image: url('/assets/draft/playoffs/playoffs_mapbackdraft.png'); }
-    /* Playoffs map icon/name positions are seeded in the Draft::playoffs bucket of
-       overlay_styles.json (Regular's saved Edit overrides would otherwise win):
-       the art's gold tab is x0-67 (arrow tip 85), white area ~86-403. */
+    /* Playoffs uses the Map Detail v2 art pair from its own folder (collapsed =
+       mapbacker_v2, open = mapdetail_v2 via #mapdetail2-plate below); the
+       expand/collapse animation is the shared one every theme uses. Map
+       icon/name/description positions are seeded in the Draft::playoffs bucket
+       of overlay_styles.json (copied from 10th Anniversary — same art layout). */
+    [data-theme="playoffs"] #draft-map::before { background-image: url('/assets/draft/playoffs/mapbacker_v2.png'); }
     /* ── Map Detail v2 — the map bug (#draft-map, art mapbacker_v2.png
        403x62, same width as the description plate) itself expands:
        OPEN slides the whole bug up 56px (so the stack's bottom edge lands
@@ -1027,6 +1029,7 @@
       transition: transform .55s cubic-bezier(.4,0,.2,1), clip-path .55s cubic-bezier(.4,0,.2,1);
       pointer-events: none;
     }
+    [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/draft/playoffs/mapdetail_v2.png'); }
     #mapdetail2-plate.md2-open { transform: none; clip-path: inset(0 0 0 0); }
     [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/draft/playoffs/mapdetail_v2.png'); }
     #mapdetail2-desc {

@@ -1211,7 +1211,7 @@
         if (isPlayoffs) {
           html += `<div class="wsm-oh"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
             `<span class="wsm-oh-label">MATCH ${i + 1} OPEN HOUSE</span>` +
-            `<span class="wsm-oh-time">${m.openHouse || ''}</span></div>`;
+            `<span class="wsm-oh-time">${wsFormatTimeGmt8(m.openHouse)}</span></div>`;
         }
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
         const center = m.score

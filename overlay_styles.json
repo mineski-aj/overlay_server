@@ -4387,13 +4387,13 @@
       "height": "390px"
     },
     ".ws-hosts-slot-left": {
-      "left": "33px",
+      "left": "-90px",
       "top": "12px",
       "width": "252px",
       "height": "390px"
     },
     ".ws-hosts-slot-right": {
-      "left": "211px",
+      "left": "400px",
       "top": "12px",
       "width": "252px",
       "height": "390px"
@@ -4737,7 +4737,7 @@
       "height": "1080px"
     },
     ".ws-hosts-slot-middle": {
-      "left": "105px",
+      "left": "145px",
       "top": "0px",
       "width": "269px",
       "height": "402px"
@@ -5845,6 +5845,13 @@
       "width": "448px",
       "height": "64px",
       "fontSize": "56px"
+    },
+    ".ws-hosts-title": {
+      "left": "0px",
+      "top": "0px",
+      "width": "571px",
+      "height": "61px",
+      "fontSize": "34px"
     }
   },
   "mploverlay_v7::playoffs": {
@@ -6056,16 +6063,31 @@
   },
   "Draft::playoffs": {
     "#draft-map-logo": {
-      "left": "0px",
+      "left": "10px",
       "top": "0px",
       "width": "71px",
       "height": "71px"
     },
     "#draft-map-name": {
-      "left": "98px",
-      "top": "10px",
-      "width": "290px",
+      "left": "140px",
+      "top": "6px",
+      "width": "230px",
       "height": "50px"
+    },
+    ".draft-map-name-text": {
+      "fontSize": "37px"
+    },
+    "#mapdetail2-plate": {
+      "left": "758px",
+      "top": "655px",
+      "width": "403px",
+      "height": "125px"
+    },
+    "#mapdetail2-desc": {
+      "left": "136px",
+      "top": "65px",
+      "width": "238.4px",
+      "height": "52.8px"
     }
   },
   "mpltag::playoffs": {

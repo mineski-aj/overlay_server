@@ -327,6 +327,42 @@
     }
     #copy-tooltip.visible { opacity: 1; }
     .feature-btns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    /* Control-tab feature list — search / favorites / sections (buildFeatureList) */
+    .feature-head { display: flex; align-items: center; gap: 6px; width: 100%; }
+    .feature-head .feature-name { flex: 1; }
+    .feat-toolbar { position: sticky; top: 0; z-index: 5; background: inherit; padding: 2px 0 8px; }
+    .feat-search {
+      width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 6px;
+      background: #0b0b12; border: 1px solid #2a2a3a; color: #ccd; font-size: 12px; outline: none;
+    }
+    .feat-search:focus { border-color: #4a5aa0; }
+    .feat-section { margin-bottom: 8px; }
+    .feat-sec-head {
+      display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;
+      padding: 5px 4px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #8080b0; border-bottom: 1px solid #1e1e2c; margin-bottom: 6px;
+    }
+    .feat-sec-head:hover { color: #aab; }
+    .feat-section-fav > .feat-sec-head { color: #d9a520; }
+    .feat-caret { display: inline-block; width: 10px; transition: transform 0.15s; }
+    .feat-sec-name { flex: 1; }
+    .feat-sec-count { color: #555; font-weight: 600; }
+    .feat-section.collapsed .feat-caret { transform: rotate(-90deg); }
+    .feat-section.collapsed .feat-sec-body { display: none; }
+    .feat-searching .feat-section.collapsed .feat-sec-body { display: block; }  /* search looks inside collapsed sections */
+    .feat-searching .feat-section.collapsed .feat-caret { transform: none; }
+    .feat-fav-hint { font-size: 11px; color: #555; padding: 4px 6px 6px; }
+    .feat-empty { font-size: 11px; color: #555; padding: 6px; }
+    .feat-star {
+      background: none; border: none; cursor: pointer; padding: 0 2px;
+      font-size: 15px; line-height: 1; color: #44445a;
+    }
+    .feat-star:hover { color: #d9a520; }
+    .feat-star.on { color: #f0b429; }
+    .feat-handle { display: none; cursor: grab; color: #555; font-size: 12px; letter-spacing: -2px; padding-right: 2px; }
+    .feat-section-fav .feat-handle { display: inline; }
+    .feature-row.feat-drop-before { box-shadow: inset 0 2px 0 #f0b429; }
+    .feature-row.feat-drop-after  { box-shadow: inset 0 -2px 0 #f0b429; }
     /* Quick left/right nudge — MVP Scene/Highlights photo+hero, see
        feat.nudges / buildNudgeControl */
     .nudge-group { display: inline-flex; align-items: center; gap: 3px; background: #14141e; border: 1px solid #2a2a3a; border-radius: 4px; padding: 2px 4px; }
@@ -2745,8 +2781,18 @@
       heatmapControls: true,
       h2hControls: true,
       bracketControls: true,
+      /* Control-tab grouping (collapsible sections, see buildFeatureList).
+         Listed by feat.name; anything not listed lands in "Other" at the
+         bottom — so a renamed/new feature is still visible, just ungrouped. */
+      featureSections: [
+        { name: 'Pre Show',  features: ['Waiting Screen TVC', 'Waiting Lobby'] },
+        { name: 'Pre Game',  features: ["Today's Schedule", 'Bracket', 'Standings', 'Team Line-Up — Blue', 'Team Line-Up — Red', 'Team Hexagon', 'Final Team'] },
+        { name: 'Post Game', features: ['Matchboard', 'Post Timeline', 'Consolidated Post 2', 'MVP Scene', 'MVP Highlights', 'Post Carry', 'Post 4 Key', 'Post H2H', 'Post Heatmap', 'Post Gold Distribution', 'Post Kill Events', "Tomorrow's Schedule", 'Credit Reel'] },
+        /* Rarely used — still fully working, just tucked away (collapsed until opened). */
+        { name: 'Hidden', collapsed: true, features: ['Middleboard', 'Playerboard', 'Post Hearts', 'Post Emblem', 'Post Items', 'Post Stats', 'Rich Guy', 'Consolidated Post'] },
+      ],
       features: [
-        { name: 'Matchboard',    show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
+        { name: 'Matchboard',   show: '/overlay/matchboard/show',    hide: '/overlay/matchboard/hide'    },
         { name: 'Middleboard',   show: '/overlay/middleboard/show',   hide: '/overlay/middleboard/hide'   },
         { name: 'Playerboard',   show: '/overlay/playerboard/show',   hide: '/overlay/playerboard/hide'   },
         { name: 'Post Hearts',   show: '/overlay/post_hearts/show',   hide: '/overlay/post_hearts/hide'   },
@@ -4170,6 +4216,178 @@
     body.appendChild(row);
   }
 
+  /* ── Control-tab feature list: search + favorites + sections ──
+     buildRow(feat) builds one .feature-row (all its buttons/listeners).
+     Each row is built ONCE and only ever MOVED between sections, so the
+     button refs other code keeps (mplfsFeatureBtns, previewToggleRegistry)
+     stay valid. Favorites + collapsed sections are per-browser
+     (localStorage, per overlay id) — each operator PC keeps its own. */
+  var ctlSearchText = {};   // ov.id -> last search text (survives a re-select)
+  var ctlSearchInput = null;
+  function ctlLsGet(k, fallback) {
+    try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? fallback : v; } catch (e) { return fallback; }
+  }
+  function ctlLsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+    var a = document.activeElement;
+    if (a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) return;
+    if (!ctlSearchInput || !ctlSearchInput.isConnected || !ctlSearchInput.offsetParent) return;
+    e.preventDefault();
+    ctlSearchInput.focus();
+    ctlSearchInput.select();
+  });
+
+  function buildFeatureList(ov, body, buildRow) {
+    var favKey = 'ctl_favs_' + ov.id, colKey = 'ctl_collapsed_' + ov.id;
+    var rows = {}, names = [];
+    ov.features.forEach(function (f) { rows[f.name] = buildRow(f); names.push(f.name); });
+    var favs = ctlLsGet(favKey, []).filter(function (n) { return rows[n]; });
+    var collapsed = ctlLsGet(colKey, {});
+    var dragName = null;
+
+    var wrap = el('div', 'feat-list');
+    var bar = el('div', 'feat-toolbar');
+    var search = document.createElement('input');
+    search.type = 'search';
+    search.className = 'feat-search';
+    search.placeholder = 'Search scenes…   ( / )';
+    search.value = ctlSearchText[ov.id] || '';
+    bar.appendChild(search);
+    wrap.appendChild(bar);
+    var secHost = el('div', '');
+    wrap.appendChild(secHost);
+    var empty = el('div', 'feat-empty', 'No scenes match');
+    wrap.appendChild(empty);
+    body.appendChild(wrap);
+    ctlSearchInput = search;
+
+    /* Star + drag handle live in each row's .feature-head. */
+    names.forEach(function (n) {
+      var head = rows[n].querySelector('.feature-head');
+      var handle = el('span', 'feat-handle', '⋮⋮');
+      handle.title = 'Drag to reorder favorites';
+      handle.draggable = true;
+      handle.addEventListener('dragstart', function (e) {
+        dragName = n;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', n);
+        try { e.dataTransfer.setDragImage(rows[n], 12, 12); } catch (err) {}
+      });
+      handle.addEventListener('dragend', function () { dragName = null; clearDropMarks(); });
+      head.insertBefore(handle, head.firstChild);
+      var star = el('button', 'feat-star', '☆');
+      star.type = 'button';
+      star.addEventListener('click', function () {
+        var i = favs.indexOf(n);
+        if (i >= 0) favs.splice(i, 1); else favs.push(n);
+        ctlLsSet(favKey, favs);
+        render();
+      });
+      head.appendChild(star);
+
+      /* Drop target — only meaningful while the row sits in Favorites. */
+      var row = rows[n];
+      row.addEventListener('dragover', function (e) {
+        if (!dragName || dragName === n || favs.indexOf(n) < 0) return;
+        e.preventDefault();
+        var r = row.getBoundingClientRect();
+        var after = e.clientY > r.top + r.height / 2;
+        row.classList.toggle('feat-drop-before', !after);
+        row.classList.toggle('feat-drop-after', after);
+      });
+      row.addEventListener('dragleave', function () { row.classList.remove('feat-drop-before', 'feat-drop-after'); });
+      row.addEventListener('drop', function (e) {
+        if (!dragName || dragName === n || favs.indexOf(n) < 0) return;
+        e.preventDefault();
+        var after = row.classList.contains('feat-drop-after');
+        favs.splice(favs.indexOf(dragName), 1);
+        favs.splice(favs.indexOf(n) + (after ? 1 : 0), 0, dragName);
+        ctlLsSet(favKey, favs);
+        dragName = null;
+        render();
+      });
+    });
+    function clearDropMarks() {
+      names.forEach(function (n) { rows[n].classList.remove('feat-drop-before', 'feat-drop-after'); });
+    }
+
+    var sectionEls = [];
+    function render() {
+      clearDropMarks();
+      secHost.innerHTML = '';   // rows are re-appended below, not rebuilt
+      sectionEls = [];
+      var used = {};
+      favs.forEach(function (n) { used[n] = true; });
+      var defs = [{ name: 'Favorites', fav: true, list: favs.slice() }];
+      (ov.featureSections || []).forEach(function (s) {
+        var list = s.features.filter(function (n) { return rows[n] && !used[n]; });
+        list.forEach(function (n) { used[n] = true; });
+        defs.push({ name: s.name, list: list, defCollapsed: !!s.collapsed });
+      });
+      var rest = names.filter(function (n) { return !used[n]; });
+      defs.push({ name: ov.featureSections ? 'Other' : 'All Scenes', list: rest });
+
+      defs.forEach(function (d) {
+        if (!d.fav && !d.list.length) return;
+        var sec = el('div', 'feat-section' + (d.fav ? ' feat-section-fav' : ''));
+        /* Saved open/closed wins; otherwise the section's own default. */
+        var isCollapsed = function () { return d.name in collapsed ? !!collapsed[d.name] : !!d.defCollapsed; };
+        if (isCollapsed()) sec.classList.add('collapsed');
+        var head = el('div', 'feat-sec-head');
+        head.appendChild(el('span', 'feat-caret', '▾'));
+        head.appendChild(el('span', 'feat-sec-name', (d.fav ? '★ ' : '') + d.name));
+        var cnt = el('span', 'feat-sec-count', String(d.list.length));
+        head.appendChild(cnt);
+        head.addEventListener('click', function () {
+          collapsed[d.name] = !isCollapsed();
+          ctlLsSet(colKey, collapsed);
+          sec.classList.toggle('collapsed', collapsed[d.name]);
+        });
+        sec.appendChild(head);
+        var sb = el('div', 'feat-sec-body');
+        if (d.fav && !d.list.length) sb.appendChild(el('div', 'feat-fav-hint', 'Click ☆ on any scene to pin it here.'));
+        d.list.forEach(function (n) {
+          var star = rows[n].querySelector('.feat-star');
+          var isFav = favs.indexOf(n) >= 0;
+          star.textContent = isFav ? '★' : '☆';
+          star.title = isFav ? 'Remove from Favorites' : 'Add to Favorites';
+          star.classList.toggle('on', isFav);
+          sb.appendChild(rows[n]);
+        });
+        sec.appendChild(sb);
+        secHost.appendChild(sec);
+        sectionEls.push({ sec: sec, list: d.list, cnt: cnt, fav: d.fav });
+      });
+      applyFilter();
+    }
+
+    function applyFilter() {
+      var q = search.value.trim().toLowerCase();
+      ctlSearchText[ov.id] = search.value;
+      wrap.classList.toggle('feat-searching', !!q);
+      var total = 0;
+      sectionEls.forEach(function (s) {
+        var shown = 0;
+        s.list.forEach(function (n) {
+          var hit = !q || n.toLowerCase().indexOf(q) >= 0;
+          rows[n].style.display = hit ? '' : 'none';
+          if (hit) shown++;
+        });
+        total += shown;
+        s.cnt.textContent = q ? shown + '/' + s.list.length : String(s.list.length);
+        s.sec.style.display = (q && !shown) ? 'none' : '';
+      });
+      empty.style.display = (q && !total) ? '' : 'none';
+    }
+
+    search.addEventListener('input', applyFilter);
+    search.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { search.value = ''; applyFilter(); search.blur(); }
+    });
+    render();
+  }
+
   function buildControlBody(ov) {
     if (_hrmSwapTimer)  { clearInterval(_hrmSwapTimer);  _hrmSwapTimer  = null; }
     if (_hmStatusTimer) { clearInterval(_hmStatusTimer); _hmStatusTimer = null; }
@@ -4740,9 +4958,12 @@
     if (ov.features && ov.features.length) {
       if (body.children.length) body.appendChild(el('div', 'divider'));
       body.appendChild(el('div', 'features-label', 'Features'));
-      ov.features.forEach(function (feat) {
+      buildFeatureList(ov, body, function (feat) {
         var fr = el('div', 'feature-row');
-        fr.appendChild(el('div', 'feature-name', feat.name));
+        fr.dataset.featName = feat.name;
+        var fhead = el('div', 'feature-head');
+        fhead.appendChild(el('div', 'feature-name', feat.name));
+        fr.appendChild(fhead);
         /* Last load result for this scene (🟢/🟡/🔴), filled + kept current
            by the Logs-tab script at the bottom of this file. Keyed by the
            same route key the Preview button uses. */
@@ -4805,7 +5026,7 @@
           });
         }
         fr.appendChild(fb);
-        body.appendChild(fr);
+        return fr;
       });
     }
 
