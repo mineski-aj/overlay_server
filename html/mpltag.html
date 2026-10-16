@@ -22,6 +22,12 @@
       src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
     }
     @font-face {
+      font-family: 'General Sans';
+      font-weight: 500;
+      font-display: block;
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+    }
+    @font-face {
       font-family: 'Anton';
       font-weight: 400;
       font-display: block;
@@ -715,6 +721,136 @@
     }
     .bpmtag-fire.on { opacity: 1; }
 
+
+    /* ═══ L3 LOBBY — special "super" Waiting Lobby strip (playoffs look) ═══
+       Self-contained, NOT theme-gated: always the playoffs HUD. Bottom strip
+       y853..1080 over playoffsbg_theme.webm (cropped to the strip), timer
+       panel / sponsor / player photos / match box / name plates, every piece
+       its own absolutely-positioned element in canvas coordinates (so each is
+       independently draggable in the Edit tab). #l3l-root is only the
+       show/hide shell (0,0,1920x1080, transparent, no clicks).
+       Reuses Waiting Lobby's art: Blue/Red_NameBox.png, the playoffs
+       MatchBox_REGULAR MATCH.png, SCORES/vs.png, /hires photos, /api/sponsors. */
+    #l3l-root { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: none; pointer-events: none; }
+    #l3l-root.l3l-on { display: block; }
+    #l3l-bg { position: absolute; left: 0; top: 853px; width: 1920px; height: 227px; overflow: hidden; z-index: 1;
+      transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
+    #l3l-bg video { position: absolute; left: 0; top: -800px; width: 1920px; height: 1080px; display: block; }
+    /* Four white corner-HUD lines (MPL PHILIPPINES / SEASON 18 PLAYOFFS / LAKAS NG PINAS / PALAG NA TO!), measured off the
+       lobby reference: real text + SVG icons, one element per corner, white on whatever the game feed is. */
+    .l3l-corner { position: absolute; z-index: 3; height: 20px; display: flex; align-items: center; color: #fff; white-space: nowrap;
+      font-family: 'General Sans', sans-serif; font-weight: 500; font-size: 17px; letter-spacing: 0.01em; line-height: 20px;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 250ms ease, transform 250ms ease; }
+    .l3l-corner b { font-weight: 700; }
+    .l3l-corner svg { display: block; flex: none; overflow: visible; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45)); }
+    #l3l-corner-tl { left: 29px;   top: 30px;  gap: 17px; transform: translateY(-24px); }
+    #l3l-corner-tr { left: 1642px; top: 20px;  gap: 11px; transform: translateY(-24px); }
+    #l3l-corner-bl { left: 30px;   top: 810px; gap: 18px; transform: translateY(24px); }
+    #l3l-corner-br { left: 1671px; top: 810px; gap: 13px; transform: translateY(24px); }
+    #l3l-corner-bl .l3l-cline { display: block; width: 212px; height: 1px; background: #fff; margin-left: 22px; }
+    #l3l-corner-br svg + svg { margin-left: -6px; }
+    #l3l-root.l3l-in .l3l-corner { opacity: 1; transform: none; transition: opacity 500ms ease 900ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms; }
+    #l3l-goldline { position: absolute; left: 409px; top: 1075px; width: 1511px; height: 5px; z-index: 2;
+      background: linear-gradient(to right, #fde067, #d8b04a 50%, #f2d157);
+      transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
+    #l3l-timerbox { position: absolute; left: 0; top: 853px; width: 409px; height: 227px; z-index: 3;
+      background: linear-gradient(to bottom, #ececee 0%, #dcdcde 55%, #cdcdcf 100%);
+      transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
+    #l3l-timer-label { position: absolute; left: 0; top: 866px; width: 409px; height: 50px; z-index: 4;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 36px; color: #0a0a0a;
+      text-transform: uppercase; white-space: nowrap;
+      transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
+    #l3l-timer-value { position: absolute; left: 0; top: 912px; width: 409px; height: 170px; z-index: 4;
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 156px; line-height: 170px;
+      letter-spacing: 0; white-space: nowrap; text-align: center;
+      transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
+    .l3l-timer-glow, .l3l-timer-fill { position: absolute; left: 0; top: 0; width: 100%; }
+    .l3l-timer-glow { color: #f2f2f2; transform: translate(-4px, 0); }
+    .l3l-timer-fill { color: #0a0a0a; }
+    .l3l-timer-digit { display: inline-block; width: 0.5em; text-align: center; }
+
+    #l3l-sponsor { position: absolute; left: 457px; top: 910px; width: 318px; height: 112px; z-index: 6;
+      opacity: 0; transform: translateY(50px); transition: opacity 300ms ease, transform 300ms ease; }
+    #l3l-sponsor-cat { position: absolute; left: 0; top: 0; width: 100%; height: 34px; z-index: 2;
+      display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden;
+      background: linear-gradient(to right, #fde067 0%, #f4d459 25%, #efcd52 60%, #f2d157 100%);
+      box-shadow: inset 0 -2px 0 #dfbd4e, 0 2px 7px rgba(0, 0, 0, 0.22);
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.02em;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap; }
+    #l3l-sponsor-loop { position: absolute; left: 0; right: 0; top: 34px; bottom: 0; overflow: hidden; padding: 6px 12px;
+      background:
+        radial-gradient(ellipse 45% 75% at 0% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        radial-gradient(ellipse 45% 75% at 100% 100%, rgba(0, 0, 0, 0.17), rgba(0, 0, 0, 0) 100%),
+        linear-gradient(to bottom, #ffffff 55%, #eeeeee 100%); }
+    #l3l-sponsor-loop img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
+      padding: 6px 12px; box-sizing: border-box; transform: translateX(-110%); }
+    #l3l-sponsor-loop img.spon-in  { transform: translateX(0); transition: transform 0.4s cubic-bezier(0, 0, 0.2, 1); }
+    #l3l-sponsor-loop img.spon-out { transform: translateX(110%); transition: transform 0.35s cubic-bezier(0.4, 0, 1, 1); }
+
+    /* Player photos: same two stacked layers per side + JS-driven cross-fade/glide as Waiting Lobby. */
+    .l3l-player { position: absolute; top: 770px; width: 520px; height: 520px; z-index: 4; }
+    .l3l-player-blue { left: 627px; }
+    .l3l-player-red  { left: 1520px; }
+    .l3l-player-photo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
+      object-position: 50% 0%; display: block; opacity: 0; }
+
+    /* Name plates: Waiting Lobby's 347x62 art scaled to 192x34 (team logo in the white square, name slides like WL). */
+    .l3l-namebox { position: absolute; top: 1027px; width: 347px; height: 62px; z-index: 8;
+      transform: scale(0.553); transform-origin: 0 0; font-family: 'Anton', sans-serif;
+      transition: clip-path 350ms cubic-bezier(0.16, 1, 0.3, 1); }
+    .l3l-namebox-blue { left: 780px;  clip-path: inset(0 100% 0 0); }
+    .l3l-namebox-red  { left: 1714px; clip-path: inset(0 0 0 100%); }
+    .l3l-namebox img.l3l-namebox-bg { position: absolute; left: 0; top: 0; width: 347px; height: 62px; }
+    .l3l-namebox-logo { position: absolute; top: 0; width: 62px; height: 62px; display: flex; align-items: center; justify-content: center; }
+    .l3l-namebox-blue .l3l-namebox-logo { left: 6px; }
+    .l3l-namebox-red  .l3l-namebox-logo { right: 6px; }
+    .l3l-namebox-logo img { width: 40px; height: 40px; object-fit: contain; filter: brightness(0); }
+    .l3l-namebox-name { position: absolute; top: 0; width: 285px; height: 62px; display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 28px; color: #fff;
+      text-transform: uppercase; white-space: nowrap; text-align: center; }
+    .l3l-namebox-blue .l3l-namebox-name { left: 62px; }
+    .l3l-namebox-red  .l3l-namebox-name { left: 0; }
+    .l3l-slide-el { transition: opacity 260ms ease, transform 260ms ease; }
+    .l3l-slide-el.l3l-slide-out { opacity: 0; transform: translateY(28px); }
+    .l3l-slide-el.l3l-slide-in  { opacity: 0; transform: translateY(-28px); }
+    .l3l-slide-el.l3l-no-transition { transition: none !important; }
+
+    /* Match box: Waiting Lobby's playoffs box (724x219) scaled to 593 wide. */
+    #l3l-match { position: absolute; left: 1040px; top: 870px; width: 593px; height: 180px; z-index: 7;
+      font-family: 'General Sans', sans-serif;
+      opacity: 0; transform: translateY(50px); transition: opacity 300ms ease, transform 300ms ease; }
+    #l3l-match .l3m-box { position: absolute; left: 0; top: 0; width: 724px; height: 219px; transform: scale(0.819); transform-origin: 0 0; }
+    #l3l-match .l3m-bg { position: absolute; left: 0; top: 0; width: 724px; height: 219px; }
+    #l3l-match .l3m-label, #l3l-match .l3m-time, #l3l-match .l3m-bo {
+      position: absolute; top: 0; height: 49px; display: flex; align-items: center;
+      font-weight: 700; font-size: 24px; color: #0a0a0a; text-transform: uppercase; white-space: nowrap; }
+    #l3l-match .l3m-label { left: 18px; }
+    #l3l-match .l3m-time  { left: 0; width: 100%; justify-content: center; }
+    #l3l-match .l3m-bo    { right: 18px; }
+    #l3l-match .l3m-slot { position: absolute; top: 49px; height: 170px; display: flex; align-items: center; justify-content: center; }
+    #l3l-match .l3m-tri { font-family: 'Anton', sans-serif; font-size: 52px; color: #fff; text-transform: uppercase; white-space: nowrap; }
+    #l3l-match .l3m-tri-l { left: 0; width: 119px; }
+    #l3l-match .l3m-tri-r { right: 0; width: 119px; }
+    #l3l-match .l3m-logo-l { left: 130px; width: 166px; }
+    #l3l-match .l3m-logo-r { left: 430px; width: 166px; }
+    #l3l-match .l3m-logo-l img, #l3l-match .l3m-logo-r img { width: 155px; height: 137px; object-fit: contain; }
+    #l3l-match .l3m-center { left: 285px; width: 153px; }
+    #l3l-match .l3m-center img.l3m-vs { width: 90px; height: 49px; object-fit: contain; }
+    #l3l-match .l3m-score { display: flex; flex-direction: column; align-items: center; line-height: 1; }
+    #l3l-match .l3m-score-l, #l3l-match .l3m-score-r { font-weight: 800; font-size: 41px; }
+    #l3l-match .l3m-score-l { color: #1656d5; }
+    #l3l-match .l3m-score-r { color: #d92027; }
+    #l3l-match .l3m-score-div { width: 46px; height: 4px; background: #0a0a0a; margin: 4px 0; }
+
+    /* IN state — everything settles into place; removing .l3l-in plays the reverse (OUT). */
+    #l3l-root.l3l-in #l3l-bg, #l3l-root.l3l-in #l3l-goldline, #l3l-root.l3l-in #l3l-timerbox,
+    #l3l-root.l3l-in #l3l-timer-label, #l3l-root.l3l-in #l3l-timer-value {
+      transform: none; transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1); }
+    #l3l-root.l3l-in #l3l-sponsor { opacity: 1; transform: none; transition: opacity 450ms ease 300ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 300ms; }
+    #l3l-root.l3l-in #l3l-match   { opacity: 1; transform: none; transition: opacity 450ms ease 400ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 400ms; }
+    #l3l-root.l3l-in .l3l-namebox { clip-path: inset(0 0 0 0); transition-delay: 800ms; }
+    #l3l-root:not(.l3l-in) .l3l-player { opacity: 0; transition: opacity 250ms ease; }
   </style>
 </head>
 <body>
@@ -728,6 +864,41 @@
   <div id="mc-blue-clip"><div id="mc-blue-burst"></div><video id="mc-blue-video" loop muted playsinline preload="auto"></video></div>
   <div id="mc-red-clip"><div id="mc-red-burst"></div><video id="mc-red-video" loop muted playsinline preload="auto"></video></div>
   <div id="mc-vs-clip"><video id="mc-vs-video" src="/assets/matchcard/vs_matchcard.webm" muted playsinline preload="auto"></video></div>
+  <!-- [FEATURE: l3-lobby] special Waiting Lobby strip; see the last IIFE in this file's script block. -->
+  <div id="l3l-root">
+    <div id="l3l-bg"><video id="l3l-bg-video" src="/assets/z_playoffs background/playoffsbg_theme.webm" loop muted playsinline preload="auto"></video></div>
+    <div id="l3l-goldline"></div>
+    <div class="l3l-corner" id="l3l-corner-tl"><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><span><b>MPL</b> PHILIPPINES</span><svg width="22" height="14" viewBox="0 0 22 14"><polygon points="1,1 10,7 1,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/><polygon points="12,1 21,7 12,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+    <div class="l3l-corner" id="l3l-corner-tr"><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><span><b>SEASON 18</b> PLAYOFFS</span><svg width="20" height="20" viewBox="-10 -10 20 20"><polygon fill="#fff" points="0,-10 2.2,-4.6 7.1,-7.1 4.6,-2.2 10,0 4.6,2.2 7.1,7.1 2.2,4.6 0,10 -2.2,4.6 -7.1,7.1 -4.6,2.2 -10,0 -4.6,-2.2 -7.1,-7.1 -2.2,-4.6"/></svg></div>
+    <div class="l3l-corner" id="l3l-corner-bl"><svg width="20" height="20" viewBox="-10 -10 20 20"><path fill="#fff" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10Z"/></svg><span><b>LAKAS</b> NG <b>PINAS</b></span><i class="l3l-cline"></i></div>
+    <div class="l3l-corner" id="l3l-corner-br"><span><b>PALAG</b> NA <b>TO!</b></span><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><svg width="22" height="14" viewBox="0 0 22 14"><polygon points="1,1 10,7 1,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/><polygon points="12,1 21,7 12,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+    <div id="l3l-timerbox"></div>
+    <div id="l3l-timer-label">SHOW STARTS IN:</div>
+    <div id="l3l-timer-value"><span class="l3l-timer-glow">30:30</span><span class="l3l-timer-fill">30:30</span></div>
+    <div id="l3l-sponsor">
+      <div id="l3l-sponsor-cat"></div>
+      <div id="l3l-sponsor-loop"><img id="l3l-sponsor-img" src="" alt=""></div>
+    </div>
+    <div class="l3l-player l3l-player-blue">
+      <img class="l3l-player-photo" id="l3l-blue-photo-0" src="" alt="">
+      <img class="l3l-player-photo" id="l3l-blue-photo-1" src="" alt="">
+    </div>
+    <div class="l3l-player l3l-player-red">
+      <img class="l3l-player-photo" id="l3l-red-photo-0" src="" alt="">
+      <img class="l3l-player-photo" id="l3l-red-photo-1" src="" alt="">
+    </div>
+    <div id="l3l-match"></div>
+    <div class="l3l-namebox l3l-namebox-blue">
+      <img class="l3l-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
+      <div class="l3l-namebox-logo"><img class="l3l-slide-el" id="l3l-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
+      <div class="l3l-namebox-name l3l-slide-el" id="l3l-blue-name"></div>
+    </div>
+    <div class="l3l-namebox l3l-namebox-red">
+      <img class="l3l-namebox-bg" src="/assets/Waiting Lobby/Red_NameBox.png" alt="">
+      <div class="l3l-namebox-logo"><img class="l3l-slide-el" id="l3l-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
+      <div class="l3l-namebox-name l3l-slide-el" id="l3l-red-name"></div>
+    </div>
+  </div>
   <!-- [FEATURE: bpm-meter] built dynamically via the IIFE at the bottom
        of this file's <script> block. -->
   <div id="bpmtag-clip">
@@ -766,6 +937,9 @@
   <button id="ph2h-dbg-mid">MID</button>
   <button id="ph2h-dbg-roamer">ROAMER</button>
   <button class="hide" id="ph2h-dbg-hide">■ HIDE</button>
+  <span class="dbg-label" style="margin-left:16px;">L3 Lobby (local test)</span>
+  <button id="l3l-dbg-show">▶ SHOW</button>
+  <button class="hide" id="l3l-dbg-hide">■ HIDE</button>
 </div>
 
 <script>
@@ -2470,6 +2644,254 @@
 
   window.bpmTagAnimateIn  = bpmTagAnimateIn;
   window.bpmTagAnimateOut = bpmTagAnimateOut;
+})();
+
+/* ── [FEATURE: l3-lobby] "L3 Lobby" — special Waiting Lobby strip ─────
+   Ported from mplfs.html's Waiting Lobby (match box, countdown, sponsor
+   loop, player-photo rotation + name plates) into the bottom strip of the
+   mpltag canvas, over playoffsbg_theme.webm. Plain checkOverlays pattern
+   (key + SSE event 'l3lobby'). Data = /match/state (home = blue/left, away
+   = red/right, same as Waiting Lobby): lineup photos from /hires, countdown
+   from state.timer (server-authoritative endAt, skew-corrected via
+   serverNow), sponsors from /api/sponsors. Only runs timers / video / loops
+   while shown. Reads only (GETs) — no PREVIEW_ONLY guard needed. */
+(function () {
+  var ROOT = document.getElementById('l3l-root');
+  var BGV  = document.getElementById('l3l-bg-video');
+  var TIMER = document.getElementById('l3l-timer-value');
+  var HOLD = 4200 + 250, FADE_IN = 450, MOVE_IN = 750, FADE_OUT = 350;
+  var OUT_MS = 800;
+
+  var on = false, state = null, clockOffset = 0;
+  var timerInt = null, playerInt = null, hideTimer = null, startTimer = null;
+  var photoLayer = { blue: 0, red: 0 }, lineupKey = '', lineups = { blue: [], red: [] }, playerIdx = 0;
+
+  function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  /* ── countdown ── */
+  function digits(t) { return t.replace(/[0-9]/g, function (d) { return '<span class="l3l-timer-digit">' + d + '</span>'; }); }
+  function renderTimer() {
+    var t = (state && state.timer) || { running: false, endAt: null, remaining: 30 * 60 + 30 };
+    var remain = (t.running && t.endAt)
+      ? Math.max(0, Math.round((t.endAt - (Date.now() + clockOffset)) / 1000))
+      : Math.max(0, t.remaining || 0);
+    var text = String(Math.floor(remain / 60)).padStart(2, '0') + ':' + String(remain % 60).padStart(2, '0');
+    var html = digits(text);
+    TIMER.querySelector('.l3l-timer-fill').innerHTML = html;
+    TIMER.querySelector('.l3l-timer-glow').innerHTML = html;
+  }
+
+  /* ── match box ── */
+  function buildMatch(ms) {
+    var root = document.getElementById('l3l-match');
+    if (!ms) { root.innerHTML = ''; return; }
+    var num = ms.match || 1, tm = (ms.todayMatches || [])[num - 1] || {};
+    var home = ms.home || {}, away = ms.away || {};
+    var lt = home.short || tm.team1Short || '', rt = away.short || tm.team2Short || '';
+    var s1 = home.score || tm.score1 || 0, s2 = away.score || tm.score2 || 0;
+    var logo = function (side, tri) {
+      return '<div class="l3m-slot l3m-logo-' + side + '">' + (tri ? '<img src="/logos/' + encodeURIComponent(tri) + '.png" onerror="this.style.display=\'none\'" alt="">' : '') + '</div>';
+    };
+    var center = (s1 === 0 && s2 === 0)
+      ? '<img class="l3m-vs" src="/assets/Waiting Screen TVC/SCORES/vs.png" alt="VS">'
+      : '<div class="l3m-score"><span class="l3m-score-l">' + s1 + '</span><span class="l3m-score-div"></span><span class="l3m-score-r">' + s2 + '</span></div>';
+    root.innerHTML =
+      '<div class="l3m-box"><img class="l3m-bg" src="/assets/Waiting Screen TVC/playoffs/MatchBox_REGULAR MATCH.png" alt="">' +
+      '<span class="l3m-label">MATCH ' + num + '</span><span class="l3m-time">' + esc(tm.time || '') + '</span>' +
+      '<span class="l3m-bo">' + esc((ms.series || 'BO3').toUpperCase()) + '</span>' +
+      '<div class="l3m-slot l3m-tri l3m-tri-l">' + esc(lt) + '</div>' + logo('l', lt) +
+      '<div class="l3m-slot l3m-center">' + center + '</div>' + logo('r', rt) +
+      '<div class="l3m-slot l3m-tri l3m-tri-r">' + esc(rt) + '</div></div>';
+  }
+
+  /* ── sponsor loop (same /api/sponsors + slide timing as Waiting Lobby) ── */
+  var sponsors = [], sIdx = 0, sActive = false, sHold = null, sIn = null, sOut = null;
+  function fitCat(el) {
+    var size = 19; el.style.fontSize = size + 'px';
+    while (el.scrollWidth > el.clientWidth && size > 9) el.style.fontSize = (size -= 0.5) + 'px';
+  }
+  function sponsorRun() {
+    if (!sActive) return;
+    var img = document.getElementById('l3l-sponsor-img'), cat = document.getElementById('l3l-sponsor-cat');
+    var sp = sponsors[sIdx];
+    img.className = ''; img.src = sp.src;
+    cat.textContent = sp.category || ''; fitCat(cat);
+    void img.offsetWidth;
+    img.classList.add('spon-in');
+    sIn = function (ev) {
+      if (ev.propertyName !== 'transform') return;
+      img.removeEventListener('transitionend', sIn);
+      sHold = setTimeout(function () {
+        if (!sActive) return;
+        img.classList.remove('spon-in'); img.classList.add('spon-out');
+        sOut = function (ev2) {
+          if (ev2.propertyName !== 'transform') return;
+          img.removeEventListener('transitionend', sOut);
+          if (!sActive) return;
+          sIdx = (sIdx + 1) % sponsors.length; sponsorRun();
+        };
+        img.addEventListener('transitionend', sOut);
+      }, sp.dur);
+    };
+    img.addEventListener('transitionend', sIn);
+  }
+  function sponsorStart() {
+    sActive = true;
+    fetch('/api/sponsors').then(function (r) { return r.json(); }).then(function (list) {
+      if (!sActive || !list || !list.length) return;
+      sponsors = list; sIdx = 0; sponsorRun();
+    }).catch(function () {});
+  }
+  function sponsorStop() {
+    sActive = false; clearTimeout(sHold);
+    var img = document.getElementById('l3l-sponsor-img');
+    if (img) { img.removeEventListener('transitionend', sIn); img.removeEventListener('transitionend', sOut); }
+  }
+
+  /* ── player rotation (Waiting Lobby's exact photo + name animation) ── */
+  function photoUrl(ign, side) {
+    var f = side === 'blue' ? 'LEFT' : 'RIGHT';
+    return '/hires/' + f + '/' + encodeURIComponent(ign + '_' + f + '.png');
+  }
+  function roleFile(role) {
+    var r = (role || '').toLowerCase();
+    if (r.indexOf('gold') >= 0) return 'GOLD LANER';
+    if (r.indexOf('exp') >= 0)  return 'EXP LANER';
+    if (r.indexOf('mid') >= 0)  return 'MID LANER';
+    if (r.indexOf('roam') >= 0) return 'ROAMER';
+    if (r.indexOf('jung') >= 0) return 'JUNGLER';
+    return (role || '').toUpperCase();
+  }
+  function applyPlayer(side, player) {
+    var ign = player && player.ign;
+    var nameEl = document.getElementById('l3l-' + side + '-name');
+    var logoEl = document.getElementById('l3l-' + side + '-logo');
+    var els = [nameEl, logoEl];
+    els.forEach(function (el) { el.classList.add('l3l-slide-out'); });
+    setTimeout(function () {
+      nameEl.textContent = ign || '';
+      logoEl.style.display = '';
+      logoEl.src = (player && player.role) ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
+      els.forEach(function (el) { el.classList.add('l3l-no-transition'); el.classList.remove('l3l-slide-out'); el.classList.add('l3l-slide-in'); });
+      void nameEl.offsetWidth;
+      els.forEach(function (el) { el.classList.remove('l3l-no-transition', 'l3l-slide-in'); });
+    }, 260);
+
+    var cur = photoLayer[side], next = 1 - cur;
+    var curEl = document.getElementById('l3l-' + side + '-photo-' + cur);
+    var nextEl = document.getElementById('l3l-' + side + '-photo-' + next);
+    var startX = side === 'blue' ? -60 : 60, failed = false;
+    nextEl.onerror = function () { nextEl.onerror = null; failed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+    nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; nextEl.style.transform = 'translateX(' + startX + 'px)';
+    if (ign) nextEl.src = photoUrl(ign, side); else nextEl.removeAttribute('src');
+    void nextEl.offsetWidth;
+    curEl.style.transition = 'opacity ' + FADE_OUT + 'ms ease';
+    curEl.style.opacity = '0';
+    setTimeout(function () {
+      if (!ign || failed || !on) return;
+      nextEl.style.transition = 'opacity ' + FADE_IN + 'ms cubic-bezier(0.16,1,0.3,1), transform ' + MOVE_IN + 'ms cubic-bezier(0.16,1,0.3,1)';
+      nextEl.style.opacity = '1'; nextEl.style.transform = 'translateX(0)';
+    }, FADE_OUT);
+    photoLayer[side] = next;
+  }
+  function showPlayers() {
+    var b = lineups.blue, r = lineups.red;
+    applyPlayer('blue', b[playerIdx % (b.length || 1)]);
+    applyPlayer('red',  r[playerIdx % (r.length || 1)]);
+  }
+  function startPlayers() {
+    clearInterval(playerInt);
+    playerIdx = 0; showPlayers();
+    if (lineups.blue.length > 1 || lineups.red.length > 1) {
+      playerInt = setInterval(function () { playerIdx++; showPlayers(); }, HOLD);
+    }
+  }
+
+  /* ── state ── */
+  function applyState(ms, restartPlayers) {
+    if (!ms) return;
+    state = ms;
+    if (typeof ms.serverNow === 'number') clockOffset = ms.serverNow - Date.now();
+    buildMatch(ms);
+    var label = document.getElementById('l3l-timer-label');
+    var txt = (ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN') + ':';
+    if (label.textContent !== txt) label.textContent = txt;
+    renderTimer();
+    lineups.blue = (ms.home && ms.home.lineup) || [];
+    lineups.red  = (ms.away && ms.away.lineup) || [];
+    var key = JSON.stringify([lineups.blue.map(function (p) { return p.ign + '|' + p.role; }), lineups.red.map(function (p) { return p.ign + '|' + p.role; }),
+                              ms.home && ms.home.short, ms.away && ms.away.short]);
+    if (restartPlayers || key !== lineupKey) { lineupKey = key; if (on) startPlayers(); }
+  }
+  function fetchState() {
+    return fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+
+  function l3lAnimateIn() {
+    if (on) return;
+    on = true;
+    clearTimeout(hideTimer);
+    ROOT.classList.add('l3l-on');
+    BGV.play().catch(function () {});
+    fetchState().then(function (ms) {
+      if (!on) return;
+      applyState(ms, false);
+      clearInterval(timerInt); timerInt = setInterval(renderTimer, 250);
+      sponsorStart();
+      void ROOT.offsetWidth;
+      ROOT.classList.add('l3l-in');
+      clearTimeout(startTimer);
+      startTimer = setTimeout(function () { if (on) startPlayers(); }, 700);
+    });
+  }
+  function l3lAnimateOut() {
+    if (!on) return;
+    on = false;
+    clearTimeout(startTimer);
+    ROOT.classList.remove('l3l-in');
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(function () {
+      ROOT.classList.remove('l3l-on');
+      BGV.pause();
+      clearInterval(timerInt); clearInterval(playerInt);
+      sponsorStop();
+      ['blue', 'red'].forEach(function (sd) { [0, 1].forEach(function (i) {
+        var el = document.getElementById('l3l-' + sd + '-photo-' + i); el.style.transition = 'none'; el.style.opacity = '0';
+      }); });
+    }, OUT_MS);
+  }
+
+  var es = createOverlaySSE();
+  es.addEventListener('l3lobby', function (e) {
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') l3lAnimateIn(); else if (d.action === 'hide') l3lAnimateOut();
+    } catch (err) {}
+  });
+  es.addEventListener('match', function (e) {
+    if (!on) return;
+    try { applyState(JSON.parse(e.data), false); } catch (err) {}
+  });
+
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.l3lobby) l3lAnimateIn(); })
+    .catch(function () {});
+
+  var prevTrigger = window.previewTrigger;
+  window.previewTrigger = function (event, action) {
+    if (event === 'l3lobby') {
+      if (action === 'hide') l3lAnimateOut(); else l3lAnimateIn();
+      return;
+    }
+    if (prevTrigger) prevTrigger(event, action);
+  };
+
+  document.getElementById('l3l-dbg-show').addEventListener('click', l3lAnimateIn);
+  document.getElementById('l3l-dbg-hide').addEventListener('click', l3lAnimateOut);
+
+  window.l3lAnimateIn = l3lAnimateIn;
+  window.l3lAnimateOut = l3lAnimateOut;
 })();
 </script>
 </body>

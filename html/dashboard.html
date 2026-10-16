@@ -2473,7 +2473,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'livewinrate', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'teamfightcheck'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'livewinrate', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'l3lobby', 'teamfightcheck'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2885,6 +2885,7 @@
       checkToggles: [
         { name: 'BPM Meter', key: 'bpmmeter_tag', extraButtons: BPM_METER_EXTRA_BUTTONS },
         { name: 'Match Card', key: 'matchcard' },
+        { name: 'L3 Lobby', key: 'l3lobby' },
       ],
     },
     {
@@ -5178,6 +5179,45 @@
     { group: 'Match Card Next Match Text', id: '#mc-next-match-text', name: 'Next Match Font Size' },
   ];
 
+  /* ── L3 Lobby (mpltag.html) element defaults — every piece of the strip
+     is its own canvas-coordinate element (#l3l-root is only the show/hide
+     shell). The match box is a fixed 593x180 window around a scaled inner
+     box, so it only takes left/top. */
+  var L3L_DEFAULTS = {
+    '#l3l-bg':           { left: 0,    top: 853,  width: 1920, height: 227 },
+    '#l3l-corner-tl':    { left: 29,   top: 30   },
+    '#l3l-corner-tr':    { left: 1642, top: 20   },
+    '#l3l-corner-bl':    { left: 30,   top: 810  },
+    '#l3l-corner-br':    { left: 1671, top: 810  },
+    '#l3l-goldline':     { left: 409,  top: 1075, width: 1511, height: 5   },
+    '#l3l-timerbox':     { left: 0,    top: 853,  width: 409,  height: 227 },
+    '#l3l-timer-label':  { left: 0,    top: 866,  width: 409,  height: 50, fontSize: 36 },
+    '#l3l-timer-value':  { left: 0,    top: 912,  width: 409,  height: 170, fontSize: 156 },
+    '#l3l-sponsor':      { left: 457,  top: 910,  width: 318,  height: 112 },
+    '.l3l-player-blue':  { left: 627,  top: 770,  width: 520,  height: 520 },
+    '.l3l-player-red':   { left: 1520, top: 770,  width: 520,  height: 520 },
+    '#l3l-match':        { left: 1040, top: 870 },
+    '.l3l-namebox-blue': { left: 780,  top: 1027 },
+    '.l3l-namebox-red':  { left: 1714, top: 1027 },
+  };
+  var L3L_ELEMENTS = [
+    { group: 'L3 Lobby Background',   id: '#l3l-bg',           name: 'Background Strip'  },
+    { group: 'L3 Lobby Corner TL',   id: '#l3l-corner-tl',    name: 'Corner HUD Top-Left'     },
+    { group: 'L3 Lobby Corner TR',   id: '#l3l-corner-tr',    name: 'Corner HUD Top-Right'    },
+    { group: 'L3 Lobby Corner BL',   id: '#l3l-corner-bl',    name: 'Corner HUD Bottom-Left'  },
+    { group: 'L3 Lobby Corner BR',   id: '#l3l-corner-br',    name: 'Corner HUD Bottom-Right' },
+    { group: 'L3 Lobby Gold Line',    id: '#l3l-goldline',     name: 'Bottom Gold Line'  },
+    { group: 'L3 Lobby Timer Panel',  id: '#l3l-timerbox',     name: 'Timer Panel'       },
+    { group: 'L3 Lobby Timer Label',  id: '#l3l-timer-label',  name: 'Timer Label'       },
+    { group: 'L3 Lobby Timer Digits', id: '#l3l-timer-value',  name: 'Timer Digits'      },
+    { group: 'L3 Lobby Sponsor',      id: '#l3l-sponsor',      name: 'Sponsor Box'       },
+    { group: 'L3 Lobby Blue Player',  id: '.l3l-player-blue',  name: 'Blue Player Photo' },
+    { group: 'L3 Lobby Red Player',   id: '.l3l-player-red',   name: 'Red Player Photo'  },
+    { group: 'L3 Lobby Match',        id: '#l3l-match',        name: 'Match Box'         },
+    { group: 'L3 Lobby Blue Name',    id: '.l3l-namebox-blue', name: 'Blue Name Plate'   },
+    { group: 'L3 Lobby Red Name',     id: '.l3l-namebox-red',  name: 'Red Name Plate'    },
+  ];
+
   /* ── Waiting Lobby (mplfs.html) element defaults ─────────────── */
   var WL_DEFAULTS = {
     /* Playoffs only — title + corner text. */
@@ -6662,6 +6702,15 @@
       elements:    MC_ELEMENTS,
       defaults:    MC_DEFAULTS,
       showFn:      'mcAnimateIn',
+    },
+    mpltag_l3lobby: {
+      label:       'L3 Lobby · mpltag',
+      file:        'mpltag.html',
+      styleFile:   'mpltag',
+      defaultsKey: 'sb_edit_defaults_mpltag_l3lobby',
+      elements:    L3L_ELEMENTS,
+      defaults:    L3L_DEFAULTS,
+      showFn:      'l3lAnimateIn',
     },
     mplfs_lobby: {
       label:       'Waiting Lobby · mplfs',

@@ -313,6 +313,20 @@ router.get('/overlay/matchcard/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// L3 Lobby (mpltag.html) — special Waiting Lobby strip, plain checkOverlays
+// pattern. The client pulls /match/state itself, so no data in the payload.
+// GET /overlay/l3lobby/show|hide
+router.get('/overlay/l3lobby/show', (req, res) => {
+  state.checkOverlays.l3lobby = true;
+  state.overlayClients.forEach(c => { try { c.write('event: l3lobby\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+router.get('/overlay/l3lobby/hide', (req, res) => {
+  state.checkOverlays.l3lobby = false;
+  state.overlayClients.forEach(c => { try { c.write('event: l3lobby\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // Player H2H — one of 5 roles at a time, mutually exclusive (unlike the
 // plain checkOverlays pattern above). The client itself is responsible
 // for animating the previously-shown role out before animating a newly
@@ -360,11 +374,13 @@ router.get('/overlay/mpltagoverlays/hide', (req, res) => {
   state.mapSelectTag.revealedWins = 0;
   state.playerh2h.role = null;
   state.checkOverlays.matchcard = false;
+  state.checkOverlays.l3lobby = false;
   state.overlayClients.forEach(c => {
     try {
       c.write('event: mapselecttag\ndata: {"action":"hide"}\n\n');
       c.write('event: playerh2h\ndata: {"action":"hide"}\n\n');
       c.write('event: matchcard\ndata: {"action":"hide"}\n\n');
+      c.write('event: l3lobby\ndata: {"action":"hide"}\n\n');
     } catch {}
   });
   res.set({ "Cache-Control": "no-store" }).json({ ok: true });

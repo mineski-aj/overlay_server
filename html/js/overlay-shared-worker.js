@@ -34,7 +34,7 @@
 const KNOWN_EVENTS = [
   'bpmmeter', 'bpmmeter_tag', 'bracket', 'consolidated_post', 'consolidated_post_2', 'cp2page', 'credits', 'debugmode', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
   'draftpredict3', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
-  'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'highlights', 'hrm', 'itemcheck', 'killevent', 'led_draftpred',
+  'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'highlights', 'hrm', 'itemcheck', 'killevent', 'l3lobby', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'livewinrate', 'mapdetailv2', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'matchcard', 'meter', 'middleboard', 'mvp', 'p2hpage', 'playerboard', 'playerh2h', 'playerui',
   'h2h_config', 'post_carry', 'post_emblems', 'post_golddistri', 'post_h2h', 'post_heatmap', 'post_hearts', 'post_itemline', 'post_killevents', 'post_itemline_itemin',

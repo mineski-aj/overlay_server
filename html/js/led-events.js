@@ -723,6 +723,19 @@ function dpPickToShow(data) {
   return preds.find(p => p.slot === data.currentSlot) || preds[preds.length - 1] || null;
 }
 
+/* Render the primary prediction AND the other side's most recent earlier one,
+   so a Show / reload mid-draft (or after the draft) doesn't leave one column empty. */
+function dpRenderAll(data) {
+  const primary = dpPickToShow(data);
+  if (!primary) return;
+  const other = primary.side === 'BLUE' ? 'RED' : 'BLUE';
+  const prior = ((data && data.predictions) || [])
+    .filter(p => p.side === other && p.slot < primary.slot && p.candidates && p.candidates.length)
+    .sort((a, b) => b.slot - a.slot)[0];
+  if (prior) dpRenderPrediction(prior, data);
+  dpRenderPrediction(primary, data);   // last, so dpDisplayedSlot = primary
+}
+
 function dpDraftKey(data) {
   if (data.battleId) return String(data.battleId);
   const r = data.roomName || '', b = data.blueTeam?.name || '', rd = data.redTeam?.name || '';
@@ -919,8 +932,7 @@ function dpApplyData(data) {
   dpPickQueue = [];
   dpDisplayedRef = JSON.parse(JSON.stringify(data.draftState || {}));
   dpClearColumns();
-  const latest = dpPickToShow(data);
-  if (latest) dpRenderPrediction(latest, data);
+  dpRenderAll(data);
 }
 
 function dpFetchLive() {
@@ -952,8 +964,7 @@ function dpApplyCmd(action) {
     dpHalt(); dpPickQueue = [];
     dpUserHidden = false;
     dpClearColumns();
-    const latest = dpActiveData && dpPickToShow(dpActiveData);
-    if (latest) dpRenderPrediction(latest, dpActiveData);
+    if (dpActiveData && dpPickToShow(dpActiveData)) dpRenderAll(dpActiveData);
     else dpShowFeature();
   } else if (action === 'hide') {
     dpHalt(); dpPickQueue = [];
