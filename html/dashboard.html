@@ -2159,10 +2159,14 @@
   var _hrmSwapTimer  = null;
   var _hmStatusTimer = null;
 
+  /* Feature toggles that read as a version switch instead of Enabled/Disabled
+     (e.g. Team Line-Up V1/V2, rendered inline in that scene's own row). */
+  var toggleLabels = { lineupv2_blue: ['V1', 'V2 · Polaroids'], lineupv2_red: ['V1', 'V2 · Polaroids'], credits_v2: ['V1', 'V2 · Side Panel'] };
   function applyToggleBtn(feature, enabled) {
     var b = toggleBtns[feature];
     if (!b) return;
-    b.textContent = enabled ? '● Enabled' : '○ Disabled';
+    var tl = toggleLabels[feature];
+    b.textContent = tl ? (enabled ? '● ' + tl[1] : '○ ' + tl[0]) : (enabled ? '● Enabled' : '○ Disabled');
     b.className   = 'btn btn-toggle ' + (enabled ? 'btn-toggle-on' : 'btn-toggle-off');
   }
 
@@ -2831,7 +2835,7 @@
             { label: 'Hero',  selector: '#mv-hero-img', fallback: 953, topFallback: 74 },
             { label: 'Photo', selector: '#mv-photo',    fallback: 953, topFallback: 74 },
           ] },
-        { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide' },
+        { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide', versionToggle: 'credits_v2' },
         /* realButtons: pressing Show again while live steps through the
            banked poses (see routes/bracket.js + buildBracketControls). */
         { name: 'Bracket', show: '/overlay/bracket/show', hide: '/overlay/bracket/hide', realButtons: true },
@@ -2855,8 +2859,8 @@
             { label: 'Red P4',  selector: '#ft-photo-8', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
             { label: 'Red P5',  selector: '#ft-photo-9', extraProp: 'cropX', fallback: 50, step: 5, min: 0, max: 100 },
           ] },
-        { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide' },
-        { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide' },
+        { name: 'Team Line-Up — Blue', show: '/overlay/team_lineup_blue/show', hide: '/overlay/team_lineup_blue/hide', versionToggle: 'lineupv2_blue' },
+        { name: 'Team Line-Up — Red', show: '/overlay/team_lineup_red/show', hide: '/overlay/team_lineup_red/hide', versionToggle: 'lineupv2_red' },
       ],
       /* Consolidated Post 2's page flip — scene-wide across all 10 rows
          (Runes/Items <-> Damage Dealt/Taken <-> BPM), not a per-element on/off
@@ -2978,6 +2982,15 @@
         { name: 'Objective Spawn', feature: 'objectivespawn' },
         { name: 'Stolen Gold', feature: 'stolengold' },
       ],
+    },
+    {
+      id: 'heatmap',
+      name: 'Heatmap',
+      file: 'heatmap.html',
+      /* Always-up standalone copy of the Post Heatmap scene (no show/hide). Same Post Heatmap Controls box as
+         MPL Full Screen's — Apply pushes 'heatmap_config', which the page re-pulls immediately. */
+      heatmapControls: true,
+      heatmapStyleControls: true,
     },
     {
       id: 'ingame',
@@ -3597,6 +3610,112 @@
     if (s >= 99999) return 'full';
     return Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   }
+  /* ── heatmap.html "Heatmap Style" — live look controls ──────────────
+     Map brightness/contrast, a brightness multiplier for each colour weight of the heat trail (the 9 colour
+     stops, coolest -> hottest) and the size of each event marker. Every slider move is POSTed (throttled to
+     ~60ms) to /api/heatmap-style, which saves heatmap_style.json and broadcasts the 'heatmap_style' SSE event with
+     the full style, so heatmap.html (and the preview iframe) update as you drag. Map brightness is "shared"
+     (follows Post Heatmap Controls) until you touch its slider here; Reset puts everything back. */
+  function buildHeatmapStyleControls(body) {
+    if (body.children.length) body.appendChild(el('div', 'divider'));
+    body.appendChild(el('div', 'features-label', 'Heatmap Style (heatmap.html · live)'));
+
+    var DEF = { mapBrightness: null, mapContrast: 1, heat: [1,1,1,1,1,1,1,1,1], markers: { kill: 30, death: 30, assist: 30 } };
+    var st = JSON.parse(JSON.stringify(DEF));
+    var sharedBright = 0.25;
+    var timer = null;
+    var sliders = [];   // { set(v) } per control, so Reset / the initial GET can refresh them
+
+    function send() {
+      timer = null;
+      fetch('/api/heatmap-style', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(st),
+      }).catch(function () {});
+    }
+    function schedule() { if (!timer) timer = setTimeout(send, 60); }
+
+    function mkRow(labelText, swatch) {
+      var row = el('div', 'pdebug-row');
+      var lab = el('label', '', labelText);
+      if (swatch) {
+        var dot = el('span', '');
+        dot.style.cssText = 'display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:' + swatch + ';';
+        lab.insertBefore(dot, lab.firstChild);
+      }
+      lab.style.cssText = 'min-width:94px;flex:0 0 94px;';
+      row.appendChild(lab);
+      body.appendChild(row);
+      return row;
+    }
+    function mkSlider(row, min, max, step, getV, setV, fmt) {
+      var input = document.createElement('input');
+      input.type = 'range'; input.min = String(min); input.max = String(max); input.step = String(step);
+      input.className = 'pdebug-select';
+      input.style.cssText = 'width:112px;flex:0 0 112px;';
+      var out = el('span', '', '');
+      out.style.cssText = 'min-width:46px;flex:0 0 46px;text-align:center;display:inline-block;font-variant-numeric:tabular-nums;';
+      function refresh() { var v = getV(); input.value = v; out.textContent = fmt ? fmt(v) : String(v); }
+      input.addEventListener('input', function () {
+        setV(Number(input.value));
+        out.textContent = fmt ? fmt(Number(input.value)) : input.value;
+        schedule();
+      });
+      row.appendChild(input); row.appendChild(out);
+      var ctl = { refresh: refresh };
+      sliders.push(ctl); refresh();
+      return ctl;
+    }
+    function f2(v) { return Number(v).toFixed(2); }
+
+    body.appendChild(el('div', '', 'MAP'));
+    body.lastChild.style.cssText = 'font-size:10px;color:#666;letter-spacing:.08em;margin:6px 0 2px;';
+    var brightRow = mkRow('Brightness');
+    mkSlider(brightRow, 0.1, 1.5, 0.01,
+      function () { return st.mapBrightness != null ? st.mapBrightness : sharedBright; },
+      function (v) { st.mapBrightness = v; },
+      function (v) { return f2(v) + (st.mapBrightness == null ? '*' : ''); });
+    body.appendChild(el('div', '', '* follows the shared Map Brightness above until you move this slider'));
+    body.lastChild.style.cssText = 'font-size:10px;color:#555;margin:2px 0 0;';
+    mkSlider(mkRow('Contrast'), 0.3, 2.5, 0.01, function () { return st.mapContrast; }, function (v) { st.mapContrast = v; }, f2);
+
+    body.appendChild(el('div', '', 'HEAT COLOUR BRIGHTNESS  (coolest → hottest)'));
+    body.lastChild.style.cssText = 'font-size:10px;color:#666;letter-spacing:.08em;margin:8px 0 2px;';
+    var HEAT = [
+      ['Blue',      'rgb(20,90,235)'],  ['Cyan',      'rgb(80,220,255)'], ['Teal',      'rgb(0,240,200)'],
+      ['Green',     'rgb(100,255,80)'], ['Yellow',    'rgb(255,255,0)'],  ['Orange',    'rgb(255,160,0)'],
+      ['Red-orange','rgb(255,60,0)'],   ['Red',       'rgb(255,0,50)'],   ['White-hot', 'rgb(255,255,255)'],
+    ];
+    HEAT.forEach(function (h, i) {
+      mkSlider(mkRow(h[0], h[1]), 0, 2, 0.01, function () { return st.heat[i]; }, function (v) { st.heat[i] = v; }, f2);
+    });
+
+    body.appendChild(el('div', '', 'EVENT MARKER SIZE (px)'));
+    body.lastChild.style.cssText = 'font-size:10px;color:#666;letter-spacing:.08em;margin:8px 0 2px;';
+    [['kill', 'Kill'], ['death', 'Death'], ['assist', 'Assist']].forEach(function (m) {
+      mkSlider(mkRow(m[1]), 10, 90, 1, function () { return st.markers[m[0]]; }, function (v) { st.markers[m[0]] = v; }, function (v) { return v + 'px'; });
+    });
+
+    var rowReset = el('div', 'pdebug-row');
+    var resetBtn = el('button', 'pdebug-trigger', 'Reset to defaults');
+    resetBtn.addEventListener('click', function () {
+      st = JSON.parse(JSON.stringify(DEF));
+      sliders.forEach(function (c) { c.refresh(); });
+      send();
+    });
+    rowReset.appendChild(resetBtn);
+    body.appendChild(rowReset);
+
+    // Current saved style + the shared brightness (shown until this box overrides it).
+    Promise.all([
+      fetch('/api/heatmap-style', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }),
+      fetch('/api/heatmap-config', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }),
+    ]).then(function (res) {
+      if (res[1] && res[1].mapBrightness != null) sharedBright = res[1].mapBrightness;
+      if (res[0] && res[0].markers && Array.isArray(res[0].heat)) st = res[0];
+      sliders.forEach(function (c) { c.refresh(); });
+    });
+  }
+
   function buildHeatmapControls(body) {
     if (body.children.length) body.appendChild(el('div', 'divider'));
     body.appendChild(el('div', 'features-label', 'Post Heatmap Controls'));
@@ -5010,6 +5129,16 @@
           var featParts = featRoute.split('/');
           fb.appendChild(buildPreviewToggleBtn(featParts[featParts.length - 2]));
         }
+        if (feat.versionToggle) {
+          /* Per-scene version switch (Team Line-Up V1/V2) — same feature toggle
+             as the Feature Toggles list, just placed in this scene's own row. */
+          var vt = el('button', 'btn btn-toggle btn-toggle-off', '');
+          vt.title = 'Switch this scene between its V1 and V2 layouts';
+          vt.addEventListener('click', (function (f) { return function () { toggleFeature(f); }; })(feat.versionToggle));
+          toggleBtns[feat.versionToggle] = vt;
+          applyToggleBtn(feat.versionToggle, featureStates[feat.versionToggle] === true);
+          fb.appendChild(vt);
+        }
         if (feat.nudges) {
           feat.nudges.forEach(function (n) { fb.appendChild(buildNudgeControl(n)); });
         }
@@ -5037,6 +5166,10 @@
        routes/devapi.js. */
     if (ov.heatmapControls) {
       buildHeatmapControls(body);
+    }
+    /* heatmap.html's own look controls (live) — see buildHeatmapStyleControls. */
+    if (ov.heatmapStyleControls) {
+      buildHeatmapStyleControls(body);
     }
 
     /* Post H2H Controls — single role selector, tuned here instead of
@@ -6379,6 +6512,15 @@
   var CREDITS_ELEMENTS = [
     { group: 'Credit Reel', id: '#credits-viewport', name: 'Credit Reel Viewport' },
   ];
+  /* V2 (side panel) — its own elements, so V1's saved positions never fight V2's layout. */
+  var CREDITS2_DEFAULTS = {
+    '#credits-viewport-v2': { left: 1440, top: 0, width: 480, height: 1080 },
+    '#credits-fade-v2':     { left: 960,  top: 0, width: 480, height: 1080 },
+  };
+  var CREDITS2_ELEMENTS = [
+    { group: 'Credit Reel V2 · Reel', id: '#credits-viewport-v2', name: 'Credit Reel Viewport (V2)' },
+    { group: 'Credit Reel V2 · Fade', id: '#credits-fade-v2',     name: 'Black Gradient Fade (V2)' },
+  ];
 
   /* ── Draft Index (DraftIndex.html) element defaults ──────────────
      Two sub-configs share one file: the intro (Smart logo + DRAFT
@@ -6721,10 +6863,16 @@
   var PKE_DEFAULTS = {
     '#pke-left': { left: 60,  top: 176, width: 900, height: 852 },
     '#pke-map':  { left: 990, top: 176, width: 870, height: 852 },
+    '#pke-mapbug':    { left: 234, top: 2, width: 403, height: 69 },
+    '#pke-map-icon':  { left: -1,  top: -1,  width: 71,  height: 71 },
+    '#pke-map-name':  { left: 100, top: 8,  width: 288, height: 50, fontSize: 37 },
   };
   var PKE_ELEMENTS = [
     { group: 'Post Kill Events · Objectives', id: '#pke-left', name: 'Objectives Panel' },
     { group: 'Post Kill Events · Map',        id: '#pke-map',  name: 'Kill Map' },
+    { group: 'Post Kill Events · Map Bug',    id: '#pke-mapbug',   name: 'Map Bug (container)' },
+    { group: 'Post Kill Events · Map Bug Icon', id: '#pke-map-icon', name: 'Map Bug · Icon' },
+    { group: 'Post Kill Events · Map Bug Name', id: '#pke-map-name', name: 'Map Bug · Name' },
   ];
   var P4K_DEFAULTS = {
     '#p4k-card-1': { left: 100,  top: 373, width: 416, height: 509 },
@@ -7093,7 +7241,16 @@
       defaultsKey: 'sb_edit_defaults_mplfs_credits',
       elements:    CREDITS_ELEMENTS,
       defaults:    CREDITS_DEFAULTS,
-      showFn:      'showCreditsScene',
+      showFn:      'showCreditsSceneV1',
+    },
+    mplfs_credits_v2: {
+      label:       'Credit Reel V2 · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_credits_v2',
+      elements:    CREDITS2_ELEMENTS,
+      defaults:    CREDITS2_DEFAULTS,
+      showFn:      'showCreditsSceneV2',
     },
     mplfs_todayschedule: {
       label:       "Today's Schedule · mplfs",
@@ -8182,7 +8339,7 @@
     buildEditList();
 
     var contentPanel = document.getElementById('edit-content-panel');
-    if (key === 'mplfs_credits') {
+    if (key === 'mplfs_credits' || key === 'mplfs_credits_v2') {
       contentPanel.style.display = 'block';
       fetch('/api/credits-text', { cache: 'no-store' })
         .then(function(r) { return r.text(); })

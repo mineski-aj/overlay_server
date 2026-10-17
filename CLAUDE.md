@@ -34,6 +34,18 @@ caller expected, until the restart actually happened.
 - `html/mplfs.html` — the main scoreboard/scene overlay (this is the file
   that gets extended with new "scenes" — MVP Highlights, MVP Scene, Final
   Team, Waiting Lobby, Team Line-Up, Casters, Hosts, Standings...).
+- `html/heatmap.html` — a standalone, always-up copy of mplfs.html's Post Heatmap scene and nothing else (transparent 1920x1080;
+  no show/hide, no scene video). Same markup/CSS/JS as the scene (generated from it once, now edit it directly — a fix to the scene's
+  heatmap code must be hand-ported, like ENTVC.html). Loads, fills from `/api/heatmap-config` + `/positions` + the game feed, fades in
+  and loops; re-pulls data at every loop wrap and on SSE `heatmap_config` (an empty/failed refresh keeps the map that's playing).
+  Uses the shared SharedWorker SSE (`theme`, `heatmap_config`, `reload`) and the SAME saved Edit-tab overrides as the mplfs scene
+  (`mplfs` bucket, only the `#hm-*`/`.hm-*`/`#hmst-*` selectors), so "Post Heatmap · mplfs" in the Edit tab positions both.
+  **Live look controls (heatmap.html only)** — dashboard Control → Heatmap → "Heatmap Style": map brightness (follows the shared
+  Post Heatmap Controls value until moved) + contrast, a brightness multiplier per heat-colour stop (9, blue → white-hot; `hmBuildCmap`)
+  and the size of the kill/death/assist markers (CSS vars `--hm-kill-size` etc.). `GET/POST /api/heatmap-style` (routes/devapi.js,
+  `heatmap_style.json`, clamped) broadcasts SSE `heatmap_style` carrying the full style, so slider drags apply instantly
+  (`hmApplyStyle`); the mplfs scene is NOT affected. Needs a server restart (new route); `heatmap_style` is in `KNOWN_EVENTS`
+  (worker v36).
 - `html/mpltag.html` — lower thirds and other "tag" overlays (small,
   self-contained broadcast graphics that sit on top of the main feed —
   e.g. Map Selection) as opposed to `mplfs.html`'s full-screen scenes.
@@ -903,6 +915,40 @@ copy for a different feature.
   lighter greens vanish on the card. Shared CSS: `.trn-p2*`, `.trn-phase2`, `.trn-slower`.
   Debug tabs (TRINITY, ITEM PICKUP) have a "PHASE 2" dropdown (live / fake faster / fake
   slower / fake no data). `core_item`'s real parent path was never confirmed.
+
+### Team Line-Up V2 — polaroid intro (mplfs.html, `lineupv2_blue` / `lineupv2_red`)
+
+Per-side `featureToggles` (a V1/V2 button inline in the Team Line-Up Blue/Red rows of the Control tab, via the `versionToggle` field on those `features` entries; default off = V1) that swap
+Phase 1's group photo for 5 polaroids of the lineup (`photos/Dynamic/2_CROPPED BUT NOT BNW/<TRI>_<ign>.jpg`, TRI = Match
+Board `short`, ign = lineup ign) dropping at random jittered spots/tilts, staggered `LU_POL_STAGGER_MS` (5 land in ~2s), held
+`LU_POL_HOLD_MS`, then the layer buttons out (`.lu-group-out`) and Phase 2 starts as normal. Big team-name `.lu-bg-photo` stays
+behind. Built in `luApplyPolaroids` (called from `luPreloadLineup`), played by `luPlayPolaroidIntro`; photos that 404 are dropped,
+and if none load it falls back to V1. Polaroids are random/transient, so not Edit-tab elements. Needs a server restart
+(`VALID_FEATURES` in `routes/overlay.js`, `lib/state.js`); no `KNOWN_EVENTS` change (rides `featuretoggle`).
+
+### Credit Reel V2 — side panel (mplfs.html, `credits_v2` featureToggle)
+
+V1/V2 button inline on the Credit Reel row (same `versionToggle` mechanism as Team Line-Up). V2 = the same reel (same
+data/speed/style, `crShowImpl`) in its own 480px panel at x=1440 (`#credits-viewport-v2`/`#credits-scroll-v2`, text wraps,
+28px side padding, nothing overflows) with a black gradient fade (`#credits-fade-v2`, x 960..1440) beside it; everything left
+of x=1440 is transparent. The background is clipped, not hidden: `showSceneVideo('credits')` sets `clip-path: inset(0 0 0 1440px)`
+on the layer it starts (`svSetClip`; every other scene's start clears it, so it can't leak) and `crShowImpl` clips `#bg-video`
+(un-clipped 450ms after hide, after the video's fade-out). Own Edit config `mplfs_credits_v2` (V1's config previews V1 via
+`showCreditsSceneV1`, V2's via `showCreditsSceneV2`; both share the Content box). Needs a server restart (`VALID_FEATURES`,
+`lib/state.js`); no `KNOWN_EVENTS` change.
+
+### Team Hexagon — playoffs "V3" layout (mplfs.html, `data-theme="playoffs"` only)
+
+Re-laid-out off the reference "8. Head to Head V3" (all canvas-absolute CSS in the "Playoffs — Team Head to Head V3" block; Regular /
+10th Anniversary are untouched). Header strip (inline SVG, blue/gold/red slants + "VERSUS") with the two team LOGOS only (names hidden);
+full-height centre panel (`#th-po-center`, gold border); radar centre moved to canvas (960,504), R=261, 8 rings (`thR()`/`thCy()`,
+`TH_PO_AXES` label/value positions); bottom stats are 2 groups x 3 full-width bars (blue value | gold label | red value, same six
+`#th-bar-*` nodes; `setThBar` sets `data-lead` so a gold triangle marks the leading side, lower-is-better stats respected).
+Player panels (535x887, `.th-player`): the BNW crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.png` (`thBnwUrl`) + a team hue (`screen`
+blend of a deep navy/dark red + an edge-glow gradient) + an inset 2px frame behind + the coloured `hires/LEFT|RIGHT` cutout in the bottom
+corner. `thSwapPlayoffs` eases BOTH images in on top of the previous pair (never emptying the frame); a missing file fades that image out.
+No Edit-tab config exists for this scene. No art existed for the header/panel/bars, so they are CSS/SVG (old `playoffs_hexa*` art for
+accents/banner/statbox is now unused; the two name plates still use `playoffs_hexabluename/redname.png`).
 
 ### Post Gold Distribution (mplfs.html, route/event `post_golddistri`, internal `golddistri`)
 

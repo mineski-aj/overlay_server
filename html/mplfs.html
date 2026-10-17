@@ -1856,45 +1856,63 @@
        anniversary bar fills (Gold Difference, side-check bars). */
     [data-theme="10th_anniversary"] .th-bar-seg-blue { background: #0095fd; }
     [data-theme="10th_anniversary"] .th-bar-seg-red  { background: #ff243e; }
-    /* ── Playoffs — totally different Team Hexagon layout (see
-       assets/hexagon/playoffs/guide_hexagonV2.png). Everything below is
-       scoped to the playoffs theme; Regular/10th Anniversary render the
-       original layout untouched. Positions are canvas-absolute straight
-       from the guide. The #th-po-* elements exist only for this theme. */
-    #th-po-hexabg, #th-po-accent-blue, #th-po-accent-red, #th-po-match, #th-po-vs { display: none; }
-    [data-theme="playoffs"] #th-po-hexabg { display: block; position: absolute; left: 571px; top: 135px; width: 779px; height: 694px; z-index: 1; }
-    [data-theme="playoffs"] #th-po-accent-blue { display: block; position: absolute; left: 24px;   top: 222px; width: 34px; height: 520px; z-index: 2; }
-    [data-theme="playoffs"] #th-po-accent-red  { display: block; position: absolute; left: 1863px; top: 222px; width: 34px; height: 520px; z-index: 2; }
-    [data-theme="playoffs"] #th-po-match { display: block; position: absolute; left: 619px; top: 100px; width: 684px; height: 71px; z-index: 3; }
-    [data-theme="playoffs"] #th-po-vs {
-      display: flex; align-items: center; justify-content: center;
-      position: absolute; left: 889px; top: 100px; width: 146px; height: 71px; z-index: 4;
-      font-family: 'Anton', sans-serif; font-size: 54px; color: #0a0a0a;
+    /* ── Playoffs — Team Head to Head "V3" layout (reference image: 8. Head to Head V3).
+       Everything below is scoped to the playoffs theme; Regular/10th Anniversary render the original
+       layout untouched. Positions are canvas-absolute, measured off the reference. Pieces with no art
+       file (header strip, centre panel, stat bars, photo tint + frames) are built from CSS/SVG. */
+    #th-po-center, #th-po-header, .th-player-bnw, .th-player-tint, .th-player-frame { display: none; }
+    [data-theme="playoffs"] #th-po-center {
+      display: block; position: absolute; left: 537px; top: 0; width: 848px; height: 887px; z-index: 1; box-sizing: border-box;
+      background: linear-gradient(115deg, #f6f6f8 0%, #fbfbfc 30%, #f3f3f6 55%, #f9f9fb 80%, #f1f1f4 100%);
+      border: 3px solid #d0a43e; border-top: none;
+    }
+    [data-theme="playoffs"] #th-po-header { display: block; position: absolute; left: 537px; top: 0; width: 848px; height: 131px; z-index: 3; }
+    #th-po-header-svg { display: block; }
+    #th-po-vs {
+      position: absolute; left: 0; top: 0; width: 848px; height: 131px; display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 98px; line-height: 1; color: #231c0b; padding-top: 6px; box-sizing: border-box;
     }
     [data-theme="playoffs"] #th-bottom-panel { display: none; }
-    /* Player photos — placeholder set inside 515x694 containers until the
-       dedicated playoffs photo set exists. */
-    [data-theme="playoffs"] .th-player { top: 135px; width: 515px; height: 694px; overflow: hidden; background: #2b2b2e; z-index: 1; }
-    [data-theme="playoffs"] .th-player-blue { left: 40px; }
-    [data-theme="playoffs"] .th-player-red  { left: 1365px; }
-    [data-theme="playoffs"] .th-player-photo { object-fit: cover; object-position: 50% 0%; }
-    /* Team banner — logos + names sit on playofgfs_hexagonmatch.png. */
-    [data-theme="playoffs"] .th-teambox { left: 619px; top: 100px; width: 684px; height: 71px; pointer-events: none; }
+    /* Player panels: black-and-white crop (photos/Dynamic/3_CROPPED BNW) with a team-colour hue and an inset
+       frame, plus the coloured LEFT/RIGHT cutout in the bottom corner. Stack: bnw < hue < glow < frame < cutout. */
+    [data-theme="playoffs"] .th-player { top: 0; width: 535px; height: 887px; overflow: hidden; isolation: isolate; z-index: 1; }
+    [data-theme="playoffs"] .th-player-blue { left: 0;      background: #050a2a; }
+    [data-theme="playoffs"] .th-player-red  { left: 1385px; background: #1a0707; }
+    [data-theme="playoffs"] .th-player-bnw {
+      display: block; position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+      object-fit: cover; object-position: 50% 0%; opacity: 0; filter: grayscale(1) contrast(1.08);
+    }
+    /* team hue = a gradient from the top-left and bottom-right corners (screen blend over the grey photo),
+       fading to the untouched black-and-white photo in between — not a flat fill */
+    [data-theme="playoffs"] .th-player-tint { display: block; position: absolute; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: screen; }
+    [data-theme="playoffs"] .th-player-blue .th-player-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(10,70,255,0.95) 0%, rgba(0,45,190,0.55) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(0,50,215,0.85) 0%, rgba(0,30,140,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    [data-theme="playoffs"] .th-player-red .th-player-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(215,30,30,0.80) 0%, rgba(140,15,15,0.40) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(235,45,45,0.90) 0%, rgba(150,25,25,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    [data-theme="playoffs"] .th-player-frame { display: block; position: absolute; top: 22px; bottom: 38px; z-index: 4; pointer-events: none; box-sizing: border-box; }
+    [data-theme="playoffs"] .th-player-blue .th-player-frame { left: 22px;  right: 18px; border: 2px solid #1f5bff; }
+    [data-theme="playoffs"] .th-player-red  .th-player-frame { left: 20px;  right: 22px; border: 2px solid #e82626; }
+    [data-theme="playoffs"] .th-player-photo { width: 650px; height: 650px; top: 456px; object-fit: contain; object-position: 50% 0%; z-index: 5; }
+    [data-theme="playoffs"] .th-player-blue .th-player-photo { left: -165px; }
+    [data-theme="playoffs"] .th-player-red  .th-player-photo { left: auto; right: -165px; }
+    /* Header: team logos only (the strip itself is #th-po-header). */
+    [data-theme="playoffs"] .th-teambox { top: 6px; width: 112px; height: 119px; z-index: 4; pointer-events: none; }
+    [data-theme="playoffs"] .th-teambox-blue { left: 586px; }
+    [data-theme="playoffs"] .th-teambox-red  { left: 1223px; }
     [data-theme="playoffs"] .th-teambox img.th-teambox-bg { display: none; }
-    [data-theme="playoffs"] .th-teambox-logo { top: 7px; width: 57px; height: 57px; }
-    [data-theme="playoffs"] .th-teambox-blue .th-teambox-logo { left: 23px; }
-    [data-theme="playoffs"] .th-teambox-red  .th-teambox-logo { left: 604px; }
-    [data-theme="playoffs"] .th-teambox-name { height: 71px; width: 240px; font-size: 54px; }
-    [data-theme="playoffs"] .th-teambox-blue .th-teambox-name { left: 71px; }
-    [data-theme="playoffs"] .th-teambox-red  .th-teambox-name { left: 377px; }
-    /* Title ribbon */
-    [data-theme="playoffs"] #th-title { left: 655px; top: 793px; width: 606px; height: 70px; z-index: 4; }
-    [data-theme="playoffs"] #th-title-bg { width: 606px; height: 70px; content: url('/assets/hexagon/playoffs/playoffs_hexatitle.png'); }
-    [data-theme="playoffs"] #th-title-text { font-size: 52px; color: #0a0a0a; letter-spacing: 0.02em; }
-    /* Player name plates (gold role tab at the outer edge, team color body) */
-    [data-theme="playoffs"] .th-namebox { top: 797px; z-index: 4; }
-    [data-theme="playoffs"] .th-namebox-blue { left: 118px; }
-    [data-theme="playoffs"] .th-namebox-red  { left: 1469px; }
+    [data-theme="playoffs"] .th-teambox-logo { top: 0; left: 0 !important; width: 112px; height: 119px; }
+    [data-theme="playoffs"] .th-teambox-name { display: none; }
+    [data-theme="playoffs"] #th-title { display: none; }
+    /* Player name plates (gold role tab on the outer edge, team-colour body) */
+    [data-theme="playoffs"] .th-namebox { top: 816px; z-index: 6; }
+    [data-theme="playoffs"] .th-namebox-blue { left: 97px; }
+    [data-theme="playoffs"] .th-namebox-red  { left: 1479px; }
     [data-theme="playoffs"] .th-namebox-blue img.th-namebox-bg { content: url('/assets/hexagon/playoffs/playoffs_hexabluename.png'); }
     [data-theme="playoffs"] .th-namebox-red  img.th-namebox-bg { content: url('/assets/hexagon/playoffs/playoffs_hexaredname.png'); }
     [data-theme="playoffs"] .th-namebox-logo { width: 80px; }
@@ -1906,43 +1924,48 @@
     /* Radar axis labels + values (built by buildThRadar's playoffs branch) */
     .th-po-label {
       position: absolute; z-index: 2; white-space: nowrap;
-      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 19px; line-height: 15px;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 20px; line-height: 18px;
       color: #0a0a0a; text-transform: uppercase;
     }
     .th-po-valrow { position: absolute; z-index: 2; display: flex; flex-direction: column; }
-    .th-po-row { display: flex; align-items: center; gap: 4px; height: 22px; font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 23px; }
-    .th-po-chip { width: 14px; height: 14px; flex: 0 0 auto; }
+    .th-po-row { display: flex; align-items: center; gap: 5px; height: 26px; font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 26px; }
+    .th-po-chip { width: 17px; height: 17px; flex: 0 0 auto; }
     .th-po-chip-blue { background: #0b52d6; }
-    .th-po-chip-red  { background: #d8120a; }
+    .th-po-chip-red  { background: #e5000a; }
     .th-po-num-blue { color: #0b52d6; }
-    .th-po-num-red  { color: #d8120a; }
-    /* Bottom stats — the same six #th-bar-* nodes (so every count-up and
-       setThBar call keeps working) re-laid-out as six playoffs_hexastatbox
-       cards. The art has a fixed 50/50 blue|red split, so segment widths
-       are pinned to 50% here instead of the proportional inline widths. */
+    .th-po-num-red  { color: #e5000a; }
+    /* Bottom stats — the same six #th-bar-* nodes (so every count-up and setThBar call keeps working),
+       re-laid-out as 2 groups x 3 full-width bars: blue value | gold label | red value. The gold triangle
+       (set by setThBar's data-lead) marks the leading side. */
     [data-theme="playoffs"] #th-bars { display: block; left: 0; top: 0; width: 1920px; height: 1080px; pointer-events: none; }
     [data-theme="playoffs"] .th-bar-col { display: contents; }
     [data-theme="playoffs"] .th-bar-divider { display: none; }
-    [data-theme="playoffs"] .th-bar-row {
-      position: absolute; top: 882px; width: 298px; height: 89px; display: block;
-      background: url('/assets/hexagon/playoffs/playoffs_hexastatbox.png') no-repeat; background-size: 100% 100%;
-    }
-    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(1) { left: 40px; }
-    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(2) { left: 347px; }
-    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row:nth-child(3) { left: 655px; }
-    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(1) { left: 962px; }
-    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(2) { left: 1270px; }
-    [data-theme="playoffs"] .th-bar-col-right .th-bar-row:nth-child(3) { left: 1577px; }
+    [data-theme="playoffs"] .th-bar-row { position: absolute; width: 874px; height: 44px; display: block; }
+    [data-theme="playoffs"] .th-bar-col-left  .th-bar-row { left: 59px; }
+    [data-theme="playoffs"] .th-bar-col-right .th-bar-row { left: 987px; }
+    [data-theme="playoffs"] .th-bar-col .th-bar-row:nth-child(1) { top: 906px; }
+    [data-theme="playoffs"] .th-bar-col .th-bar-row:nth-child(2) { top: 960px; }
+    [data-theme="playoffs"] .th-bar-col .th-bar-row:nth-child(3) { top: 1013px; }
     [data-theme="playoffs"] .th-bar-label {
-      position: absolute; left: 0; top: 0; width: 298px; height: 38px; text-align: center !important;
+      position: absolute; left: 273px; top: 0; width: 328px; height: 44px; z-index: 2; box-sizing: border-box; text-align: center !important;
       display: flex; align-items: center; justify-content: center;
-      font-size: 20px; color: #0a0a0a;
+      font-size: 30px; font-weight: 800; color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+      background: linear-gradient(to bottom, #f2d777 0%, #e2b84e 100%); border: 1px solid #c9a03e;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
     }
     [data-theme="playoffs"] .th-bar {
-      position: absolute; left: 2px; top: 41px; width: 294px; height: 46px; border-radius: 0;
-      font-size: 24px; color: #fff;
+      position: absolute; left: 0; top: 0; width: 874px; height: 44px; border-radius: 0;
+      display: flex; justify-content: space-between; font-size: 30px; font-weight: 800; color: #fff;
     }
-    [data-theme="playoffs"] #th-bars .th-bar-seg { width: 50% !important; background: none; justify-content: center !important; padding: 0 !important; }
+    [data-theme="playoffs"] #th-bars .th-bar-seg { width: 273px !important; padding: 0 22px !important; box-sizing: border-box; }
+    [data-theme="playoffs"] #th-bars .th-bar-seg-blue { order: 0; background: linear-gradient(to right, #0436b4 0%, #0b57f5 65%, #0b5cff 100%); justify-content: flex-start !important; }
+    [data-theme="playoffs"] #th-bars .th-bar-seg-red  { order: 2; background: linear-gradient(to right, #e8150a 0%, #d30a05 55%, #b00000 100%); justify-content: flex-end !important; }
+    [data-theme="playoffs"] .th-bar::before, [data-theme="playoffs"] .th-bar::after {
+      content: ''; position: absolute; top: 11px; width: 20px; height: 22px; z-index: 3; display: none;
+      background: linear-gradient(to bottom, #e3bb55, #b98d2a);
+    }
+    [data-theme="playoffs"] .th-bar[data-lead="blue"]::before { display: block; left: 233px; clip-path: polygon(100% 0, 100% 100%, 0 50%); }
+    [data-theme="playoffs"] .th-bar[data-lead="red"]::after   { display: block; left: 621px; clip-path: polygon(0 0, 0 100%, 100% 50%); }
 
     /* ── MVP HIGHLIGHTS PAGE — single-player MVP card, fed by the
        game-mvp/view API (see /api/highlights-url in Settings to repoint
@@ -2746,6 +2769,39 @@
     }
     .lu-group-photo.lu-group-in .lu-group-photo-flash {
       animation: lu-group-flash-pop 550ms ease-out;
+    }
+
+    /* ── Line-Up V2 — polaroid drop-in (replaces the group photo when
+       state.featureToggles.lineupv2_<side> is on) ──
+       Five polaroids built by luApplyPolaroids from
+       /photos/Dynamic/2_CROPPED BUT NOT BNW/<TRI>_<ign>.jpg, each dropped
+       onto a random spot (jittered slots, random tilt) in a ~2s span, then
+       the whole layer buttons out via .lu-group-out exactly like V1's photo.
+       Per-polaroid position/tilt are random by design, so they are NOT Edit-tab elements. */
+    .lu-group-photo.lu-v2 .lu-group-photo-stage,
+    .lu-group-photo.lu-v2 .lu-group-photo-flash { display: none; }
+    .lu-pol-layer { position: absolute; inset: 0; display: none; will-change: opacity, transform; }
+    .lu-group-photo.lu-v2 .lu-pol-layer { display: block; }
+    .lu-group-photo.lu-v2.lu-group-out .lu-pol-layer {
+      opacity: 0; transform: scale(0.94);
+      transition: opacity 220ms ease-in, transform 220ms ease-in;
+    }
+    .lu-pol {
+      position: absolute; left: 0; top: 0; width: 580px; padding: 28px 28px 112px;
+      background: #f7f4ec; box-sizing: border-box;
+      box-shadow: 0 2px 4px rgba(0,0,0,.35);
+      opacity: 0;
+      transform: translate(var(--x), var(--y)) rotate(calc(var(--r) + 22deg)) scale(1.7);
+      will-change: opacity, transform;
+    }
+    .lu-pol img { display: block; width: 524px; height: 641px; object-fit: cover; object-position: 50% 0%; background: #1b1b1b; }
+    .lu-pol.lu-pol-in {
+      opacity: 1;
+      transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1);
+      box-shadow: 0 14px 30px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.4);
+      transition: opacity 160ms ease-out,
+                  transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
+                  box-shadow 460ms ease-out;
     }
 
     /* Backmost layer — full-bleed 1920×1080 team background (see
@@ -4527,13 +4583,13 @@
     [data-theme="10th_anniversary"] #pke-page { --pke-blue: #0195fc; --pke-red: #ff243e; }
     #pke-left {
       position: absolute; left: 60px; top: 176px; width: 900px; height: 852px;
-      background: rgba(255,255,255,0.9); border-radius: 14px;
-      box-shadow: inset 4px 0 0 var(--pke-blue), inset -4px 0 0 var(--pke-red), 0 6px 18px rgba(0,0,0,0.18);
+      background: rgba(255,255,255,0.9);
+      box-shadow: inset 4px 0 0 #d0a43e, inset -4px 0 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18);
       font-family: 'General Sans', sans-serif; color: #0a0a0a;
       opacity: 0; transform: translateX(-30px);
       transition: opacity 450ms ease, transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
     }
-    [data-theme="playoffs"] #pke-left { box-shadow: inset 4px 0 0 var(--pke-blue), inset -4px 0 0 var(--pke-red), inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
+    [data-theme="playoffs"] #pke-left { box-shadow: inset 4px 0 0 #d0a43e, inset -4px 0 0 #d0a43e, inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
     #pke-left.pke-in { opacity: 1; transform: translateX(0); }
     .pke-head { position: absolute; left: 0; top: 14px; width: 100%; height: 40px; }
     .pke-head .pke-tri { position: absolute; top: 0; height: 40px; line-height: 40px; font-family: 'Anton', sans-serif; font-size: 34px; letter-spacing: 0.02em; }
@@ -4543,7 +4599,7 @@
     #pke-rows { position: absolute; left: 0; top: 66px; width: 100%; height: 770px; display: flex; flex-direction: column; justify-content: space-between; }
     .pke-row { position: relative; width: 100%; flex: 0 0 auto; padding: 0 106px; box-sizing: border-box; text-align: center; }
     .pke-lbl { height: 22px; line-height: 22px; font-weight: 800; font-size: 17px; letter-spacing: 0.12em; color: #3e4452; }
-    .pke-bar { position: relative; height: 24px; margin: 4px 0 6px; border-radius: 4px; overflow: hidden; display: flex; background: rgba(10,10,10,0.08); }
+    .pke-bar { position: relative; height: 24px; margin: 4px 0 6px; overflow: hidden; display: flex; background: rgba(10,10,10,0.08); }
     .pke-seg { display: block; height: 100%; width: 50%; transition: width 800ms cubic-bezier(0.22, 1, 0.36, 1); }
     .pke-seg-l { background: var(--pke-blue); } .pke-seg-r { background: var(--pke-red); }
     .pke-seg.pke-dim { opacity: 0.22; }
@@ -4561,10 +4617,20 @@
       transition: opacity 450ms ease, transform 550ms cubic-bezier(0.16, 1, 0.3, 1);
     }
     #pke-map.pke-in { opacity: 1; transform: translateX(0); }
-    .pke-map-title { position: absolute; left: 0; top: 0; width: 100%; height: 64px; display: flex; align-items: center; justify-content: center; gap: 14px;
-      font-family: 'Anton', sans-serif; font-size: 40px; letter-spacing: 0.04em; color: #0a0a0a; text-transform: uppercase; }
-    .pke-map-title img { width: 52px; height: 52px; object-fit: contain; }
-    .pke-board { position: absolute; left: 55px; top: 74px; width: 760px; height: 760px; border-radius: 10px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.25); background: #3a3f42; }
+    /* Map bug — Draft.html's map container (mapbacker_v2 art + map icon + name, same layout as #draft-map),
+       laid over the top of the kill map. Icon/name are children of #pke-mapbug, so they move with it. */
+    #pke-mapbug {
+      position: absolute; left: 234px; top: 2px; width: 403px; height: 69px; z-index: 5;
+      background: url('/assets/draft/mapbacker_v2.png') 0 0 / 100% 100% no-repeat;
+    }
+    [data-theme="playoffs"] #pke-mapbug { background-image: url('/assets/draft/playoffs/mapbacker_v2.png'); }
+    #pke-map-icon { position: absolute; left: -1px; top: -1px; width: 71px; height: 71px; object-fit: contain; }
+    #pke-map-name {
+      position: absolute; left: 100px; top: 8px; width: 288px; height: 50px; box-sizing: border-box;
+      display: flex; align-items: center; justify-content: center; white-space: nowrap; text-align: center;
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 37px; color: #000; text-transform: uppercase;
+    }
+    .pke-board { position: absolute; left: 55px; top: 74px; width: 760px; height: 760px; overflow: hidden; box-shadow: 0 6px 18px rgba(0,0,0,0.25); background: #3a3f42; }
     .pke-board > img.pke-map-img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
     #pke-kills { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
     .pke-kill {
@@ -4604,17 +4670,16 @@
     .pgd-col {
       position: relative; flex: 0 0 auto; width: 347px; height: 840px;
       background: rgba(255,255,255,0.9);
-      border-radius: 14px;
-      box-shadow: inset 4px 0 0 var(--pgd-blue), inset -4px 0 0 var(--pgd-red), 0 6px 18px rgba(0,0,0,0.18);
+      box-shadow: inset 4px 0 0 #d0a43e, inset -4px 0 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18);   /* gold edges, same gold as the playoffs top edge */
       opacity: 0; transform: translateY(26px);
       transition: opacity 400ms ease, transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
       font-family: 'General Sans', sans-serif; color: #0a0a0a;
     }
     .pgd-col.pgd-in { opacity: 1; transform: translateY(0); }
-    [data-theme="playoffs"] .pgd-col { box-shadow: inset 4px 0 0 var(--pgd-blue), inset -4px 0 0 var(--pgd-red), inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
+    [data-theme="playoffs"] .pgd-col { box-shadow: inset 4px 0 0 #d0a43e, inset -4px 0 0 #d0a43e, inset 0 3px 0 #d0a43e, 0 6px 18px rgba(0,0,0,0.18); }
     .pgd-hero {
       position: absolute; top: 18px; width: 112px; height: 148px; object-fit: cover; object-position: 50% 18%;
-      border-radius: 6px; background: #d9dce3;
+      background: #d9dce3;
     }
     .pgd-hero-l { left: 18px;  border: 2px solid var(--pgd-blue); }
     .pgd-hero-r { right: 18px; border: 2px solid var(--pgd-red); }
@@ -4629,7 +4694,7 @@
       position: absolute; top: 174px; width: 112px; height: 28px; line-height: 28px;
       display: flex; align-items: center; justify-content: center;   /* centred even if the text is wider than the box */
       font-weight: 800; font-size: 17px; text-transform: uppercase; white-space: nowrap; transform-origin: center;
-      color: #0a0a0a; border-radius: 4px;
+      color: #0a0a0a;
       background: linear-gradient(to bottom, #edc555, #d0a43e);   /* same gold as the playoffs gold plates */
     }
     .pgd-name span { flex: none; white-space: nowrap; }
@@ -4668,7 +4733,7 @@
       display: flex; align-items: center; justify-content: center; text-align: center; white-space: pre-line;
       font-weight: 700; font-size: 15px; line-height: 1.12; letter-spacing: 0.04em; color: #3e4452; text-transform: uppercase;
     }
-    .pgd-bar { position: relative; height: 30px; border-radius: 4px; background: rgba(10,10,10,0.1); overflow: hidden; }
+    .pgd-bar { position: relative; height: 30px; background: rgba(10,10,10,0.1); overflow: hidden; }
     .pgd-fill {
       position: absolute; top: 0; height: 100%; width: 0;
       display: flex; align-items: center; justify-content: center;
@@ -5505,13 +5570,35 @@
       -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
       mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
     }
-    #credits-scroll {
+    #credits-scroll, #credits-scroll-v2 {
       position: absolute; left: 0; top: 0; width: 100%;
       display: flex; flex-direction: column; align-items: center;
       will-change: transform;
       --cr-heading-size: 40px; /* overridden inline per crApplyStyle() — see script */
       --cr-body-size: 24px;
     }
+    /* ── V2 (state.featureToggles.credits_v2) — same reel, laid out in a 480px panel on the right while the
+       left 1440px stays transparent (the scene video + #bg-video are clipped to the panel, see svSetClip /
+       crShowImpl). Own elements/ids so V1's saved Edit positions never touch it. A soft black fade sits
+       just left of the panel for depth. Text wraps inside the panel instead of overflowing. */
+    .cr-v2-only { display: none; }
+    #credits-page.cr-v2 .cr-v2-only { display: block; }
+    #credits-page.cr-v2 #credits-viewport { display: none; }
+    #credits-fade-v2 {
+      position: absolute; left: 960px; top: 0; width: 480px; height: 1080px; pointer-events: none;
+      background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.82) 100%);
+    }
+    #credits-viewport-v2 {
+      position: absolute; left: 1440px; top: 0; width: 480px; height: 1080px;
+      overflow: hidden;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+      mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
+    }
+    #credits-scroll-v2 { padding: 0 28px; box-sizing: border-box; }
+    #credits-scroll-v2 .cr-heading,
+    #credits-scroll-v2 .cr-line,
+    #credits-scroll-v2 .cr-logo-title { max-width: 100%; overflow-wrap: anywhere; }
+    #credits-scroll-v2 .cr-logo-row img { max-width: 100%; }
     .cr-logo-row {
       display: flex; flex-direction: column; align-items: center;
       gap: 12px; margin: 0 0 48px 0;
@@ -6624,8 +6711,11 @@
         <div id="pke-rows"></div>
       </div>
       <div id="pke-map">
-        <div class="pke-map-title"><img id="pke-map-icon" src="" alt="" onerror="this.style.display='none'"><span id="pke-map-name"></span></div>
         <div class="pke-board"><img class="pke-map-img" src="/assets/postkill/killmap.webp" alt=""><div id="pke-kills"></div></div>
+        <div id="pke-mapbug">
+          <img id="pke-map-icon" src="" alt="" onerror="this.style.display='none'">
+          <div id="pke-map-name"></div>
+        </div>
       </div>
     </div>
     <div id="pgd-page">
@@ -6802,16 +6892,36 @@
     </div>
     <div id="team-hexagon-page">
       <div id="th-bottom-panel"></div>
-      <img id="th-po-hexabg" src="/assets/hexagon/playoffs/playoffs_hexabg.png" alt="">
-      <img id="th-po-accent-blue" src="/assets/hexagon/playoffs/playoffs_hexablueaccent.png" alt="">
-      <img id="th-po-accent-red" src="/assets/hexagon/playoffs/playoffs_hexaredaccent.png" alt="">
-      <img id="th-po-match" src="/assets/hexagon/playoffs/playofgfs_hexagonmatch.png" alt="">
-      <div id="th-po-vs">VS</div>
+      <div id="th-po-center"></div>
+      <div id="th-po-header">
+        <svg id="th-po-header-svg" width="848" height="131" viewBox="0 0 848 131">
+          <defs>
+            <linearGradient id="thpo-gold" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f3d676"/><stop offset="1" stop-color="#dcae45"/></linearGradient>
+            <linearGradient id="thpo-blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a5cff"/><stop offset="1" stop-color="#0436b8"/></linearGradient>
+            <linearGradient id="thpo-red"  x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff2a0e"/><stop offset="1" stop-color="#a80000"/></linearGradient>
+          </defs>
+          <rect width="848" height="131" fill="#f5f5f7"/>
+          <polygon points="190,3 238,3 268,128 222,128" fill="url(#thpo-blue)"/>
+          <polygon points="238,3 605,3 575,128 268,128" fill="url(#thpo-gold)"/>
+          <polygon points="605,3 655,3 622,128 575,128" fill="url(#thpo-red)"/>
+          <rect x="0" y="0" width="848" height="3" fill="#d0a43e"/>
+          <rect x="0" y="128" width="848" height="3" fill="#d0a43e"/>
+        </svg>
+        <div id="th-po-vs">VERSUS</div>
+      </div>
       <div class="th-player th-player-blue">
+        <img class="th-player-bnw" id="th-blue-bnw-0" src="" alt="">
+        <img class="th-player-bnw" id="th-blue-bnw-1" src="" alt="">
+        <div class="th-player-tint"></div>
+        <div class="th-player-frame"></div>
         <img class="th-player-photo" id="th-blue-photo-0" src="" alt="">
         <img class="th-player-photo" id="th-blue-photo-1" src="" alt="">
       </div>
       <div class="th-player th-player-red">
+        <img class="th-player-bnw" id="th-red-bnw-0" src="" alt="">
+        <img class="th-player-bnw" id="th-red-bnw-1" src="" alt="">
+        <div class="th-player-tint"></div>
+        <div class="th-player-frame"></div>
         <img class="th-player-photo" id="th-red-photo-0" src="" alt="">
         <img class="th-player-photo" id="th-red-photo-1" src="" alt="">
       </div>
@@ -6888,6 +6998,7 @@
         <div class="lu-group-photo-stage">
           <img class="lu-group-photo-img" id="lub-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
         </div>
+        <div class="lu-pol-layer" id="lub-pol-layer"></div>
         <div class="lu-group-photo-flash"></div>
       </div>
       <div class="lu-title" id="lub-title">
@@ -6977,6 +7088,7 @@
         <div class="lu-group-photo-stage">
           <img class="lu-group-photo-img" id="lur-group-photo-img" src="" alt="" onerror="this.style.visibility='hidden'">
         </div>
+        <div class="lu-pol-layer" id="lur-pol-layer"></div>
         <div class="lu-group-photo-flash"></div>
       </div>
       <div class="lu-title" id="lur-title">
@@ -7362,6 +7474,10 @@
     <div id="credits-page">
       <div id="credits-viewport">
         <div id="credits-scroll"></div>
+      </div>
+      <div id="credits-fade-v2" class="cr-v2-only"></div>
+      <div id="credits-viewport-v2" class="cr-v2-only">
+        <div id="credits-scroll-v2"></div>
       </div>
     </div>
     <div id="bracket-page">
@@ -8140,6 +8256,9 @@
           }
           if (d.feature === 'lineupsecrole_blue') luSecroleEnabled.blue = !!d.enabled;
           if (d.feature === 'lineupsecrole_red')  luSecroleEnabled.red  = !!d.enabled;
+          if (d.feature === 'credits_v2') crV2Enabled = !!d.enabled;
+          if (d.feature === 'lineupv2_blue') luV2Enabled.blue = !!d.enabled;
+          if (d.feature === 'lineupv2_red')  luV2Enabled.red  = !!d.enabled;
         } catch {}
       });
 
@@ -9011,10 +9130,17 @@
       });
     }
 
+    /* Credit Reel V2 only shows the background in its right-hand panel — the layer that plays it is clipped to
+       x >= clipPx. The clip lives on the layer element and is reset whenever a layer is (re)started for any
+       other scene, so it can never leak into another scene's background. */
+    function svSetClip(el, px) { el.style.clipPath = px ? 'inset(0 0 0 ' + px + 'px)' : ''; }
+
     function showSceneVideo(feature) {
       const src = getSceneVideoSrc(feature);
+      const clipPx = (feature === 'credits' && crUseV2()) ? 1440 : 0;
 
       if (src === currentSceneVideoSrc) {
+        svSetClip(sceneVideoEls[sceneVideoLayer], clipPx);
         if (!sceneVideoVisible) {
           const el = sceneVideoEls[sceneVideoLayer];
           svSetVisible(el, true, true); // same file after a gap — just reveal it again
@@ -9042,6 +9168,7 @@
       const nextEl = sceneVideoEls[nextLayer];
       const handingOff = sceneVideoVisible && curEl.classList.contains('sv-visible');
       svSetVisible(nextEl, false, false);
+      svSetClip(nextEl, clipPx);
       nextEl.src = src;
       nextEl.currentTime = 0;
       nextEl.play().catch(() => {});
@@ -10520,8 +10647,81 @@
     let thLineupBlue = [], thLineupRed = [];
     let thPlayerIdx = 0, thPlayerInt = null;
     let thPhotoLayer = { blue: 0, red: 0 };
+    let thTriBlue = '', thTriRed = '';
 
-    function thApplyPlayer(side, player) {
+    /* Playoffs: the official black-and-white crops (photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.png,
+       TRI = the Match Board team's short code) fill the panel; the coloured LEFT/RIGHT cutout
+       (wlPhotoUrl) sits in its bottom corner. Other themes use only the cutout. */
+    function thBnwUrl(ign, tri) {
+      return (ign && tri) ? '/photos/Dynamic/3_CROPPED%20BNW/' + encodeURIComponent(tri + '_' + ign) + '.png' : '';
+    }
+
+    /* Playoffs photo swap — the bnw crop eases in ON TOP of the previous one (never emptying the frame; the old one
+       is cleared once the new is fully opaque); the small cutout uses the standard fade-out / ease-in. A pair that has no
+       file (APBR/TWIS bnw, a missing cutout) fades the old one out instead of leaving a stale player. */
+    function thSwapPlayoffs(side, ign, tri, next) {
+      const cur = 1 - next;
+      const startX = side === 'blue' ? -60 : 60;
+      const pairs = [
+        { kind: 'bnw',   url: thBnwUrl(ign, tri),                                          move: false, z: 1, overlap: true  },
+        /* playoffs uses the OPPOSITE pose folder (blue -> RIGHT, red -> LEFT) and the standard
+           fade-out-then-ease-in swap (the bnw crossfades on top instead) */
+        { kind: 'photo', url: ign ? wlPhotoUrl(ign, side === 'blue' ? 'red' : 'blue') : '', move: true,  z: 5, overlap: false },
+      ].map(p => Object.assign(p, {
+        curEl:  document.getElementById('th-' + side + '-' + p.kind + '-' + cur),
+        nextEl: document.getElementById('th-' + side + '-' + p.kind + '-' + next),
+        failed: false,
+      }));
+      pairs.forEach(p => {
+        p.nextEl.onerror = () => { p.nextEl.onerror = null; p.failed = true; };
+        p.nextEl.style.transition = 'none';
+        p.nextEl.style.opacity = '0';
+        p.nextEl.style.transform = p.move ? `translateX(${startX}px)` : '';
+        p.nextEl.style.zIndex = String(p.z + 1);
+        p.curEl.style.zIndex = String(p.z);
+        if (p.url) p.nextEl.src = p.url; else p.nextEl.removeAttribute('src');
+      });
+      void pairs[0].nextEl.offsetWidth;
+      thPhotoLayer[side] = next;
+      const reveal = () => {
+        if (thPhotoLayer[side] !== next) return; // superseded by a newer swap
+        pairs.forEach(p => {
+          if (p.url && p.nextEl.complete && !p.nextEl.naturalWidth) p.failed = true; // 404'd (onerror may not have run yet)
+          if (!p.url || p.failed) {
+            p.curEl.style.transition = `opacity ${WL_PHOTO_FADE_OUT_MS}ms ease`;
+            p.curEl.style.opacity = '0';
+            return;
+          }
+          if (!p.overlap) {
+            /* standard swap: old fades out, THEN the new one fades in and glides into place */
+            p.curEl.style.transition = `opacity ${WL_PHOTO_FADE_OUT_MS}ms ease`;
+            p.curEl.style.opacity = '0';
+            setTimeout(() => {
+              if (thPhotoLayer[side] !== next || p.failed) return;
+              p.nextEl.style.transition = `opacity ${WL_PHOTO_FADE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1), transform ${WL_PHOTO_MOVE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+              p.nextEl.style.opacity = '1';
+              p.nextEl.style.transform = 'translateX(0)';
+            }, WL_PHOTO_FADE_OUT_MS);
+            return;
+          }
+          p.nextEl.style.transition = `opacity ${WL_PHOTO_FADE_IN_MS}ms ease-out, transform ${WL_PHOTO_MOVE_IN_MS}ms cubic-bezier(0.16, 1, 0.3, 1)`;
+          p.nextEl.style.opacity = '1';
+          p.nextEl.style.transform = p.move ? 'translateX(0)' : '';
+          setTimeout(() => {
+            if (thPhotoLayer[side] !== next) return;
+            p.curEl.style.transition = 'none';
+            p.curEl.style.opacity = '0';
+          }, WL_PHOTO_FADE_IN_MS + 40);
+        });
+      };
+      let done = false;
+      const go = () => { if (!done) { done = true; reveal(); } };
+      Promise.all(pairs.filter(p => p.url).map(p => p.nextEl.decode().catch(() => {}))).then(go);
+      if (!pairs.some(p => p.url)) go();
+      setTimeout(go, 1500);
+    }
+
+    function thApplyPlayer(side, player, tri) {
       const ign  = player && player.ign;
       const role = player && player.role;
       const nameEl  = document.getElementById('th-' + side + '-name');
@@ -10541,6 +10741,7 @@
 
       const cur    = thPhotoLayer[side];
       const next   = 1 - cur;
+      if (thIsPlayoffs()) { thSwapPlayoffs(side, ign, tri, next); return; }
       const curEl  = document.getElementById('th-' + side + '-photo-' + cur);
       const nextEl = document.getElementById('th-' + side + '-photo-' + next);
       const startX = side === 'blue' ? -60 : 60;
@@ -10570,14 +10771,16 @@
     function thShowPlayers(idx) {
       const blue = thLineupBlue[idx % (thLineupBlue.length || 1)];
       const red  = thLineupRed[idx % (thLineupRed.length || 1)];
-      thApplyPlayer('blue', blue);
-      thApplyPlayer('red', red);
+      thApplyPlayer('blue', blue, thTriBlue);
+      thApplyPlayer('red', red, thTriRed);
     }
 
     function startThPlayerCycle(state) {
       clearInterval(thPlayerInt);
       thLineupBlue = (state && state.home && state.home.lineup) || [];
       thLineupRed  = (state && state.away && state.away.lineup) || [];
+      thTriBlue = (state && state.home && state.home.short) || '';
+      thTriRed  = (state && state.away && state.away.short) || '';
       thPlayerIdx = 0;
       thShowPlayers(thPlayerIdx);
       if (thLineupBlue.length > 1 || thLineupRed.length > 1) {
@@ -10655,23 +10858,25 @@
        measured off guide_hexagonV2.png); read at build time so a live theme
        switch picks it up. */
     function thIsPlayoffs() { return document.documentElement.getAttribute('data-theme') === 'playoffs'; }
-    function thR() { return thIsPlayoffs() ? 238 : TH_R; }
+    function thR() { return thIsPlayoffs() ? 261 : TH_R; }
+    /* Playoffs centre sits lower in the 600px radar box (canvas centre y=504 -> 324 local). */
+    function thCy() { return thIsPlayoffs() ? 324 : TH_CY; }
     /* Playoffs axis label/value positions, canvas-absolute (guide_hexagonV2.png).
        label: left/top/width/align; vals: left/top of the 2-row value block. */
     const TH_PO_AXES = [
-      { label: { left: 760,  top: 211, width: 208, align: 'right' }, vals: { left: 995,  top: 196 } },
-      { label: { left: 1190, top: 306, width: 150, align: 'left'  }, vals: { left: 1191, top: 345 } },
-      { label: { left: 1188, top: 601, width: 150, align: 'left'  }, vals: { left: 1152, top: 622 } },
-      { label: { left: 780,  top: 737, width: 198, align: 'right' }, vals: { left: 995,  top: 724 } },
-      { label: { left: 640,  top: 602, width: 150, align: 'left'  }, vals: { left: 642,  top: 640 } },
-      { label: { left: 624,  top: 306, width: 150, align: 'left'  }, vals: { left: 626,  top: 345 } },
+      { label: { left: 765,  top: 190, width: 208, align: 'right' }, vals: { left: 990,  top: 172 } },
+      { label: { left: 1214, top: 313, width: 150, align: 'left'  }, vals: { left: 1214, top: 362 } },
+      { label: { left: 1210, top: 639, width: 150, align: 'left'  }, vals: { left: 1171, top: 666 } },
+      { label: { left: 777,  top: 792, width: 201, align: 'right' }, vals: { left: 997,  top: 775 } },
+      { label: { left: 600,  top: 638, width: 150, align: 'left'  }, vals: { left: 602,  top: 679 } },
+      { label: { left: 579,  top: 313, width: 150, align: 'left'  }, vals: { left: 579,  top: 362 } },
     ];
     /* Shared duration for both team shapes' entrance (see buildThRadar's
        THR_KEYFRAMES) and every number's count-up. */
     const TH_ANIM_MS = 700;
     function thAxisPoint(i, r) {
       const ang = (Math.PI / 180) * (i * 60);
-      return { x: TH_CX + r * Math.sin(ang), y: TH_CY - r * Math.cos(ang) };
+      return { x: TH_CX + r * Math.sin(ang), y: thCy() - r * Math.cos(ang) };
     }
     /* Generic count-up — animates el's text from 0 to `to`, formatting each
        frame with `fmt`, ease-out over TH_ANIM_MS. Used for every number in
@@ -10717,7 +10922,7 @@
          getting lost against it at the brighter shade. */
       const blueColor = isAnniv ? '#0068c9' : (isPo ? '#0b52d6' : '#1656d5');
       const redColor  = isAnniv ? '#d1001f' : (isPo ? '#d8120a' : '#d92027');
-      const ringCount = isPo ? 7 : 5;
+      const ringCount = isPo ? 8 : 5;
       let grid = '';
       for (let ring = 1; ring <= ringCount; ring++) {
         const r = R * ring / ringCount;
@@ -10726,7 +10931,7 @@
       }
       const spokes = TH_RADAR_AXES.map((_, i) => {
         const p = thAxisPoint(i, R);
-        return `<line x1="${TH_CX}" y1="${TH_CY}" x2="${p.x}" y2="${p.y}" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
+        return `<line x1="${TH_CX}" y1="${thCy()}" x2="${p.x}" y2="${p.y}" stroke="${gridColor}" stroke-width="${gridWidth}"/>`;
       }).join('');
       function poly(stats, color, groupId) {
         const pts = TH_RADAR_AXES.map((ax, i) => {
@@ -10738,7 +10943,7 @@
            numbers as cx/cy above) since it's a plain pixel value, not a
            percentage — that's what lets each team's shape grow from the
            chart's true center regardless of its own bounding box. */
-        return `<g id="${groupId}" style="transform-origin:300px 300px;">` +
+        return `<g id="${groupId}" style="transform-origin:${TH_CX}px ${thCy()}px;">` +
           `<polygon points="${pts}" fill="${color}" fill-opacity="0.25" stroke="${color}" stroke-width="3"/></g>`;
       }
       const svg = `<svg id="th-radar-svg" width="600" height="600" viewBox="0 0 600 600">${grid}${spokes}` +
@@ -10860,6 +11065,7 @@
       const total    = blueWeight + redWeight;
       const bluePct  = total > 0 ? (blueWeight / total * 100) : 50;
       const redPct   = 100 - bluePct;
+      document.getElementById(elId).dataset.lead = bluePct > redPct ? 'blue' : (redPct > bluePct ? 'red' : '');
       const blueId = elId + '-blue', redId = elId + '-red';
       const blueSeg = `<div class="th-bar-seg th-bar-seg-blue" style="width:${bluePct}%"><span id="${blueId}"></span></div>`;
       const redSeg  = `<div class="th-bar-seg th-bar-seg-red"  style="width:${redPct}%"><span id="${redId}"></span></div>`;
@@ -11637,8 +11843,23 @@
     const CREDITS_DEFAULT_STYLE = { headingSize: 40, bodySize: 24 }; /* fallback if /api/credits-style is unreachable */
 
     const crPage     = document.getElementById('credits-page');
-    const crViewport = document.getElementById('credits-viewport');
-    const crScroll    = document.getElementById('credits-scroll');
+    const CR_EL = {
+      v1: { viewport: document.getElementById('credits-viewport'),    scroll: document.getElementById('credits-scroll') },
+      v2: { viewport: document.getElementById('credits-viewport-v2'), scroll: document.getElementById('credits-scroll-v2') },
+    };
+    let crViewport = CR_EL.v1.viewport;   // the ACTIVE pair — switched per show by crShowImpl
+    let crScroll   = CR_EL.v1.scroll;
+
+    /* V1/V2 layout (dashboard: V1/V2 button on the Credit Reel row). crForce is set only by the Edit tab's
+       per-version previews (showCreditsSceneV1/V2); a real Show always follows the toggle. */
+    let crV2Enabled = false;
+    let crForce = null;
+    function crUseV2() { return crForce === null ? crV2Enabled : crForce; }
+    fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json()).then(d => { if (d && d.credits_v2 !== undefined) crV2Enabled = !!d.credits_v2; })
+      .catch(() => {});
+    const crBgVideo = document.getElementById('bg-video');
+    let crBgRestoreTimer = null;
 
     function crEsc(s) {
       return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -11744,7 +11965,17 @@
       });
     }
 
-    async function showCreditsScene() {
+    function showCreditsScene()   { crForce = null;  return crShowImpl(); }
+    function showCreditsSceneV1() { crForce = false; return crShowImpl(); }
+    function showCreditsSceneV2() { crForce = true;  return crShowImpl(); }
+
+    async function crShowImpl() {
+      const v2 = crUseV2();
+      crPage.classList.toggle('cr-v2', v2);
+      crViewport = (v2 ? CR_EL.v2 : CR_EL.v1).viewport;
+      crScroll   = (v2 ? CR_EL.v2 : CR_EL.v1).scroll;
+      clearTimeout(crBgRestoreTimer);
+      crBgVideo.style.clipPath = v2 ? 'inset(0 0 0 1440px)' : '';   // idle background stays transparent on the left too
       const textPromise      = crFetchText();
       const speedPromise     = crFetchSpeed();
       const stylePromise     = crFetchStyle();
@@ -11771,6 +12002,9 @@
           crPage.classList.remove('cr-on');
           crScroll.style.transition = 'none';
           hideSceneVideo();
+          /* give the scene video's 400ms fade-out time to finish before the idle background is un-clipped */
+          clearTimeout(crBgRestoreTimer);
+          crBgRestoreTimer = setTimeout(() => { crBgVideo.style.clipPath = ''; }, 450);
           resolve();
         }, 420);
       });
@@ -12453,12 +12687,16 @@
     // "we're not showing this today". Server default is true (existing
     // behavior); see state.featureToggles.lineupsecrole_blue/red.
     let luSecroleEnabled = { blue: true, red: true };
+    // Line-Up V2 (polaroid drop-in instead of the group photo), per side. Default off = V1.
+    let luV2Enabled = { blue: false, red: false };
     fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
       .then(r => r.json())
       .then(d => {
         if (!d) return;
         if (d.lineupsecrole_blue !== undefined) luSecroleEnabled.blue = !!d.lineupsecrole_blue;
         if (d.lineupsecrole_red  !== undefined) luSecroleEnabled.red  = !!d.lineupsecrole_red;
+        if (d.lineupv2_blue !== undefined) luV2Enabled.blue = !!d.lineupv2_blue;
+        if (d.lineupv2_red  !== undefined) luV2Enabled.red  = !!d.lineupv2_red;
       })
       .catch(() => {});
 
@@ -12561,6 +12799,39 @@
     /* Backmost background — set once alongside the group photo, but (unlike
        it) never touched again for the rest of the show() run, so it just
        sits there through Phase 1 and Phase 2 both. */
+    /* V2: build the polaroids for this side's lineup. Files that 404 are
+       removed again, so a team with a missing photo just drops fewer
+       polaroids (luPlayGroupPhotoIntro falls back to V1 if NONE load). */
+    function luApplyPolaroids(side, teamObj, lineup) {
+      const s = LU_SIDES[side];
+      const layer = document.getElementById(s.prefix + '-pol-layer');
+      layer.innerHTML = '';
+      const tri = teamObj && teamObj.short;
+      if (!tri) return;
+      // Five slots across the table, jittered. Which player lands in which slot is random, but the drop
+      // order runs outside -> in (centre last, so it lands on top): every polaroid keeps >= ~350px of its
+      // 580px width visible even though they overlap edge to edge, so no face gets buried.
+      const POL_W = 580, POL_H = 781;
+      const players = (lineup || []).slice(0, 5).filter(p => p && p.ign).sort(() => Math.random() - 0.5);
+      const slotOrder = Math.random() < 0.5 ? [0, 4, 1, 3, 2] : [4, 0, 3, 1, 2];
+      players.forEach((p, i) => {
+        const cx = 260 + 350 * slotOrder[i] + (Math.random() - 0.5) * 100;   // 5 slots, 350px apart: ~40% overlap, edge to edge
+        const cy = 540 + (Math.random() - 0.5) * 200;
+        const el = document.createElement('div');
+        el.className = 'lu-pol';
+        el.style.setProperty('--x', Math.round(cx - POL_W / 2) + 'px');
+        el.style.setProperty('--y', Math.round(cy - POL_H / 2) + 'px');
+        el.style.setProperty('--r', ((Math.random() * 2 - 1) * 10).toFixed(1) + 'deg');
+        el.style.zIndex = String(i + 1);
+        const img = document.createElement('img');
+        img.alt = '';
+        img.onerror = () => { el.remove(); };
+        img.src = '/photos/Dynamic/2_CROPPED%20BUT%20NOT%20BNW/' + encodeURIComponent(tri + '_' + p.ign) + '.jpg';
+        el.appendChild(img);
+        layer.appendChild(el);
+      });
+    }
+
     function luApplyBgPhoto(side, teamObj) {
       const s = LU_SIDES[side];
       const imgEl = document.getElementById(s.prefix + '-bg-photo');
@@ -12595,7 +12866,8 @@
         document.getElementById(s.prefix + '-photo-final-' + n).classList.remove('lu-bounce');
         document.getElementById(s.prefix + '-secrole-' + n).classList.remove('lu-secrole-in');
       }
-      document.getElementById(s.prefix + '-group-photo').classList.remove('lu-group-in', 'lu-group-float', 'lu-group-out');
+      document.getElementById(s.prefix + '-group-photo').classList.remove('lu-group-in', 'lu-group-float', 'lu-group-out', 'lu-v2');
+      document.getElementById(s.prefix + '-pol-layer').querySelectorAll('.lu-pol-in').forEach(e => e.classList.remove('lu-pol-in'));
       s.page.classList.remove('lu-phase2');
     }
 
@@ -12679,8 +12951,40 @@
     const LU_GROUP_FLOAT_MS     = 1000;
     const LU_PHASE2_DELAY_MS    = 200;
 
+    /* V2 timing: 5 polaroids land across ~2s (stagger + the 460ms drop),
+       a short hold, then the same button-out + Phase 2 handoff as V1. */
+    const LU_POL_START_MS   = 600; // beat before the first drop, so it lands after the intro/stinger has fully cleared
+    const LU_POL_STAGGER_MS = 380;
+    const LU_POL_HOLD_MS    = 500;
+
+    function luPlayPolaroidIntro(side, feature) {
+      const s = LU_SIDES[side];
+      const groupEl = document.getElementById(s.prefix + '-group-photo');
+      const pols = Array.from(document.getElementById(s.prefix + '-pol-layer').querySelectorAll('.lu-pol'));
+      groupEl.classList.add('lu-v2');
+      pols.forEach((el, i) => {
+        setTimeout(() => {
+          if (activeFeature !== feature) return; /* superseded mid-intro */
+          el.classList.add('lu-pol-in');
+        }, LU_POL_START_MS + i * LU_POL_STAGGER_MS);
+      });
+      const dropsDoneAt = LU_POL_START_MS + (pols.length - 1) * LU_POL_STAGGER_MS + 460;
+      setTimeout(() => {
+        if (activeFeature !== feature) return;
+        groupEl.classList.add('lu-group-out');
+      }, dropsDoneAt + LU_POL_HOLD_MS);
+      setTimeout(() => {
+        if (activeFeature !== feature) return;
+        s.page.classList.add('lu-phase2');
+        luPlayAnimation(side, feature);
+      }, dropsDoneAt + LU_POL_HOLD_MS + 220 + LU_PHASE2_DELAY_MS);
+    }
+
     function luPlayGroupPhotoIntro(side, feature) {
       const s = LU_SIDES[side];
+      if (luV2Enabled[side] && document.getElementById(s.prefix + '-pol-layer').querySelector('.lu-pol')) {
+        return luPlayPolaroidIntro(side, feature);
+      }
       const groupEl = document.getElementById(s.prefix + '-group-photo');
       groupEl.classList.add('lu-group-in');
       setTimeout(() => {
@@ -12744,6 +13048,7 @@
       luApplyGroupPhoto(side, teamObj);
       luApplyBgPhoto(side, teamObj);
       luResetAnimation(side);
+      luApplyPolaroids(side, teamObj, luV2Enabled[side] ? lineup : []);
 
       // Wait for every signature/left/right photo + logo/plate image to be
       // fully loaded before revealing anything — a half-loaded roster
@@ -13056,7 +13361,14 @@
        the shared elements to arbitrate. luIntroTokens is still keyed per
        side, though — see its declaration above for why a single shared
        counter doesn't work for back-to-back Blue -> Red / Red -> Blue. */
-    function luStartPhase0(side) {
+    async function luStartPhase0(side) {
+      const feature = side === 'blue' ? 'lineupblue' : 'lineupred';
+      /* This scene is already up or mid-intro (the page's own restore-on-load,
+         a double Show click, or the Edit tab's showFn landing on top of the
+         restored live scene): tear that run down FIRST. Otherwise this run's
+         own transitionTo() would hide the earlier one through luHidePhase0,
+         bumping this side's token and silently cancelling THIS run too. */
+      if (activeFeature === feature) await luHidePhase0(side);
       const token = ++luIntroTokens[side];
       return luPlayIntroThenShow(side, token);
     }
@@ -15465,6 +15777,19 @@
       });
     }
 
+    /* Shrinks the map name to fit the bug's text box (~270px usable). Canvas measureText (never scrollWidth) —
+       this runs while #pke-page is still display:none, where DOM measurements are meaningless. */
+    let _pkeMeasureCtx = null;
+    function pkeFitMapName(el) {
+      if (!_pkeMeasureCtx) _pkeMeasureCtx = document.createElement('canvas').getContext('2d');
+      const MAX = 37, MIN = 14, BOX = 270;
+      let size = MAX;
+      _pkeMeasureCtx.font = '400 ' + size + "px 'Anton'";
+      const w = _pkeMeasureCtx.measureText(el.textContent).width;
+      if (w > BOX) size = Math.max(MIN, Math.floor(MAX * BOX / w * 2) / 2);
+      el.style.fontSize = size + 'px';
+    }
+
     async function pkeApplyMap() {
       try {
         const [msR, mapSelR] = await Promise.all([
@@ -15480,7 +15805,9 @@
         const icon = document.getElementById('pke-map-icon');
         icon.style.display = '';
         icon.src = mapName ? buildUrl('/maps/' + encodeURIComponent(mapName) + '.png') : '';
-        document.getElementById('pke-map-name').textContent = mapName.toUpperCase();
+        const nameEl = document.getElementById('pke-map-name');
+        nameEl.textContent = mapName.toUpperCase();
+        pkeFitMapName(nameEl);
       } catch {}
     }
 

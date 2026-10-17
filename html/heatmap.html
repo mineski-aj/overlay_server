@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <base href="/">
+  <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/po-gold-text.js"></script>
+  <script src="html/js/event-log-client.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
+  <title>Heatmap Overlay</title>
+  <style>
+    @font-face {
+      font-family: 'Anton'; font-weight: 400; font-display: block;
+      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+    }
+    @font-face {
+      font-family: 'General Sans'; font-weight: 400 500; font-display: block;
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans'; font-weight: 600; font-display: block;
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans'; font-weight: 700 900; font-display: block;
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    /* Transparent 1920x1080 broadcast canvas — this page is ONLY the Post Heatmap scene, always up. */
+    html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+    #canvas { width: 1920px; height: 1080px; background: transparent; overflow: hidden; position: relative; }
+
+    /* ── POST HEATMAP PAGE — MVP Highlights' exact layout (title top-left,
+       signature photo + team plaque bottom-right), with the thermal
+       player-movement map filling MVP Highlights' otherwise-empty left
+       two-thirds instead of a hero photo, and the plaque/stats fed by the
+       chosen focus player instead of the MVP. Migrated from the standalone
+       mlbb_heatmap.html debug tool: positions come from this server's own
+       /positions log (already polled by lib/pollers.js — see
+       fetchHeatmapPositions); player identity/stats come from the live
+       sub-info feed (/api/gamedata-proxy — see hmApplyPlayerCard), the
+       same feed Post Stats/the dashboard's Focus Player dropdown already
+       use, not the Post-Info API (that one only feeds Consolidated/
+       Middle Board's buff counts here). Time window/playback speed/camp+
+       seat focus are
+       NOT on-page controls (this is a broadcast overlay, not a debug
+       tool) — they're tuned from the dashboard's Control tab (Post Heatmap
+       Controls box, see buildHeatmapControls in dashboard.html) via
+       /api/heatmap-config, fetched fresh every time this scene is shown,
+       same pattern as Credit Reel's credits_speed.json. */
+    #heatmap-page {
+      position: absolute; top: 0; left: 0; width: 1920px; height: 1080px;
+      display: none; overflow: hidden;
+      background: transparent; /* #scene-video shows through — see showSceneVideo */
+      opacity: 0; transition: opacity 400ms ease;
+    }
+    #heatmap-page.hm-on { display: block; }
+    #heatmap-page.hm-visible { opacity: 1; }
+
+    #hm-title {
+      position: absolute; left: 52px; top: 95px; width: 641px; height: 94px; z-index: 32;
+      display: flex; align-items: center; justify-content: flex-start;
+      font-family: 'Anton', sans-serif; font-size: 103px; line-height: 1;
+      color: #0a0a0a; text-transform: uppercase; text-align: left; white-space: nowrap;
+    }
+    /* 10th Anniversary — "PLAYER HEATMAP" title, white with the same
+       subtle glow used for every other white-on-video text this theme
+       adds elsewhere in this file (MVP Highlights title, scoreboard
+       stats, tricode, etc.), so it lifts off annivloopwavesnosun.webm.
+       Drop shadow deepened twice now (bigger blur + offset each time)
+       and the title recentered above the map box's top edge (.hm-map-box:
+       left 60px, width 740px → center x 430px; #hm-title is 641px wide,
+       so left 110px centers it on that same 430px), then nudged 5px
+       right of that centered position per a follow-up request — all
+       10th Anniversary only, Regular keeps its original left-aligned
+       placement. */
+    [data-theme="10th_anniversary"] #hm-title {
+      color: #ffffff;
+      text-shadow: 0 0 16px rgba(0, 0, 0, 0.6), 3px 3px 5px rgba(0, 0, 0, 0.65);
+      left: 115px;
+      justify-content: center;
+      text-align: center;
+    }
+
+    /* Independently positioned/sized top-level pieces — each can be
+       dragged/resized on its own from the dashboard Edit tab (see
+       HM_DEFAULTS/HM_ELEMENTS in dashboard.html). The canvases/scanlines/
+       corners inside .hm-map-box are NOT separately editable — they must
+       move together with their parent (shared canvas coordinate system),
+       same exception already used for .postbacker's internal .psb-inner. */
+    .hm-map-box {
+      position: absolute; left: 60px; top: 200px; width: 740px; height: 740px;
+      z-index: 10; overflow: hidden; border-radius: 4px;
+      background: #000000; /* fallback fill if .hm-map-bg's image is ever missing */
+      border: 1px solid #1a2240;
+      box-shadow: 0 0 40px rgba(0,229,255,0.07), inset 0 0 60px rgba(0,0,0,0.5);
+    }
+    /* Terrain backdrop, sitting behind the heat/dot canvases (first in DOM
+       order among this box's un-z-indexed children) — same map art
+       Consolidated Post's own Kill Map uses (consomap.png), not a
+       calibrated real map texture, just a decorative backdrop so the
+       heat trail reads as "on the map" instead of floating on black.
+       brightness(0.25) here is only the pre-JS fallback (so the map isn't
+       unfiltered for an instant before the first fetch resolves) — the
+       real value is tunable per-broadcast via the dashboard's Post
+       Heatmap Controls "Map Brightness" slider (heatmap_config.json's
+       mapBrightness, applied in hmLoadAndApply) so a too-dark map can be
+       brightened without a code change. */
+    .hm-map-bg {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; filter: brightness(0.25);
+    }
+    #hm-heat-canvas, #hm-dot-canvas {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+    }
+    #hm-heat-canvas { mix-blend-mode: screen; }
+    #hm-dot-canvas  { pointer-events: none; }
+    .hm-scanlines {
+      position: absolute; inset: 0; pointer-events: none; z-index: 10;
+      background: repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.06) 2px,rgba(0,0,0,0.06) 4px);
+    }
+    .hm-corner { position: absolute; width: 18px; height: 18px; border-color: #00e5ff; border-style: solid; opacity: 0.5; }
+    .hm-corner.hm-tl { top:6px; left:6px;   border-width: 2px 0 0 2px; }
+    .hm-corner.hm-tr { top:6px; right:6px;  border-width: 2px 2px 0 0; }
+    .hm-corner.hm-bl { bottom:6px; left:6px; border-width: 0 0 2px 2px; }
+    .hm-corner.hm-br { bottom:6px; right:6px; border-width: 0 2px 2px 0; }
+    /* Kill/Death/Assist event icons — see hmTriggerEventIcon. Small,
+       persistent (no removal timeout — hmClearEventIcons() is what
+       takes these out, on loop wraparound/hide), pop in once and stay
+       put. Same shell (white circle + pop-in) for all three — only the
+       icon drawn inside (HM_EVENT_ICONS) differs per type. */
+    /* marker size is per type (--hm-kill-size etc., set live by hmApplyStyle from the dashboard's Heatmap Style box);
+       left/top are the marker's CENTRE, the negative margins pull it back by half its size */
+    .hm-event-icon {
+      --sz: 30px;
+      position: absolute; width: var(--sz); height: var(--sz); margin: calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2); z-index: 15;
+      pointer-events: none;
+      animation: hm-event-pop-in 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.8));
+    }
+    .hm-event-icon.hm-ev-kill   { --sz: var(--hm-kill-size, 30px); }
+    .hm-event-icon.hm-ev-death  { --sz: var(--hm-death-size, 30px); }
+    .hm-event-icon.hm-ev-assist { --sz: var(--hm-assist-size, 30px); }
+    .hm-event-icon svg { display: block; width: 100%; height: 100%; }
+    @keyframes hm-event-pop-in {
+      0%   { transform: scale(0);    opacity: 0; }
+      60%  { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    .hm-hud {
+      position: absolute; left: 60px; top: 950px; width: 740px; height: 40px;
+      z-index: 10; display: flex; align-items: center; gap: 14px;
+      padding: 0 14px; background: #0a0e1a; border: 1px solid #1a2240; border-radius: 3px;
+    }
+    #hm-timer { font-family: 'Courier New', monospace; font-size: 22px; color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.6); min-width: 54px; }
+    .hm-progress-outer { flex: 1; height: 6px; background: #111827; border-radius: 3px; overflow: hidden; border: 1px solid #1a2240; }
+    #hm-progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #0050ff, #00e5ff, #ff6b00); border-radius: 3px; transition: width 0.1s linear; }
+
+    /* ── Focus-player plaque — same mvphlblue/red.png plaque, hero art,
+       and stats-backer graphic as MVP Highlights (#hl-plaque etc.),
+       just its own hm-prefixed ids/classes so the two scenes' Edit-tab
+       overrides (selector-string based) never collide. Fed by
+       hmApplyPlayerCard from the Post-Info API's hero_list — see that
+       function for field sourcing (KDA/KP%/GPM computed from
+       kill_num/dead_num/assist_num/total_money/game_time, since Post-Info
+       has no ready-made kda-string/kp/gpm fields of its own). */
+    .hm-player-photo-wrap {
+      position: absolute; left: 720px; top: 0px; width: 1292px; height: 1292px;
+      overflow: hidden; z-index: 40;
+    }
+    .hm-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; transition: transform 200ms ease; }
+    #hm-plaque {
+      position: absolute; left: 901px; top: 744px; width: 462px; height: 174px;
+      z-index: 42; background: url('/assets/highlights/mvphlblue.png') no-repeat; background-size: 100% 100%;
+    }
+    /* ── Time Focus — new panel next to the plaque (flush against its
+       right edge: plaque spans x901–1363, this spans x1363–1825), showing
+       the configured from/to window as plain text. heatmap_timeback.png
+       is a dark-header/light-body banner (same "labeled backer" idea as
+       mvphlstats.png) — the header strip (top 56px) holds a static title,
+       the lighter body below (remaining 118px) holds the actual selected
+       range, filled by hmApplyPlayerCard/hmFormatTimeRange. */
+    #hm-timefocus {
+      position: absolute; left: 1363px; top: 744px; width: 462px; height: 174px;
+      z-index: 41; background: url('/assets/postgame/heatmap_timeback.png') no-repeat; background-size: 100% 100%;
+    }
+    #hm-timefocus-title {
+      position: absolute; left: 0; top: 0; width: 462px; height: 56px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 28.3px;
+      color: #fff; text-transform: uppercase; text-align: center;
+    }
+    #hm-timefocus-range {
+      position: absolute; left: 0; top: 56px; width: 462px; height: 118px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 75px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    .hm-logo {
+      position: absolute; left: 11px; top: 3px; width: 49px; height: 49px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hm-logo img { width: 100%; height: 100%; object-fit: contain; }
+    .hm-role {
+      position: absolute; left: 77px; top: 5px; width: 45px; height: 45px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .hm-role img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); } /* role/*.png icons — forced solid black */
+    .hm-name {
+      position: absolute; left: 157px; top: 5px; width: 298px; height: 43px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 700; color: #fff;
+      text-transform: uppercase; white-space: nowrap; text-align: center;
+    }
+    .hm-hero {
+      position: absolute; left: 1px; top: 55px; width: 460px; height: 118px;
+      overflow: hidden;
+    }
+    .hm-hero-img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; display: block; }
+    .hm-hero-name {
+      position: absolute; left: 10px; top: 83px;
+      font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 22px;
+      color: #fff; text-transform: uppercase; text-shadow: 0 1px 6px rgba(0,0,0,0.85);
+    }
+    /* Stats backer — KDA / KP% / GPM (fixed labels, unlike MVP Highlights'
+       dynamic mvp_title 3rd slot — there's no single API-named "MVP stat"
+       for an arbitrary focus player). Same internal layout/positions as
+       MVP Highlights' #hl-stats-backer. */
+    #hm-stats-backer {
+      position: absolute; left: 902px; top: 917px; width: 463px; height: 48px;
+      z-index: 40;
+      background: url('/assets/highlights/mvphlstats.png') no-repeat;
+      background-size: 100% 100%;
+    }
+    .hmst-label {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 12.4px;
+      color: #0a0a0a; text-transform: uppercase; text-align: center;
+    }
+    .hmst-value {
+      position: absolute; top: 2px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-size: 25.4px;
+      color: #0a0a0a; text-align: center; white-space: nowrap;
+    }
+    #hmst-kda-label { left: 2px;   width: 53px;  z-index: 9;  white-space: nowrap; }
+    #hmst-kda-value { left: 55px;  width: 118px; z-index: 10; }
+    #hmst-kp-label  { left: 187px; width: 40px;  z-index: 13; white-space: nowrap; }
+    #hmst-kp-value  { left: 227px; width: 90px;  z-index: 11; }
+    #hmst-gpm-label { left: 331px; width: 52px;  z-index: 14; white-space: nowrap; }
+    #hmst-gpm-value { left: 383px; width: 78px;  z-index: 12; }
+
+    /* ── Event-icon legend — explains the Kill/Assist/Death badges
+       hmTriggerEventIcon stamps onto the map (see HM_EVENT_ICONS).
+       Populated at load time by hmInitLegendIcons(), which reuses the
+       exact same hmEventSvg(type) markup the live map badges use —
+       so the legend can never drift out of sync with what the map
+       actually draws (no hand-copied second icon set to maintain). */
+    #hm-legend {
+      position: absolute; left: 810px; top: 205px; width: 190px; height: 96px;
+      z-index: 40; box-sizing: border-box;
+      display: flex; flex-direction: column; justify-content: center; gap: 6px;
+      background: #0a0e1a; border: 1px solid #1a2240; border-radius: 3px;
+      padding: 8px 12px;
+    }
+    .hm-legend-row { display: flex; align-items: center; gap: 10px; }
+    .hm-legend-icon { width: 24px; height: 24px; flex: 0 0 24px; }
+    .hm-legend-icon svg { display: block; width: 100%; height: 100%; }
+    .hm-legend-label {
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 16px;
+      color: #ffffff; text-transform: uppercase;
+    }
+
+
+    /* Always-up: the page is displayed from load; opacity only ramps 0 -> 1 once the first data has landed. */
+    #heatmap-page { display: block; }
+  </style>
+</head>
+<body>
+  <div id="canvas">
+    <div id="heatmap-page">
+      <div id="hm-title">PLAYER HEATMAP</div>
+      <div class="hm-map-box">
+        <img class="hm-map-bg" src="/assets/consolidated_post/consomap.png" alt="">
+        <canvas id="hm-heat-canvas"></canvas>
+        <canvas id="hm-dot-canvas"></canvas>
+        <div class="hm-scanlines"></div>
+        <div class="hm-corner hm-tl"></div>
+        <div class="hm-corner hm-tr"></div>
+        <div class="hm-corner hm-bl"></div>
+        <div class="hm-corner hm-br"></div>
+      </div>
+      <div class="hm-hud">
+        <div id="hm-timer">0:00</div>
+        <div class="hm-progress-outer"><div id="hm-progress-bar"></div></div>
+      </div>
+      <div class="hm-player-photo-wrap"><img class="hm-player-photo" id="hm-player-photo" src="" alt=""></div>
+      <div id="hm-plaque">
+        <div class="hm-logo"><img id="hm-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="hm-role"><img id="hm-role-icon" src="" alt="" onerror="this.style.display='none'"></div>
+        <div class="hm-name" id="hm-name"></div>
+        <div class="hm-hero">
+          <img class="hm-hero-img" id="hm-hero-img" src="" alt="" onerror="this.style.display='none'">
+          <div class="hm-hero-name" id="hm-hero-name"></div>
+        </div>
+      </div>
+      <div id="hm-timefocus">
+        <div id="hm-timefocus-title">HEAT MAP TIME FOCUS</div>
+        <div id="hm-timefocus-range"></div>
+      </div>
+      <div id="hm-stats-backer">
+        <div id="hmst-kda-label" class="hmst-label">KDA</div>
+        <div id="hmst-kda-value" class="hmst-value"></div>
+        <div id="hmst-kp-label" class="hmst-label">KP%</div>
+        <div id="hmst-kp-value" class="hmst-value"></div>
+        <div id="hmst-gpm-label" class="hmst-label">GPM</div>
+        <div id="hmst-gpm-value" class="hmst-value"></div>
+      </div>
+      <div id="hm-legend">
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-kill"></span><span class="hm-legend-label">Kill</span></div>
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-assist"></span><span class="hm-legend-label">Assist</span></div>
+        <div class="hm-legend-row"><span class="hm-legend-icon" id="hm-legend-icon-death"></span><span class="hm-legend-label">Death</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* heatmap.html — a standalone copy of mplfs.html's Post Heatmap scene (see CLAUDE.md "heatmap.html").
+       Same markup/CSS/animation/data path as the scene; no show/hide, no scene machinery — it loads, fills
+       itself from /api/heatmap-config + /positions + the game feed, fades in, and keeps looping. */
+    function buildUrl(path) {
+      return window.location.origin + path;
+    }
+
+    function roleFile(role) {
+      const r = (role || '').toLowerCase();
+      if (r.includes('gold')) return 'GOLD LANER';
+      if (r.includes('exp'))  return 'EXP LANER';
+      if (r.includes('mid'))  return 'MID LANER';
+      if (r.includes('roam')) return 'ROAMER';
+      if (r.includes('jung')) return 'JUNGLER';
+      return role?.toUpperCase() || '';
+    }
+
+    function hlHeroImg(heroid) {
+      return heroid ? '/herohighlights/' + heroid + 'heromvp.png' : '';
+    }
+
+    function hlPhotoUrl(ign) {
+      return ign ? '/hires/SIGNATURE/' + encodeURIComponent(ign + '_SIGNATURE.png') : '';
+    }
+
+    function mvFormatStatValue(v) {
+      if (v == null) return '-';
+      const n = Number(v);
+      if (!isFinite(n)) return String(v);
+      if (Math.abs(n) < 10000) return String(n);
+      return (n / 1000).toFixed(1) + 'k';
+    }
+
+    function hlFitName(el) {
+      const MAX_SIZE = 34, MIN_SIZE = 14;
+      let size = MAX_SIZE;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.clientWidth && size > MIN_SIZE) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+      }
+    }
+
+    function mvFitStatValue(el, maxSize, minSize) {
+      let size = maxSize;
+      el.style.fontSize = size + 'px';
+      /* Strict > (not >=) — same as every other shrink-to-fit helper in
+         this file. scrollWidth is spec'd to never read below clientWidth,
+         so short content that fits comfortably still reports
+         scrollWidth === clientWidth (the normal "fits fine" case, not an
+         edge case) — a >= comparison misreads that as "still overflowing"
+         and shrinks every value straight to minSize regardless of actual
+         length, which is what was happening here. A previous version used
+         >= to catch one specific near-exact-fit case ("DAMAGE DEALT" at
+         width 134 == 134) clipping a sub-pixel glyph sliver, but that
+         traded a correct, universal case for a rare, minor cosmetic one. */
+      while (el.scrollWidth > el.clientWidth && size > minSize) {
+        size -= 1;
+        el.style.fontSize = size + 'px';
+      }
+    }
+
+    /* Playoffs gold header text (po-gold-text.js; every layer is hidden under other themes). */
+    PoGoldText.textTitle(document.getElementById('hm-title'));
+
+    const HM_CANVAS_SIZE   = 600;
+    const HM_HEAT_RADIUS   = 64;
+    const HM_HEAT_STRENGTH = 0.32;
+    const HM_STAMP_DIST_PX = 4;
+    /* Original debug tool used a 560px box with MSCALE=215/47 (not
+       280/47 — the map render is deliberately inset from the box edges,
+       ~65px margin at 560px). Preserve that same inset ratio (215/280)
+       when scaling up to this box's size, instead of scaling to
+       HM_CANVAS_SIZE/2 directly (which would zoom in further / lose the
+       margin). */
+    const HM_MSCALE        = (HM_CANVAS_SIZE / 2) * (215 / 280) / 47; // game units → canvas px
+
+    /* c.width/height below are the canvas's actual DRAWING BUFFER
+       resolution (a fixed HM_CANVAS_SIZE logical-pixel grid — every
+       hmGameToCanvas/hmStampHeat coordinate is in this same fixed 0..
+       HM_CANVAS_SIZE space) — NOT its on-screen display size. Display
+       size is left to the existing CSS rule (#hm-heat-canvas,
+       #hm-dot-canvas { width:100%; height:100% }), which stretches the
+       buffer to fill however big .hm-map-box actually is right now.
+       Bug this used to have: this function ALSO force-set
+       c.style.width/height to a literal HM_CANVAS_SIZE + 'px', an inline
+       style that wins over the CSS rule regardless of specificity — so
+       the canvas was hard-pinned to 600×600 no matter what size
+       .hm-map-box actually was. That happened to look correct only
+       because .hm-map-box's own size was ALSO 600×600 at the time
+       (coincidental match, not the CSS rule doing anything) — resizing
+       the box (e.g. the Player Heatmap relayout's bigger square, or any
+       future Edit-tab resize) left a dead unstretched strip along the
+       box's right/bottom edges where the canvas simply didn't reach.
+       Removing the inline size here lets the CSS rule do what it always
+       claimed to: the canvas now genuinely fills .hm-map-box at
+       whatever size it is. */
+    function hmSetupCanvas(c) {
+      const scale = window.devicePixelRatio || 1;
+      c.width  = HM_CANVAS_SIZE * scale;
+      c.height = HM_CANVAS_SIZE * scale;
+      const ctx = c.getContext('2d');
+      ctx.scale(scale, scale);
+      return ctx;
+    }
+    const hmHeatCtx = hmSetupCanvas(document.getElementById('hm-heat-canvas'));
+    const hmDotCtx  = hmSetupCanvas(document.getElementById('hm-dot-canvas'));
+
+    const hmHeatBuf = new Float32Array(HM_CANVAS_SIZE * HM_CANVAS_SIZE);
+    let   hmBufMax  = 0.001;
+
+    function hmStampHeat(cx, cy) {
+      const r = HM_HEAT_RADIUS, r2 = r * r;
+      const x0 = Math.max(0, (cx - r) | 0), x1 = Math.min(HM_CANVAS_SIZE - 1, (cx + r + 1) | 0);
+      const y0 = Math.max(0, (cy - r) | 0), y1 = Math.min(HM_CANVAS_SIZE - 1, (cy + r + 1) | 0);
+      for (let py = y0; py <= y1; py++) {
+        const dy = py - cy;
+        for (let px = x0; px <= x1; px++) {
+          const d2 = (px - cx) * (px - cx) + dy * dy;
+          if (d2 >= r2) continue;
+          const norm = 1 - d2 / r2;
+          const i = py * HM_CANVAS_SIZE + px;
+          hmHeatBuf[i] += HM_HEAT_STRENGTH * norm * norm;
+          if (hmHeatBuf[i] > hmBufMax) hmBufMax = hmHeatBuf[i];
+        }
+      }
+    }
+
+    const HM_COLOR_STOPS = [
+      [0.00, [0,0,0,0]],
+      [0.05, [20,90,235,190]],  /* saturated blue — was [140,200,255,180], too pale/near-white at the low end */
+      [0.18, [80,220,255,200]],
+      [0.32, [0,240,200,215]],
+      [0.48, [100,255,80,228]],
+      [0.62, [255,255,0,238]],
+      [0.74, [255,160,0,245]],
+      [0.85, [255,60,0,252]],
+      [0.93, [255,0,50,255]],
+      [1.00, [255,255,255,255]],
+    ];
+    const HM_CMAP = new Array(256);
+    /* mults[i] = brightness multiplier for colour stop i+1 (HM_COLOR_STOPS[1..9], blue -> white-hot); alpha untouched.
+       Rebuilt whenever the dashboard's Heatmap Style box changes a heat-colour slider. */
+    function hmBuildCmap(mults) {
+      const stops = HM_COLOR_STOPS.map(([t, c], i) => {
+        const m = i === 0 ? 1 : ((mults && mults[i - 1] != null) ? mults[i - 1] : 1);
+        return [t, [Math.min(255, c[0] * m), Math.min(255, c[1] * m), Math.min(255, c[2] * m), c[3]]];
+      });
+      for (let i = 0; i < 256; i++) {
+        const t = i / 255;
+        for (let s = 1; s < stops.length; s++) {
+          if (t <= stops[s][0]) {
+            const [t0,c0] = stops[s-1], [t1,c1] = stops[s];
+            const f = (t-t0)/(t1-t0);
+            HM_CMAP[i] = [(c0[0]+f*(c1[0]-c0[0]))|0,(c0[1]+f*(c1[1]-c0[1]))|0,
+                          (c0[2]+f*(c1[2]-c0[2]))|0,(c0[3]+f*(c1[3]-c0[3]))|0];
+            break;
+          }
+        }
+      }
+    }
+    hmBuildCmap(null);
+
+    const hmHeatOff    = document.createElement('canvas');
+    hmHeatOff.width    = HM_CANVAS_SIZE;
+    hmHeatOff.height   = HM_CANVAS_SIZE;
+    const hmHeatOffCtx = hmHeatOff.getContext('2d');
+    const hmImgData    = hmHeatOffCtx.createImageData(HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+    const hmPixels     = hmImgData.data;
+
+    function hmRenderHeat() {
+      for (let i = 0; i < hmHeatBuf.length; i++) {
+        const norm = hmHeatBuf[i] / hmBufMax;
+        if (norm < 0.012) { hmPixels[i*4+3] = 0; continue; }
+        const c = HM_CMAP[Math.min(255, (norm * 255) | 0)];
+        hmPixels[i*4]=c[0]; hmPixels[i*4+1]=c[1]; hmPixels[i*4+2]=c[2]; hmPixels[i*4+3]=c[3];
+      }
+      hmHeatOffCtx.putImageData(hmImgData, 0, 0);
+      hmHeatCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      hmHeatCtx.drawImage(hmHeatOff, 0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+    }
+
+    function hmGameToCanvas(gx, gy) {
+      const half = HM_CANVAS_SIZE / 2;
+      return {
+        x: Math.max(4, Math.min(HM_CANVAS_SIZE - 4, half + gx * HM_MSCALE + gy * HM_MSCALE)),
+        y: Math.max(4, Math.min(HM_CANVAS_SIZE - 4, half - gx * HM_MSCALE + gy * HM_MSCALE)),
+      };
+    }
+
+    function hmFmt(s) {
+      return `${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
+    }
+
+    /* Zero-padded "00:00" form (hmFmt's minutes aren't padded — fine for
+       the HUD timer, but the Time Focus panel wants a fixed-width
+       "00:00 - 13:23" look either side of the dash). */
+    function hmFmtPadded(s) {
+      return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    }
+
+    /* finalGameTime is Post-Info's own game_time (seconds) — used ONLY
+       when cfg.to is the dashboard's 99999 "FULL" sentinel, so the label
+       reads the match's actual final recorded time instead of a
+       meaningless literal "1666:39". This is deliberately a DIFFERENT
+       source from hmLoadAndApply's own FULL-resolution (the latest
+       /positions timestamp, used for playback speed) — the label is
+       asked to reflect the Post-Info API's final time specifically. */
+    function hmFormatTimeRange(cfg, finalGameTime) {
+      const from = hmFmtPadded(cfg.from || 0);
+      const to = cfg.to >= 99999 ? hmFmtPadded(finalGameTime || 0) : hmFmtPadded(cfg.to);
+      return `${from} - ${to}`;
+    }
+
+    function hmInterpolate(waypoints, gameT) {
+      if (!waypoints.length) return null;
+      if (gameT <= waypoints[0].t) return waypoints[0];
+      const last = waypoints[waypoints.length - 1];
+      if (gameT >= last.t) return last;
+      let lo = 0, hi = waypoints.length - 1;
+      while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (waypoints[mid].t <= gameT) lo = mid; else hi = mid; }
+      const a = waypoints[lo], b = waypoints[hi];
+      const f = (gameT - a.t) / (b.t - a.t), ss = f * f * (3 - 2 * f);
+      return { x: a.x + (b.x - a.x) * ss, y: a.y + (b.y - a.y) * ss };
+    }
+
+    let hmVisible        = false;
+    let hmActiveTracks   = [];
+    let hmFromS          = 0;
+    let hmToS            = 600;
+    let hmPlaybackSecs   = 15;
+    let hmStartTime      = null;
+    let hmHeatDirty      = false;
+    let hmLastHeatRender = 0;
+    const HM_HEAT_FPS    = 1000 / 30;
+
+    function hmResetLoop() {
+      hmHeatBuf.fill(0);
+      hmBufMax = 0.001;
+      hmPixels.fill(0);
+      hmHeatOffCtx.putImageData(hmImgData, 0, 0);
+      hmHeatCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      hmDotCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      for (const tr of hmActiveTracks) {
+        tr.lastStampX = tr.lastStampY = -9999; tr._lastPos = null;
+        tr.nextKillIdx = tr.nextDeathIdx = tr.nextAssistIdx = 0;
+      }
+      hmClearEventIcons();
+      hmHeatDirty = false; hmLastHeatRender = 0; hmStartTime = null;
+    }
+
+    function hmDrawDots(now) {
+      hmDotCtx.clearRect(0, 0, HM_CANVAS_SIZE, HM_CANVAS_SIZE);
+      for (const tr of hmActiveTracks) {
+        if (!tr._lastPos) continue;
+        const { x, y } = tr._lastPos;
+        const blue = tr.camp === 1;
+        const fill = blue ? '#0050ff' : '#ff1a1a';
+        const r    = 9;
+
+        hmDotCtx.beginPath();
+        hmDotCtx.arc(x, y, r, 0, Math.PI * 2);
+        hmDotCtx.fillStyle = fill;
+        hmDotCtx.fill();
+        hmDotCtx.lineWidth = 2.5;
+        hmDotCtx.strokeStyle = '#ffffff';
+        hmDotCtx.stroke();
+
+        if (hmActiveTracks.length > 1) {
+          hmDotCtx.fillStyle = '#ffffff';
+          hmDotCtx.font = 'bold 8px "Courier New",monospace';
+          hmDotCtx.textAlign = 'center';
+          hmDotCtx.fillText(`${tr.camp}·${tr.seat}`, x, y + r + 12);
+        }
+      }
+    }
+
+    /* ── Kill/Death/Assist event icons — a small badge (white circle +
+       a per-type glyph) that pops in at the event's location and stays
+       there for the rest of this playback pass, fired from hmFrame's
+       per-track event-checkpoint walks above. No icon assets exist
+       anywhere in this repo (checked assets/, herohighlights/,
+       postgame/, hexagon/, etc.) — these are inline SVG so the effect
+       has zero asset dependency; swap an HM_EVENT_ICONS entry for an
+       <img> if a real asset is ever supplied for it. Persists (no
+       removal timeout) until hmClearEventIcons() clears every icon at
+       once — on loop wraparound (hmResetLoop, so a repeat pass starts
+       clean instead of stacking duplicate icons on the same events) and
+       on hide (hidePostHeatmap). */
+    const HM_EVENT_ICONS = {
+      /* Crossed swords: two corner-to-corner blades (same diagonal
+         coordinates the old plain-X used) plus a perpendicular guard bar
+         and a pommel circle near each blade's lower end, so it reads as
+         swords hilt-down rather than a bare X. */
+      kill: `
+        <line x1="22" y1="22" x2="78" y2="78" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+        <line x1="56.2" y1="77.4" x2="77.4" y2="56.2" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="78" cy="78" r="7" fill="#0a0a0a"/>
+        <line x1="78" y1="22" x2="22" y2="78" stroke="#0a0a0a" stroke-width="12" stroke-linecap="round"/>
+        <line x1="43.8" y1="77.4" x2="22.6" y2="56.2" stroke="#0a0a0a" stroke-width="9" stroke-linecap="round"/>
+        <circle cx="22" cy="78" r="7" fill="#0a0a0a"/>
+      `,
+      death: `
+        <circle cx="50" cy="40" r="24" fill="#e02020"/>
+        <rect x="34" y="56" width="32" height="20" rx="7" fill="#e02020"/>
+        <circle cx="40" cy="40" r="6" fill="#0a0a0a"/>
+        <circle cx="60" cy="40" r="6" fill="#0a0a0a"/>
+        <circle cx="50" cy="50" r="3" fill="#0a0a0a"/>
+        <rect x="41" y="68" width="4" height="8" fill="#0a0a0a"/>
+        <rect x="55" y="68" width="4" height="8" fill="#0a0a0a"/>
+      `,
+      /* Shaking hands — the user's own reference handshake artwork
+         (svgrepo.com), a filled-silhouette icon rather than the earlier
+         hand-built attempts, so it doesn't need the same "thin lines
+         vanish at 30px" workaround those needed. Original is a 5-path
+         512x512 glyph (2 sleeves, 2 elbow-joint cutout circles, 1
+         clasped-fingers mass with the loose-thumb notch); reproduced
+         here verbatim and just re-centered/scaled into this icon
+         system's 100x100 viewBox via the wrapping <g> transform — scale
+         0.172 sizes its ~500px bulk to fill the ~86px-diameter safe
+         area inside the white circle backer (see hmEventSvg), and the
+         translate pair recenters its own (256,256) midpoint onto this
+         icon's (50,50) origin. Confirmed legible at the actual ~30px
+         on-screen size (see .hm-event-icon) — SVG paths stay crisp at
+         any raster size, unlike the stroke-width tricks the earlier
+         attempts needed. */
+      assist: `
+        <g transform="translate(50,50) scale(0.172) translate(-256,-256)" fill="#0a0a0a">
+          <path d="M255.366,141.046c-7.4,3.583-14.732,8.548-21.533,15.357c-34.091,34.098-65.081,65.088-65.081,65.088
+            l0.013,0.02c-0.185,0.186-0.371,0.338-0.557,0.53c-8.824,8.831-9.174,22.909-1.025,32.146c0.323,0.371,0.668,0.736,1.025,1.086
+            c9.161,9.174,24.036,9.196,33.232,0l35.797-35.797c6.176,2.263,12.248,3.583,18.074,4.243c7.937,0.88,15.392,0.55,22.022-0.385
+            c16.162-2.29,14.47-1.623,23.844-4.704c9.353-3.068,19.862-9.354,19.862-9.354l6.362,6.355
+            c0.701,0.681,16.919,16.925,25.192,25.185c1.465,1.471,2.709,2.682,3.542,3.549c0.956,0.997,2.022,1.719,2.682,2.682l41.278,41.279
+            c11.898-13.35,25.488-33.232,23.81-56.058L320.763,129.14C320.763,129.14,285.062,126.589,255.366,141.046z"/>
+          <path d="M261.115,394.362c-9.134-9.147-23.961-9.147-33.101,0l-6.794,6.794c9.119-9.132,9.112-23.926-0.021-33.066
+            c-9.14-9.126-23.947-9.126-33.087,0.007c9.14-9.133,9.14-23.94,0-33.087c-9.133-9.148-23.947-9.133-33.087,0
+            c9.14-9.133,9.14-23.947,0-33.095c-9.134-9.132-23.947-9.132-33.088,0.014l-20.46,20.453c-9.14,9.147-9.14,23.947,0,33.094
+            c9.133,9.134,23.941,9.134,33.08,0c-9.14,9.134-9.14,23.947,0,33.087c9.147,9.133,23.954,9.133,33.094,0
+            c-9.14,9.133-9.14,23.941,0,33.088c9.14,9.133,23.947,9.133,33.088,0l6.802-6.809c-9.119,9.147-9.113,23.94,0.02,33.081
+            c9.14,9.132,23.947,9.132,33.088,0l20.467-20.468C270.248,418.302,270.248,403.495,261.115,394.362z"/>
+          <path d="M507.987,178.28L387.543,57.822c-5.351-5.337-14.002-5.337-19.339,0l-38.631,38.63
+            c-5.337,5.337-5.337,13.989,0,19.333l120.458,120.451c5.33,5.35,13.996,5.35,19.326,0l38.63-38.638
+            C513.338,192.276,513.338,183.624,507.987,178.28z M473.655,204.992c-5.75,5.736-15.048,5.736-20.777,0
+            c-5.735-5.743-5.735-15.041,0-20.777c5.729-5.736,15.027-5.736,20.777,0C479.391,189.951,479.384,199.249,473.655,204.992z"/>
+          <path d="M182.417,99.864l-38.624-38.63c-5.336-5.337-13.995-5.337-19.332,0L4.003,181.691
+            c-5.337,5.323-5.337,13.989,0,19.319l38.631,38.644c5.33,5.331,14.002,5.331,19.325,0l120.458-120.458
+            C187.761,113.859,187.761,105.207,182.417,99.864z M59.118,208.403c-5.736,5.729-15.04,5.729-20.777,0
+            c-5.735-5.742-5.735-15.041,0-20.777c5.736-5.735,15.041-5.735,20.777,0C64.854,193.362,64.854,202.66,59.118,208.403z"/>
+          <path d="M397.528,312.809l-7.468-7.482l-72.509-72.509l-4.883,2.166l-5.316,1.919l-0.384,0.117
+            c-0.936,0.296-9.684,2.971-26.932,5.412c-9.12,1.273-18.156,1.431-26.904,0.434c-3.459-0.385-6.898-0.95-10.296-1.692
+            l-27.757,27.744c-16.678,16.678-43.836,16.678-60.514,0c-0.585-0.591-1.149-1.19-1.671-1.781l-0.179-0.2
+            c-10.529-11.939-13.204-28.28-8.252-42.461l10.673-16.609l-0.02-0.02l65.081-65.074c2.647-2.641,5.426-5.103,8.314-7.428
+            c-20.281-3.982-37.296-2.806-37.296-2.806L88.093,235.679c-1.389,18.988,11.651,39.799,20.928,51.952
+            c16.692-15.963,43.239-15.756,59.641,0.654c6.107,6.1,9.952,13.617,11.574,21.498c7.895,1.637,15.406,5.475,21.513,11.582
+            c6.107,6.114,9.952,13.631,11.575,21.519c7.888,1.623,15.412,5.46,21.513,11.568c4.078,4.078,7.152,8.783,9.222,13.817
+            c11.1-0.137,22.242,4.016,30.688,12.455c16.65,16.636,16.643,43.733,0,60.363l-6.809,6.822l3.411,3.412
+            c9.148,9.147,23.954,9.147,33.095,0c9.14-9.134,9.14-23.947,0-33.088l6.808,6.83c9.147,9.133,23.947,9.133,33.087,0
+            c9.14-9.147,9.147-23.954,0-33.101c9.147,9.147,23.947,9.147,33.087,0c9.134-9.126,9.154-23.94,0-33.088
+            c9.154,9.148,23.954,9.148,33.088,0c9.147-9.132,9.147-23.947,0-33.08L397.528,312.809z"/>
+        </g>
+      `,
+    };
+
+    function hmEventSvg(type) {
+      return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="47" fill="#ffffff"/>
+        ${HM_EVENT_ICONS[type] || ''}
+      </svg>`;
+    }
+
+    function hmClearEventIcons() {
+      document.querySelectorAll('.hm-event-icon').forEach(el => el.remove());
+    }
+
+    /* One-time legend fill — reuses hmEventSvg(type) verbatim so the
+       legend's icons are drawn from the exact same markup as the live
+       map badges (see HM_EVENT_ICONS) instead of a hand-copied second
+       set that could quietly drift out of sync. Static content, so this
+       just runs once at parse time like the itlPage/rgPage/hlPage-style
+       top-level DOM lookups elsewhere in this file — #heatmap-page is
+       already in the DOM by the time this inline <script> runs. */
+    document.getElementById('hm-legend-icon-kill').innerHTML   = hmEventSvg('kill');
+    document.getElementById('hm-legend-icon-assist').innerHTML = hmEventSvg('assist');
+    document.getElementById('hm-legend-icon-death').innerHTML  = hmEventSvg('death');
+
+    function hmTriggerEventIcon(cx, cy, type) {
+      const mapBox = document.querySelector('.hm-map-box');
+      if (!mapBox) return;
+      /* cx/cy (from hmGameToCanvas) are in the canvas's fixed 0..
+         HM_CANVAS_SIZE BUFFER space, not real CSS pixels — the canvas
+         itself is stretched to the box's actual rendered size by the CSS
+         width:100%/height:100% rule (see hmSetupCanvas's own comment on
+         this same buffer-vs-display-size split), but a plain positioned
+         DOM element like this icon gets no such automatic stretch, so it
+         has to redo that same scaling itself against however big
+         .hm-map-box actually is right now (clientWidth/Height — the
+         content-box size, matching what the canvases actually fill).
+         Read fresh per call rather than cached, since .hm-map-box is a
+         dashboard Edit-tab-resizable group. */
+      const scaleX = mapBox.clientWidth  / HM_CANVAS_SIZE;
+      const scaleY = mapBox.clientHeight / HM_CANVAS_SIZE;
+      const px = cx * scaleX, py = cy * scaleY;
+      const el = document.createElement('div');
+      el.className = 'hm-event-icon hm-ev-' + type;
+      el.style.left = px + 'px'; /* centre of the marker; size comes from the per-type CSS variable */
+      el.style.top  = py + 'px';
+      el.innerHTML = hmEventSvg(type);
+      mapBox.appendChild(el);
+    }
+
+    /* Self-stopping RAF loop — only keeps ticking while hmVisible, unlike
+       the standalone debug tool's unconditional forever-loop (see
+       "Video-heavy overlays" in CLAUDE.md re: sustained cost of anything
+       left running while off-screen). */
+    function hmFrame(now) {
+      if (!hmVisible) return;
+      requestAnimationFrame(hmFrame);
+      if (!hmActiveTracks.length) return;
+
+      if (!hmStartTime) hmStartTime = now;
+      let elapsed = (now - hmStartTime) / 1000;
+
+      if (elapsed >= hmPlaybackSecs) {
+        hmResetLoop();
+        hmStartTime = now;
+        elapsed = 0;
+        hmRequestRefresh(); /* always-up page: pull fresh positions / player card at every loop wrap */
+      }
+
+      const gameSpeed = (hmToS - hmFromS) / hmPlaybackSecs;
+      const gameT     = hmFromS + elapsed * gameSpeed;
+
+      for (const tr of hmActiveTracks) {
+        const pos = hmInterpolate(tr.waypoints, gameT);
+        if (!pos) continue;
+        const { x, y } = hmGameToCanvas(pos.x, pos.y);
+        tr._lastPos = { x, y };
+        const dx = x - tr.lastStampX, dy = y - tr.lastStampY;
+        if (dx*dx + dy*dy >= HM_STAMP_DIST_PX * HM_STAMP_DIST_PX) {
+          hmStampHeat(x, y);
+          tr.lastStampX = x; tr.lastStampY = y;
+          hmHeatDirty = true;
+        }
+
+        /* Kill/death/assist checkpoints — gameT only ever moves forward
+           within one loop pass (hmResetLoop resets these pointers at
+           wraparound), so a plain pointer walk here never re-fires or
+           skips one, even if several events fall inside the same
+           frame's advance (fast playback speed / a long from-to window
+           compressed into a short hmPlaybackSecs). */
+        while (tr.nextKillIdx < tr.killEvents.length && tr.killEvents[tr.nextKillIdx].t <= gameT) {
+          const ev = tr.killEvents[tr.nextKillIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'kill');
+          tr.nextKillIdx++;
+        }
+        while (tr.nextDeathIdx < tr.deathEvents.length && tr.deathEvents[tr.nextDeathIdx].t <= gameT) {
+          const ev = tr.deathEvents[tr.nextDeathIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'death');
+          tr.nextDeathIdx++;
+        }
+        while (tr.nextAssistIdx < tr.assistEvents.length && tr.assistEvents[tr.nextAssistIdx].t <= gameT) {
+          const ev = tr.assistEvents[tr.nextAssistIdx];
+          const pt = hmGameToCanvas(ev.x, ev.y);
+          hmTriggerEventIcon(pt.x, pt.y, 'assist');
+          tr.nextAssistIdx++;
+        }
+      }
+
+      if (hmHeatDirty && (now - hmLastHeatRender) >= HM_HEAT_FPS) {
+        hmRenderHeat(); hmLastHeatRender = now; hmHeatDirty = false;
+      }
+
+      hmDrawDots(now);
+
+      document.getElementById('hm-progress-bar').style.width = ((elapsed / hmPlaybackSecs) * 100) + '%';
+      document.getElementById('hm-timer').textContent = hmFmt(gameT);
+    }
+
+    async function fetchHeatmapConfig() {
+      try {
+        const r = await fetch(buildUrl('/api/heatmap-config'), { cache: 'no-store' });
+        if (!r.ok) throw new Error('bad status');
+        return await r.json();
+      } catch {
+        return { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, mapBrightness: 0.25 };
+      }
+    }
+
+    async function fetchHeatmapPositions(cfg) {
+      const params = new URLSearchParams({ from: cfg.from, to: cfg.to });
+      if (cfg.camp) params.set('camp', cfg.camp);
+      if (cfg.seat) params.set('seat', cfg.seat);
+      try {
+        const r = await fetch(buildUrl('/positions?' + params), { cache: 'no-store' });
+        if (!r.ok) return [];
+        const json = await r.json();
+        return json.positions || [];
+      } catch { return []; }
+    }
+
+    /* One per waypoint where THIS track's own counter (field) rose versus
+       the previous waypoint (positionLog snapshots each player's own
+       cumulative K/D/A alongside their position, see lib/pollers.js —
+       memory: reference_mlbb_postinfo_api.md's sibling note on
+       /positions). Starts at i=1 (never fires off the very first
+       waypoint) so a window that starts mid-game with a counter already
+       nonzero doesn't replay every earlier kill/death/assist as if it
+       just happened — only a rise WITHIN this fetched window counts,
+       same "snapshot only, don't fire" baseline rule lib/pollers.js's own
+       kill-event broadcaster uses. Shared by kill/death/assist below —
+       same shape, different source field. */
+    function hmBuildCheckpoints(waypoints, field) {
+      const events = [];
+      for (let i = 1; i < waypoints.length; i++) {
+        const prev = waypoints[i - 1][field], cur = waypoints[i][field];
+        if (cur != null && prev != null && cur > prev) {
+          events.push({ t: waypoints[i].t, x: waypoints[i].x, y: waypoints[i].y });
+        }
+      }
+      return events;
+    }
+
+    function hmBuildTracks(positions) {
+      const trackMap = {};
+      for (const p of positions) {
+        const key = `${p.camp}-${p.seat}`;
+        if (!trackMap[key]) trackMap[key] = { camp: p.camp, seat: p.seat, waypoints: [] };
+        trackMap[key].waypoints.push({ t: p.game_time_s, x: p.x, y: p.y, k: p.kill_num, d: p.dead_num, a: p.assist_num });
+      }
+      return Object.values(trackMap).map(tr => {
+        const waypoints = tr.waypoints.sort((a, b) => a.t - b.t);
+        return {
+          ...tr,
+          waypoints,
+          killEvents:   hmBuildCheckpoints(waypoints, 'k'),
+          deathEvents:  hmBuildCheckpoints(waypoints, 'd'),
+          assistEvents: hmBuildCheckpoints(waypoints, 'a'),
+          nextKillIdx: 0, nextDeathIdx: 0, nextAssistIdx: 0,
+          lastStampX: -9999,
+          lastStampY: -9999,
+          _lastPos:   null,
+        };
+      });
+    }
+
+    /* Player focus card — MVP Highlights' own plaque/hero/stats layout
+       (hm-prefixed twin of hlApply), fed by the live sub-info feed
+       (/api/gamedata-proxy — same feed Post Stats/Consolidated Post/the
+       dashboard's own Focus Player dropdown all already read), not the
+       Post-Info API — that avoided a whole seat/order-matching problem
+       Post-Info's flat hero_list had (its per-camp order is pick/draft
+       order, not seat order, so cardSeat-1 could silently grab the wrong
+       player) and gets role/hero-name for free: this feed's camp_list[].
+       seat_N objects already carry `role`, `kp` (kill participation %),
+       `hero_name`, and extra_param.gpm directly — no roster cross-check
+       or manual KP/GPM math needed, unlike Post-Info. */
+    async function hmApplyPlayerCard(cfg) {
+      const cardCamp = Number(cfg.camp) || 1;
+      const cardSeat = Number(cfg.seat) || 1;
+      document.getElementById('hm-plaque').style.backgroundImage =
+        `url('/assets/highlights/${cardCamp === 2 ? 'mvphlred' : 'mvphlblue'}.png')`;
+
+      const logoEl   = document.getElementById('hm-team-logo');
+      const roleEl   = document.getElementById('hm-role-icon');
+      const nameEl   = document.getElementById('hm-name');
+      const heroImg  = document.getElementById('hm-hero-img');
+      const heroName = document.getElementById('hm-hero-name');
+      const photoEl  = document.getElementById('hm-player-photo');
+
+      try {
+        const r = await fetch(buildUrl('/api/gamedata-proxy?fresh=1'), { cache: 'no-store' });
+        if (!r.ok) return;
+        const json = await r.json();
+        const gd = json.data;
+        if (!gd) return;
+
+        document.getElementById('hm-timefocus-range').textContent = hmFormatTimeRange(cfg, gd.game_time);
+
+        const camp = (gd.camp_list || []).find(c => c.campid === cardCamp);
+        if (!camp) return;
+        const seats  = ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].map(k => camp[k]).filter(Boolean);
+        const player = seats[cardSeat - 1] || seats[0];
+        if (!player) return;
+
+        const tricode = (player.team_simple_name || '').toUpperCase();
+        logoEl.onerror = () => { logoEl.style.display = 'none'; };
+        logoEl.style.display = '';
+        logoEl.src = tricode ? '/logos/' + encodeURIComponent(tricode) + '.png' : '';
+
+        roleEl.onerror = () => { roleEl.style.display = 'none'; };
+        roleEl.style.display = '';
+        roleEl.src = player.role ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
+
+        nameEl.textContent = player.name || '';
+        /* Not fit here — see hlApply's identical comment: #heatmap-page is
+           still display:none at this point, fit again once shown instead
+           (see showPostHeatmap). */
+
+        heroImg.onerror = () => { heroImg.style.display = 'none'; };
+        heroImg.style.display = '';
+        heroImg.src = hlHeroImg(player.heroid);
+        /* hero_name is a plain string on this feed (unlike the MVP
+           endpoint's hero_name[] array hlApply reads) — handle either
+           shape defensively rather than assume, since indexing a plain
+           string with [0] would silently truncate it to one character. */
+        heroName.textContent = (Array.isArray(player.hero_name) ? player.hero_name[0] : player.hero_name) || '';
+
+        photoEl.onerror = () => { photoEl.style.display = 'none'; };
+        photoEl.style.display = '';
+        photoEl.src = hlPhotoUrl(player.name);
+        /* Dashboard's "Player Photo Nudge" left/right buttons — some
+           source photos aren't centered on the player within their own
+           frame, so this shifts the image inside its overflow:hidden
+           wrap rather than moving the wrap itself (which the Edit tab
+           already handles). Tuned per-broadcast via /api/heatmap-config,
+           same live-refresh path as the rest of this cfg object. */
+        photoEl.style.transform = `translateX(${cfg.photoOffsetX || 0}px)`;
+
+        document.getElementById('hmst-kda-value').textContent = `${player.kill_num || 0}/${player.dead_num || 0}/${player.assist_num || 0}`;
+        document.getElementById('hmst-kp-value').textContent  = (player.kp != null ? Math.round(player.kp) : 0) + '%';
+        document.getElementById('hmst-gpm-value').textContent = mvFormatStatValue((player.extra_param && player.extra_param.gpm) || 0);
+      } catch {}
+    }
+
+    /* Shared by the initial show AND the live 'heatmap_config' SSE
+       refresh below — fetches positions+player card for a given config
+       and applies them to the already-existing DOM/canvas state. Caller
+       is responsible for the activeFeature-still-current guard around
+       each await, since the two call sites need it at different points. */
+    async function hmLoadAndApply(cfg, keepIfEmpty) {
+      const [positions] = await Promise.all([fetchHeatmapPositions(cfg), hmApplyPlayerCard(cfg)]);
+      /* a failed/empty refresh must not blank a map that is already playing */
+      if (keepIfEmpty && !positions.length && hmActiveTracks.length) return;
+      /* Map brightness — tuned from the dashboard's Post Heatmap Controls
+         box (Map Brightness slider), same live-refresh path as the rest
+         of this cfg object. Overrides the .hm-map-bg CSS rule's own
+         brightness(0.25) fallback, which only applies before this first
+         runs. */
+      hmSharedBrightness = cfg.mapBrightness != null ? cfg.mapBrightness : 0.25;
+      hmApplyMapFilter();
+      hmFromS = cfg.from;
+      hmPlaybackSecs = cfg.playbackSec;
+      /* cfg.to === 99999 is the dashboard's "FULL" sentinel — routes/
+         positions.js takes it literally as the query's upper bound (no
+         clamping server-side), so using it as-is for playback made
+         hmFrame's gameSpeed = (hmToS-hmFromS)/hmPlaybackSecs enormous:
+         gameT blew past every real waypoint almost instantly and
+         hmInterpolate just held the last one for nearly the whole clip —
+         looked frozen instead of playing "the full game". Resolve FULL to
+         the actual latest game_time_s this fetch's own positions cover,
+         so playback still spans real recorded ground instead of racing
+         through 99999 seconds of nothing. */
+      if (cfg.to >= 99999) {
+        let maxT = hmFromS;
+        for (const p of positions) if (p.game_time_s > maxT) maxT = p.game_time_s;
+        hmToS = maxT;
+      } else {
+        hmToS = cfg.to;
+      }
+      hmActiveTracks = hmBuildTracks(positions);
+      hmResetLoop();
+    }
+
+
+    /* Shrink-to-fit pass for the plaque's text pieces (see
+       hmApplyPlayerCard's comment on why this can't happen at apply-time)
+       — needed after BOTH the initial show (page just became visible) and
+       a live focus-player change via hmLiveRefresh (a new name/value can
+       be a different length than whatever the font-size last shrank to). */
+    function hmFitPlayerText() {
+      hlFitName(document.getElementById('hm-name'));
+      mvFitStatValue(document.getElementById('hmst-kda-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hmst-kp-value'), 25.4, 14);
+      mvFitStatValue(document.getElementById('hmst-gpm-value'), 25.4, 14);
+    }
+
+
+    /* ── live look controls (dashboard Control -> Heatmap -> Heatmap Style, GET/POST /api/heatmap-style) ──
+       Applied once at load and on every 'heatmap_style' SSE event (which carries the full style), so slider
+       drags show up here immediately. mapBrightness null = follow the shared Post Heatmap Controls value. */
+    let hmStyle = { mapBrightness: null, mapContrast: 1, heat: [1,1,1,1,1,1,1,1,1], markers: { kill: 30, death: 30, assist: 30 } };
+    let hmSharedBrightness = 0.25;
+    function hmApplyMapFilter() {
+      const b = hmStyle.mapBrightness != null ? hmStyle.mapBrightness : hmSharedBrightness;
+      document.querySelector('.hm-map-bg').style.filter = `brightness(${b}) contrast(${hmStyle.mapContrast})`;
+    }
+    function hmApplyStyle(st) {
+      if (!st || !st.markers || !Array.isArray(st.heat)) return;
+      hmStyle = st;
+      hmApplyMapFilter();
+      hmBuildCmap(st.heat);
+      hmRenderHeat();   /* repaint the trail in the new colours right now */
+      const root = document.documentElement.style;
+      root.setProperty('--hm-kill-size',   st.markers.kill   + 'px');
+      root.setProperty('--hm-death-size',  st.markers.death  + 'px');
+      root.setProperty('--hm-assist-size', st.markers.assist + 'px');
+    }
+    async function hmFetchStyle() {
+      try { const r = await fetch(buildUrl('/api/heatmap-style'), { cache: 'no-store' }); return r.ok ? await r.json() : null; }
+      catch { return null; }
+    }
+
+    /* ── always-up lifecycle ── */
+    const hmPage = document.getElementById('heatmap-page');
+    let hmRefreshing = false;
+
+    /* Re-pull config + positions + player card. Called at every loop wrap and when the dashboard applies new
+       Post Heatmap Controls ('heatmap_config' SSE). Never overlaps itself; an empty/failed fetch keeps the
+       map that is already playing. */
+    async function hmRequestRefresh() {
+      if (hmRefreshing) return;
+      hmRefreshing = true;
+      try {
+        const cfg = await fetchHeatmapConfig();
+        await hmLoadAndApply(cfg, true);
+        hmFitPlayerText();
+      } finally { hmRefreshing = false; }
+    }
+
+    /* Resolves once every <img> under el has decoded (or failed), capped at maxMs. */
+    function hmPreloadImages(el, maxMs) {
+      const imgs = Array.from(el.querySelectorAll('img')).filter(i => i.getAttribute('src'));
+      return Promise.race([
+        Promise.all(imgs.map(i => i.decode().catch(() => {}))),
+        new Promise(r => setTimeout(r, maxMs)),
+      ]);
+    }
+
+    (async function hmStart() {
+      hmApplyStyle(await hmFetchStyle());
+      const cfg = await fetchHeatmapConfig();
+      await hmLoadAndApply(cfg);
+      await hmPreloadImages(hmPage, 1500);
+      hmVisible = true;
+      hmPage.classList.add('hm-on');
+      void hmPage.offsetWidth;
+      hmPage.classList.add('hm-visible');
+      hmFitPlayerText();
+      requestAnimationFrame(hmFrame);
+    })();
+
+    /* Shared SSE (one real connection for the whole browser — see CLAUDE.md "Dashboard architecture"). */
+    (function hmConnect() {
+      const sse = createOverlaySSE();
+      sse.addEventListener('theme', (e) => { try { applyTheme(JSON.parse(e.data).theme); } catch {} });
+      sse.addEventListener('heatmap_config', () => { hmRequestRefresh(); });
+      sse.addEventListener('heatmap_style', (e) => { try { hmApplyStyle(JSON.parse(e.data)); } catch {} });
+      /* Edit-tab Save broadcasts 'reload' so every open page picks up the new positions */
+      sse.addEventListener('reload', () => { window.location.reload(); });
+    })();
+
+    /* Edit-tab position/size overrides — the SAME saved styles the Post Heatmap scene in mplfs.html uses
+       (overlay_styles.json "mplfs" bucket, theme-scoped server-side), restricted to this scene's own
+       selectors, so tuning it in the dashboard's Edit tab (Post Heatmap · mplfs) moves both. */
+    fetch(buildUrl('/api/overlay-styles?file=mplfs'), { cache: 'no-store' })
+      .then(r => r.json())
+      .then(styles => {
+        if (!styles) return;
+        const css = Object.keys(styles).filter(sel => /^[#.](hm-|hmst-|heatmap)/.test(sel)).map(sel => {
+          const decls = Object.keys(styles[sel]).filter(p => p !== 'cropX' && p !== 'cropY').map(p =>
+            (p === 'fontSize' ? 'font-size' : p) + ':' + styles[sel][p] + ' !important');
+          return sel + '{' + decls.join(';') + '}';
+        }).join('\n');
+        if (!css) return;
+        const style = document.createElement('style');
+        style.id = 'heatmap-overrides';
+        style.textContent = css;
+        document.head.appendChild(style);
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

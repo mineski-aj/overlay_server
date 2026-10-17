@@ -259,6 +259,43 @@ router.post('/api/heatmap-config', (req, res) => {
   res.json({ ok: true, ...cfg });
 });
 
+// heatmap.html's own look controls (dashboard Control -> Heatmap -> Heatmap Style): map brightness/contrast,
+// a brightness multiplier per colour weight of the heat trail (9 stops, blue -> white-hot) and the size of each
+// event marker. GET to read, POST to update (partial OK); every POST is broadcast as the 'heatmap_style' SSE event
+// WITH the full style as its payload, so heatmap.html applies slider drags live without re-fetching anything.
+// mapBrightness null = "follow the shared Post Heatmap Controls brightness" (heatmap_config.json).
+const HEATMAP_STYLE_FILE = path.join(__dirname, '..', 'heatmap_style.json');
+const HEATMAP_STYLE_DEFAULT = { mapBrightness: null, mapContrast: 1, heat: [1, 1, 1, 1, 1, 1, 1, 1, 1], markers: { kill: 30, death: 30, assist: 30 } };
+function heatmapStyleClean(b, base) {
+  const num = (v, lo, hi, d) => { const n = Number(v); return isFinite(n) && v !== null && v !== '' ? Math.max(lo, Math.min(hi, n)) : d; };
+  b = b || {}; base = base || HEATMAP_STYLE_DEFAULT;
+  const heat = Array.isArray(b.heat) ? b.heat : base.heat;
+  const mk = b.markers || {};
+  return {
+    mapBrightness: b.mapBrightness === null ? null : (b.mapBrightness === undefined ? base.mapBrightness : num(b.mapBrightness, 0.1, 1.5, base.mapBrightness)),
+    mapContrast:   num(b.mapContrast, 0.3, 2.5, base.mapContrast),
+    heat: HEATMAP_STYLE_DEFAULT.heat.map((_, i) => num(heat[i], 0, 2, base.heat[i])),
+    markers: {
+      kill:   num(mk.kill,   8, 100, base.markers.kill),
+      death:  num(mk.death,  8, 100, base.markers.death),
+      assist: num(mk.assist, 8, 100, base.markers.assist),
+    },
+  };
+}
+function readHeatmapStyle() {
+  try { return heatmapStyleClean(JSON.parse(fs.readFileSync(HEATMAP_STYLE_FILE, 'utf8'))); } catch (e) { return HEATMAP_STYLE_DEFAULT; }
+}
+router.get('/api/heatmap-style', (req, res) => {
+  res.set('Cache-Control', 'no-store').json(readHeatmapStyle());
+});
+router.post('/api/heatmap-style', (req, res) => {
+  const st = heatmapStyleClean(req.body, readHeatmapStyle());
+  fs.writeFileSync(HEATMAP_STYLE_FILE, JSON.stringify(st));
+  const line = 'event: heatmap_style\ndata: ' + JSON.stringify(st) + '\n\n';
+  state.overlayClients.forEach(c => { try { c.write(line); } catch {} });
+  res.json({ ok: true, ...st });
+});
+
 // Post H2H role selection (which role's head-to-head comparison is shown)
 // — GET to read, POST { role } to update. mplfs.html's showPostH2H() and
 // p2hLiveRefresh() fetch this fresh (no caching) each time, same pattern
