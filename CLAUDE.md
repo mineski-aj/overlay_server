@@ -944,7 +944,7 @@ Re-laid-out off the reference "8. Head to Head V3" (all canvas-absolute CSS in t
 full-height centre panel (`#th-po-center`, gold border); radar centre moved to canvas (960,504), R=261, 8 rings (`thR()`/`thCy()`,
 `TH_PO_AXES` label/value positions); bottom stats are 2 groups x 3 full-width bars (blue value | gold label | red value, same six
 `#th-bar-*` nodes; `setThBar` sets `data-lead` so a gold triangle marks the leading side, lower-is-better stats respected).
-Player panels (535x887, `.th-player`): the BNW crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.png` (`thBnwUrl`) + a team hue (`screen`
+Player panels (535x887, `.th-player`): the BNW crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp` (grayscale WebP q90, ~0.1-0.3MB each; `thBnwUrl`; the pre-WebP PNGs / pre-recrop originals live in `old/` and a backup zip) + a team hue (`screen`
 blend of a deep navy/dark red + an edge-glow gradient) + an inset 2px frame behind + the coloured `hires/LEFT|RIGHT` cutout in the bottom
 corner. `thSwapPlayoffs` eases BOTH images in on top of the previous pair (never emptying the frame); a missing file fades that image out.
 No Edit-tab config exists for this scene. No art existed for the header/panel/bars, so they are CSS/SVG (old `playoffs_hexa*` art for

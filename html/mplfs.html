@@ -10649,11 +10649,11 @@
     let thPhotoLayer = { blue: 0, red: 0 };
     let thTriBlue = '', thTriRed = '';
 
-    /* Playoffs: the official black-and-white crops (photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.png,
+    /* Playoffs: the official black-and-white crops (photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp,
        TRI = the Match Board team's short code) fill the panel; the coloured LEFT/RIGHT cutout
        (wlPhotoUrl) sits in its bottom corner. Other themes use only the cutout. */
     function thBnwUrl(ign, tri) {
-      return (ign && tri) ? '/photos/Dynamic/3_CROPPED%20BNW/' + encodeURIComponent(tri + '_' + ign) + '.png' : '';
+      return (ign && tri) ? '/photos/Dynamic/3_CROPPED%20BNW/' + encodeURIComponent(tri + '_' + ign) + '.webp' : '';
     }
 
     /* Playoffs photo swap — the bnw crop eases in ON TOP of the previous one (never emptying the frame; the old one
