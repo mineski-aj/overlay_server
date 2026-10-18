@@ -744,6 +744,7 @@
     updateMatchPicker();
     var mp = document.getElementById('match-picker');
     if (mp) mp.value = String((s.match || 1) - 1);
+    clampMatchToDay();   // playoffs: a saved match number beyond the day's count (e.g. Match 2 on Day 5) is pulled back
     syncGoodbyeSelect();
   }
 
@@ -988,7 +989,14 @@
   function updateMatchPicker() {
     var isDay2 = (localState.day || 1) === 2;
     var opt3 = document.querySelector('#match-picker option[value="2"]');
-    if (opt3) opt3.style.display = isDay2 ? '' : 'none';
+    var opt2 = document.querySelector('#match-picker option[value="1"]');
+    if (poTheme) {   // playoffs: never a 3rd match; Match 2 only on the 2-match days (1-3)
+      if (opt3) opt3.style.display = 'none';
+      if (opt2) opt2.style.display = poMatchCount(localState.day) >= 2 ? '' : 'none';
+    } else {
+      if (opt3) opt3.style.display = isDay2 ? '' : 'none';
+      if (opt2) opt2.style.display = '';
+    }
   }
 
   document.getElementById('match-picker').addEventListener('change', function () {
@@ -1146,6 +1154,7 @@
     document.getElementById('day-val').textContent = localState.day;
     updatePreview();
     updateMatchPicker();
+    clampMatchToDay();
     if (localState.goodbyeLabel !== GOODBYE_SUNDAY) localState.goodbyeLabel = computeGoodbye(localState.day);
     push({ day: localState.day, goodbyeLabel: localState.goodbyeLabel });
     syncGoodbyeSelect();
@@ -1156,6 +1165,7 @@
     document.getElementById('day-val').textContent = localState.day;
     updatePreview();
     updateMatchPicker();
+    clampMatchToDay();
     if (localState.goodbyeLabel !== GOODBYE_SUNDAY) localState.goodbyeLabel = computeGoodbye(localState.day);
     push({ day: localState.day, goodbyeLabel: localState.goodbyeLabel });
     syncGoodbyeSelect();
@@ -1210,6 +1220,19 @@
      drops "W#", and "See you next week" never applies. The theme is re-checked every few seconds (plain fetch, no
      connection held open) because this iframe stays mounted while the Settings page switches the theme. */
   function dayMax() { return poTheme ? 5 : 3; }
+  /* Playoffs only: Days 1-3 run 2 matches, Days 4-5 run 1 (Today's AND Tomorrow's lists; Tomorrow's looks at tomorrow's day). */
+  function poMatchCount(day) { return (day || 1) >= 4 ? 1 : 2; }
+  /* A Match picker / current match beyond the day's count would point at a card that is off — pull it back. */
+  function clampMatchToDay() {
+    if (!poTheme) return;
+    var max = poMatchCount(localState.day);
+    if ((localState.match || 1) > max) {
+      localState.match = max;
+      push({ match: max });
+      var mp = document.getElementById('match-picker'); if (mp) mp.value = String(max - 1);
+      updateShowLabel();
+    }
+  }
   function applyThemeLayout(theme) {
     var po = theme === 'playoffs';
     if (po === poTheme && applyThemeLayout.done) return;
@@ -1217,7 +1240,7 @@
     poTheme = po;
     var wf = document.getElementById('week-field');
     if (wf) wf.style.display = po ? 'none' : '';
-    renderTodayMatches(); renderTomorrowMatches(); updatePreview();
+    renderTodayMatches(); renderTomorrowMatches(); updatePreview(); updateMatchPicker(); clampMatchToDay();
     if (localState.goodbyeLabel !== GOODBYE_SUNDAY && localState.day) {
       var g = computeGoodbye(localState.day);
       if (g !== localState.goodbyeLabel) { localState.goodbyeLabel = g; push({ goodbyeLabel: g }); }
@@ -1256,7 +1279,7 @@
     var matches = getMatches();
 
     matches.forEach(function (m, i) {
-      var disabled = poTheme ? (i === 2) : (i === 2 && !isDay2);
+      var disabled = poTheme ? (i >= poMatchCount(localState.day)) : (i === 2 && !isDay2);
       var mt = matchTypeOf(m);
       var card = document.createElement('div');
       card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');
@@ -1497,12 +1520,12 @@
     container.innerHTML = '';
     var today = localState.day || 1;
     // Day 1→tomorrow Day 2 (3 matches), Day 2→Day 3 (2), Day 3→Day 1 next week (2)
-    var tomorrowDay = (today % 3) + 1;
+    var tomorrowDay = poTheme ? today + 1 : (today % 3) + 1;   // playoffs: no weekly wrap
     var isThreeMatch = (tomorrowDay === 2);
     var matches = getTomorrowMatches();
 
     matches.forEach(function (m, i) {
-      var disabled = poTheme ? (i === 2) : (i === 0 && !isThreeMatch);
+      var disabled = poTheme ? (i >= poMatchCount(tomorrowDay)) : (i === 0 && !isThreeMatch);
       var mt = matchTypeOf(m);
       var card = document.createElement('div');
       card.className = 'match-card' + (disabled ? ' disabled' : '') + (mt !== 'regular' ? ' rivalry' : '');

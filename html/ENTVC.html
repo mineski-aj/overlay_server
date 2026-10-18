@@ -1246,9 +1246,9 @@
          overrides (scoped to #waiting-screen-page.wsm-count-N ...) never
          match anything here, since the class was never applied. */
       const countClass = 'wsm-count-' + matches.length;
-      root.classList.remove('wsm-count-2', 'wsm-count-3');
+      root.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       root.classList.add(countClass);
-      wsPage.classList.remove('wsm-count-2', 'wsm-count-3');
+      wsPage.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       wsPage.classList.add(countClass);
     }
     buildWsMatches('ws-matches', WS_MATCHES);
@@ -1563,10 +1563,11 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
-         match is ignored here. */
+      /* Playoffs theme: Days 1-3 = 2 matches, Days 4-5 = 1 (the Match Board's 3rd
+         match is always ignored). Other themes keep their own rules. */
       const isPoWs = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? 2 : undefined) || WS_MATCHES).slice(0, isPoWs ? 2 : undefined), { currentMatch: ms.match });
+      const poWsCount = (ms.day || 1) >= 4 ? 1 : 2;
+      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? poWsCount : undefined) || WS_MATCHES).slice(0, isPoWs ? poWsCount : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');

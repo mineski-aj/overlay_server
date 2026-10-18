@@ -997,6 +997,14 @@ pinned these font sizes at 34px (`!important`) — they were moved to 30px in `o
 Day spinner runs to **5** (regular: 3), the **Week** counter is hidden, the preview line is `D#` (no `W#`), and the goodbye label never says "next week".
 The iframe re-polls `/api/theme` every 4s (it stays mounted while Settings switches theme). mplfs.html's Tomorrow's Schedule
 (`computeTomorrowWeekDay`, `twTitleText`) is playoffs-aware too: tomorrow = day+1, no wrap to next week. Stored `week` is untouched.
+**Matches per day (playoffs only):** Days 1-3 = 2 matches, Days 4-5 = 1. Match Board: `poMatchCount(day)` greys out the extra cards in Today's and Tomorrow's lists (Tomorrow's
+looks at tomorrow's day = today+1, no wrap; Day 5 -> "Day 6" = 1), the Match picker hides Match 2 on Days 4-5 and Match 3 always, and the current match is
+clamped when the day drops the count. mplfs.html: `buildTsMatches` (`poCount`) and `msToTomorrowMatchRows` (tomorrow day >= 4, or a GRAND FINALS label on match 1,
+-> 1 row). Today's single-row layout is seeded as `#ts-matches.tsm-count-1` in `mplfs::playoffs` (same spot as Tomorrow's: left 131, top 521); there is NO
+Edit-tab config for the 1-match layouts. `routes/overlay.js` Today's highlight cycle follows the same count (needs a server restart).
+The **Waiting TVC match list** (`#ws-matches`, mplfs.html AND ENTVC.html — `poWsCount` in `updateWsFromState`) follows it too: 1 box on Days 4-5. Its playoffs
+header/matches/sponsor positions are keyed to `.wsm-count-2` in `mplfs::playoffs`, so the same positions are seeded for `.wsm-count-1` (no Edit-tab config for it) — except `#ws-matches.wsm-count-1`, which is centred vertically between the header
+bottom (y 218) and the SHOW STARTS IN label (y 806): top 370 (285px block, ~151px free above and below). Regular / 10th Anniversary rules are unchanged.
 
 ### Post 4 Key — playoffs phase-2 photo (mplfs.html, `p4kApplyCard`)
 

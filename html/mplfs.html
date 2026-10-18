@@ -9492,9 +9492,9 @@
          header/match/sponsor boards independently per 2-match/3-match day
          (see mplfs_wsmatches_2m/3m in dashboard.html). */
       const countClass = 'wsm-count-' + matches.length;
-      root.classList.remove('wsm-count-2', 'wsm-count-3');
+      root.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       root.classList.add(countClass);
-      wsPage.classList.remove('wsm-count-2', 'wsm-count-3');
+      wsPage.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       wsPage.classList.add(countClass);
     }
     buildWsMatches('ws-matches', WS_MATCHES);
@@ -9945,7 +9945,9 @@
       /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
          match (Day 2) is ignored here. */
       const isPoTs = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      const rows = (msToMatchRows(state, isPoTs ? 2 : undefined) || TS_MATCHES).slice(0, isPoTs ? 2 : undefined);
+      /* Playoffs: Days 1-3 = 2 matches, Days 4-5 = 1 (Regular/Anniversary untouched). */
+      const poCount = (state && (state.day || 1) >= 4) ? 1 : 2;
+      const rows = (msToMatchRows(state, isPoTs ? poCount : undefined) || TS_MATCHES).slice(0, isPoTs ? poCount : undefined);
       /* Tags the match container AND the whole page with the live match
          count so the dashboard Edit tab can save a separate layout per
          2-match/3-match day (see mplfs_todayschedule_2m/3m in
@@ -9954,11 +9956,11 @@
          Queried fresh (not the tsPage const below) since this runs at
          load time before that const is initialized. */
       const countClass = 'tsm-count-' + rows.length;
-      root.classList.remove('tsm-count-2', 'tsm-count-3');
+      root.classList.remove('tsm-count-1', 'tsm-count-2', 'tsm-count-3');
       root.classList.add(countClass);
       const page = document.getElementById('today-schedule-page');
       if (page) {
-        page.classList.remove('tsm-count-2', 'tsm-count-3');
+        page.classList.remove('tsm-count-1', 'tsm-count-2', 'tsm-count-3');
         page.classList.add(countClass);
       }
       root.innerHTML = rows.map(m => {
@@ -10008,7 +10010,9 @@
       const isPoTw = document.documentElement.getAttribute('data-theme') === 'playoffs';
       const poSlice = (() => {
         const first = state.tomorrowMatches[0] || {};
-        return /grand\s*finals?/i.test(first.stageLabel || '') ? state.tomorrowMatches.slice(0, 1) : state.tomorrowMatches.slice(0, 2);
+        /* Tomorrow's day 4/5 = 1 match, day 2/3 = 2 (a GRAND FINALS label on match 1 still forces 1). */
+        const n = (computeTomorrowWeekDay(state).day >= 4 || /grand\s*finals?/i.test(first.stageLabel || '')) ? 1 : 2;
+        return state.tomorrowMatches.slice(0, n);
       })();
       return (isPoTw ? poSlice : slice).map((m, i) => ({
         label: 'MATCH ' + (i + 1),
@@ -10170,10 +10174,11 @@
           wsWeekLabel.textContent = 'WEEK ' + ms.week + ' - DAY ' + ms.day;
         }
       }
-      /* Playoffs theme: ALWAYS exactly 2 matches — the Match Board's 3rd
-         match is ignored here. */
+      /* Playoffs theme: Days 1-3 = 2 matches, Days 4-5 = 1 (the Match Board's 3rd
+         match is always ignored). Other themes keep their own rules. */
       const isPoWs = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? 2 : undefined) || WS_MATCHES).slice(0, isPoWs ? 2 : undefined), { currentMatch: ms.match });
+      const poWsCount = (ms.day || 1) >= 4 ? 1 : 2;
+      buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? poWsCount : undefined) || WS_MATCHES).slice(0, isPoWs ? poWsCount : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
