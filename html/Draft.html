@@ -1052,7 +1052,16 @@
     }
     #draft-map.draft-map-v2-open { transform: translateY(-56px); }
     #draft-map.draft-map-v2-open::before { opacity: 0; }
-    #draft-map.draft-map-v2-open #draft-map-logo { transform: translate(0, 28px) scale(1.3); }
+    /* Open-state icon target — an empty box inside #draft-map (Edit tab:
+       Map Detail v2 -> "Map Icon (open)"). On show the icon glides/scales
+       into it (mapDetail2LogoSync), on hide it glides back to its own
+       closed box. Default = the old translate(0,28px) scale(1.3). */
+    #draft-map-logo-open {
+      position: absolute;
+      left: -1px; top: 17px;
+      width: 92px; height: 92px;
+      pointer-events: none;
+    }
     #draft-map-logo {
       position: absolute;
       left: 10px;
@@ -1063,6 +1072,7 @@
       align-items: center;
       justify-content: center;
       overflow: hidden;
+      transform-origin: 0 0;
       transition: transform .55s cubic-bezier(.4,0,.2,1);
     }
     #draft-map-logo-img {
@@ -2389,8 +2399,12 @@
     name.id = 'draft-map-name';
     name.innerHTML = '<span class="draft-map-name-text"></span>';
 
+    var logoOpen = document.createElement('div');
+    logoOpen.id = 'draft-map-logo-open';
+
     box.appendChild(logo);
     box.appendChild(name);
+    box.appendChild(logoOpen);
     scene.appendChild(box);
   }
 
@@ -2427,6 +2441,26 @@
   }
   buildMapDetail2();
 
+  /* Moves the map icon from its closed box (#draft-map-logo) into the
+     open target box (#draft-map-logo-open) with one transform (origin 0 0,
+     uniform scale, centred in the target so the art never squashes).
+     Both boxes are px-positioned children of #draft-map, so computed
+     left/top/width/height are valid even while the scene is hidden. */
+  function mapDetail2LogoSync() {
+    var bug  = document.getElementById('draft-map');
+    var logo = document.getElementById('draft-map-logo');
+    var tgt  = document.getElementById('draft-map-logo-open');
+    if (!bug || !logo || !tgt) return;
+    if (!bug.classList.contains('draft-map-v2-open')) { logo.style.transform = ''; return; }
+    var a = getComputedStyle(logo), b = getComputedStyle(tgt);
+    var L = parseFloat(a.left) || 0, T = parseFloat(a.top) || 0;
+    var W = parseFloat(a.width) || 1, H = parseFloat(a.height) || 1;
+    var L2 = parseFloat(b.left) || 0, T2 = parseFloat(b.top) || 0;
+    var W2 = parseFloat(b.width) || W, H2 = parseFloat(b.height) || H;
+    var k = Math.min(W2 / W, H2 / H);
+    var dx = L2 + (W2 - W * k) / 2 - L, dy = T2 + (H2 - H * k) / 2 - T;
+    logo.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(' + k + ')';
+  }
   function mapDetail2ApplyCmd(action) {
     var bug = document.getElementById('draft-map');
     if (action === 'show') {
@@ -2438,7 +2472,9 @@
       md2PlateEl.classList.remove('md2-open');
       if (bug) bug.classList.remove('draft-map-v2-open');
     }
+    mapDetail2LogoSync();
   }
+  var md2EditObserver = null;
   window.showDraftMapDetail2ForEdit = function () {
     showDraftScene(true);
     var m = MAPDETAIL_TEXT[mapDetailCurrentMap] ? mapDetailCurrentMap : 'Healing Turtle';
@@ -2446,6 +2482,13 @@
     md2PlateEl.classList.add('md2-open');
     var bug = document.getElementById('draft-map');
     if (bug) bug.classList.add('draft-map-v2-open');
+    mapDetail2LogoSync();
+    /* Edit tab rewrites <style> overrides on every drag/input — re-sync
+       so the icon follows the "Map Icon (open)" box live. */
+    if (!md2EditObserver) {
+      md2EditObserver = new MutationObserver(mapDetail2LogoSync);
+      md2EditObserver.observe(document.head, { childList: true, subtree: true, characterData: true });
+    }
   };
   setTimeout(function () {
     fetch('/overlay/mapdetailv2-state', { cache: 'no-store' })
