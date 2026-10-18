@@ -1004,7 +1004,10 @@ clamped when the day drops the count. mplfs.html: `buildTsMatches` (`poCount`) a
 Edit-tab config for the 1-match layouts. `routes/overlay.js` Today's highlight cycle follows the same count (needs a server restart).
 The **Waiting TVC match list** (`#ws-matches`, mplfs.html AND ENTVC.html — `poWsCount` in `updateWsFromState`) follows it too: 1 box on Days 4-5. Its playoffs
 header/matches/sponsor positions are keyed to `.wsm-count-2` in `mplfs::playoffs`, so the same positions are seeded for `.wsm-count-1` (no Edit-tab config for it) — except `#ws-matches.wsm-count-1`, which is centred vertically between the header
-bottom (y 218) and the SHOW STARTS IN label (y 806): top 370 (285px block, ~151px free above and below). Regular / 10th Anniversary rules are unchanged.
+bottom (y 218) and the SHOW STARTS IN label (y 806): top 370 (285px block, ~151px free above and below).
+**Waiting TVC playoffs team logos** (`#ws-matches .wsm-logo-l/r`, mplfs.html + ENTVC.html): the white logo areas of `MatchBox_*.png` are slanted parallelograms (125px wide,
+leaning ~19px across the box), so the logo slots are centred on their mid-height centre (x 165.5 left / 404.5 right: slot `left` 100 / 339, width 131) and logos are 96x96 —
+bigger/straighter logos poked into the gold (ONIC did at 122x108, centred ~7px too far right). Regular / 10th Anniversary rules are unchanged.
 
 ### Post 4 Key — playoffs phase-2 photo (mplfs.html, `p4kApplyCard`)
 

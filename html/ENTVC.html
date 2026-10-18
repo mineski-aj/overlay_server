@@ -719,10 +719,14 @@
     .wsm-oh-label { left: 12px; width: 255px; color: #fff; }
     .wsm-oh-time  { left: 295px; width: 270px; justify-content: center; color: #0a0a0a; }
     [data-theme="playoffs"] #ws-matches .wsm-tri { font-size: 41px; }
-    [data-theme="playoffs"] #ws-matches .wsm-logo-l { left: 107px; width: 131px; }
-    [data-theme="playoffs"] #ws-matches .wsm-logo-r { left: 341px; }
+    /* The white logo areas of MatchBox_*.png are slanted parallelograms 125px wide (left: 94-219 at y=78 -> 113-238 at y=147; right mirrored), so
+       their centre at the logo's mid-height is x=165.5 (left) / 404.5 (right). The slots are centred on those (131px wide => left 100 / 339) and
+       the logo is 96x96 so even its slanted-edge corners stay inside the white (it used to be 122x108 centred ~7px too far right, which pushed wide
+       logos like ONIC into the gold). */
+    [data-theme="playoffs"] #ws-matches .wsm-logo-l { left: 100px; width: 131px; }
+    [data-theme="playoffs"] #ws-matches .wsm-logo-r { left: 339px; }
     [data-theme="playoffs"] #ws-matches .wsm-logo-l img,
-    [data-theme="playoffs"] #ws-matches .wsm-logo-r img { width: 122px; height: 108px; }
+    [data-theme="playoffs"] #ws-matches .wsm-logo-r img { width: 96px; height: 96px; }
     [data-theme="playoffs"] .ws-talent-box { height: 500px; }
     [data-theme="playoffs"] .ws-talent-box .ws-talent-bg { width: 571px; height: 601px; }
     [data-theme="playoffs"] .ws-talent-photos { top: 61px; height: 402px; }
