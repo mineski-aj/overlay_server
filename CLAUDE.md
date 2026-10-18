@@ -1495,6 +1495,12 @@ rest of each card is a blurred copy so no gap shows over the camera feed), revea
 script) is **false** for now: the webm band and the blue/red container art are
 transparent; set it true to bring them back (then the webm plays only while shown).
 Heroes/strip contents never wait on phase 2's data.
+**Hero cards are compositor-only (vMix stutter fix):** each card's art (blur fill + edge-faded hero + team
+shade) is painted ONCE into a `<canvas>` (`dv2PaintCard`); the open/close "window" is a skewed
+`overflow:hidden` box animated by `scaleX` with a counter-transformed inner box (`dv2WindowFrames`,
+pre-sampled keyframes), and the entrance flash is a white overlay's opacity. Don't reintroduce animated
+`clip-path`/`filter`, live CSS `blur()` or `mask-image` on the cards — that combination repainted all 10
+cards every frame and hitched when the sheen layers kicked in.
 
 ### The dashboard's Edit tab is theme-scoped — a drag/resize under one theme never affects another
 

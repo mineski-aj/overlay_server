@@ -393,23 +393,25 @@
     /* Cards tile edge to edge (no gaps — a camera feed sits underneath): each
        is a slanted parallelogram sized so its right edge lands exactly on the
        next card's left edge; size/position/clip are set per card in JS. */
-    .dv2-hero { position: absolute; overflow: hidden; background: #0c0f1c; will-change: clip-path, transform; contain: layout paint; }
-    /* The hero art keeps its earlier display size (326x188, centered in the
-       card) — it is NOT scaled up to fill. The card's remaining area is
-       filled by a soft blurred copy of the same art, so there is no gap. */
-    .dv2-hero img.dv2-hero-fill { position: absolute; left: -20px; top: -20px; width: calc(100% + 40px); height: calc(100% + 40px); object-fit: cover; display: block; filter: blur(16px) brightness(0.85) saturate(1.2); will-change: transform; }
-    .dv2-hero img.dv2-hero-img {
-      position: absolute; width: 326px; height: 188px; object-fit: cover; display: block; transform-origin: 50% 40%; will-change: transform;
-      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
-              mask-image: linear-gradient(to right, transparent 0, #000 26px, #000 calc(100% - 26px), transparent 100%);
+    /* Perf (vMix): every per-frame property here is transform/opacity only, so the
+       compositor runs the whole reveal without repainting. The card art (blurred
+       fill + edge-faded hero + team shade) is painted ONCE into a canvas at build
+       time (dv2PaintCard) instead of live CSS blur/mask/filter, and the
+       parallelogram "window" is a skewed overflow:hidden box (.dv2-hero) whose
+       scaleX opens/closes it, with .dv2-hero-inner counter-transformed so the art
+       itself never moves (dv2WindowFrames). */
+    .dv2-hero { position: absolute; overflow: hidden; transform-origin: 50% 50%; will-change: transform, opacity; }
+    .dv2-hero-inner { position: absolute; top: 0; left: -7px; transform-origin: 50% 50%; will-change: transform; }
+    .dv2-hero-inner canvas { position: absolute; left: 0; top: 0; display: block; }
+    /* Entrance flash over the hero art (was an animated brightness() filter). */
+    .dv2-hero .dv2-hero-flash {
+      position: absolute; width: 326px; height: 188px; opacity: 0; will-change: opacity;
+      background: linear-gradient(to right, rgba(255,255,255,0) 0, rgba(255,255,255,0.7) 26px, rgba(255,255,255,0.7) calc(100% - 26px), rgba(255,255,255,0) 100%);
     }
-    .dv2-hero .dv2-hero-shade { position: absolute; inset: 0; }
-    .dv2-heroes-blue .dv2-hero-shade { background: linear-gradient(to top, rgba(0,70,220,0.55) 0%, rgba(0,70,220,0) 55%); }
-    .dv2-heroes-red  .dv2-hero-shade { background: linear-gradient(to bottom, rgba(230,0,12,0.55) 0%, rgba(230,0,12,0) 55%); }
     .dv2-hero .dv2-hero-sheen {
       position: absolute; top: 0; left: 0; width: 70px; height: 100%;
       background: linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
-      transform: translateX(-120%) skewX(-18deg); opacity: 0;
+      transform: translateX(-120%) skewX(-18deg); opacity: 0; will-change: transform, opacity;
     }
   </style>
 </head>
@@ -1098,41 +1100,128 @@
   }
   function dv2HeroUrl(heroid) { return 'posthero/' + heroid + '_POST_HERO.png'; }
 
+  /* cubic-bezier(x1,y1,x2,y2) as a JS function, so the window open/close can
+     be pre-sampled into keyframes (see dv2WindowFrames). */
+  function dv2Bezier(x1, y1, x2, y2) {
+    function bx(t) { return 3 * x1 * t * (1 - t) * (1 - t) + 3 * x2 * t * t * (1 - t) + t * t * t; }
+    function by(t) { return 3 * y1 * t * (1 - t) * (1 - t) + 3 * y2 * t * t * (1 - t) + t * t * t; }
+    return function (x) {
+      if (x <= 0) return 0; if (x >= 1) return 1;
+      var lo = 0, hi = 1, t = x;
+      for (var k = 0; k < 24; k++) { if (bx(t) < x) lo = t; else hi = t; t = (lo + hi) / 2; }
+      return by(t);
+    };
+  }
+  var DV2_EASE_IN_FN  = dv2Bezier(0.22, 1, 0.36, 1);   /* = EASE_OUT */
+  var DV2_EASE_OUT_FN = dv2Bezier(0.55, 0, 0.9, 0.4);
+
+  /* Window open/close as keyframes for the outer box (skew + scaleX = the
+     parallelogram growing from / shrinking to its centre line) and the inner
+     box (the exact inverse, so the art stays put). The inverse scale (1/p) is
+     not linear in p, so it is sampled densely — opening samples the start more
+     densely since the ease-out moves fastest there. */
+  function dv2Skew(g) { return Math.atan(DV2_SLANT / g.h) * 180 / Math.PI; }
+  function dv2WindowFrames(g, ease, opening, fromY) {
+    var N = 48, outer = [], inner = [], skew = dv2Skew(g);
+    for (var k = 0; k <= N; k++) {
+      var u = k / N;
+      var t = opening ? u * u : u;
+      var e = ease(t);
+      var p = opening ? e : 1 - e;
+      var shut = opening ? k === 0 : k === N;
+      var ps = Math.max(p, 0.01);
+      var o = { offset: t, transform: 'translateY(' + (fromY * (1 - e)).toFixed(2) + 'px) skewX(' + (-skew) + 'deg) scaleX(' + (shut ? 0 : ps) + ')' };
+      if (opening) o.opacity = e;
+      outer.push(o);
+      inner.push({ offset: t, transform: 'scaleX(' + (1 / ps) + ') skewX(' + skew + 'deg)' });
+    }
+    return { outer: outer, inner: inner };
+  }
+
   function dv2BuildHeroes(side, seats) {
     var wrap = dv2Heroes[side];
     wrap.innerHTML = '';
     var cards = [];
     seats.forEach(function (seat, i) {
       var g = dv2Geom(side, i);
+      /* Outer box = the parallelogram's un-skewed rectangle (width w - slant,
+         offset by half the slant); skewX turns it into the tile. */
       var card = document.createElement('div');
       card.className = 'dv2-hero';
-      card.style.left = g.left + 'px'; card.style.top = g.top + 'px';
-      card.style.width = g.w + 'px';   card.style.height = g.h + 'px';
-      card.style.clipPath = g.shut;
-      /* A seat with no hero yet still gets a (dark) card so there is never a gap. */
-      var img = null;
+      card.style.left = (g.left + DV2_SLANT / 2) + 'px'; card.style.top = g.top + 'px';
+      card.style.width = (g.w - DV2_SLANT) + 'px';     card.style.height = g.h + 'px';
+      card.style.opacity = '0';
+      var inner = document.createElement('div');
+      inner.className = 'dv2-hero-inner';
+      inner.style.width = g.w + 'px'; inner.style.height = g.h + 'px';
+      var canvas = document.createElement('canvas');
+      canvas.width = g.w; canvas.height = g.h;
+      inner.appendChild(canvas);
+      /* A seat with no hero yet still gets a (dark) card so there is never a gap.
+         The hero PNG loads off-DOM and is painted into the canvas (dv2PaintCard). */
+      var img = null, flash = null;
       if (seat && seat.heroid) {
-        var fill = document.createElement('img');
-        fill.className = 'dv2-hero-fill';
-        fill.alt = '';
-        fill.src = dv2HeroUrl(seat.heroid);
-        card.appendChild(fill);
-        img = document.createElement('img');
-        img.className = 'dv2-hero-img';
-        img.alt = '';
-        img.style.left = Math.round((g.w - 326) / 2) + 'px';
-        img.style.top  = Math.round((g.h - 188) / 2) + 'px';
-        img.onerror = function () { img.style.display = 'none'; fill.style.display = 'none'; };
+        img = new Image();
         img.src = dv2HeroUrl(seat.heroid);
-        card.appendChild(img);
+        flash = document.createElement('div');
+        flash.className = 'dv2-hero-flash';
+        flash.style.left = Math.round((g.w - 326) / 2) + 'px';
+        flash.style.top  = Math.round((g.h - 188) / 2) + 'px';
+        inner.appendChild(flash);
       }
-      var shade = document.createElement('div'); shade.className = 'dv2-hero-shade';
       var sheen = document.createElement('div'); sheen.className = 'dv2-hero-sheen';
-      card.appendChild(shade); card.appendChild(sheen);
+      inner.appendChild(sheen);
+      card.appendChild(inner);
       wrap.appendChild(card);
-      cards.push({ card: card, img: img, sheen: sheen, geom: g });
+      cards.push({ side: side, card: card, inner: inner, canvas: canvas, img: img, flash: flash, sheen: sheen, geom: g });
     });
     return cards;
+  }
+
+  /* Draws src into (dx,dy,dw,dh) like object-fit: cover. */
+  function dv2DrawCover(ctx, src, dx, dy, dw, dh) {
+    var sw = src.naturalWidth, sh = src.naturalHeight;
+    var s = Math.max(dw / sw, dh / sh), cw = dw / s, ch = dh / s;
+    ctx.drawImage(src, (sw - cw) / 2, (sh - ch) / 2, cw, ch, dx, dy, dw, dh);
+  }
+  /* One-time paint of a card's static art: dark base, blurred cover fill, the
+     hero at its 326x188 display size with 26px faded side edges, team shade. */
+  function dv2PaintCard(c) {
+    if (!c) return;
+    var g = c.geom, ctx = c.canvas.getContext('2d');
+    ctx.fillStyle = '#0c0f1c';
+    ctx.fillRect(0, 0, g.w, g.h);
+    if (c.img && c.img.complete && c.img.naturalWidth > 0) {
+      if ('filter' in ctx) {
+        ctx.save();
+        ctx.filter = 'blur(16px) brightness(0.85) saturate(1.2)';
+        dv2DrawCover(ctx, c.img, -20, -20, g.w + 40, g.h + 40);
+        ctx.restore();
+      } else {
+        /* No canvas filter support: blur by drawing tiny and scaling back up. */
+        var tiny = document.createElement('canvas'); tiny.width = 24; tiny.height = 14;
+        dv2DrawCover(tiny.getContext('2d'), c.img, 0, 0, 24, 14);
+        ctx.save(); ctx.globalAlpha = 0.85; ctx.drawImage(tiny, -20, -20, g.w + 40, g.h + 40); ctx.restore();
+      }
+      var hero = document.createElement('canvas'); hero.width = 326; hero.height = 188;
+      var hc = hero.getContext('2d');
+      dv2DrawCover(hc, c.img, 0, 0, 326, 188);
+      var edge = hc.createLinearGradient(0, 0, 326, 0);
+      edge.addColorStop(0, 'rgba(0,0,0,0)'); edge.addColorStop(26 / 326, '#000');
+      edge.addColorStop(1 - 26 / 326, '#000'); edge.addColorStop(1, 'rgba(0,0,0,0)');
+      hc.globalCompositeOperation = 'destination-in';
+      hc.fillStyle = edge; hc.fillRect(0, 0, 326, 188);
+      ctx.drawImage(hero, Math.round((g.w - 326) / 2), Math.round((g.h - 188) / 2));
+    } else if (c.flash) {
+      c.flash.remove(); c.flash = null;
+    }
+    var shade = c.side === 'blue'
+      ? ctx.createLinearGradient(0, g.h, 0, 0)    /* to top */
+      : ctx.createLinearGradient(0, 0, 0, g.h);   /* to bottom */
+    var rgb = c.side === 'blue' ? '0,70,220' : '230,0,12';
+    shade.addColorStop(0, 'rgba(' + rgb + ',0.55)'); shade.addColorStop(0.55, 'rgba(' + rgb + ',0)');
+    ctx.fillStyle = shade;
+    ctx.fillRect(0, 0, g.w, g.h);
   }
 
   function dv2AnimateIn(side, cards) {
@@ -1140,25 +1229,23 @@
     cards.forEach(function (c, i) {
       if (!c) return;
       var d = i * DV2_STAGGER_MS;
-      var inAnim = c.card.animate(
-        [{ clipPath: c.geom.shut, transform: 'translateY(' + fromY + 'px)', opacity: 0 },
-         { clipPath: c.geom.full, transform: 'translateY(0)', opacity: 1 }],
-        { duration: DV2_IN_MS, delay: d, easing: EASE_OUT, fill: 'both' }
-      );
+      var fr = dv2WindowFrames(c.geom, DV2_EASE_IN_FN, true, fromY);
+      var timing = { duration: DV2_IN_MS, delay: d, easing: 'linear', fill: 'both' };
+      var inAnim = c.card.animate(fr.outer, timing);
+      var innerAnim = c.inner.animate(fr.inner, timing);
       /* Once it has landed, bake the final state into plain styles and drop the
-         animation, so nothing is left running/held during the hold — the exit
-         then starts from a clean, idle layer (no animation-stack swap, which
-         showed up as a hitch right before the windows close). */
-      (function (card, geom, anim) {
-        anim.finished.then(function () {
+         animations, so nothing is left running/held during the hold — the exit
+         then starts from a clean, idle layer. */
+      (function (card, inner, skew, a1, a2) {
+        a1.finished.then(function () {
           if (!card.isConnected) return;
-          card.style.clipPath = geom.full; card.style.transform = 'none'; card.style.opacity = '1';
-          anim.cancel();
+          card.style.transform = 'skewX(' + (-skew) + 'deg)'; card.style.opacity = '1';
+          inner.style.transform = 'skewX(' + skew + 'deg)';
+          a1.cancel(); a2.cancel();
         }).catch(function () {});
-      })(c.card, c.geom, inAnim);
-      if (c.img) c.img.animate(
-        [{ filter: 'brightness(2.4) saturate(1.3)' },
-         { filter: 'brightness(1) saturate(1)' }],
+      })(c.card, c.inner, dv2Skew(c.geom), inAnim, innerAnim);
+      if (c.flash) c.flash.animate(
+        [{ opacity: 1 }, { opacity: 0 }],
         { duration: DV2_IN_MS + 350, delay: d, easing: 'cubic-bezier(0.16, 1, 0.3, 1)', fill: 'backwards' }
       );
       c.sheen.animate(
@@ -1171,14 +1258,14 @@
     return (cards.length - 1) * DV2_STAGGER_MS + DV2_IN_MS + 350;
   }
   function dv2AnimateOut(side, cards) {
-    /* "Close the windows": each card just closes toward its centre line — no
-       scale, no x/y movement, no fade. */
+    /* "Close the windows": each card just closes toward its centre line — the
+       art doesn't scale or move, no fade. */
     cards.forEach(function (c, i) {
       if (!c) return;
-      c.card.animate(
-        [{ clipPath: c.geom.full }, { clipPath: c.geom.shut }],
-        { duration: DV2_OUT_MS, delay: i * 70, easing: 'cubic-bezier(0.55, 0, 0.9, 0.4)', fill: 'forwards' }
-      );
+      var fr = dv2WindowFrames(c.geom, DV2_EASE_OUT_FN, false, 0);
+      var timing = { duration: DV2_OUT_MS, delay: i * 70, easing: 'linear', fill: 'forwards' };
+      c.card.animate(fr.outer, timing);
+      c.inner.animate(fr.inner, timing);
     });
     return 4 * 70 + DV2_OUT_MS;
   }
@@ -1204,6 +1291,7 @@
         );
         diPreload(imgs, 800).then(function () {
           if (token !== sceneToken) return;
+          builds.blue.concat(builds.red).forEach(dv2PaintCard);
           dv2Heroes.blue.style.display = 'block';
           dv2Heroes.red.style.display = 'block';
           var inMs = Math.max(dv2AnimateIn('blue', builds.blue), dv2AnimateIn('red', builds.red));
