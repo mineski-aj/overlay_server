@@ -1985,9 +1985,39 @@
       heartEl: document.getElementById(`p${n}-heart-path`),
       valEl:   document.getElementById(`p${n}-bpm`),
       lastStroke: null,
+      flatRun: 0,
     };
   });
-  ekgStates.forEach(p => { if (p && p.pathEl) p.pathEl.setAttribute('stroke-width', EKG_LW); });
+  /* Perf: the EKG line is a tiny <canvas> instead of an SVG <path> whose 'd' was rewritten 60x/s per plate (re-raster of
+     an SVG layer + a CSS mask render-surface, x10 plates). Canvas 2D draws it directly on the GPU, and the edge fade is
+     baked in with destination-in, so no mask-image is needed. Drawn at 2x for crisp lines. */
+  const EKG_CW = 124, EKG_CH = 56, EKG_FADE = (() => {
+    const c = document.createElement('canvas'); c.width = EKG_CW; c.height = 1;
+    const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, EKG_CW, 0);
+    gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(0.06, '#000'); gr.addColorStop(0.94, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, EKG_CW, 1); return c;
+  })();
+  ekgStates.forEach(p => {
+    if (!p || !p.pathEl) return;
+    const svg = p.pathEl.closest('svg'), zone = svg && svg.parentNode;
+    if (!zone) { p.pathEl = null; return; }
+    const cv = document.createElement('canvas'); cv.width = EKG_CW; cv.height = EKG_CH;
+    cv.style.cssText = 'display:block;width:100%;height:28px';
+    zone.replaceChild(cv, svg);
+    zone.style.maskImage = zone.style.webkitMaskImage = 'none';   /* beats the .ekg-zone-led CSS mask (fade is in the canvas) */
+    p.cv = cv; p.ctx = cv.getContext('2d');
+  });
+  function drawEkg(p, col) {
+    const g = p.ctx, pts = p.points, step = EKG_CW / (PATH_LEN - 1);
+    g.globalCompositeOperation = 'source-over';
+    g.clearRect(0, 0, EKG_CW, EKG_CH);
+    g.strokeStyle = col; g.lineWidth = EKG_LW * 2; g.lineJoin = g.lineCap = 'round';
+    g.beginPath(); g.moveTo(0, pts[0] * 2);
+    for (let i = 1; i < PATH_LEN; i++) g.lineTo(i * step, pts[i] * 2);
+    g.stroke();
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(EKG_FADE, 0, 0, EKG_CW, EKG_CH);
+  }
 
   const bpmColorCache = {};
   function bpmColor(bpm) {
@@ -2036,8 +2066,8 @@
       if (col !== p.lastStroke) {      // colour only changes with the BPM band; skip the rest of the writes
         p.valEl.style.color = col;
         p.heartEl.setAttribute('fill', col);
-        p.pathEl.setAttribute('stroke', col);
         p.lastStroke = col;
+        p.dirty = true;
       }
     }
   }
@@ -2048,22 +2078,22 @@
     ekgLast = ts;
     for (let n = 1; n <= 10; n++) {
       const p = ekgStates[n];
-      if (!p || !p.pathEl) continue;
+      if (!p || !p.cv) continue;
       const active = p.bpm > 0 && p.connected;
       if (active) p.phase = (p.phase + (p.bpm / 60) * dt) % 1;
       p.scrollBuffer += dt * 60 * EKG_FREQ;
       while (p.scrollBuffer >= 1) {
         const y = getHeartY(p.phase, active ? p.bpm : 0);
+        p.flatRun = (!active && y === 14) ? p.flatRun + 1 : 0;
         if (p.reversed) { p.points.unshift(y); p.points.pop(); }
         else             { p.points.push(y);   p.points.shift(); }
         p.scrollBuffer -= 1;
       }
-      p.pathEl.setAttribute('d', buildEkgPath(p.points));
       const col = active ? bpmColor(p.bpm) : '#2a2a2a';
-      if (col !== p.lastStroke) {
-        p.pathEl.setAttribute('stroke', col);
-        p.lastStroke = col;
-      }
+      if (col !== p.lastStroke) { p.lastStroke = col; p.dirty = true; }
+      /* a flat idle line (no BPM) never changes — don't redraw it; it costs nothing until a BPM arrives */
+      /* ~30fps is plenty for a 62px line and halves the per-frame canvas uploads (10 layers) */
+      if ((p.dirty || p.flatRun < PATH_LEN) && (p.dirty || ts - (p.lastDraw || 0) >= 30)) { drawEkg(p, col); p.dirty = false; p.lastDraw = ts; }
       let beat = 0;
       if (active && p.phase >= 0.22 && p.phase <= 0.50)
         beat = Math.pow(1 - (p.phase - 0.22) / 0.28, 4);

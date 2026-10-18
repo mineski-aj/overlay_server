@@ -1162,6 +1162,8 @@
     background-size: 100% 100%;
     pointer-events: none;
   }
+  /* Playoffs: gold logo square + white name bar (same 294x69 as the Regular art). */
+  [data-theme="playoffs"] #sb-map { background-image: url('/assets/ingame/playoffs/mapbacker.png'); }
   #sb-map-logo {
     position: absolute;
     left: 9px;
@@ -2106,8 +2108,16 @@
     from { left: -60%; }
     to   { left: 120%; }
   }
-  .ggc-header-title.ggc-sheen-play .ggc-header-title-sheen {
-    animation: ggc-sheen-sweep 650ms ease-out;
+  /* The sheen runs through the LETTERS only (a highlight clipped to the glyphs), not across the whole title box — the old
+     white band over the box looked awkward on the gold playoffs bar. The band div stays in the DOM but is never shown. */
+  .ggc-header-title-sheen { display: none; }
+  @keyframes ggc-text-sheen { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+  .ggc-header-title.ggc-sheen-play > span {
+    color: transparent;
+    background-image: linear-gradient(120deg, #0a0a0a 0%, #0a0a0a 38%, #ffffff 50%, #0a0a0a 62%, #0a0a0a 100%);
+    background-size: 300% 100%; background-repeat: no-repeat;
+    -webkit-background-clip: text; background-clip: text;
+    animation: ggc-text-sheen 650ms ease-out;
   }
   @keyframes ggc-header-title-bounce {
     0%   { transform: scale(1); }
@@ -2270,8 +2280,16 @@
     from { left: -60%; }
     to   { left: 120%; }
   }
-  .lwr-header-title.lwr-sheen-play .lwr-header-title-sheen {
-    animation: lwr-sheen-sweep 650ms ease-out;
+  /* The sheen runs through the LETTERS only (a highlight clipped to the glyphs), not across the whole title box — the old
+     white band over the box looked awkward on the gold playoffs bar. The band div stays in the DOM but is never shown. */
+  .lwr-header-title-sheen { display: none; }
+  @keyframes lwr-text-sheen { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+  .lwr-header-title.lwr-sheen-play > span {
+    color: transparent;
+    background-image: linear-gradient(120deg, #0a0a0a 0%, #0a0a0a 38%, #ffffff 50%, #0a0a0a 62%, #0a0a0a 100%);
+    background-size: 300% 100%; background-repeat: no-repeat;
+    -webkit-background-clip: text; background-clip: text;
+    animation: lwr-text-sheen 650ms ease-out;
   }
   @keyframes lwr-header-title-bounce {
     0%   { transform: scale(1); }

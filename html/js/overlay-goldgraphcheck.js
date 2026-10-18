@@ -189,9 +189,11 @@ function ggcBuildPanel() {
      own #scoreboard-tricode-c1/c2 and #sb-logo-c1/c2. */
   const headerBg = document.createElement('img');
   headerBg.className = 'ggc-header-bg';
-  headerBg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
-    ? '/assets/ingame/anniversary/graph_header.png'
-    : '/assets/ingame/graph_header.png';
+  /* Playoffs: same art with the white title trapezoid recoloured to the playoffs gold (assets/ingame/playoffs/graph_header.png). */
+  { const th = document.documentElement.getAttribute('data-theme');
+    headerBg.src = th === '10th_anniversary' ? '/assets/ingame/anniversary/graph_header.png'
+                 : th === 'playoffs'         ? '/assets/ingame/playoffs/graph_header.png'
+                 :                             '/assets/ingame/graph_header.png'; }
   headerBg.alt = '';
   overlay.appendChild(headerBg);
 

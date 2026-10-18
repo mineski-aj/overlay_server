@@ -266,6 +266,19 @@ router.get('/overlay/golddiffcheck/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// GET /overlay/heatmappage/show|hide — heatmap.html's own on/off (checkOverlays pattern). Hidden = the page
+// stops its RAF loop and all fetches and removes its layer, so an unused heatmap source costs no GPU.
+router.get('/overlay/heatmappage/show', (req, res) => {
+  state.checkOverlays.heatmappage = true;
+  state.overlayClients.forEach(c => { try { c.write('event: heatmappage\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+router.get('/overlay/heatmappage/hide', (req, res) => {
+  state.checkOverlays.heatmappage = false;
+  state.overlayClients.forEach(c => { try { c.write('event: heatmappage\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // GET /overlay/livewinrate/show
 router.get('/overlay/livewinrate/show', (req, res) => {
   state.checkOverlays.livewinrate = true;

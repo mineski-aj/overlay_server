@@ -44,8 +44,12 @@ caller expected, until the restart actually happened.
   Post Heatmap Controls value until moved) + contrast, a brightness multiplier per heat-colour stop (9, blue → white-hot; `hmBuildCmap`)
   and the size of the kill/death/assist markers (CSS vars `--hm-kill-size` etc.). `GET/POST /api/heatmap-style` (routes/devapi.js,
   `heatmap_style.json`, clamped) broadcasts SSE `heatmap_style` carrying the full style, so slider drags apply instantly
-  (`hmApplyStyle`); the mplfs scene is NOT affected. Needs a server restart (new route); `heatmap_style` is in `KNOWN_EVENTS`
-  (worker v36).
+  (`hmApplyStyle`); the mplfs scene is NOT affected.
+  **Show/hide (GPU saver)** — dashboard Control → Heatmap → "Heatmap" toggle = checkOverlays key `heatmappage`
+  (`/overlay/heatmappage/show|hide`, SSE `heatmappage`, worker v37). **Hidden by default**: the page loads idle
+  (`display:none`, no RAF loop, no fetches; `heatmap_config` ignored) and only fetches/fades in on Show; Hide fades out,
+  stops the loop and resets. `?preview=1` copies (Control/Edit iframes) ignore it and are always shown. Needs a server
+  restart (new route); `heatmappage` and `heatmap_style` are in `KNOWN_EVENTS` (worker v37).
 - `html/mpltag.html` — lower thirds and other "tag" overlays (small,
   self-contained broadcast graphics that sit on top of the main feed —
   e.g. Map Selection) as opposed to `mplfs.html`'s full-screen scenes.
@@ -364,6 +368,9 @@ dataset flag — `cache-bust.js` appends `?v=` to every `img.src`, so never comp
   Per-frame things (EKG line, heart pulse) need their OWN compositor layers
   (`will-change: transform` on BOTH `.ekg-zone-led` and `.heart-bpm` — either alone
   does nothing). 200→100 EKG points (same time span) was free.
+- **EKG lines are 62x28 <canvas>es, not SVG paths** (`drawEkg`, led_overlay.html): the SVG path's `d` rewrite + CSS mask cost ~80ms paint +
+  ~30ms raster per 3s and 20 full-page repaints/frame; canvas (edge fade baked in via destination-in, no mask-image) drops paint/raster
+  to ~0, redraw capped ~30fps, and a flat idle line (no BPM) is not redrawn at all. Don't go back to animating an SVG `d`.
 - Death-timer: write text only when the displayed second changes and toggle the
   class only on state change (it was rewriting `class` for all 10 players every frame
   and re-rasterising filtered portraits).
@@ -411,6 +418,10 @@ design): ban plates, timer bar, status text, map bug, coach row, Draft Stats / b
 badges — easy follow-ups if wanted (ban plates need a home in the transparent middle).
 `Led_draft.html` was assembled from `led_overlay.html` pieces plus new CSS/JS, but
 the generator was throwaway: **edit the file directly now**.
+
+**LED Draft perf:** measured idle cost = the 10 looping `HERO_PICK_DRAFT_<id>.webm` videos (200ms GPU/3s; paused = 0). Pick/reveal
+animations are cheap (~40-75ms/3s). Opt-in `Led_draft.html?heroloops=N` plays each hero clip N times then holds the last frame
+(paused, ~90% less GPU); default (omitted) = loop forever, unchanged. Clips are 4-10s each.
 
 ### Testing LED pages without a live feed (what worked)
 Throwaway Node mock of the server (static repo files + mutable `/api/gamedata-proxy`,
@@ -974,6 +985,28 @@ upscaled 4x with the Magnific connector, 512 -> 2048, saved as a 1600px WebP) wi
 resolve like fetchCmbData's (Map Selection game slot, else Match Board map). Edit config `mplfs_killevents`
 (objectives panel + map as two units). Server restart needed for `/overlay/post_killevents/*`.
 
+### Playoffs header bar text (Today's / Tomorrow's / Waiting TVC / Waiting Lobby)
+
+`MPL PH S18 PLAYOFFS` / `SEASON 18 PLAYOFFS` + `DAY n` sit on the baked bar of `S18_Header_playoffs*.png` (924x158; at y=140 the black section is
+x 199-599, gold 601-727). Text is **30px**, centred in those two sections (`#ts-season/#ts-week`, `#tw-*`, `.ws-po-phase/.ws-po-day` under
+`#ws-/#wl-week-label`), nowrap with side padding (widest text 335px of 401, "DAY n" 86 of 127). Gotcha: the `mplfs::playoffs` Edit bucket
+pinned these font sizes at 34px (`!important`) — they were moved to 30px in `overlay_styles.json`; a CSS-only change would not have shown.
+
+### Match Board under the playoffs theme (match-dashboard.html)
+
+Day spinner runs to **5** (regular: 3), the **Week** counter is hidden, the preview line is `D#` (no `W#`), and the goodbye label never says "next week".
+The iframe re-polls `/api/theme` every 4s (it stays mounted while Settings switches theme). mplfs.html's Tomorrow's Schedule
+(`computeTomorrowWeekDay`, `twTitleText`) is playoffs-aware too: tomorrow = day+1, no wrap to next week. Stored `week` is untouched.
+
+### Post 4 Key — playoffs phase-2 photo (mplfs.html, `p4kApplyCard`)
+
+Under `data-theme="playoffs"` the card's phase-2 (`.p4k-photo-sig`) image is the B&W crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp`
+(`thBnwUrl`, TRI = the player's camp `team_simple_name` from the game feed, added to each seat in `fetchPost4KeyData`) instead of the
+signature portrait; a player with no crop falls back to the signature portrait. Photo-only — deal-in, FRONT→pose crossfade/bounce and
+timing are unchanged. Read at card-fill time, so a theme switch applies on the next show. The crop gets Team Hexagon's look (grayscale +
+contrast, plus a team-colour corner-gradient `screen` overlay `.p4k-photo-tint`, blue/red by camp) — copies of the `.th-player-tint`
+gradients, shown only while `.p4k-bnw` is set (not for the signature fallback) and faded in with `.p4k-posed`.
+
 ### Post H2H page 2 — gold distribution (mplfs.html)
 
 Post H2H has two pages now: 1 = the role stats (unchanged), 2 = gold distribution for the SAME role's
@@ -984,6 +1017,23 @@ seats by NAME (then heroid). Page switch = `GET /overlay/p2hpage/1|2` (state `p2
 dashboard buttons next to the Consolidated Post 2 page buttons); every fresh show resets to page 1
 (not from `?preview=1`). Title is "<ROLE> GOLD DISTRIBUTION", font-fitted by canvas measure. Rows 5/6 are
 extra markup (`p2h-row-off` when unused). Server restart needed for `/overlay/p2hpage*`.
+
+### Sponsor loops share one resume point (`html/js/sponsor-cursor.js`)
+
+Every mplfs.html sponsor loop (Waiting TVC `runWsSponsorLoop`, Waiting Lobby `runWlSponsorLoop`, and `makeSponsorLoop` for Today's / Tomorrow's /
+Bracket / Consolidated Post 2 / Post H2H / Middle Board) and ENTVC.html's Waiting TVC loop start at `SponsorCursor.start(len)` instead of #1, and
+call `SponsorCursor.aired(idx)` when a sponsor goes on air — so a freshly-shown scene begins at the sponsor AFTER the last one any loop aired and
+the later sponsors get airtime on short scenes. Logo + category tag come from the same list entry. A running loop still keeps its own index (two
+scenes on screen at once walk the list side by side). Page-level state: resets on reload; other pages (Draft, sponsors.html...) are unaffected.
+A NEW sponsor loop must use these two calls or it will restart at #1 again.
+
+### Gold Graph Check header — playoffs gold title bar
+
+`assets/ingame/playoffs/graph_header.png` = the Regular `graph_header.png` (887x60) with only its white title trapezoid recoloured to the playoffs
+gold (#f3d067 -> #d0a43e vertical, original shading kept; recoloured neutral pixels x 200-690 only, so the logo squares and blue/red
+tricode slants are untouched). Picked by theme in `overlay-goldgraphcheck.js` at build time (a theme switch applies on the next reload,
+like every v7 panel). The title's sheen (Gold Graph + Live Win Rate, all themes) is a highlight clipped to the letters (`background-clip:text`, `*-text-sheen`),
+not a band across the title box. **Live Win Rate** (`overlay-livewinrate.js`) shares the same art and picks it the same way. Regenerated with a canvas recolour script, not hand-drawn — if the Regular art changes, redo it.
 
 ### Live Win Rate (`html/js/overlay-livewinrate.js`, mploverlay_v7, checkOverlays key `livewinrate`)
 
@@ -1440,7 +1490,7 @@ Team Line-Up Blue/Red (feather PNG, per-team `photos/groupbg_playoffs/` wordmark
 Bracket (background swaps to `playoffsbg_theme.webm` + sponsor fades while off its
 base pose), Final Team, Consolidated Post 2 (pages 1-3, gold stat tracks, page-3
 seam fix), Post Match Board VICTORY plaques; `mploverlay_v7` scoreboard /
-match-info (stage label from Match Board) / gold-diff / item / emblem / side-stat
+match-info (stage label from Match Board) / map box (`assets/ingame/playoffs/mapbacker.png`, gold logo square + white name bar) / gold-diff / item / emblem / side-stat
 checks / player UI / event-pickup backgrounds; `Draft.html` (background, triangles,
 ban icon that fades out when a hero is banned, gold timer + pick glow, gradient-map
 Draft Stats, `#121212` role icons, map container); `DraftIndex.html`;

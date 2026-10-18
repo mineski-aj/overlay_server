@@ -2513,7 +2513,7 @@
     } catch (err) {}
   });
 
-  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'livewinrate', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'l3lobby', 'teamfightcheck'].forEach(function (key) {
+  ['itemcheck', 'emblemcheck', 'golddiffcheck', 'goldgraphcheck', 'livewinrate', 'scoreboard', 'playerui', 'draftrecap', 'draftpredict3', 'bpmmeter', 'bpmmeter_tag', 'stolengold', 'matchcard', 'l3lobby', 'teamfightcheck', 'heatmappage'].forEach(function (key) {
     dashboardSSE.addEventListener(key, function (e) {
       try {
         var d = JSON.parse(e.data);
@@ -2991,6 +2991,10 @@
          MPL Full Screen's — Apply pushes 'heatmap_config', which the page re-pulls immediately. */
       heatmapControls: true,
       heatmapStyleControls: true,
+      /* Hidden = heatmap.html goes fully idle (no animation loop, no polling) so it costs no GPU while not live. */
+      checkToggles: [
+        { name: 'Heatmap', key: 'heatmappage' },
+      ],
     },
     {
       id: 'ingame',
@@ -3319,7 +3323,7 @@
       previewDisabledMsg.style.display = 'flex';
     } else {
       previewDisabledMsg.style.display = 'none';
-      if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : ('?t=' + Date.now() + '&preview=1'));
+      if (srcUrl) previewIframe.src = srcUrl + (ov.url ? '' : ('?t=' + Date.now() + '&preview=1' + (ov.id === 'heatmap' ? '&follow=1' : '')));
     }
     layout.classList.add('split');
     requestAnimationFrame(scalePreview);

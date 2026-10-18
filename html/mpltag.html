@@ -2799,7 +2799,12 @@
     applyPlayer('blue', b[playerIdx % (b.length || 1)]);
     applyPlayer('red',  r[playerIdx % (r.length || 1)]);
   }
+  /* playersStarted: the first photo must fade in exactly once per show. applyState() (fresh lineup => startPlayers) runs
+     while the strip is still opening, and the 700ms intro timer below would start them AGAIN — the first photo then faded
+     in, out and in. introHold keeps applyState from starting them during the intro; the timer does it once. */
+  var playersStarted = false, introHold = false;
   function startPlayers() {
+    playersStarted = true;
     clearInterval(playerInt);
     playerIdx = 0; showPlayers();
     if (lineups.blue.length > 1 || lineups.red.length > 1) {
@@ -2821,7 +2826,7 @@
     lineups.red  = (ms.away && ms.away.lineup) || [];
     var key = JSON.stringify([lineups.blue.map(function (p) { return p.ign + '|' + p.role; }), lineups.red.map(function (p) { return p.ign + '|' + p.role; }),
                               ms.home && ms.home.short, ms.away && ms.away.short]);
-    if (restartPlayers || key !== lineupKey) { lineupKey = key; if (on) startPlayers(); }
+    if (restartPlayers || key !== lineupKey) { lineupKey = key; if (on && !introHold) startPlayers(); }
   }
   function fetchState() {
     return fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
@@ -2830,23 +2835,25 @@
   function l3lAnimateIn() {
     if (on) return;
     on = true;
+    playersStarted = false;
     clearTimeout(hideTimer);
     ROOT.classList.add('l3l-on');
     BGV.play().catch(function () {});
     fetchState().then(function (ms) {
       if (!on) return;
-      applyState(ms, false);
+      introHold = true; applyState(ms, false); introHold = false;
       clearInterval(timerInt); timerInt = setInterval(renderTimer, 250);
       sponsorStart();
       void ROOT.offsetWidth;
       ROOT.classList.add('l3l-in');
       clearTimeout(startTimer);
-      startTimer = setTimeout(function () { if (on) startPlayers(); }, 700);
+      startTimer = setTimeout(function () { if (on && !playersStarted) startPlayers(); }, 700);
     });
   }
   function l3lAnimateOut() {
     if (!on) return;
     on = false;
+    playersStarted = false;
     clearTimeout(startTimer);
     ROOT.classList.remove('l3l-in');
     clearTimeout(hideTimer);

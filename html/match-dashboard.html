@@ -365,7 +365,7 @@
 
     <!-- Row 2: Week / Day / Patch -->
     <div class="meta-row" style="margin-top:12px;">
-      <div class="meta-field">
+      <div class="meta-field" id="week-field">
         <div class="meta-label">Week</div>
         <div class="spinner-row">
           <button class="btn btn-spin" id="week-minus">−</button>
@@ -778,7 +778,7 @@
     document.getElementById('pv-right-short').textContent = right.short || 'AWY';
     document.getElementById('pv-right-score').textContent = right.score || 0;
     document.getElementById('pv-right-side').textContent  = s.swapped ? 'HOME' : 'AWAY';
-    document.getElementById('pv-meta').textContent = 'W' + (s.week||1) + ' D' + (s.day||1) + ' · ' + (s.series || 'BO5') + ' · Game ' + computeGame();
+    document.getElementById('pv-meta').textContent = (poTheme ? '' : 'W' + (s.week||1) + ' ') + 'D' + (s.day||1) + ' · ' + (s.series || 'BO5') + ' · Game ' + computeGame();
   }
 
   /* ── ROSTER HELPERS ── */
@@ -1152,7 +1152,7 @@
     renderTodayMatches(); renderTomorrowMatches();
   });
   document.getElementById('day-plus').addEventListener('click', function () {
-    localState.day = Math.min(3, (localState.day || 1) + 1);
+    localState.day = Math.min(dayMax(), (localState.day || 1) + 1);
     document.getElementById('day-val').textContent = localState.day;
     updatePreview();
     updateMatchPicker();
@@ -1206,10 +1206,30 @@
      label is GRAND FINALS), so the greyed-out "not used today" cards follow
      that instead of the regular-season 3-match-on-Day-2 rule. */
   var poTheme = false;
-  fetch('/api/theme', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (t) {
-    poTheme = !!t && t.theme === 'playoffs';
-    if (poTheme) { renderTodayMatches(); renderTomorrowMatches(); }
-  }).catch(function () {});
+  /* Playoffs also runs up to Day 5 (regular season: 3) and has no weeks — the Week counter is hidden, the preview line
+     drops "W#", and "See you next week" never applies. The theme is re-checked every few seconds (plain fetch, no
+     connection held open) because this iframe stays mounted while the Settings page switches the theme. */
+  function dayMax() { return poTheme ? 5 : 3; }
+  function applyThemeLayout(theme) {
+    var po = theme === 'playoffs';
+    if (po === poTheme && applyThemeLayout.done) return;
+    applyThemeLayout.done = true;
+    poTheme = po;
+    var wf = document.getElementById('week-field');
+    if (wf) wf.style.display = po ? 'none' : '';
+    renderTodayMatches(); renderTomorrowMatches(); updatePreview();
+    if (localState.goodbyeLabel !== GOODBYE_SUNDAY && localState.day) {
+      var g = computeGoodbye(localState.day);
+      if (g !== localState.goodbyeLabel) { localState.goodbyeLabel = g; push({ goodbyeLabel: g }); }
+      syncGoodbyeSelect();
+    }
+  }
+  function pollTheme() {
+    fetch('/api/theme', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (t) { applyThemeLayout(t && t.theme); }).catch(function () {});
+  }
+  pollTheme();
+  setInterval(pollTheme, 4000);
   function matchTypeOf(m) { return m.matchType || (m.star ? 'clash' : 'regular'); }
 
   function getMatches() {
@@ -1425,7 +1445,7 @@
     el.textContent = str;
   }
   function computeGoodbye(day) {
-    return (day === 3) ? 'SEE YOU NEXT WEEK' : 'SEE YOU TOMORROW';
+    return (!poTheme && day === 3) ? 'SEE YOU NEXT WEEK' : 'SEE YOU TOMORROW';
   }
 
   /* Goodbye label dropdown — "auto" follows the day (TOMORROW / NEXT

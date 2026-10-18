@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/sponsor-cursor.js"></script>
   <script src="html/js/po-gold-text.js"></script>
   <script src="html/js/hero-web.js"></script>
   <script src="html/js/event-log-client.js"></script>
@@ -1558,10 +1559,15 @@
     }
     [data-theme="playoffs"] #wl-week-label {
       left: 0; top: 123px; width: 735px; height: 35px;
-      justify-content: flex-start; font-size: 34px; font-weight: 800; letter-spacing: 0;
+      justify-content: flex-start; font-size: 30px; font-weight: 800; letter-spacing: 0;
     }
-    [data-theme="playoffs"] #wl-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
-    [data-theme="playoffs"] #wl-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
+    /* centred in the art's black (199-599) / gold (601-727) sections — see #ts-season */
+    [data-theme="playoffs"] #wl-week-label .ws-po-phase,
+    [data-theme="playoffs"] #wl-week-label .ws-po-day {
+      position: absolute; top: 0; height: 35px; line-height: 35px; box-sizing: border-box; text-align: center; white-space: nowrap; overflow: hidden;
+    }
+    [data-theme="playoffs"] #wl-week-label .ws-po-phase { left: 199px; width: 401px; padding: 0 14px; color: #fff; }
+    [data-theme="playoffs"] #wl-week-label .ws-po-day   { left: 601px; width: 127px; padding: 0 10px; color: #0a0a0a; }
     [data-theme="playoffs"] #wl-redcorner { display: none; }
     /* Slight feather on the bottom edge of the lobby players: the 1080px photo
        boxes start at y130, so the canvas edge is 950px down the box. */
@@ -3733,14 +3739,17 @@
       text-shadow: 1px 0 0 #c9a227, -1px 0 0 #c9a227, 0 1px 0 #c9a227, 0 -1px 0 #c9a227, 2px 2px 3px rgba(0,0,0,0.35);
     }
     [data-theme="playoffs"] #ts-subline { display: block; margin: 0; }
+    /* Header bar text is centred in the art's own sections (measured off S18_Header_playoffs*.png at y=140: black 199-599,
+       gold 601-727), nowrap + a little side padding so it can never touch the slanted ends. 30px (was 34). */
     [data-theme="playoffs"] #ts-season {
-      position: absolute; left: 210px; top: 123px; width: 400px; height: 35px;
-      display: flex; align-items: center;
-      font-size: 34px; font-weight: 800; letter-spacing: 0; color: #fff;
+      position: absolute; left: 199px; top: 123px; width: 401px; height: 35px; box-sizing: border-box; padding: 0 14px;
+      display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden;
+      font-size: 30px; font-weight: 800; letter-spacing: 0; color: #fff;
     }
     [data-theme="playoffs"] #ts-week {
-      position: absolute; left: 618px; top: 123px; width: 117px; height: 35px;
-      background: none; color: #0a0a0a; font-size: 34px; font-weight: 800;
+      position: absolute; left: 601px; top: 123px; width: 127px; height: 35px; box-sizing: border-box; padding: 0 10px;
+      display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden;
+      background: none; color: #0a0a0a; font-size: 30px; font-weight: 800;
     }
     [data-theme="playoffs"] #ts-matches { gap: 22px; }
     /* Highlight "grow": Regular's 1.15 reduced by 30% (15% -> 10.5%) */
@@ -3810,14 +3819,17 @@
       text-shadow: 1px 0 0 #c9a227, -1px 0 0 #c9a227, 0 1px 0 #c9a227, 0 -1px 0 #c9a227, 2px 2px 3px rgba(0,0,0,0.35);
     }
     [data-theme="playoffs"] #tw-subline { display: block; margin: 0; }
+    /* Header bar text is centred in the art's own sections (measured off S18_Header_playoffs*.png at y=140: black 199-599,
+       gold 601-727), nowrap + a little side padding so it can never touch the slanted ends. 30px (was 34). */
     [data-theme="playoffs"] #tw-season {
-      position: absolute; left: 210px; top: 123px; width: 400px; height: 35px;
-      display: flex; align-items: center;
-      font-size: 34px; font-weight: 800; letter-spacing: 0; color: #fff;
+      position: absolute; left: 199px; top: 123px; width: 401px; height: 35px; box-sizing: border-box; padding: 0 14px;
+      display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden;
+      font-size: 30px; font-weight: 800; letter-spacing: 0; color: #fff;
     }
     [data-theme="playoffs"] #tw-week {
-      position: absolute; left: 603px; top: 123px; width: 117px; height: 35px;
-      background: none; color: #0a0a0a; font-size: 34px; font-weight: 800;
+      position: absolute; left: 601px; top: 123px; width: 127px; height: 35px; box-sizing: border-box; padding: 0 10px;
+      display: flex; align-items: center; justify-content: center; white-space: nowrap; overflow: hidden;
+      background: none; color: #0a0a0a; font-size: 30px; font-weight: 800;
     }
     [data-theme="playoffs"] #tw-matches { gap: 22px; }
     [data-theme="playoffs"] #tw-matches .tsm-row { width: 1661px; height: 242px; will-change: transform, opacity, clip-path; backface-visibility: hidden; }
@@ -4452,10 +4464,15 @@
        the black part (white), DAY n on the gold part (dark). */
     [data-theme="playoffs"] #ws-week-label {
       left: 0; top: 123px; width: 735px; height: 35px;
-      justify-content: flex-start; font-size: 34px; font-weight: 800; letter-spacing: 0;
+      justify-content: flex-start; font-size: 30px; font-weight: 800; letter-spacing: 0;
     }
-    [data-theme="playoffs"] #ws-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
-    [data-theme="playoffs"] #ws-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
+    /* centred in the art's black (199-599) / gold (601-727) sections — see #ts-season */
+    [data-theme="playoffs"] #ws-week-label .ws-po-phase,
+    [data-theme="playoffs"] #ws-week-label .ws-po-day {
+      position: absolute; top: 0; height: 35px; line-height: 35px; box-sizing: border-box; text-align: center; white-space: nowrap; overflow: hidden;
+    }
+    [data-theme="playoffs"] #ws-week-label .ws-po-phase { left: 199px; width: 401px; padding: 0 14px; color: #fff; }
+    [data-theme="playoffs"] #ws-week-label .ws-po-day   { left: 601px; width: 127px; padding: 0 10px; color: #0a0a0a; }
     [data-theme="playoffs"] #ws-matches, [data-theme="playoffs"] .ws-talent-box { left: 30px; top: 278px; }
     /* Playoffs Waiting TVC layout (per the updated reference screenshot):
        "SHOW STARTS IN:" (one line) + the big countdown sit centered under
@@ -4871,6 +4888,27 @@
     .p4k-photo-sig   { z-index: 4; opacity: 0; }
     .p4k-photo-box.p4k-posed .p4k-photo-front { opacity: 0; transition: opacity 220ms ease; }
     .p4k-photo-box.p4k-posed .p4k-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    /* Playoffs: the phase-2 B&W crop gets Team Hexagon's treatment (.th-player-bnw / .th-player-tint) — grey photo +
+       a team-colour gradient from the top-left and bottom-right corners (screen blend), clear in between. The tint fades
+       in with the pose crossfade. Only when the crop is actually used (.p4k-bnw, set in p4kApplyCard), not for the
+       signature-portrait fallback. */
+    .p4k-photo-tint { display: none; }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-bnw { isolation: isolate; }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-bnw .p4k-photo-sig { filter: grayscale(1) contrast(1.08); }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-bnw .p4k-photo-tint {
+      display: block; position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+    }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-bnw.p4k-posed .p4k-photo-tint { opacity: 1; transition: opacity 220ms ease; }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-tint-blue .p4k-photo-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(10,70,255,0.95) 0%, rgba(0,45,190,0.55) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(0,50,215,0.85) 0%, rgba(0,30,140,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    [data-theme="playoffs"] .p4k-photo-box.p4k-tint-red .p4k-photo-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(215,30,30,0.80) 0%, rgba(140,15,15,0.40) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(235,45,45,0.90) 0%, rgba(150,25,25,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
     @keyframes p4k-pose-bounce {
       0%   { transform: scale(1); }
       40%  { transform: scale(1.06); }
@@ -6729,6 +6767,7 @@
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-1-photo-front" src="/photos/placeholder.png" alt="">
           <img class="p4k-photo p4k-photo-sig"   id="p4k-1-photo-sig"   src="/photos/placeholder.png" alt="">
+          <div class="p4k-photo-tint"></div>
         </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-1-name"></span></div>
@@ -6747,6 +6786,7 @@
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-2-photo-front" src="/photos/placeholder.png" alt="">
           <img class="p4k-photo p4k-photo-sig"   id="p4k-2-photo-sig"   src="/photos/placeholder.png" alt="">
+          <div class="p4k-photo-tint"></div>
         </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-2-name"></span></div>
@@ -6762,6 +6802,7 @@
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-3-photo-front" src="/photos/placeholder.png" alt="">
           <img class="p4k-photo p4k-photo-sig"   id="p4k-3-photo-sig"   src="/photos/placeholder.png" alt="">
+          <div class="p4k-photo-tint"></div>
         </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-3-name"></span></div>
@@ -6777,6 +6818,7 @@
         <div class="p4k-photo-box">
           <img class="p4k-photo p4k-photo-front" id="p4k-4-photo-front" src="/photos/placeholder.png" alt="">
           <img class="p4k-photo p4k-photo-sig"   id="p4k-4-photo-sig"   src="/photos/placeholder.png" alt="">
+          <div class="p4k-photo-tint"></div>
         </div>
         <div class="p4k-crop"></div>
         <div class="p4k-name-box"><span class="p4k-name" id="p4k-4-name"></span></div>
@@ -9479,7 +9521,7 @@
       fetch('/api/sponsors').then(r => r.json()).then(list => {
         if (!wsSponsorActive || !list || !list.length) return;
         wsSponsors = list;
-        wsSponsorIdx = 0;
+        wsSponsorIdx = SponsorCursor.start(list.length);
         runWsSponsorLoop();
       }).catch(() => {});
     }
@@ -9489,6 +9531,7 @@
       const img = document.getElementById('ws-sponsor-img');
       if (!img) return;
       const s = wsSponsors[wsSponsorIdx];
+      SponsorCursor.aired(wsSponsorIdx);
       img.className = '';
       img.src = s.src;
       updateSponsorCatLabel('ws-sponsor-cat', s.category);
@@ -9945,6 +9988,8 @@
        previews next week's Day 1 (no play the following calendar day). */
     function computeTomorrowWeekDay(state) {
       const week = state.week || 1, day = state.day || 1;
+      /* Playoffs runs Day 1-5 with no weeks: tomorrow is simply the next day. */
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs') return { week, day: day + 1 };
       return day === 3 ? { week: week + 1, day: 1 } : { week, day: day + 1 };
     }
 
@@ -10032,7 +10077,7 @@
       /* Match Board's Goodbye label dropdown can override the day-based
          line with "See You On Sunday" (goodbyeLabel === 'SEE YOU ON SUNDAY'). */
       if (state && state.goodbyeLabel === 'SEE YOU ON SUNDAY') return 'See You On Sunday';
-      return (state && state.day === 3) ? 'See You Next Week' : 'See You Tomorrow';
+      return (state && state.day === 3 && document.documentElement.getAttribute('data-theme') !== 'playoffs') ? 'See You Next Week' : 'See You Tomorrow';
     }
     /* Playoffs title may run from its left edge (canvas x=225) right up to the
        sponsor box (x=1492): 1492-225 = 1267px. */
@@ -10365,7 +10410,7 @@
       fetch('/api/sponsors').then(r => r.json()).then(list => {
         if (!wlSponsorActive || !list || !list.length) return;
         wlSponsors = list;
-        wlSponsorIdx = 0;
+        wlSponsorIdx = SponsorCursor.start(list.length);
         runWlSponsorLoop();
       }).catch(() => {});
     }
@@ -10375,6 +10420,7 @@
       const img = document.getElementById('wl-sponsor-img');
       if (!img) return;
       const s = wlSponsors[wlSponsorIdx];
+      SponsorCursor.aired(wlSponsorIdx);
       img.className = '';
       img.src = s.src;
       updateSponsorCatLabel('wl-sponsor-cat', s.category);
@@ -13422,6 +13468,7 @@
         const img = document.getElementById(imgId);
         if (!img) return;
         const s = sponsors[idx];
+        SponsorCursor.aired(idx);
         img.className = '';
         img.src = s.src;
         updateSponsorCatLabel(labelId, s.category);
@@ -13452,7 +13499,7 @@
           fetch('/api/sponsors').then(r => r.json()).then(list => {
             if (!active || !list || !list.length) return;
             sponsors = list;
-            idx = 0;
+            idx = SponsorCursor.start(list.length);
             run();
           }).catch(() => {});
         },
@@ -15576,9 +15623,29 @@
         // same helper MVP Highlights/MVP Scene use (hlPhotoUrl), same
         // hide-on-error fallback (no photo beats a broken-image icon,
         // and the card's own marble/team-color art shows through).
+        const sigFallback = buildUrl(hlPhotoUrl(s.name));
         sigEl.onerror = () => { sigEl.style.display = 'none'; };
         sigEl.style.display = '';
-        sigEl.src = buildUrl(hlPhotoUrl(s.name));
+        /* Playoffs: phase 2's photo is the official black-and-white crop
+           (photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp — same files/helper as Team Hexagon, thBnwUrl) instead of the
+           signature portrait. Only the photo changes; the front->pose button, bounce and timing are untouched. A
+           player with no crop file falls back to the signature portrait. TRI = the team's code in the game feed. */
+        const bnw = document.documentElement.getAttribute('data-theme') === 'playoffs' ? thBnwUrl(s.name, s.tri) : '';
+        if (photoBox) {
+          photoBox.classList.toggle('p4k-bnw', !!bnw);
+          photoBox.classList.toggle('p4k-tint-blue', s.campid === 1);
+          photoBox.classList.toggle('p4k-tint-red', s.campid !== 1);
+        }
+        if (bnw) {
+          sigEl.onerror = () => {
+            sigEl.onerror = () => { sigEl.style.display = 'none'; };
+            if (photoBox) photoBox.classList.remove('p4k-bnw');   // fallback portrait: no grey/tint
+            sigEl.src = sigFallback;
+          };
+          sigEl.src = buildUrl(bnw);
+        } else {
+          sigEl.src = sigFallback;
+        }
       }
     }
 
@@ -15594,7 +15661,7 @@
         (gd.camp_list || []).filter(c => c.campid === 1 || c.campid === 2).forEach(camp => {
           ['seat_1', 'seat_2', 'seat_3', 'seat_4', 'seat_5'].forEach(k => {
             const p = camp[k];
-            if (p && !p.judger) seats.push({ ...p, campid: camp.campid });
+            if (p && !p.judger) seats.push({ ...p, campid: camp.campid, tri: camp.team_simple_name || camp.team_name || '' });
           });
         });
         if (!seats.length) return;

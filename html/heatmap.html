@@ -276,8 +276,7 @@
     }
 
 
-    /* Always-up: the page is displayed from load; opacity only ramps 0 -> 1 once the first data has landed. */
-    #heatmap-page { display: block; }
+    /* Shown/hidden from the dashboard (hm-on / hm-visible, see hmShow/hmHide); display:none while hidden so an idle page costs nothing. */
   </style>
 </head>
 <body>
@@ -1059,24 +1058,60 @@
       ]);
     }
 
+    /* Show / hide (dashboard Control → Heatmap toggle, checkOverlays key 'heatmappage'). Hidden = idle: the layer
+       is display:none, the RAF loop has stopped (hmFrame bails on !hmVisible) and nothing fetches, so an unused
+       source costs no GPU. A ?preview=1 copy (Control/Edit iframes) ignores this and is always shown. */
+    /* Control-tab preview adds &follow=1 so it mirrors the toggle (read-only: it only listens, never writes state); the Edit-tab
+       preview has no follow and stays always shown so the layout can be positioned while off-air. */
+    const HM_PREVIEW = /[?&]preview=1(?:&|$)/.test(location.search) && !/[?&]follow=1(?:&|$)/.test(location.search);
+    let hmWanted = HM_PREVIEW, hmBusy = false;
+    async function hmShow() {
+      hmWanted = true;
+      if (hmBusy || hmVisible) return;
+      hmBusy = true;
+      try {
+        hmApplyStyle(await hmFetchStyle());
+        const cfg = await fetchHeatmapConfig();
+        await hmLoadAndApply(cfg);
+        await hmPreloadImages(hmPage, 1500);
+        if (!hmWanted) return;            /* hidden again while loading */
+        hmVisible = true;
+        hmPage.classList.add('hm-on');
+        void hmPage.offsetWidth;
+        hmPage.classList.add('hm-visible');
+        hmFitPlayerText();
+        requestAnimationFrame(hmFrame);
+      } finally { hmBusy = false; }
+      if (!hmWanted && hmVisible) hmHide();
+    }
+    function hmHide() {
+      hmWanted = false;
+      if (!hmVisible) return;
+      hmVisible = false;                  /* stops the RAF loop on its next tick */
+      hmPage.classList.remove('hm-visible');
+      setTimeout(() => {
+        if (hmVisible) return;            /* shown again during the fade */
+        hmPage.classList.remove('hm-on');
+        hmResetLoop();
+      }, 420);
+    }
     (async function hmStart() {
-      hmApplyStyle(await hmFetchStyle());
-      const cfg = await fetchHeatmapConfig();
-      await hmLoadAndApply(cfg);
-      await hmPreloadImages(hmPage, 1500);
-      hmVisible = true;
-      hmPage.classList.add('hm-on');
-      void hmPage.offsetWidth;
-      hmPage.classList.add('hm-visible');
-      hmFitPlayerText();
-      requestAnimationFrame(hmFrame);
+      if (HM_PREVIEW) return hmShow();
+      try {
+        const st = await fetch(buildUrl('/overlay/check-overlays'), { cache: 'no-store' }).then(r => r.json());
+        if (st && st.heatmappage) hmShow();
+      } catch {}
     })();
 
     /* Shared SSE (one real connection for the whole browser — see CLAUDE.md "Dashboard architecture"). */
     (function hmConnect() {
       const sse = createOverlaySSE();
       sse.addEventListener('theme', (e) => { try { applyTheme(JSON.parse(e.data).theme); } catch {} });
-      sse.addEventListener('heatmap_config', () => { hmRequestRefresh(); });
+      sse.addEventListener('heatmap_config', () => { if (hmVisible) hmRequestRefresh(); });
+      sse.addEventListener('heatmappage', (e) => {
+        if (HM_PREVIEW) return;
+        try { JSON.parse(e.data).action === 'show' ? hmShow() : hmHide(); } catch {}
+      });
       sse.addEventListener('heatmap_style', (e) => { try { hmApplyStyle(JSON.parse(e.data)); } catch {} });
       /* Edit-tab Save broadcasts 'reload' so every open page picks up the new positions */
       sse.addEventListener('reload', () => { window.location.reload(); });

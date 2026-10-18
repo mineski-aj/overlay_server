@@ -34,7 +34,7 @@
 const KNOWN_EVENTS = [
   'bpmmeter', 'bpmmeter_tag', 'bracket', 'consolidated_post', 'consolidated_post_2', 'cp2page', 'credits', 'debugmode', 'debugoff', 'draft', 'draftindex', 'draftphotomode',
   'draftpredict3', 'draftrecap', 'draftstats', 'emblemcheck', 'featuretoggle', 'fights', 'final_team', 'fs_debugoff', 'fs_hide',
-  'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'heatmap_style', 'highlights', 'hrm', 'itemcheck', 'killevent', 'l3lobby', 'led_draftpred',
+  'golddiffcheck', 'goldgraphcheck', 'heatmap_config', 'heatmap_style', 'heatmappage', 'highlights', 'hrm', 'itemcheck', 'killevent', 'l3lobby', 'led_draftpred',
   'led_fight', 'led_health', 'led_side', 'led_win', 'livewinrate', 'mapdetailv2', 'mapselection', 'mapselecttag',
   'match', 'matchboard', 'matchcard', 'meter', 'middleboard', 'mvp', 'p2hpage', 'playerboard', 'playerh2h', 'playerui',
   'h2h_config', 'post_carry', 'post_emblems', 'post_golddistri', 'post_h2h', 'post_heatmap', 'post_hearts', 'post_itemline', 'post_killevents', 'post_itemline_itemin',
@@ -60,9 +60,19 @@ function broadcast(msg) {
 
 function ensureConnection() {
   if (es) return;
-  es = new EventSource('/overlay/events');
+  const mine = es = new EventSource('/overlay/events');
   es.onopen = () => { connected = true; broadcast({ type: 'sse-status', ok: true }); };
-  es.onerror = () => { connected = false; broadcast({ type: 'sse-status', ok: false }); };
+  es.onerror = () => {
+    connected = false; broadcast({ type: 'sse-status', ok: false });
+    // A browser EventSource retries network drops by itself, but gives up for good (readyState CLOSED) if the
+    // server answers with a non-200 / wrong type — e.g. a request that lands while the server is restarting.
+    // The worker outlives page reloads, so a dead one would silence every open overlay until ALL tabs closed.
+    if (mine.readyState === 2) {
+      try { mine.close(); } catch (e) {}
+      if (es === mine) es = null;
+      setTimeout(ensureConnection, 2000);
+    }
+  };
   KNOWN_EVENTS.forEach((name) => {
     es.addEventListener(name, (e) => broadcast({ type: 'sse-event', event: name, data: e.data }));
   });

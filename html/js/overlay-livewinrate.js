@@ -87,9 +87,11 @@ function lwrBuildPanel() {
 
   const headerBg = document.createElement('img');
   headerBg.className = 'lwr-header-bg';
-  headerBg.src = document.documentElement.getAttribute('data-theme') === '10th_anniversary'
-    ? '/assets/ingame/anniversary/graph_header.png'
-    : '/assets/ingame/graph_header.png';
+  /* Playoffs: Gold Graph Check's gold-title-trapezoid header art (same 887x60 layout). */
+  { const th = document.documentElement.getAttribute('data-theme');
+    headerBg.src = th === '10th_anniversary' ? '/assets/ingame/anniversary/graph_header.png'
+                 : th === 'playoffs'         ? '/assets/ingame/playoffs/graph_header.png'
+                 :                             '/assets/ingame/graph_header.png'; }
   headerBg.alt = '';
   overlay.appendChild(headerBg);
 

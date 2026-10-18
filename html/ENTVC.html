@@ -5,6 +5,7 @@
   <base href="/">
   <script src="html/js/cache-bust.js"></script>
   <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/sponsor-cursor.js"></script>
   <script src="html/js/po-gold-text.js"></script>
   <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
@@ -1274,7 +1275,7 @@
       fetch('/api/sponsors').then(r => r.json()).then(list => {
         if (!wsSponsorActive || !list || !list.length) return;
         wsSponsors = list;
-        wsSponsorIdx = 0;
+        wsSponsorIdx = SponsorCursor.start(list.length);
         runWsSponsorLoop();
       }).catch(() => {});
     }
@@ -1284,6 +1285,7 @@
       const img = document.getElementById('ws-sponsor-img');
       if (!img) return;
       const s = wsSponsors[wsSponsorIdx];
+      SponsorCursor.aired(wsSponsorIdx);
       img.className = '';
       img.src = s.src;
       updateSponsorCatLabel('ws-sponsor-cat', s.category);

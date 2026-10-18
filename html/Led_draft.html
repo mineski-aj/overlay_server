@@ -915,6 +915,10 @@
   function dbgStatus(msg) { const el = document.getElementById('dbg-status'); if (el) setText(el, msg); }
 
   /* ─────────────── Part B — draft cards ─────────────── */
+  /* Perf (opt-in): the 10 looping hero videos are the page's whole idle GPU/decode cost. ?heroloops=N plays each hero
+     animation N times, then holds the last frame (video paused = zero cost). Omitted / 0 / 'inf' = loop forever (default,
+     unchanged). Example: Led_draft.html?heroloops=2 */
+  const HERO_LOOPS = (() => { const v = new URLSearchParams(location.search).get('heroloops'); const n = parseInt(v, 10); return n > 0 ? n : Infinity; })();
   const PHOTO_W = 396;          // .dr-photo / .dr-photo-cvs width
   const HERO_W  = 200;          // .dr-hero-vid / .dr-hero-cvs width (= slot width)
   const PHOTO_FRONT_HOLD_MS = 700;    // FRONT stays up this long after the picking turn starts
@@ -966,13 +970,14 @@
       const glow  = mk('div', 'dr-glow-pick', slot);
       const photo = mk('img', 'dr-photo', slot); photo.alt = '';
       const pcvs  = mk('canvas', 'dr-photo-cvs', slot); pcvs.width = PHOTO_W; pcvs.height = PHOTO_W;
-      const hvid  = mk('video', 'dr-hero-vid', slot); hvid.loop = true; hvid.muted = true; hvid.playsInline = true; hvid.preload = 'none';
+      const hvid  = mk('video', 'dr-hero-vid', slot); hvid.loop = HERO_LOOPS === Infinity; hvid.muted = true; hvid.playsInline = true; hvid.preload = 'none';
       const hcvs  = mk('canvas', 'dr-hero-cvs', slot); hcvs.width = HERO_W; hcvs.height = 319;
       const flash = mk('div', 'dr-flash', slot);
       const hname = mk('div', 'dr-hname', slot); const hnameTxt = mk('span', '', hname);
       slotEls[key] = { key, campid, seatIdx: i, slot, glow, photo, pcvs, pctx: pcvs.getContext('2d'),
-        hvid, hcvs, hctx: hcvs.getContext('2d'), flash, hname, hnameTxt,
+        hvid, hcvs, hctx: hcvs.getContext('2d'), flash, hname, hnameTxt, loops: 0,
         pickAnim: null, matteVid: null, heroMatteVid: null, photoH: null };
+      if (HERO_LOOPS !== Infinity) hvid.addEventListener('ended', () => { const e = slotEls[key]; if (++e.loops < HERO_LOOPS) { hvid.currentTime = 0; hvid.play().catch(() => {}); } });
       prev[key] = { lastName: '', heroid: undefined, picking: false, matteActive: false,
         photoName: undefined, photoPhase: 'none', photoErasing: false, idleName: undefined,
         t0: null, t1: null, t2: null, pickAnimTimer: null };
@@ -1219,6 +1224,7 @@
     if (heroid !== p.heroid) {
       if (heroid > 0) {
         e.hvid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+        e.loops = 0;
         e.hvid.currentTime = 0;
         if (p.heroid !== undefined) {                // live pick → matte reveal drives play() + display
           e.hvid.style.display = 'none';
