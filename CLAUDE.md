@@ -1018,6 +1018,11 @@ timing are unchanged. Read at card-fill time, so a theme switch applies on the n
 contrast, plus a team-colour corner-gradient `screen` overlay `.p4k-photo-tint`, blue/red by camp) — copies of the `.th-player-tint`
 gradients, shown only while `.p4k-bnw` is set (not for the signature fallback) and faded in with `.p4k-posed`.
 
+### Final Team logo (mplfs.html `#ft-mpl-logo`)
+
+Playoffs uses the plain MPL logo (no sun burst): `[data-theme="playoffs"] #ft-mpl-logo { content: url('/assets/mpl2026logo.png') }` — same file the Match Board uses. The sun version
+(`assets/postgame/mpl_logo.png`, still the `<img src>`) is retired for playoffs only; Regular / 10th Anniversary still show it. Playoffs box stays at its saved 270x270 (`mplfs::playoffs`).
+
 ### Post H2H page 2 — gold distribution (mplfs.html)
 
 Post H2H has two pages now: 1 = the role stats (unchanged), 2 = gold distribution for the SAME role's

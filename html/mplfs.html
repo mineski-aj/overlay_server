@@ -2428,6 +2428,9 @@
       position: absolute; left: 885px; top: 84px; width: 150px; height: 150px;
       object-fit: contain; z-index: 4;
     }
+    /* Playoffs: the plain MPL logo (no sun burst) — assets/mpl2026logo.png, same one the Match Board uses. The sun version
+       (postgame/mpl_logo.png) is retired for this theme; Regular / 10th Anniversary keep it until told otherwise. */
+    [data-theme="playoffs"] #ft-mpl-logo { content: url('/assets/mpl2026logo.png'); }
 
     /* Series score, "bar form" — same pip pattern as the in-game
        scoreboard's #sb-score-c1/c2 (see overlay-scoreboard.js) — lives
