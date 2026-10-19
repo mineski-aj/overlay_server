@@ -1038,6 +1038,13 @@ the later sponsors get airtime on short scenes. Logo + category tag come from th
 scenes on screen at once walk the list side by side). Page-level state: resets on reload; other pages (Draft, sponsors.html...) are unaffected.
 A NEW sponsor loop must use these two calls or it will restart at #1 again.
 
+### MPL L3 Lobby strip (`mpltag.html`, checkOverlays key `l3lobby`) — notes
+
+The four white corner-HUD lines were removed (strip only: timer, sponsor loop, 2 players + name plates, match box). It has the playoffs **SUPERFAN ticker** carried over from
+Waiting TVC (`#l3l-superfan`, 899x51 at left 12 / top 788 (above the timer panel, just above the strip); same `superfanrunner.png` art, fixed "MPL PH SUPERFAN CITY" label + scrolling text from the
+Dynamic tab's Superfan Ticker field via `/api/dynamic-content`, `applySuperfan()` = mplfs.html's `applyWsSuperfan`). It is z 9 — in FRONT of the player photos (behind them a head
+hid the label) — and slides/fades in with the strip (`.l3l-in`). Edit-tab row: group "L3 Lobby Superfan" in `mpltag_l3lobby` — left/top/**width**: the fixed 899x51 `.l3l-sf-inner` is scaled to width/899 (`fitSuperfan`, ResizeObserver) and the box height follows, so the whole ticker resizes uniformly.
+
 ### Gold Graph Check header — playoffs gold title bar
 
 `assets/ingame/playoffs/graph_header.png` = the Regular `graph_header.png` (887x60) with only its white title trapezoid recoloured to the playoffs

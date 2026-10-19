@@ -5543,10 +5543,7 @@
      box, so it only takes left/top. */
   var L3L_DEFAULTS = {
     '#l3l-bg':           { left: 0,    top: 853,  width: 1920, height: 227 },
-    '#l3l-corner-tl':    { left: 29,   top: 30   },
-    '#l3l-corner-tr':    { left: 1642, top: 20   },
-    '#l3l-corner-bl':    { left: 30,   top: 810  },
-    '#l3l-corner-br':    { left: 1671, top: 810  },
+    '#l3l-superfan':     { left: 12,   top: 788,  width: 899 },   /* size = width only: contents scale uniformly, height follows (fitSuperfan in mpltag.html) */
     '#l3l-goldline':     { left: 409,  top: 1075, width: 1511, height: 5   },
     '#l3l-timerbox':     { left: 0,    top: 853,  width: 409,  height: 227 },
     '#l3l-timer-label':  { left: 0,    top: 866,  width: 409,  height: 50, fontSize: 36 },
@@ -5560,10 +5557,7 @@
   };
   var L3L_ELEMENTS = [
     { group: 'L3 Lobby Background',   id: '#l3l-bg',           name: 'Background Strip'  },
-    { group: 'L3 Lobby Corner TL',   id: '#l3l-corner-tl',    name: 'Corner HUD Top-Left'     },
-    { group: 'L3 Lobby Corner TR',   id: '#l3l-corner-tr',    name: 'Corner HUD Top-Right'    },
-    { group: 'L3 Lobby Corner BL',   id: '#l3l-corner-bl',    name: 'Corner HUD Bottom-Left'  },
-    { group: 'L3 Lobby Corner BR',   id: '#l3l-corner-br',    name: 'Corner HUD Bottom-Right' },
+    { group: 'L3 Lobby Superfan',     id: '#l3l-superfan',     name: 'Superfan Ticker'   },
     { group: 'L3 Lobby Gold Line',    id: '#l3l-goldline',     name: 'Bottom Gold Line'  },
     { group: 'L3 Lobby Timer Panel',  id: '#l3l-timerbox',     name: 'Timer Panel'       },
     { group: 'L3 Lobby Timer Label',  id: '#l3l-timer-label',  name: 'Timer Label'       },

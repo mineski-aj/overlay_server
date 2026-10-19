@@ -4369,31 +4369,31 @@
       "top": "893px"
     },
     ".ws-casters-slot-left": {
-      "left": "-96px",
+      "left": "-64px",
       "top": "31px",
       "width": "297px",
       "height": "390px"
     },
     ".ws-casters-slot-middle": {
-      "left": "124px",
+      "left": "173px",
       "top": "23px",
       "width": "269px",
       "height": "402px"
     },
     ".ws-casters-slot-right": {
-      "left": "329px",
+      "left": "394px",
       "top": "29px",
       "width": "297px",
       "height": "390px"
     },
     ".ws-hosts-slot-left": {
-      "left": "-90px",
+      "left": "-115px",
       "top": "12px",
       "width": "252px",
       "height": "390px"
     },
     ".ws-hosts-slot-right": {
-      "left": "400px",
+      "left": "415px",
       "top": "12px",
       "width": "252px",
       "height": "390px"
@@ -4737,25 +4737,25 @@
       "height": "1080px"
     },
     ".ws-hosts-slot-middle": {
-      "left": "145px",
+      "left": "142px",
       "top": "0px",
       "width": "269px",
       "height": "402px"
     },
     ".ws-encasters-slot-left": {
-      "left": "-96px",
+      "left": "-86px",
       "top": "31px",
       "width": "297px",
       "height": "390px"
     },
     ".ws-encasters-slot-middle": {
-      "left": "124px",
+      "left": "140px",
       "top": "23px",
       "width": "269px",
       "height": "402px"
     },
     ".ws-encasters-slot-right": {
-      "left": "329px",
+      "left": "384px",
       "top": "29px",
       "width": "297px",
       "height": "390px"
@@ -5876,6 +5876,20 @@
       "top": "280px",
       "width": "571px",
       "height": "600px"
+    },
+    ".ws-casters-title": {
+      "left": "0px",
+      "top": "0px",
+      "width": "571px",
+      "height": "61px",
+      "fontSize": "34px"
+    },
+    ".ws-encasters-title": {
+      "left": "0px",
+      "top": "0px",
+      "width": "571px",
+      "height": "61px",
+      "fontSize": "34px"
     }
   },
   "mploverlay_v7::playoffs": {
@@ -5989,18 +6003,18 @@
       "height": "13px"
     },
     "#sb-mi-patch": {
-      "left": "1508px",
-      "top": "107px",
+      "left": "1509px",
+      "top": "111px",
       "width": "176px",
       "height": "23px",
-      "fontSize": "13px"
+      "fontSize": "15px"
     },
     "#sb-mi-casters": {
-      "left": "1664px",
-      "top": "108px",
+      "left": "1665px",
+      "top": "113px",
       "width": "280px",
       "height": "19.1px",
-      "fontSize": "12px"
+      "fontSize": "13px"
     },
     "#kill-event-sponsor-logo-clip": {
       "left": "866px",
@@ -6082,7 +6096,7 @@
     },
     "#sb-map": {
       "left": "1627px",
-      "top": "141px"
+      "top": "139px"
     }
   },
   "Draft::playoffs": {
@@ -6209,6 +6223,73 @@
     },
     "#mc-next-match-text": {
       "fontSize": "137.33px"
+    },
+    "#l3l-bg": {
+      "left": "0px",
+      "top": "853px",
+      "width": "1920px",
+      "height": "227px"
+    },
+    "#l3l-superfan": {
+      "left": "10px",
+      "top": "800px",
+      "width": "600px"
+    },
+    "#l3l-goldline": {
+      "left": "409px",
+      "top": "1075px",
+      "width": "1511px",
+      "height": "5px"
+    },
+    "#l3l-timerbox": {
+      "left": "0px",
+      "top": "853px",
+      "width": "409px",
+      "height": "227px"
+    },
+    "#l3l-timer-label": {
+      "left": "0px",
+      "top": "866px",
+      "width": "409px",
+      "height": "50px",
+      "fontSize": "36px"
+    },
+    "#l3l-timer-value": {
+      "left": "0px",
+      "top": "912px",
+      "width": "409px",
+      "height": "170px",
+      "fontSize": "156px"
+    },
+    "#l3l-sponsor": {
+      "left": "457px",
+      "top": "910px",
+      "width": "318px",
+      "height": "112px"
+    },
+    ".l3l-player-blue": {
+      "left": "627px",
+      "top": "770px",
+      "width": "520px",
+      "height": "520px"
+    },
+    ".l3l-player-red": {
+      "left": "1520px",
+      "top": "770px",
+      "width": "520px",
+      "height": "520px"
+    },
+    "#l3l-match": {
+      "left": "1040px",
+      "top": "870px"
+    },
+    ".l3l-namebox-blue": {
+      "left": "780px",
+      "top": "1027px"
+    },
+    ".l3l-namebox-red": {
+      "left": "1714px",
+      "top": "1027px"
     }
   }
 }

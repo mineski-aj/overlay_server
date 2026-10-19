@@ -736,20 +736,24 @@
     #l3l-bg { position: absolute; left: 0; top: 853px; width: 1920px; height: 227px; overflow: hidden; z-index: 1;
       transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
     #l3l-bg video { position: absolute; left: 0; top: -800px; width: 1920px; height: 1080px; display: block; }
-    /* Four white corner-HUD lines (MPL PHILIPPINES / SEASON 18 PLAYOFFS / LAKAS NG PINAS / PALAG NA TO!), measured off the
-       lobby reference: real text + SVG icons, one element per corner, white on whatever the game feed is. */
-    .l3l-corner { position: absolute; z-index: 3; height: 20px; display: flex; align-items: center; color: #fff; white-space: nowrap;
-      font-family: 'General Sans', sans-serif; font-weight: 500; font-size: 17px; letter-spacing: 0.01em; line-height: 20px;
-      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45); opacity: 0; transition: opacity 250ms ease, transform 250ms ease; }
-    .l3l-corner b { font-weight: 700; }
-    .l3l-corner svg { display: block; flex: none; overflow: visible; filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.45)); }
-    #l3l-corner-tl { left: 29px;   top: 30px;  gap: 17px; transform: translateY(-24px); }
-    #l3l-corner-tr { left: 1642px; top: 20px;  gap: 11px; transform: translateY(-24px); }
-    #l3l-corner-bl { left: 30px;   top: 810px; gap: 18px; transform: translateY(24px); }
-    #l3l-corner-br { left: 1671px; top: 810px; gap: 13px; transform: translateY(24px); }
-    #l3l-corner-bl .l3l-cline { display: block; width: 212px; height: 1px; background: #fff; margin-left: 22px; }
-    #l3l-corner-br svg + svg { margin-left: -6px; }
-    #l3l-root.l3l-in .l3l-corner { opacity: 1; transform: none; transition: opacity 500ms ease 900ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms; }
+    /* SUPERFAN ticker — carried over from the playoffs Waiting TVC (#ws-superfan in mplfs.html): same art, 899x51, fixed
+       "MPL PH SUPERFAN CITY" label + scrolling text from the Dynamic tab's Superfan Ticker field. Sits just above the strip, IN FRONT of the
+       player photos (z 9) — behind them, a player's head covered the "MPL PH SUPERFAN CITY" label. Slides/fades in with the rest of the strip (see .l3l-in below). */
+    #l3l-superfan { position: absolute; left: 12px; top: 788px; width: 899px; height: 51px; z-index: 9;
+      opacity: 0; transform: translateY(24px); transition: opacity 250ms ease, transform 250ms ease; }
+    /* The Edit tab sets left/top/WIDTH on #l3l-superfan; everything inside lives in a fixed 899x51 .l3l-sf-inner that is scaled uniformly to
+       width/899 (fitSuperfan() below; it also sets the box height = 51*scale so the selection box matches). Native size = 899 wide. */
+    .l3l-sf-inner { position: absolute; left: 0; top: 0; width: 899px; height: 51px; transform-origin: 0 0; }
+    .l3l-sf-inner > img { position: absolute; left: 0; top: 0; width: 899px; height: 51px; }
+    .l3l-sf-label, .l3l-sf-window span { font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 27px; text-transform: uppercase; white-space: nowrap; }
+    .l3l-sf-label { position: absolute; left: 17px; top: 0; width: 360px; height: 51px; display: flex; align-items: center; color: #fff; }
+    .l3l-sf-window { position: absolute; left: 396px; top: 0; width: 503px; height: 51px; overflow: hidden;
+      -webkit-mask-image: linear-gradient(to right, transparent 0, #000 44px, #000 calc(100% - 44px), transparent 100%);
+              mask-image: linear-gradient(to right, transparent 0, #000 44px, #000 calc(100% - 44px), transparent 100%); }
+    .l3l-sf-track { position: absolute; left: 0; top: 0; height: 51px; display: flex; align-items: center; animation: l3l-sf-scroll 9s linear infinite; }
+    .l3l-sf-window span { color: #0a0a0a; padding-right: 120px; flex: none; }
+    @keyframes l3l-sf-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+    #l3l-root.l3l-in #l3l-superfan { opacity: 1; transform: none; transition: opacity 500ms ease 900ms, transform 600ms cubic-bezier(0.16, 1, 0.3, 1) 900ms; }
     #l3l-goldline { position: absolute; left: 409px; top: 1075px; width: 1511px; height: 5px; z-index: 2;
       background: linear-gradient(to right, #fde067, #d8b04a 50%, #f2d157);
       transform: translateY(240px); transition: transform 450ms cubic-bezier(0.55, 0, 0.9, 0.4); }
@@ -868,10 +872,11 @@
   <div id="l3l-root">
     <div id="l3l-bg"><video id="l3l-bg-video" src="/assets/z_playoffs background/playoffsbg_theme.webm" loop muted playsinline preload="auto"></video></div>
     <div id="l3l-goldline"></div>
-    <div class="l3l-corner" id="l3l-corner-tl"><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><span><b>MPL</b> PHILIPPINES</span><svg width="22" height="14" viewBox="0 0 22 14"><polygon points="1,1 10,7 1,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/><polygon points="12,1 21,7 12,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
-    <div class="l3l-corner" id="l3l-corner-tr"><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><span><b>SEASON 18</b> PLAYOFFS</span><svg width="20" height="20" viewBox="-10 -10 20 20"><polygon fill="#fff" points="0,-10 2.2,-4.6 7.1,-7.1 4.6,-2.2 10,0 4.6,2.2 7.1,7.1 2.2,4.6 0,10 -2.2,4.6 -7.1,7.1 -4.6,2.2 -10,0 -4.6,-2.2 -7.1,-7.1 -2.2,-4.6"/></svg></div>
-    <div class="l3l-corner" id="l3l-corner-bl"><svg width="20" height="20" viewBox="-10 -10 20 20"><path fill="#fff" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10Z"/></svg><span><b>LAKAS</b> NG <b>PINAS</b></span><i class="l3l-cline"></i></div>
-    <div class="l3l-corner" id="l3l-corner-br"><span><b>PALAG</b> NA <b>TO!</b></span><svg width="21" height="13" viewBox="0 0 21 13"><polygon points="0,0 9.5,6.5 0,13" fill="#fff"/><polygon points="11,0 20.5,6.5 11,13" fill="#fff"/></svg><svg width="22" height="14" viewBox="0 0 22 14"><polygon points="1,1 10,7 1,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/><polygon points="12,1 21,7 12,13" fill="none" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+    <div id="l3l-superfan"><div class="l3l-sf-inner">
+      <img src="/assets/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
+      <span class="l3l-sf-label">MPL PH SUPERFAN CITY</span>
+      <div class="l3l-sf-window"><div class="l3l-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
+    </div></div>
     <div id="l3l-timerbox"></div>
     <div id="l3l-timer-label">SHOW STARTS IN:</div>
     <div id="l3l-timer-value"><span class="l3l-timer-glow">30:30</span><span class="l3l-timer-fill">30:30</span></div>
@@ -2832,6 +2837,44 @@
     return fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
 
+  /* SUPERFAN ticker text: Dynamic tab "Superfan Ticker" (dynamic_content.json superfan_text), same logic as mplfs.html's applyWsSuperfan —
+     canvas measureText (the strip is display:none when this runs), text repeated until one copy fills the 503px window, scroll speed ~70px/s. */
+  var SF_DEFAULT = 'COME AND JOIN THE FUN FOR FREE', sfCtx = null;
+  function applySuperfan(raw) {
+    var text = String(raw || '').trim() || SF_DEFAULT;
+    var track = document.querySelector('#l3l-superfan .l3l-sf-track');
+    if (!track || track.dataset.text === text) return;
+    track.dataset.text = text;
+    if (!sfCtx) sfCtx = document.createElement('canvas').getContext('2d');
+    sfCtx.font = "800 27px 'General Sans'";
+    var GAP = '    ';
+    var unit = sfCtx.measureText(text.toUpperCase() + GAP).width || 1;
+    var copies = Math.max(1, Math.ceil(503 / unit));
+    var content = Array(copies).fill(text).join(GAP);
+    [].forEach.call(track.querySelectorAll('span'), function (sp) { sp.textContent = content; });
+    track.style.animationDuration = Math.max(4, (unit * copies + 120) / 70) + 's';
+  }
+  /* Overall size: scale the fixed 899x51 inner to the container's (Edit-tab) width. offsetWidth = layout width, unaffected by the slide-in transform. */
+  function fitSuperfan() {
+    var box = document.getElementById('l3l-superfan'), inner = box && box.querySelector('.l3l-sf-inner');
+    if (!inner) return;
+    var sc = (box.offsetWidth || 899) / 899;
+    inner.style.transform = 'scale(' + sc + ')';
+    var h = Math.round(51 * sc) + 'px';
+    if (box.style.height !== h) box.style.height = h;
+  }
+  (function () {
+    var box = document.getElementById('l3l-superfan');
+    fitSuperfan();
+    if (box && window.ResizeObserver) new ResizeObserver(fitSuperfan).observe(box);   // Edit-tab width changes (also fires once the strip is shown)
+  })();
+  function loadSuperfan() {
+    fetch('/api/dynamic-content', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) { applySuperfan(d && d.superfan_text); })
+      .catch(function () {});
+  }
+
   function l3lAnimateIn() {
     if (on) return;
     on = true;
@@ -2839,6 +2882,8 @@
     clearTimeout(hideTimer);
     ROOT.classList.add('l3l-on');
     BGV.play().catch(function () {});
+    fitSuperfan();
+    loadSuperfan();
     fetchState().then(function (ms) {
       if (!on) return;
       introHold = true; applyState(ms, false); introHold = false;
