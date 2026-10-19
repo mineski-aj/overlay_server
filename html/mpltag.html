@@ -2794,7 +2794,9 @@
     if (r.indexOf('jung') >= 0) return 'JUNGLER';
     return (role || '').toUpperCase();
   }
-  function applyPlayer(side, player) {
+  /* group (optional) = { ready: [], starts: [] } shared by the two sides of one swap: each side registers when ITS photo is ready
+     (old one faded out + new one decoded) and the function that fades it in; showPlayers() then fires both starts in the same frame. */
+  function applyPlayer(side, player, group) {
     var ign = player && player.ign;
     var nameEl = document.getElementById('l3l-' + side + '-name');
     var logoEl = document.getElementById('l3l-' + side + '-logo');
@@ -2826,19 +2828,27 @@
     /* Fade the new photo in only after it is DECODED (async, off the main thread) as well as after the old one has faded out — starting the
        transition on an image that still has to decode is what made the frame hitch. Wait is capped so a slow/broken load can't hold it forever. */
     var decoded = (ign && nextEl.decode) ? Promise.race([nextEl.decode().catch(function () {}), new Promise(function (r) { setTimeout(r, 1500); })]) : Promise.resolve();
-    Promise.all([new Promise(function (r) { setTimeout(r, FADE_OUT); }), decoded]).then(function () {
+    var ready = Promise.all([new Promise(function (r) { setTimeout(r, FADE_OUT); }), decoded]);
+    function start() {
       if (!ign || failed || !on) return;
       nextEl.style.transition = 'opacity ' + FADE_IN + 'ms cubic-bezier(0.16,1,0.3,1), transform ' + MOVE_IN + 'ms cubic-bezier(0.16,1,0.3,1)';
       nextEl.style.opacity = '1'; nextEl.style.transform = 'translateX(0)';
-    });
+    }
+    if (group) { group.ready.push(ready); group.starts.push(start); }
+    else ready.then(start);
     photoLayer[side] = next;
   }
   function showPlayers() {
     var b = lineups.blue, r = lineups.red;
     var bp = b[playerIdx % (b.length || 1)], rp = r[playerIdx % (r.length || 1)];
-    applyPlayer('blue', bp);
-    /* red follows 140 ms later: two simultaneous photo swaps (decode + layer upload + forced reflows) landed in one frame in vMix's browser */
-    setTimeout(function () { if (on) applyPlayer('red', rp); }, 140);
+    /* Both photos animate TOGETHER: both sides are prepared in the same tick and their fade-ins start in one frame, once BOTH are decoded
+       (the whole lineup is pre-decoded by preloadLineup, so this no longer needs the old 140ms stagger that made red lag blue). */
+    var group = { ready: [], starts: [] };
+    applyPlayer('blue', bp, group);
+    applyPlayer('red', rp, group);
+    Promise.all(group.ready).then(function () {
+      requestAnimationFrame(function () { group.starts.forEach(function (fn) { fn(); }); });
+    });
   }
   /* playersStarted: the first photo must fade in exactly once per show. applyState() (fresh lineup => startPlayers) runs
      while the strip is still opening, and the 700ms intro timer below would start them AGAIN — the first photo then faded
