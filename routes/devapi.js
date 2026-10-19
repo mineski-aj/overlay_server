@@ -265,13 +265,14 @@ router.post('/api/heatmap-config', (req, res) => {
 // WITH the full style as its payload, so heatmap.html applies slider drags live without re-fetching anything.
 // mapBrightness null = "follow the shared Post Heatmap Controls brightness" (heatmap_config.json).
 const HEATMAP_STYLE_FILE = path.join(__dirname, '..', 'heatmap_style.json');
-const HEATMAP_STYLE_DEFAULT = { mapBrightness: null, mapContrast: 1, heat: [1, 1, 1, 1, 1, 1, 1, 1, 1], markers: { kill: 30, death: 30, assist: 30 } };
+const HEATMAP_STYLE_DEFAULT = { photo: true, mapBrightness: null, mapContrast: 1, heat: [1, 1, 1, 1, 1, 1, 1, 1, 1], markers: { kill: 30, death: 30, assist: 30 } };
 function heatmapStyleClean(b, base) {
   const num = (v, lo, hi, d) => { const n = Number(v); return isFinite(n) && v !== null && v !== '' ? Math.max(lo, Math.min(hi, n)) : d; };
   b = b || {}; base = base || HEATMAP_STYLE_DEFAULT;
   const heat = Array.isArray(b.heat) ? b.heat : base.heat;
   const mk = b.markers || {};
   return {
+    photo: b.photo === undefined ? base.photo : !!b.photo,   // show the player photo (heatmap.html only)
     mapBrightness: b.mapBrightness === null ? null : (b.mapBrightness === undefined ? base.mapBrightness : num(b.mapBrightness, 0.1, 1.5, base.mapBrightness)),
     mapContrast:   num(b.mapContrast, 0.3, 2.5, base.mapContrast),
     heat: HEATMAP_STYLE_DEFAULT.heat.map((_, i) => num(heat[i], 0, 2, base.heat[i])),

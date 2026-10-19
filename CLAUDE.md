@@ -42,7 +42,8 @@ caller expected, until the restart actually happened.
   (`mplfs` bucket, only the `#hm-*`/`.hm-*`/`#hmst-*` selectors), so "Post Heatmap · mplfs" in the Edit tab positions both.
   **Live look controls (heatmap.html only)** — dashboard Control → Heatmap → "Heatmap Style": map brightness (follows the shared
   Post Heatmap Controls value until moved) + contrast, a brightness multiplier per heat-colour stop (9, blue → white-hot; `hmBuildCmap`)
-  and the size of the kill/death/assist markers (CSS vars `--hm-kill-size` etc.). `GET/POST /api/heatmap-style` (routes/devapi.js,
+  the size of the kill/death/assist markers (CSS vars `--hm-kill-size` etc.) and a **Player Photo Shown/Hidden** button (`photo` in the style; `.hm-nophoto` on `<html>` hides `.hm-player-photo-wrap` only —
+  plaque/hero/stats stay; default shown; needs the restart for `photo` to be saved/broadcast). `GET/POST /api/heatmap-style` (routes/devapi.js,
   `heatmap_style.json`, clamped) broadcasts SSE `heatmap_style` carrying the full style, so slider drags apply instantly
   (`hmApplyStyle`); the mplfs scene is NOT affected.
   **Show/hide (GPU saver)** — dashboard Control → Heatmap → "Heatmap" toggle = checkOverlays key `heatmappage`
@@ -907,8 +908,8 @@ copy for a different feature.
 - **Lord Advantage** (`js/overlay-lordadv.js`, key `lordadv`, armable): white panel under
   each camp's tricode (`#lordadv-c1` left 338 / `#lordadv-c2` left 1218, top 78, 290x58),
   inserted as `#scoreboard-overlay`'s FIRST child so it sits behind the scoreboard art and
-  slides with it; top shadow via `::before`. Shows +GOLD / KILLS / TURRET for 7s once per
-  (camp, `begin_time`) when `camp_list[].kill_lord_advantage.end_time` is set (also reads
+  slides with it; top shadow via `::before`. Shows +GOLD / KILLS / TURRET for 90s (`LORDADV_SHOW_MS`) from the moment the Lord dies — once per
+  (camp, `begin_time`), triggered as soon as `camp_list[].kill_lord_advantage.begin_time` appears (NOT when `end_time` is set, ~120s later), with the numbers updating LIVE every poll (also reads
   `data.kill_lord_advantage[campid]`). Gold = API `gold`; KILLS/TURRET are the camp's
   `score` / `kill_tower` diffs between per-poll snapshots at begin/end time (the API only
   has tower HP). Lord icon gold both sides, "ADVANTAGE" title blue/red, bar follows theme
@@ -947,6 +948,14 @@ on the layer it starts (`svSetClip`; every other scene's start clears it, so it 
 (un-clipped 450ms after hide, after the video's fade-out). Own Edit config `mplfs_credits_v2` (V1's config previews V1 via
 `showCreditsSceneV1`, V2's via `showCreditsSceneV2`; both share the Content box). Needs a server restart (`VALID_FEATURES`,
 `lib/state.js`); no `KNOWN_EVENTS` change.
+
+### MVP Scene V2 — transparent over the live camera (mplfs.html, `mvp_v2` featureToggle)
+
+V1/V2 button on the MVP Scene row (`versionToggle`). V2 = `#mvp-page.mv-v2`: NO background (the instant the trigger lands `mvBgCut()` kills the scene loops + idle `#bg-video`, no fade; `transitionToImpl`
+skips `showSceneVideo('mvp')` for V2; `hideMvpScene` restores `#bg-video`), NO signature photo (player's live face shows through), black gradient `#mv-gradient-v2` over the right half, "MATCH n - GAME n" and
+OF THE GAME / icon titles white, smaller hero near the left edge of the MVP text webm. Elements animate in `MV_V2_ELEMENTS_DELAY_MS` (1000ms) after the trigger (webm restarted then; CSS `mvV2*` keyframes).
+V2 default CSS is `!important` (V1's saved `#mv-hero-img` override is `!important` too); V2 Edit rows (`mplfs_mvp_v2`, `MV2_*` in dashboard.html) save under `html #mvp-page.mv-v2 <id>` so they win and never touch V1.
+V2 hero reuses V1's saved Feather/Intensity. `mplfs_mvp`'s showFn is now `showMvpSceneV1` (forces V1 in the Edit preview). Needs a server restart (`VALID_FEATURES`, `lib/state.js`); no `KNOWN_EVENTS` change.
 
 ### Team Hexagon — playoffs "V3" layout (mplfs.html, `data-theme="playoffs"` only)
 
@@ -1009,6 +1018,27 @@ bottom (y 218) and the SHOW STARTS IN label (y 806): top 370 (285px block, ~151p
 leaning ~19px across the box), so the logo slots are centred on their mid-height centre (x 165.5 left / 404.5 right: slot `left` 100 / 339, width 131) and logos are 96x96 —
 bigger/straighter logos poked into the gold (ONIC did at 122x108, centred ~7px too far right). Regular / 10th Anniversary rules are unchanged.
 
+### Team Line-Up Blue/Red + Waiting Lobby — WebP photos, and where the CPU actually goes
+
+Team Line-Up (`luApplyPlayers`, helper `luSetPhoto`) and Waiting Lobby's photo swap use the existing full-size WebP set (`hires/<POSE>_web/<ign>_<POSE>.webp`, ~60 KB, via `hiresWebUrl()`),
+falling back to the PNG if a copy is missing (`wlPhotoUrl` itself is unchanged: Team Hexagon also uses it). Measured (headless trace, playoffs theme) with the Team Line-Up showing and idle:
+**photos/layers cost ~0**; the steady CPU/GPU load was two full-screen 1080p@60 VP9 videos — the shared background `playoffsbg_theme.webm` (~190 ms/s) and the lineup page's own
+`SHAPES CORNER_1920x1080.webm` (~150 ms/s). **The corner-shapes overlay (`PoShapes`, Waiting Lobby / Team Line-Up / MVP Scene) was REMOVED entirely** (code + calls; the .webm is still on disk in `assets/z_playoffs background/`, unused). The per-team intro webms (9-24 MB) and the stinger only run in Phase 0. No ffmpeg on this machine, so those videos cannot be re-encoded here.
+
+### Team Line-Up Blue/Red playoffs layout — players stand on the bottom edge
+
+The five player boxes (`.lu-player-N`, `mplfs::playoffs` bucket) are placed with `top = 1080 - height` (230 / 230 / 180 / 230 / 230 for sizes 850 / 850 / 900 / 850 / 850): the hires photos' art reaches the bottom
+of its box, so every player touches the screen's bottom edge. Name tags (`.lu-nametag-N`) were shifted by the same per-slot amount (+53 / +59 / +49 / +54 / +52) and the secondary-role tags follow them.
+`playoffs_bottomfeather.png` (the white fade whose solid band covered y 1004-1080) is `display:none` in the playoffs theme. The team-logo box (`.lu-po-logobox`, bottom centre) is unchanged.
+If you change a player box size in the Edit tab, keep top + height = 1080 or a gap reappears.
+
+### Post 4 Key — playoffs taller photo container (+120px)
+
+Playoffs only: `.p4k-photo-box` is 416x536 (was 416), cards are 416x629 (was 509), and everything under the photo moved down 120px (`.p4k-crop`/`.p4k-name-box` top 477, `.p4k-stat-box` 525, `.p4k-value-box` 524) —
+seeded in the `mplfs::playoffs` bucket of `overlay_styles.json` (Regular / 10th Anniversary buckets untouched, still 509). The card art `bigfour*.png` (416x509) has no taller version, so `p4kExtendedArt` extends it on a canvas at
+show time (marble above the band stretched by 120px; band 357-405 + stat panel stay pixel-exact), also for the Visa layer; `p4kApplyCard` returns a promise `fetchPost4KeyData` awaits. Deal-in and FRONT->pose animations are
+unchanged (they act on the box/card, which just got bigger; the crop clip is computed in `p4kApplyCrop`). Bottom of a card is now y=1002 (the baked "LAKAS NG PINAS" text in playoffsbg_theme.webm starts at y≈1034, leaving ~32px).
+
 ### Post 4 Key — playoffs phase-2 photo (mplfs.html, `p4kApplyCard`)
 
 Under `data-theme="playoffs"` the card's phase-2 (`.p4k-photo-sig`) image is the B&W crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp`
@@ -1017,6 +1047,14 @@ signature portrait; a player with no crop falls back to the signature portrait. 
 timing are unchanged. Read at card-fill time, so a theme switch applies on the next show. The crop gets Team Hexagon's look (grayscale +
 contrast, plus a team-colour corner-gradient `screen` overlay `.p4k-photo-tint`, blue/red by camp) — copies of the `.th-player-tint`
 gradients, shown only while `.p4k-bnw` is set (not for the signature fallback) and faded in with `.p4k-posed`.
+
+### Playoffs kill events — updated webms + overlay sponsors (mploverlay_v7, `overlay-killevents.js`)
+
+`assets/ingame/playoffs/motion/*.webm` are the "updated" set (the previous ones are in `motion/old/`; `motion/updated/` is the delivery folder, same files). The updated webms have NO baked sponsor; the previous ones had Smart
+(Double Kill, Turtle Slain: 177x50 at 1204,804) and Visa (Triple Kill: 136x44 at 1225,817) painted above the bar's right end from ~0.4s to ~3.0s. Playoffs now shows them via the normal sponsor element
+(`KILL_EVENT_SPONSOR_LOGO`: doublekill + turtleslain = Smart, triplekill = Visa white; `killEventSponsorLogo` no longer returns null for playoffs). The `mploverlay_v7::playoffs` bucket box
+`#kill-event-sponsor-logo-clip` = 1202,778 182x102 (sized so the Smart pill lands on its old 177x50 spot — the PNGs are full 1920x1080 canvases with transparent margins); `killEventApplySponsorFit` shrinks/offsets the Visa
+image inside that box (inline %) so it lands on its old 136x44. The logo pops in with the player popup (300ms in, out at the playoffs pop-out time) instead of riding the video's own timing.
 
 ### Final Team logo (mplfs.html `#ft-mpl-logo`)
 
@@ -1048,7 +1086,10 @@ A NEW sponsor loop must use these two calls or it will restart at #1 again.
 The four white corner-HUD lines were removed (strip only: timer, sponsor loop, 2 players + name plates, match box). It has the playoffs **SUPERFAN ticker** carried over from
 Waiting TVC (`#l3l-superfan`, 899x51 at left 12 / top 788 (above the timer panel, just above the strip); same `superfanrunner.png` art, fixed "MPL PH SUPERFAN CITY" label + scrolling text from the
 Dynamic tab's Superfan Ticker field via `/api/dynamic-content`, `applySuperfan()` = mplfs.html's `applyWsSuperfan`). It is z 9 — in FRONT of the player photos (behind them a head
-hid the label) — and slides/fades in with the strip (`.l3l-in`). Edit-tab row: group "L3 Lobby Superfan" in `mpltag_l3lobby` — left/top/**width**: the fixed 899x51 `.l3l-sf-inner` is scaled to width/899 (`fitSuperfan`, ResizeObserver) and the box height follows, so the whole ticker resizes uniformly.
+hid the label) — and slides/fades in with the strip (`.l3l-in`). **Swap stutter fix (vMix):** the player swap used to load + decode two ~1 MB 1000x1000 PNGs (`hires/LEFT|RIGHT`) at the same instant and start fading before they were decoded, which froze the whole strip in vMix's
+embedded browser (not reproducible in a normal browser). Now: overlay-only 640x640 WebP copies in `hires_l3/LEFT|RIGHT/<ign>_LEFT|RIGHT.webp` (~55 KB; falls back to the original PNG on error — **a NEW player
+photo needs a `hires_l3` copy too, or it silently uses the heavy PNG**), `preloadLineup()` pre-decodes the lineup in the background, the fade-in waits for `img.decode()`, red swaps 140 ms after blue, `.l3l-player` has
+`contain: layout style`, photo layers `will-change: opacity, transform`. Biggest remaining steady cost = the 1920x1080 `playoffsbg_theme.webm` of which only the bottom 227px strip is visible. Edit-tab row: group "L3 Lobby Superfan" in `mpltag_l3lobby` — left/top/**width**: the fixed 899x51 `.l3l-sf-inner` is scaled to width/899 (`fitSuperfan`, ResizeObserver) and the box height follows, so the whole ticker resizes uniformly.
 
 ### Gold Graph Check header — playoffs gold title bar
 
@@ -1057,6 +1098,14 @@ gold (#f3d067 -> #d0a43e vertical, original shading kept; recoloured neutral pix
 tricode slants are untouched). Picked by theme in `overlay-goldgraphcheck.js` at build time (a theme switch applies on the next reload,
 like every v7 panel). The title's sheen (Gold Graph + Live Win Rate, all themes) is a highlight clipped to the letters (`background-clip:text`, `*-text-sheen`),
 not a band across the title box. **Live Win Rate** (`overlay-livewinrate.js`) shares the same art and picks it the same way. Regenerated with a canvas recolour script, not hand-drawn — if the Regular art changes, redo it.
+
+### Gold Graph Check + Live Win Rate — static time checkpoints
+
+The chart's time stamps are FIXED game minutes, no longer 5 marks stretched across however long the game has run: **2, 5, 8, 12, 15 min, then +3 each (18, 21, 24 ...)**
+(`ggcMarkMinute` / `lwrMarkMinute`; `GGC_FIXED_MARKS` / `LWR_FIXED_MARKS` = 24 persistent groups, enough to ~72 min). A checkpoint is drawn only once the game has reached it
+(`minute*60 <= duration`). The LAST group (`*_MARK_COUNT - 1`) is the live "now" point: dot + number only (no gridline / time box / time label), so the current value still matches the
+scoreboard/HUD; a checkpoint within 46px of it yields its dot+number to it. The 0:00 mark is gone. The chart x-axis is still 0 -> now. 3-minute spacing leaves boxes (63px) touching
+above ~45 min of game time.
 
 ### Live Win Rate (`html/js/overlay-livewinrate.js`, mploverlay_v7, checkOverlays key `livewinrate`)
 
@@ -2129,3 +2178,75 @@ file.js` (parse-only, no execution) is safer than `node -e
 "require(...)"` for a quick syntax check of a `lib/`/`routes/` file
 that starts intervals/pollers at require-time (e.g. `lib/pollers.js`) —
 `require`-ing it for real hangs the process on those timers.
+
+### Bracket pose moves (mplfs.html) — vMix frame-skip notes
+
+While the bracket is OFF its base pose (`brApplyPose`, `brAnimActive`) the trophy video and the playoffs sponsor loop are stopped once their
+fade-out ends (`brTrophyPoseSync`, `brSponsorPoseSync`; resumed on return to base, flags reset in show/hide), and `#br-trophy`, `#br-header`,
+`#br-sponsor` have `will-change: opacity` so their fades don't repaint the tilting container. Measured at 20x CPU throttle in headless Edge
+(can't reproduce vMix itself): gpu ~1000 -> ~790ms, video decode ~1080 -> ~850ms, main ~6.8 -> ~6.1s; >25ms frames per move barely changed
+(still ~15-20 on leave/return of base). Remaining suspect: the bg video crossfade (`bracket` <-> `bracket_anim`, a cold 1080p webm) at the
+moment the pose leaves/returns base — not changed because delaying/pre-warming it alters visual timing.
+
+### Post H2H — playoffs phase-2 photo (mplfs.html, `p2hApplyCard`)
+
+Same treatment as Post 4 Key: under `data-theme="playoffs"` the card's phase-2 image (`.p2h-photo-sig`) is the B&W crop `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp`
+(`thBnwUrl`, TRI = the camp's `team_simple_name`), greyscale + a team-colour corner tint (`.p2h-photo-tint`, blue = home / red = away, copies of the `.p4k-photo-tint` gradients,
+screen blend) that fades in with the `.p2h-posed` crossfade. `.p2h-bnw` on `.p2h-photo-box` is only set while the crop is used; a player with no crop falls back to the signature
+portrait with no grey/tint. Front->pose button, bounce and timing unchanged. Read at card-fill time (next Show after a theme switch). Verified in a headless preview (filter + tint opacity 1 once posed).
+
+### Bracket — eliminated teams + winner path glow (mplfs.html, `brApplyData`)
+
+A series counts as decided when a side reaches the wins its stage title's "BOn" needs (`brWinsNeeded`: BO5 -> 3, BO7 -> 4, none -> BO5). Loser: all four pieces of its slot get `.br-defeated`
+(`grayscale(1) brightness(.5)`, eased 600ms; static filter on purpose). Winner: its path over `bracket_lines.png` glows (`.br-glow-on`, clipped copies of the lines art per `BR_PATHS`, coordinates measured off the art, gold
+drop-shadow bloom, opacity-only pulse — never animate the filter, the plane is 3D-tilted). Only the drawn winner connectors glow (M1/M2->M3/M4, M3/M4->M5, M6->M7, M5/M7->M8); loser paths aren't on the art. Merely leading
+keeps the old `*_win` cell art, no glow/dim. Live: rides the existing bracket `data` SSE refresh. No server change.
+
+### Bracket return-to-base hitch — `showSceneVideo` no longer re-assigns an unchanged src
+
+Measured (headless Edge over raw CDP, `Emulation.setCPUThrottlingRate` 20, rAF gap logger, 3 runs of off-base -> base 800ms): the `bracket_anim` <-> `bracket` background swap was the one controllable cost (no-swap
+variant ~halved the slow frames). Cause: `showSceneVideo` set `nextEl.src = src` every swap, restarting resource selection (cold demux + VP9 decoder init) even when that paused layer still held the file. It now skips the
+assignment when `getAttribute('src')` already equals it, so after the first leave-base the return swap is just rewind+play. Measured slow frames (>=33ms) per move ~11-12 -> ~7-10 (noisy). Tried and NOT better: delaying
+the bg swap to the end of the move (hitch just moves there), deferring trophy play / sponsor loop start to the move end, removing the new defeated/glow layers (they cost nothing). The rest is the 3D plane move itself
+in a throttled headless browser (can't reproduce vMix). **Measurement gotcha:** orphaned headless Edge processes from earlier failed harness runs starve the CPU and the server (6-connection cap) and fake a huge
+stutter — kill leftovers (`msedge` with the harness `--user-data-dir`) before trusting numbers.
+
+### Bracket — background first, then tilt (playoffs, leaving the base pose)
+
+`brApplyPose` now starts the 3D move `BR_BG_LEAD_MS` (550ms) AFTER the background crossfade (+ trophy/header/sponsor fades) when the bracket leaves its base pose under the playoffs theme (`leavingBase`), so the
+full-screen fade and the tilt never overlap. **Return to base is mirrored:** the tilt goes back first (theme background, no trophy/header/sponsor until it lands), then `surround()` (background crossfade + trophy/header/sponsor fades + their syncs) runs `durMs + 60`ms later (`brRestoreTimer`). Angle -> angle, live slider edits (durMs 0) and other themes move immediately. `brMoveTimer` is cleared by every `brApplyPose` and by hide. Verified: bg swaps at
+t+200ms, transform unchanged until ~550ms, angle->angle immediate. Adds ~0.55s of lead to the first Show-again step.
+
+### Bracket (playoffs) — one constant background + a header webm that does the fading
+
+The playoffs bracket background is now `playoffsbg_theme.webm` at ALL times (`SCENE_VIDEO_SRC_BY_THEME.playoffs.bracket`; `bracket_anim` is the same file, so `brSyncBg` never swaps — no more full-screen crossfade).
+`#br-header-bg` (`HEADER BG_1920x250.webm`, playoffs only, flush top-left at 0,0, outside the tilting container, behind `#br-header`) is the layer that fades: opacity = base ? 1 : 0 (500ms) from `brApplyPose`'s `surround()` along
+with trophy/header/sponsor, played on base and paused ~560ms after fading out (`brHeaderBgSync`). `playoffsbg_waiting.webm` is no longer used by the bracket (still used by Waiting/Lobby/Schedules).
+
+### Bracket pre-warming the background videos was tried and REVERTED
+
+Prefetching both bracket background webms (detached `preload=auto` videos) made the 20x-throttle run much worse (103 slow frames vs 46, worst 467ms) — don't re-add it.
+
+## Handoff — state at the end of the vMix-optimization / playoffs session (read first in a fresh chat)
+
+**Nothing is committed** (git status was dirty before this work too; `hires_l3/` is untracked). Don't commit unless asked.
+
+**Server restart still pending (ask the user first — it's their terminal):** `routes/overlay.js` + `lib/state.js` (`heatmappage` show/hide + state key; playoffs per-day highlight cycle; `lordadv`/`skypiercer`/`led_*` `VALID_FEATURES`),
+`routes/devapi.js` (`superfan_text`, `/api/heatmap-style`, `/api/winrate-proxy`), `routes/proxy.js`, `routes/led.js`. HTML-only changes (everything else in this session) need no restart.
+`OVERLAY_WORKER_VERSION` is currently 38 (worker auto-recreates a dead EventSource); bump it again whenever `overlay-shared-worker.js` changes.
+
+**vMix perf lessons (headless Edge can't reproduce vMix; measure under `Emulation.setCPUThrottlingRate` ~20x with Tracing + a rAF gap logger):**
+- Cheap: compositor-only animation (transform/opacity), `will-change` own layers, canvas pre-paint, WebP copies with PNG fallback, `img.decode()` before a fade, staggered swaps, pausing hidden videos.
+- Expensive: full-screen 1080p60 VP9 loops (dominant idle cost), big PNG decode at swap time, animated SVG `d` / mask / clip-path / filter, anything repainting the big tilting container.
+- Always A/B: a "plausible" optimisation can make it worse (bracket background pre-warm: 46 -> 103 slow frames). Revert what doesn't measure better.
+- No ffmpeg on this machine, so videos can't be re-encoded/cropped here (installing needs the user's OK).
+
+**Open / offered but not requested:**
+- Bracket: only remaining lever is delaying the `bracket` <-> `bracket_anim` background swap until the pose move ends (changes visible timing) — user hasn't chosen it.
+- L3 Lobby: background video re-cut/crop (needs ffmpeg); optionally use existing `hires/*_web` instead of `hires_l3`.
+- webp copies of Team Line-Up group/bg PNGs; Final Team plain-logo for Regular/10th Anniversary (currently playoffs only).
+- A NEW player needs a `hires_l3` WebP copy (L3 Lobby) and a `photos/Dynamic/3_CROPPED BNW/<TRI>_<ign>.webp` crop (Team Hexagon, Post 4 Key, Post H2H) or it silently falls back.
+
+**Scratch test harness pattern** (scripts live in the session scratchpad, not the repo, so recreate): spawn headless Edge with `--remote-debugging-port`, open a tab over raw CDP WebSocket, `Page.navigate` to
+`http://localhost:3000/html/mplfs.html?preview=1`, drive with `window.previewTrigger('<sse event>','show'|'hide')`, read DOM/computed style back. Gotcha: never `await` a `Runtime.evaluate` that itself sets
+`location.href` (it hangs) — wrap in `setTimeout(...,10);1`.

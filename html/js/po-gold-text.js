@@ -182,47 +182,5 @@
     schedule();
   }
 
-  /* ── Playoffs corner-shapes overlay ──────────────────────────────────
-     SHAPES CORNER_1920x1080.webm (alpha, animated accent in the lower-right
-     of the canvas) laid over the player photos of Waiting Lobby, Team Line-Up
-     blue/red and MVP Scene. One full-canvas <video> per page, z-index chosen
-     per page so it sits above the photos but under the name plates / UI.
-     Hidden (display:none) under every other theme, so the src is only fetched
-     — and the video only decodes — while a playoffs scene is actually on
-     screen (IntersectionObserver); it restarts from 0 each time its scene
-     appears so the animation's intro lines up with the scene's own. */
-  var SHAPES_SRC = '/assets/z_playoffs background/SHAPES CORNER_1920x1080.webm';
-  var shapesIO = ('IntersectionObserver' in window) ? new IntersectionObserver(function (entries) {
-    entries.forEach(function (en) {
-      var v = en.target;
-      if (en.isIntersecting) {
-        if (!v.getAttribute('src')) v.src = SHAPES_SRC;
-        v.currentTime = 0;
-        v.play().catch(function () {});
-      } else {
-        v.pause();
-      }
-    });
-  }) : null;
-  var shapesCss = document.createElement('style');
-  shapesCss.textContent =
-    '.po-shapes{display:none;position:absolute;left:0;top:0;width:1920px;height:1080px;pointer-events:none;}' +
-    '[data-theme="playoffs"] .po-shapes{display:block;}';
-  document.head.appendChild(shapesCss);
-
-  /* page: the scene's 1920x1080 container. z: stacking tier (above that
-     scene's photos, below its name plates). before: optional sibling to
-     insert in front of (DOM order breaks z-index ties). */
-  function cornerShapes(page, z, before) {
-    if (!page || page.querySelector(':scope > .po-shapes')) return;
-    var v = document.createElement('video');
-    v.className = 'po-shapes';
-    v.muted = true; v.loop = true; v.playsInline = true; v.preload = 'auto';
-    v.style.zIndex = String(z);
-    if (before && before.parentNode === page) page.insertBefore(v, before); else page.appendChild(v);
-    if (shapesIO) shapesIO.observe(v);
-  }
-
-  window.PoShapes = { attach: cornerShapes };
   window.PoGoldText = { imageHeader: imageHeader, textTitle: textTitle };
 })();

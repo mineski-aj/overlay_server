@@ -793,11 +793,11 @@
     #l3l-sponsor-loop img.spon-out { transform: translateX(110%); transition: transform 0.35s cubic-bezier(0.4, 0, 1, 1); }
 
     /* Player photos: same two stacked layers per side + JS-driven cross-fade/glide as Waiting Lobby. */
-    .l3l-player { position: absolute; top: 770px; width: 520px; height: 520px; z-index: 4; }
+    .l3l-player { position: absolute; top: 770px; width: 520px; height: 520px; z-index: 4; contain: layout style; }   /* swap-time style/layout work stays inside the player box */
     .l3l-player-blue { left: 627px; }
     .l3l-player-red  { left: 1520px; }
     .l3l-player-photo { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
-      object-position: 50% 0%; display: block; opacity: 0; }
+      object-position: 50% 0%; display: block; opacity: 0; will-change: opacity, transform; }
 
     /* Name plates: Waiting Lobby's 347x62 art scaled to 192x34 (team logo in the white square, name slides like WL). */
     .l3l-namebox { position: absolute; top: 1027px; width: 347px; height: 62px; z-index: 8;
@@ -2754,9 +2754,36 @@
   }
 
   /* ── player rotation (Waiting Lobby's exact photo + name animation) ── */
+  /* Perf (vMix): the originals are 1000x1000 PNGs (~1 MB each) and a swap loads + decodes TWO of them at once (blue + red) while the video
+     background / ticker / sponsor loop run — that stalled the whole page in vMix's embedded browser. Overlay-only 640x640 WebP copies live in
+     /hires_l3/ (~55 KB, same framing, 5x fewer pixels to decode); if one is missing the original PNG is used. */
   function photoUrl(ign, side) {
     var f = side === 'blue' ? 'LEFT' : 'RIGHT';
+    return '/hires_l3/' + f + '/' + encodeURIComponent(ign + '_' + f + '.webp');
+  }
+  function photoUrlOriginal(ign, side) {
+    var f = side === 'blue' ? 'LEFT' : 'RIGHT';
     return '/hires/' + f + '/' + encodeURIComponent(ign + '_' + f + '.png');
+  }
+  /* Pre-load + pre-decode the whole lineup in the background, one photo at a time with gaps, so by the time a player's turn comes the image is
+     already in the cache and decoded (decode() runs off the main thread). Holds the Image objects so they stay cached. */
+  var photoPre = {}, prePending = [], preTimer = null;
+  function preloadLineup() {
+    prePending = [];
+    ['blue', 'red'].forEach(function (sd) {
+      (lineups[sd] || []).forEach(function (p) { if (p && p.ign) prePending.push({ ign: p.ign, side: sd }); });
+    });
+    clearTimeout(preTimer);
+    (function next() {
+      var job = prePending.shift();
+      if (!job) return;
+      var url = photoUrl(job.ign, job.side);
+      if (photoPre[url]) { preTimer = setTimeout(next, 0); return; }
+      var im = new Image(); im.decoding = 'async'; photoPre[url] = im;
+      im.onerror = function () { var o = new Image(); o.decoding = 'async'; o.src = photoUrlOriginal(job.ign, job.side); photoPre[url] = o; };
+      im.src = url;
+      (im.decode ? im.decode() : Promise.resolve()).catch(function () {}).then(function () { preTimer = setTimeout(next, 120); });
+    })();
   }
   function roleFile(role) {
     var r = (role || '').toLowerCase();
@@ -2786,23 +2813,32 @@
     var curEl = document.getElementById('l3l-' + side + '-photo-' + cur);
     var nextEl = document.getElementById('l3l-' + side + '-photo-' + next);
     var startX = side === 'blue' ? -60 : 60, failed = false;
-    nextEl.onerror = function () { nextEl.onerror = null; failed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+    var triedOriginal = false;
+    nextEl.onerror = function () {
+      if (!triedOriginal && ign) { triedOriginal = true; nextEl.src = photoUrlOriginal(ign, side); return; }   // no small copy -> original PNG
+      nextEl.onerror = null; failed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0';
+    };
     nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; nextEl.style.transform = 'translateX(' + startX + 'px)';
     if (ign) nextEl.src = photoUrl(ign, side); else nextEl.removeAttribute('src');
     void nextEl.offsetWidth;
     curEl.style.transition = 'opacity ' + FADE_OUT + 'ms ease';
     curEl.style.opacity = '0';
-    setTimeout(function () {
+    /* Fade the new photo in only after it is DECODED (async, off the main thread) as well as after the old one has faded out — starting the
+       transition on an image that still has to decode is what made the frame hitch. Wait is capped so a slow/broken load can't hold it forever. */
+    var decoded = (ign && nextEl.decode) ? Promise.race([nextEl.decode().catch(function () {}), new Promise(function (r) { setTimeout(r, 1500); })]) : Promise.resolve();
+    Promise.all([new Promise(function (r) { setTimeout(r, FADE_OUT); }), decoded]).then(function () {
       if (!ign || failed || !on) return;
       nextEl.style.transition = 'opacity ' + FADE_IN + 'ms cubic-bezier(0.16,1,0.3,1), transform ' + MOVE_IN + 'ms cubic-bezier(0.16,1,0.3,1)';
       nextEl.style.opacity = '1'; nextEl.style.transform = 'translateX(0)';
-    }, FADE_OUT);
+    });
     photoLayer[side] = next;
   }
   function showPlayers() {
     var b = lineups.blue, r = lineups.red;
-    applyPlayer('blue', b[playerIdx % (b.length || 1)]);
-    applyPlayer('red',  r[playerIdx % (r.length || 1)]);
+    var bp = b[playerIdx % (b.length || 1)], rp = r[playerIdx % (r.length || 1)];
+    applyPlayer('blue', bp);
+    /* red follows 140 ms later: two simultaneous photo swaps (decode + layer upload + forced reflows) landed in one frame in vMix's browser */
+    setTimeout(function () { if (on) applyPlayer('red', rp); }, 140);
   }
   /* playersStarted: the first photo must fade in exactly once per show. applyState() (fresh lineup => startPlayers) runs
      while the strip is still opening, and the 700ms intro timer below would start them AGAIN — the first photo then faded
@@ -2831,7 +2867,7 @@
     lineups.red  = (ms.away && ms.away.lineup) || [];
     var key = JSON.stringify([lineups.blue.map(function (p) { return p.ign + '|' + p.role; }), lineups.red.map(function (p) { return p.ign + '|' + p.role; }),
                               ms.home && ms.home.short, ms.away && ms.away.short]);
-    if (restartPlayers || key !== lineupKey) { lineupKey = key; if (on && !introHold) startPlayers(); }
+    if (restartPlayers || key !== lineupKey) { lineupKey = key; preloadLineup(); if (on && !introHold) startPlayers(); }
   }
   function fetchState() {
     return fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });

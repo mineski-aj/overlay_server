@@ -1327,8 +1327,8 @@
     /* Bracket: same spot as Waiting TVC/Lobby's sponsor box. Lives on
        #bracket-page itself (not inside the tilting #bracket-container) so
        the 3D pose never moves it. Playoffs only. */
-    #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; transition: opacity 400ms ease; }
-    [data-theme="playoffs"] #br-sponsor { display: block; left: 1562px; }
+    #br-sponsor { display: none; position: absolute; left: 1520px; top: 78px; width: 340px; height: 94px; pointer-events: none; transition: opacity 400ms ease; will-change: opacity; }
+    [data-theme="playoffs"] #br-sponsor { display: block; left: 1562px; top: 65px; } /* vertically centred in the 250px header band (120px box) */
     [data-theme="playoffs"] #ts-sponsor { display: block; left: 1534px; top: 78px; }
     #wl-timer {
       position: absolute;
@@ -2361,6 +2361,46 @@
     #mv-gpm { left: 1312px; width: 134px; }
     #mv-kp  { left: 1555px; width: 204px; }
 
+    /* ── MVP SCENE V2 (state.featureToggles.mvp_v2; dashboard V1/V2 button on the MVP Scene row) ──
+       Meant to sit over the LIVE camera: no background video, no signature photo (the player's real face
+       shows through the empty left half), a black gradient on the right half to lift the text off the camera.
+       All rules are scoped to #mvp-page.mv-v2 so V1 (and every theme) is untouched. The V2 defaults are
+       !important on purpose — V1's saved Edit-tab overrides on the plain ids (e.g. #mv-hero-img, huge and
+       off-canvas) are !important too and would otherwise win; the V2 Edit rows save under
+       "html #mvp-page.mv-v2 <id>" (one element-selector more specific), so they beat these defaults. */
+    #mv-gradient-v2 {
+      display: none; position: absolute; left: 960px; top: 0; width: 960px; height: 1080px; z-index: 9;
+      pointer-events: none;
+      background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.72) 45%, rgba(0,0,0,0.88) 100%);
+    }
+    #mvp-page.mv-v2 #mv-gradient-v2 { display: block; }
+    #mvp-page.mv-v2 #mv-photo,
+    #mvp-page.mv-v2 #mv-po-herofronter,
+    #mvp-page.mv-v2 #mv-title-anniv-bg { display: none !important; }
+    #mvp-page.mv-v2 #mv-hero-img { left: 860px !important; top: 90px !important; width: 560px !important; height: 560px !important; }
+    #mvp-page.mv-v2 #mv-matchbox-game,
+    #mvp-page.mv-v2 #mv-po-matchgame,
+    #mvp-page.mv-v2 #mv-ofthegame { color: #fff; opacity: 1; }
+    #mvp-page.mv-v2 .mv-icon-title { color: #0a0a0a; } /* SPELL / EMBLEM / IN-GAME EQUIPMENTS stay black */
+    /* The page itself does not fade in (the elements animate in individually, below); fading OUT still uses
+       #mvp-page's normal 400ms transition because this rule stops matching when .mv-visible is removed. */
+    #mvp-page.mv-v2.mv-visible { transition: none; }
+    @keyframes mvV2FadeIn  { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes mvV2SlideIn { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
+    @keyframes mvV2RiseIn  { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: none; } }
+    #mvp-page.mv-v2.mv-visible #mv-gradient-v2,
+    #mvp-page.mv-v2.mv-visible #mv-box-bg    { animation: mvV2FadeIn 700ms ease both; }
+    #mvp-page.mv-v2.mv-visible #mv-hero-img  { animation: mvV2FadeIn 600ms ease 100ms both; }
+    #mvp-page.mv-v2.mv-visible #mv-ofthegame,
+    #mvp-page.mv-v2.mv-visible #mv-matchbox,
+    #mvp-page.mv-v2.mv-visible #mv-po-matchgame,
+    #mvp-page.mv-v2.mv-visible #mv-stats-back,
+    #mvp-page.mv-v2.mv-visible .mv-icon-title,
+    #mvp-page.mv-v2.mv-visible #mv-spell,
+    #mvp-page.mv-v2.mv-visible .mv-rune,
+    #mvp-page.mv-v2.mv-visible .mv-item      { animation: mvV2SlideIn 600ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms both; }
+    #mvp-page.mv-v2.mv-visible #mv-backer    { animation: mvV2RiseIn 650ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both; }
+
     /* ── FINAL TEAM PAGE ── */
     #final-team-page {
       position: absolute;
@@ -3166,10 +3206,8 @@
     [data-theme="playoffs"] .lu-teambar-season,
     [data-theme="playoffs"] .lu-teambar-match { display: none; }
     [data-theme="playoffs"] .lu-photo { -webkit-mask-image: none; mask-image: none; }
-    [data-theme="playoffs"] .lu-po-feather {
-      display: block; position: absolute; left: 0; top: 789px; width: 1920px; height: 291px; z-index: 8;
-      pointer-events: none;
-    }
+    /* The white bottom feather is retired: the players now stand on the bottom edge of the screen (their boxes end at y=1080), so there is no white band to cover. */
+    [data-theme="playoffs"] .lu-po-feather { display: none; }
     [data-theme="playoffs"] .lu-po-logobox {
       display: block; position: absolute; left: 844px; top: 843px; width: 237px; height: 237px; z-index: 10;
     }
@@ -4806,6 +4844,9 @@
       opacity: 0;
       transition: opacity 300ms ease;
     }
+    /* Playoffs — photo container is 120px taller, so the card (and its canvas-extended art, see p4kExtendedArt) is 629px. */
+    [data-theme="playoffs"] .p4k-bg { height: 629px; }
+    [data-theme="playoffs"] .p4k-card { height: 629px; }
     .p4k-bg-visa.p4k-bg-visa-in { opacity: 1; }
 
     .p4k-title {
@@ -5558,14 +5599,22 @@
        The mask hides the bottom half and feathers the cut around the midpoint. */
     #br-trophy {
       transition: opacity 500ms ease; /* fades out off the base pose (skewed looks wrong), back in on return */
+      will-change: opacity;           /* own layer: its fade must not repaint the whole 1920x1080 tilting plane */
       position: absolute; left: 1334px; top: 228px; width: 638px; height: 638px; display: block;
       /* feather in px (not %) so it stays at the same spot on the canvas (y 504-599) when the size changes */
       -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
               mask-image: linear-gradient(to bottom, #000 0%, #000 276px, transparent 371px);
     }
+    /* Playoffs: header band webm, flush to the top of the canvas (1920x250), on top of the always-running background loop.
+       It is the piece that fades out when the bracket leaves its base pose and back in on return; outside the tilting container. */
+    #br-header-bg { display: none; }
+    [data-theme="playoffs"] #br-header-bg {
+      display: block; position: absolute; left: 0; top: 0; width: 1920px; height: 250px; object-fit: cover; pointer-events: none;
+      transition: opacity 500ms ease; will-change: opacity;
+    }
     /* Bracket header (S18_Header_bracket.png, same 1028x150 box Waiting TVC's header uses). */
-    #br-header { transition: opacity 500ms ease; } /* fades with the trophy off the base pose */
-    #br-header { position: absolute; left: 40px; top: 80px; width: 1028px; height: 150px; display: block; }
+    #br-header { transition: opacity 500ms ease; will-change: opacity; } /* fades with the trophy off the base pose; own layer, see #br-trophy */
+    #br-header { position: absolute; left: 40px; top: 50px; width: 1028px; height: 150px; display: block; }
     #br-grandfinals { position: absolute; left: 1499px; top: 718px; width: 306px; height: 47px; display: block; }
     .br-cell  { position: absolute; width: 377px; height: 70px; display: block; }
     .br-logo  { position: absolute; width: 53px; height: 53px; object-fit: contain; display: block; }
@@ -5591,6 +5640,20 @@
     }
     .br-name  { color: #fff; }
     .br-score { color: #000; }
+    /* Eliminated team (series decided against it): the whole slot goes grey and 50% darker. Static filter, eased in. */
+    .br-cell, .br-logo, .br-name, .br-score { transition: filter 600ms ease; }
+    .br-defeated { filter: grayscale(1) brightness(0.5); }
+    /* Winner's path along the lines art: a clipped copy of bracket_lines.png (see BR_PATHS) with a gold bloom. The pulse
+       is opacity-only on the wrapper (compositor), never an animated filter — that would repaint the tilting plane. */
+    .br-glow {
+      position: absolute; display: none; pointer-events: none;
+      will-change: opacity;
+      filter: drop-shadow(0 0 3px #ffc21a) drop-shadow(0 0 10px rgba(255, 160, 0, 0.95));
+    }
+    .br-glow img { position: absolute; width: 1920px; height: 1080px; display: block; max-width: none; filter: saturate(2.4) contrast(1.15); }
+    .br-glow.br-glow-on { display: block; animation: br-glow-in 700ms ease-out both, br-glow-pulse 2.6s ease-in-out 700ms infinite; }
+    @keyframes br-glow-in    { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes br-glow-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
 
     /* ── CREDIT REEL PAGE — continuous upward scroll (sponsor logos +
        titles, then cast/crew text). Content lives in CREDIT_REEL_ITEMS
@@ -5914,6 +5977,25 @@
     .p2h-photo-sig   { opacity: 0; }
     .p2h-card.p2h-posed .p2h-photo-front { opacity: 0; transition: opacity 220ms ease; }
     .p2h-card.p2h-posed .p2h-photo-sig   { opacity: 1; transition: opacity 220ms ease; animation: p4k-pose-bounce 380ms ease-out; }
+    /* Playoffs: phase 2 uses the B&W crop with the same grey + team-colour corner tint as Post 4 Key (.p4k-photo-tint) — copies of
+       those gradients; only while .p2h-bnw is set (not for the signature-portrait fallback), faded in with the pose crossfade. */
+    .p2h-photo-tint { display: none; }
+    [data-theme="playoffs"] .p2h-photo-box.p2h-bnw { isolation: isolate; }
+    [data-theme="playoffs"] .p2h-photo-box.p2h-bnw .p2h-photo-sig { filter: grayscale(1) contrast(1.08); }
+    [data-theme="playoffs"] .p2h-photo-box.p2h-bnw .p2h-photo-tint {
+      display: block; position: absolute; inset: 0; z-index: 5; pointer-events: none; mix-blend-mode: screen; opacity: 0;
+    }
+    [data-theme="playoffs"] .p2h-card.p2h-posed .p2h-photo-box.p2h-bnw .p2h-photo-tint { opacity: 1; transition: opacity 220ms ease; }
+    [data-theme="playoffs"] .p2h-photo-box.p2h-tint-blue .p2h-photo-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(10,70,255,0.95) 0%, rgba(0,45,190,0.55) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(0,50,215,0.85) 0%, rgba(0,30,140,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    [data-theme="playoffs"] .p2h-photo-box.p2h-tint-red .p2h-photo-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(215,30,30,0.80) 0%, rgba(140,15,15,0.40) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(235,45,45,0.90) 0%, rgba(150,25,25,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
     .p2h-box {
       position: absolute; left: 0; top: 522px; width: 485px; height: 150px;
       z-index: 42; display: block;
@@ -7361,6 +7443,7 @@
         <div class="p2h-photo-box">
           <img class="p2h-photo-front" id="p2h-photo-front-home" src="" alt="">
           <img class="p2h-photo-sig"   id="p2h-photo-sig-home"   src="" alt="">
+          <div class="p2h-photo-tint"></div>
         </div>
         <img class="p2h-box" src="/assets/PostH2H/PH2HBlue_Box.png" alt="">
         <div class="p2h-logo"><img id="p2h-logo-home" src="" alt="" onerror="this.style.display='none'"></div>
@@ -7386,6 +7469,7 @@
         <div class="p2h-photo-box">
           <img class="p2h-photo-front" id="p2h-photo-front-away" src="" alt="">
           <img class="p2h-photo-sig"   id="p2h-photo-sig-away"   src="" alt="">
+          <div class="p2h-photo-tint"></div>
         </div>
         <img class="p2h-box" src="/assets/PostH2H/PH2HRed_Box.png" alt="">
         <div class="p2h-logo"><img id="p2h-logo-away" src="" alt="" onerror="this.style.display='none'"></div>
@@ -7474,6 +7558,7 @@
       </div>
     </div>
     <div id="mvp-page">
+      <div id="mv-gradient-v2"></div>
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
@@ -7530,6 +7615,7 @@
       </div>
     </div>
     <div id="bracket-page">
+      <video id="br-header-bg" src="/assets/z_playoffs%20background/HEADER%20BG_1920x250.webm" muted loop playsinline preload="auto"></video>
       <div id="bracket-container">
         <video id="br-trophy" src="/assets/bracket/trophybrack_loop.webm" muted loop playsinline preload="auto"></video>
         <img id="bracket-img" src="/assets/bracket/bracket_lines.png" alt="">
@@ -8306,6 +8392,7 @@
           if (d.feature === 'lineupsecrole_blue') luSecroleEnabled.blue = !!d.enabled;
           if (d.feature === 'lineupsecrole_red')  luSecroleEnabled.red  = !!d.enabled;
           if (d.feature === 'credits_v2') crV2Enabled = !!d.enabled;
+          if (d.feature === 'mvp_v2') mvV2Enabled = !!d.enabled;
           if (d.feature === 'lineupv2_blue') luV2Enabled.blue = !!d.enabled;
           if (d.feature === 'lineupv2_red')  luV2Enabled.red  = !!d.enabled;
         } catch {}
@@ -9048,7 +9135,7 @@
       'playoffs': {
         waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         lobby:   '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
-        bracket: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        bracket: '/assets/z_playoffs%20background/playoffsbg_theme.webm', /* same loop as bracket_anim: no background swap, the header webm (#br-header-bg) does the fading */
         bracket_anim: '/assets/z_playoffs%20background/playoffsbg_theme.webm', /* bracket while off its base pose */
         schedule: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
         tomorrow: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
@@ -9218,7 +9305,10 @@
       const handingOff = sceneVideoVisible && curEl.classList.contains('sv-visible');
       svSetVisible(nextEl, false, false);
       svSetClip(nextEl, clipPx);
-      nextEl.src = src;
+      /* Re-assigning the same src restarts resource selection (a cold demux + decoder init on a 1080p VP9 loop — a
+         visible hitch mid-move when the Bracket swaps bracket <-> bracket_anim). A paused layer that still holds this
+         exact file just rewinds and plays. */
+      if (nextEl.getAttribute('src') !== src) nextEl.src = src;
       nextEl.currentTime = 0;
       nextEl.play().catch(() => {});
 
@@ -10072,14 +10162,6 @@
     PoGoldText.textTitle(document.getElementById('hl-title'));
     PoGoldText.textTitle(document.getElementById('hm-title'));
 
-    /* Playoffs corner-shapes overlay on top of the player photos (po-gold-text.js):
-       Waiting Lobby (above the photos z1/2, under the nameboxes z3 — DOM-ordered before them),
-       Team Line-Up blue/red (photos z2-5, nametags z20), MVP Scene (photo z12, UI z13+). */
-    PoShapes.attach(document.getElementById('waiting-lobby-page'), 3, document.querySelector('#waiting-lobby-page .wl-namebox-blue'));
-    PoShapes.attach(document.getElementById('team-lineup-blue-page'), 10);
-    PoShapes.attach(document.getElementById('team-lineup-red-page'), 10);
-    PoShapes.attach(document.getElementById('mvp-page'), 12, document.getElementById('mv-photo').nextSibling);
-
     /* Tomorrow's Schedule title is a sign-off line, not "Tomorrow's
        Matches" — it reads the CURRENT day from the Match Board: Day 3
        means there's no play the next calendar day (next games are next
@@ -10509,6 +10591,11 @@
       const folder = side === 'blue' ? 'LEFT' : 'RIGHT';
       return '/hires/' + folder + '/' + encodeURIComponent(ign + '_' + folder + '.png');
     }
+    /* /hires/<POSE>/<ign>_<POSE>.png -> /hires/<POSE>_web/<ign>_<POSE>.webp (the full-size ~60 KB WebP set from the OPTIMIZE commit, same one the MVP
+       scenes use). Anything not under /hires/<POSE>/ comes back unchanged. Used by Team Line-Up + Waiting Lobby, which fall back to the PNG on error. */
+    function hiresWebUrl(pngUrl) {
+      return String(pngUrl || '').replace(/^\/hires\/(LEFT|RIGHT|SIGNATURE|FRONT|DEFEAT)\/(.+)\.png$/i, '/hires/$1_web/$2.webp');
+    }
 
     function wlApplyPlayer(side, player) {
       const ign  = player && player.ign;
@@ -10543,12 +10630,16 @@
       // tracks a missing file so the fade-in below can skip it — onerror
       // alone isn't enough, since it used to run unconditionally and stomp
       // the hidden state back to visible (showing the broken-image icon).
-      let photoFailed = false;
-      nextEl.onerror = () => { nextEl.onerror = null; photoFailed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0'; };
+      let photoFailed = false, wlOnWeb = true;
+      const wlPng = ign ? wlPhotoUrl(ign, side) : '';
+      nextEl.onerror = () => {
+        if (wlOnWeb && wlPng) { wlOnWeb = false; nextEl.src = wlPng; return; }   // no WebP copy -> original PNG
+        nextEl.onerror = null; photoFailed = true; nextEl.style.transition = 'none'; nextEl.style.opacity = '0';
+      };
       nextEl.style.transition = 'none';
       nextEl.style.opacity = '0';
       nextEl.style.transform = `translateX(${startX}px)`;
-      if (ign) nextEl.src = wlPhotoUrl(ign, side);
+      if (ign) nextEl.src = hiresWebUrl(wlPng);
       else nextEl.removeAttribute('src');
       void nextEl.offsetWidth; // force reflow so the jump above applies before the transition below
 
@@ -11792,8 +11883,12 @@
          later in showMvpScene once .mv-on is applied, same as mvFitName. */
 
       const photoEl = document.getElementById('mv-photo');
-      const photoUrl = hlPhotoUrl(player && player.name);
-      mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
+      if (mvPage.classList.contains('mv-v2')) {
+        photoEl.removeAttribute('src'); /* V2: no signature photo — the live camera shows the player */
+      } else {
+        const photoUrl = hlPhotoUrl(player && player.name);
+        mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
+      }
 
       const spellEl = document.getElementById('mv-spell');
       spellEl.onerror = () => { spellEl.style.visibility = 'hidden'; };
@@ -11848,7 +11943,34 @@
       mvApplyMatchLabel(ms);
     }
 
-    async function showMvpScene() {
+    /* V1/V2 (dashboard: V1/V2 button on the MVP Scene row). mvForce is set only by the Edit tab's per-version
+       previews (showMvpSceneV1/V2); a real Show always follows the toggle. */
+    let mvV2Enabled = false;
+    let mvForce = null;
+    function mvUseV2() { return mvForce === null ? mvV2Enabled : mvForce; }
+    const mvFeaturesReady = fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json()).then(d => { if (d && d.mvp_v2 !== undefined) mvV2Enabled = !!d.mvp_v2; })
+      .catch(() => {});
+    /* V2: the moment the trigger lands the background goes away (scene loops + idle #bg-video, no fade), then
+       the elements animate in this long after the trigger. */
+    const MV_V2_ELEMENTS_DELAY_MS = 1000;
+    function mvBgCut() {
+      ++sceneVideoSwapToken; /* cancel any crossfade still in progress */
+      sceneVideoVisible = false;
+      sceneVideoEls.forEach(el => { svSetVisible(el, false, false); el.pause(); });
+      luBgCut(); /* idle #bg-video -> opacity 0; luBgRestore() brings it back on hide */
+    }
+
+    function showMvpScene()   { mvForce = null;  return mvShowImpl(); }
+    function showMvpSceneV1() { mvForce = false; return mvShowImpl(); }
+    function showMvpSceneV2() { mvForce = true;  return mvShowImpl(); }
+
+    async function mvShowImpl() {
+      await mvFeaturesReady;
+      const v2 = mvUseV2();
+      const t0 = performance.now();
+      mvPage.classList.toggle('mv-v2', v2);
+      if (v2) mvBgCut();
       const dataPromise = hlFetchMvp();
       const msPromise   = mvFetchMatchState();
       await transitionTo('mvp');
@@ -11857,7 +11979,15 @@
       mvApply(hlExtractPlayer(payload), ms);
       await preloadMedia(mvPage.querySelectorAll('img, video'), 1500);
       if (activeFeature !== 'mvp') return; /* superseded while preloading */
-      showSceneVideo('mvp');
+      if (v2) {
+        const wait = MV_V2_ELEMENTS_DELAY_MS - (performance.now() - t0);
+        if (wait > 0) await new Promise(r => setTimeout(r, wait));
+        if (activeFeature !== 'mvp') return; /* superseded during the delay */
+        const bgv = document.getElementById('mv-box-bg');
+        try { bgv.currentTime = 0; bgv.play().catch(() => {}); } catch (e) {} /* MVP text animation starts with the elements */
+      } else {
+        showSceneVideo('mvp');
+      }
       mvPage.classList.add('mv-on');
       mvFitName(document.getElementById('mv-name')); /* now has real layout to measure against */
       mvFeatherHeroImg(document.getElementById('mv-hero-img')); /* ditto — needs real box size */
@@ -11872,6 +12002,7 @@
         setTimeout(() => {
           mvPage.classList.remove('mv-on');
           hideSceneVideo();
+          if (mvPage.classList.contains('mv-v2')) { luBgRestore(); mvPage.classList.remove('mv-v2'); }
           resolve();
         }, 420);
       });
@@ -12078,6 +12209,14 @@
     const brContainer = document.getElementById('bracket-container');
     const brTrophy    = document.getElementById('br-trophy');
     const brHeader    = document.getElementById('br-header');
+    const brHeaderBg  = document.getElementById('br-header-bg');
+    let brHeaderBgTimer = null;
+    /* Header band webm (playoffs): plays while on the base pose; once its fade-out has finished it is paused (no hidden decoding). */
+    function brHeaderBgSync(onBase) {
+      clearTimeout(brHeaderBgTimer);
+      if (onBase) { if (brPage.classList.contains('br-on')) brHeaderBg.play().catch(() => {}); }
+      else brHeaderBgTimer = setTimeout(() => { if (brAnimActive) brHeaderBg.pause(); }, 560);
+    }
 
     /* Base pose = the one the scene fades in at. The trophy only shows there. */
     let brBase = null;
@@ -12088,6 +12227,31 @@
 
     const brSponsorEl = document.getElementById('br-sponsor');
     let brAnimActive = false;
+    /* Perf (vMix): while the bracket is OFF its base pose (zoomed/tilted through the banked poses) the trophy and the sponsor box are invisible
+       (opacity 0) but used to keep working — the trophy's masked alpha video kept decoding and the sponsor loop kept swapping images/text — right in
+       the middle of the 3D move. Now they are stopped once their fade-out has finished and resumed when the base pose returns. */
+    let brTrophyTimer = null, brSponsorTimer = null, brSponsorPausedByPose = false;
+    function brTrophyPoseSync(onBase) {
+      clearTimeout(brTrophyTimer);
+      if (onBase) {
+        brTrophy.style.visibility = '';
+        if (brPage.classList.contains('br-on')) brTrophy.play().catch(() => {});
+      } else {
+        brTrophyTimer = setTimeout(() => { if (brAnimActive) { brTrophy.pause(); brTrophy.style.visibility = 'hidden'; } }, 560);   // after the 500ms fade-out
+      }
+    }
+    function brSponsorPoseSync() {
+      if (document.documentElement.getAttribute('data-theme') !== 'playoffs') return;
+      clearTimeout(brSponsorTimer);
+      if (brAnimActive) {
+        brSponsorTimer = setTimeout(() => {
+          if (brAnimActive && activeFeature === 'bracket' && !brSponsorPausedByPose) { brSponsorLoop.stop(); brSponsorPausedByPose = true; }
+        }, 450);                                                                                      // after the 400ms fade-out
+      } else if (brSponsorPausedByPose) {
+        brSponsorPausedByPose = false;
+        if (activeFeature === 'bracket') brSponsorLoop.start();
+      }
+    }
     function brBgFeature() {
       return (brAnimActive && document.documentElement.getAttribute('data-theme') === 'playoffs') ? 'bracket_anim' : 'bracket';
     }
@@ -12099,21 +12263,53 @@
       showSceneVideo(brBgFeature());
     }
 
+    /* Playoffs, leaving the base pose: the full-screen background crossfade (bracket -> bracket_anim) and the 3D move used
+       to start in the same frame, which stuttered. Now the background (and the trophy/header/sponsor fades) goes first and
+       the tilt starts BR_BG_LEAD_MS later, once the fade has finished. Angle -> angle and return-to-base are unchanged. */
+    const BR_BG_LEAD_MS = 550;
+    let brMoveTimer = null, brRestoreTimer = null;
     function brApplyPose(p, durMs) {
       if (!p) return;
+      const wasAnim = brAnimActive;
       const baseOp = brIsBase(p) ? '1' : '0';
-      brTrophy.style.opacity = baseOp;
-      brHeader.style.opacity = baseOp;
-      /* Playoffs: while the bracket is off its base pose (animating through
-         the banked poses) swap to the theme background and fade the sponsor
-         box out; both revert on returning to the base pose. */
-      brAnimActive = baseOp === '0';
-      brSponsorEl.style.opacity = brAnimActive ? '0' : '1';
-      brSyncBg();
-      brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
-      brContainer.style.transform =
-        `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
-        `rotateX(${p.rx}deg) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) scale(${p.scale})`;
+      /* Everything that changes the look around the move: trophy/header fade, sponsor fade, their video/loop syncs and
+         the background crossfade. */
+      const surround = () => {
+        brTrophy.style.opacity = baseOp;
+        brHeader.style.opacity = baseOp;
+        brHeaderBg.style.opacity = baseOp;
+        /* Playoffs: while the bracket is off its base pose (animating through
+           the banked poses) swap to the theme background and fade the sponsor
+           box out; both revert on returning to the base pose. */
+        brAnimActive = baseOp === '0';
+        brSponsorEl.style.opacity = brAnimActive ? '0' : '1';
+        brTrophyPoseSync(!brAnimActive);
+        brHeaderBgSync(!brAnimActive);
+        brSponsorPoseSync();
+        brSyncBg();
+      };
+      const move = () => {
+        brContainer.style.transition = durMs > 0 ? `transform ${durMs}ms cubic-bezier(0.65, 0, 0.35, 1)` : 'none';
+        brContainer.style.transform =
+          `perspective(${p.persp}px) translate3d(${p.x}px, ${p.y}px, 0) ` +
+          `rotateX(${p.rx}deg) rotateY(${p.ry}deg) rotateZ(${p.rz}deg) scale(${p.scale})`;
+      };
+      clearTimeout(brMoveTimer); clearTimeout(brRestoreTimer);
+      const live = durMs > 0 && activeFeature === 'bracket' && brPage.classList.contains('br-on')
+        && document.documentElement.getAttribute('data-theme') === 'playoffs';
+      if (live && !wasAnim && baseOp === '0') {
+        /* leaving base: background / fades first, tilt after */
+        surround();
+        brMoveTimer = setTimeout(move, BR_BG_LEAD_MS);
+      } else if (live && wasAnim && baseOp === '1') {
+        /* returning to base: tilt back first (the angled look — theme background, no trophy/header/sponsor — stays
+           until it has landed), THEN the background and the elements fade back in */
+        move();
+        brRestoreTimer = setTimeout(surround, durMs + 60);
+      } else {
+        surround();
+        move();
+      }
     }
 
     async function brFetchConfig() {
@@ -12139,11 +12335,54 @@
       8: [[1464, 634], [1464, 781]],
     };
     const BR_FALLBACK_LOGO = '/assets/mpl2026logo.png';
+
+    /* Series result -> visuals. A series is decided once a side has reached the wins a "BOn" in the stage title needs
+       (BO5 -> 3, BO7 -> 4; no BO in the title -> BO5). The WINNER's path along bracket_lines.png glows; the LOSER's whole
+       slot (cell, logo, name, score) is desaturated + dimmed 50% (.br-defeated). Only a finished series counts — a team
+       that is merely ahead keeps the plain "win" cell art it always had. */
+    function brWinsNeeded(title) {
+      const m = String(title || '').match(/(?:\bBO|best of)\s*(\d+)/i);
+      return Math.floor((m ? parseInt(m[1], 10) : 5) / 2) + 1;
+    }
+    /* Winner path pieces over bracket_lines.png (1920x1080), measured off the art (3px lines): [x1, y1, x2, y2] rects.
+       Key = match id + side ('a' = top/blue slot, 'b' = bottom/red slot). Each is that team's stub + the connector it
+       travels to the next round; M3/M4 share the out line to M5 and M5/M7 share the one into M8 (the loser paths are
+       not drawn on the art, and M8 has no outgoing line). */
+    const BR_PATHS = (function () {
+      const M34_OUT = [928, 572, 985, 576];                       /* x930 junction -> M5 */
+      const M58_OUT = [1400, 738, 1464, 744];                     /* x1402 junction -> M8 */
+      return {
+        '1a': [[425, 412, 512, 461]],                '1b': [[425, 455, 512, 503]],
+        '2a': [[425, 645, 512, 692]],                '2b': [[425, 688, 512, 736]],
+        '3a': [[890, 412, 933, 461], [928, 457, 933, 576], M34_OUT], '3b': [[890, 455, 933, 503], [928, 457, 933, 576], M34_OUT],
+        '4a': [[890, 645, 933, 693], [928, 572, 933, 693], M34_OUT], '4b': [[890, 687, 933, 737], [928, 572, 933, 693], M34_OUT],
+        '5a': [[1362, 533, 1405, 577], [1400, 572, 1404, 744], M58_OUT], '5b': [[1362, 571, 1405, 614], [1400, 572, 1404, 744], M58_OUT],
+        '6a': [[890, 918, 977, 966]],                '6b': [[890, 962, 977, 1009]],
+        '7a': [[1362, 919, 1405, 967], [1400, 738, 1404, 967], M58_OUT], '7b': [[1362, 961, 1405, 1010], [1400, 738, 1404, 967], M58_OUT],
+      };
+    })();
+    function brBuildGlows() {
+      const MARGIN = 18; /* room for the drop-shadow bloom */
+      Object.keys(BR_PATHS).forEach(key => {
+        const rects = BR_PATHS[key];
+        const x1 = Math.min(...rects.map(r => r[0])) - MARGIN, y1 = Math.min(...rects.map(r => r[1])) - MARGIN;
+        const x2 = Math.max(...rects.map(r => r[2])) + MARGIN, y2 = Math.max(...rects.map(r => r[3])) + MARGIN;
+        const wrap = document.createElement('div');
+        wrap.id = `br-glow-${key}`; wrap.className = 'br-glow';
+        wrap.style.cssText = `left:${x1}px;top:${y1}px;width:${x2 - x1}px;height:${y2 - y1}px`;
+        const img = document.createElement('img');
+        img.src = '/assets/bracket/bracket_lines.png'; img.alt = '';
+        img.style.cssText = `left:${-x1}px;top:${-y1}px;clip-path:path('${rects.map(r => `M${r[0]} ${r[1]}H${r[2]}V${r[3]}H${r[0]}Z`).join('')}')`;
+        wrap.appendChild(img);
+        brContainer.appendChild(wrap);
+      });
+    }
     /* match id whose stage text it shows -> [left, top, width] */
     const BR_TITLES = { 1: [152, 290, 207], 3: [558, 290, 288], 6: [562, 813, 288],
                         5: [1040, 394, 288], 7: [1041, 813, 288], 8: [1504, 858, 288] };
     function brBuild() {
       let css = '';
+      brBuildGlows(); /* first, so the glow sits above the lines art and below the cells */
       Object.keys(BR_TITLES).forEach(id => {
         const [L, T, W] = BR_TITLES[id];
         const t = document.createElement('div');
@@ -12241,6 +12480,12 @@
           const win = !!tri && mine > other;
           document.getElementById(`${pre}-cell`).src =
             `/assets/bracket/${side === 'a' ? 'blue' : 'red'}brack_${win ? 'win' : 'clean'}.png`;
+          const need = brWinsNeeded(m.title || (res[id] && res[id].title));
+          const wonSeries  = !!tri && mine >= need && mine > other;
+          const lostSeries = !!tri && other >= need && other > mine;
+          ['cell', 'logo', 'name', 'score'].forEach(p => document.getElementById(`${pre}-${p}`).classList.toggle('br-defeated', lostSeries));
+          const glow = document.getElementById(`br-glow-${id}${side}`);
+          if (glow) glow.classList.toggle('br-glow-on', wonSeries);
           const logo = document.getElementById(`${pre}-logo`);
           /* TBD / no team yet / missing logo file -> MPL logo */
           logo.onerror = () => { logo.onerror = null; logo.src = BR_FALLBACK_LOGO; };
@@ -12281,6 +12526,8 @@
       if (activeFeature !== 'bracket') return; /* superseded while preloading */
       showSceneVideo(brBgFeature());
       brTrophy.currentTime = 0; brTrophy.play().catch(() => {});
+      brHeaderBg.currentTime = 0; if (brIsBase(cfg ? cfg.pose : {})) brHeaderBg.play().catch(() => {});
+      brSponsorPausedByPose = false; clearTimeout(brSponsorTimer);
       if (document.documentElement.getAttribute('data-theme') === 'playoffs') brSponsorLoop.start();
       brPage.classList.add('br-on');
       void brPage.offsetWidth; /* force reflow so the opacity transition runs */
@@ -12292,12 +12539,14 @@
 
     function hideBracketScene() {
       activeFeature = null;
+      clearTimeout(brMoveTimer); clearTimeout(brRestoreTimer); clearTimeout(brHeaderBgTimer);
       brSponsorLoop.stop();
+      brSponsorPausedByPose = false; clearTimeout(brSponsorTimer); clearTimeout(brTrophyTimer); brTrophy.style.visibility = '';
       brPage.classList.remove('br-visible');
       return new Promise(resolve => {
         setTimeout(() => {
           brPage.classList.remove('br-on');
-          if (!brPage.classList.contains('br-visible')) brTrophy.pause(); /* skip if re-shown during fade */
+          if (!brPage.classList.contains('br-visible')) { brTrophy.pause(); brHeaderBg.pause(); } /* skip if re-shown during fade */
           hideSceneVideo();
           resolve();
         }, 420);
@@ -12830,12 +13079,15 @@
         const nameEl  = document.getElementById(s.prefix + '-nametag-name-' + n);
         const secRoleImg = document.getElementById(s.prefix + '-secrole-icon-' + n);
 
-        sigEl.onerror = () => { sigEl.style.visibility = 'hidden'; };
-        finalEl.onerror = () => { finalEl.style.visibility = 'hidden'; };
-        sigEl.style.visibility = '';
-        finalEl.style.visibility = '';
-        sigEl.src   = ign ? luPoseUrl(ign, 'SIGNATURE')        : '';
-        finalEl.src = ign ? luPoseUrl(ign, luPoseForSlot(n))   : '';
+        /* WebP copy first (~60 KB vs ~800 KB PNG), PNG if that copy is missing, hidden if neither exists */
+        const luSetPhoto = (el, png) => {
+          let web = !!png;
+          el.onerror = () => { if (web) { web = false; el.src = png; return; } el.style.visibility = 'hidden'; };
+          el.style.visibility = '';
+          el.src = png ? hiresWebUrl(png) : '';
+        };
+        luSetPhoto(sigEl,   ign ? luPoseUrl(ign, 'SIGNATURE')      : '');
+        luSetPhoto(finalEl, ign ? luPoseUrl(ign, luPoseForSlot(n)) : '');
 
         roleImg.style.display = '';
         roleImg.src = role ? '/role/' + encodeURIComponent(roleFile(role)) + '.png' : '';
@@ -14140,7 +14392,8 @@
          off directly (see sceneVideoHandoff). try/finally so the flag can
          never get stuck on — that would make every later hideSceneVideo a
          no-op. */
-      const startsOwnBg = !!SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature);
+      const startsOwnBg = !!SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature)
+        && !(newFeature === 'mvp' && mvUseV2()); /* MVP V2 has no background at all */
       sceneVideoHandoff = startsOwnBg;
       try { await transitionTeardown(newFeature); } finally { sceneVideoHandoff = false; }
       if (startsOwnBg) showSceneVideo(newFeature);
@@ -15599,7 +15852,38 @@
       return '/assets/postgame/' + (isAnniv ? 'anniversary/' : '') + filename;
     }
 
+    /* Playoffs: the player-photo container is 120px taller (416 -> 536), so the whole card is 629px tall and everything
+       under the photo (crop line, name bar, stat boxes — seeded in the mplfs::playoffs Edit bucket) sits 80px lower.
+       The card art (bigfour*.png, 416x509: marble 0-357, team-colour band 357-405, grey stat panel 405-509) has no
+       taller version, so it is extended on a canvas: the marble above the band is stretched by the extra 120px, the band
+       and the stat panel stay pixel-exact. Cached per URL; falls back to the plain art if the canvas fails. */
+    const P4K_PO_EXTRA_PX = 120;
+    const P4K_ART_BAND_TOP = 357;
+    const p4kArtCache = {};
+    function p4kExtendedArt(url) {
+      if (p4kArtCache[url]) return p4kArtCache[url];
+      return p4kArtCache[url] = new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          try {
+            const w = img.naturalWidth, h = img.naturalHeight;
+            const c = document.createElement('canvas');
+            c.width = w; c.height = h + P4K_PO_EXTRA_PX;
+            const g = c.getContext('2d');
+            g.drawImage(img, 0, 0, w, P4K_ART_BAND_TOP, 0, 0, w, P4K_ART_BAND_TOP + P4K_PO_EXTRA_PX);
+            g.drawImage(img, 0, P4K_ART_BAND_TOP, w, h - P4K_ART_BAND_TOP, 0, P4K_ART_BAND_TOP + P4K_PO_EXTRA_PX, w, h - P4K_ART_BAND_TOP);
+            resolve(c.toDataURL('image/png'));
+          } catch (e) { resolve(url); }
+        };
+        img.onerror = () => resolve(url);
+        img.src = url;
+      });
+    }
+
+    /* Returns a promise that resolves once the card's art is in place (playoffs only; otherwise nothing to wait for). */
     function p4kApplyCard(n, s, value) {
+      const artPromises = [];
+      const isPlayoffsP4k = document.documentElement.getAttribute('data-theme') === 'playoffs';
       const bgEl     = document.getElementById(`p4k-${n}-bg`);
       const bgVisaEl = document.getElementById(`p4k-${n}-bg-visa`); // only exists for card 2
       const nameEl   = document.getElementById(`p4k-${n}-name`);
@@ -15610,14 +15894,19 @@
 
       // 10th Anniversary — same filenames, reskinned art under
       // assets/postgame/anniversary/ (see p4kAsset).
-      if (bgEl) bgEl.src = buildUrl(p4kAsset(s.campid === 1 ? 'bigfourblue.png' : 'bigfourred.png'));
+      const setP4kArt = (el, file) => {
+        const url = buildUrl(p4kAsset(file));
+        if (!isPlayoffsP4k) { el.src = url; return; }
+        artPromises.push(p4kExtendedArt(url).then(u => { el.src = u; }));
+      };
+      if (bgEl) setP4kArt(bgEl, s.campid === 1 ? 'bigfourblue.png' : 'bigfourred.png');
       // Card 2 (THE CARRY) only — the Visa-branded backer sits on a
       // second layer on top of the plain one above, kept transparent
       // until phase 3 quick-fades it in (see p4kPlayAnimation). Reset
       // the fade state here too, in case a re-fetch mid-scene lands on
       // an already-faded-in card.
       if (bgVisaEl) {
-        bgVisaEl.src = buildUrl(p4kAsset(s.campid === 1 ? 'bigfourbluevisa.png' : 'bigfourredvisa.png'));
+        setP4kArt(bgVisaEl, s.campid === 1 ? 'bigfourbluevisa.png' : 'bigfourredvisa.png');
         bgVisaEl.classList.remove('p4k-bg-visa-in');
       }
       if (nameEl) { nameEl.textContent = s.name || ''; p4kFitName(nameEl); }
@@ -15659,6 +15948,7 @@
           sigEl.src = sigFallback;
         }
       }
+      return Promise.all(artPromises);
     }
 
     async function fetchPost4KeyData() {
@@ -15691,10 +15981,12 @@
           assistTied[0]
         );
 
-        p4kApplyCard(1, gpmPlayer,   String(gpmPlayer.extra_param?.gpm || 0));
-        p4kApplyCard(2, dealtPlayer, fmtGold(dealtPlayer.total_damage || 0));
-        p4kApplyCard(3, takenPlayer, fmtGold(takenPlayer.total_hurt || 0));
-        p4kApplyCard(4, assistPlayer, String(assistPlayer.assist_num || 0));
+        await Promise.all([
+          p4kApplyCard(1, gpmPlayer,   String(gpmPlayer.extra_param?.gpm || 0)),
+          p4kApplyCard(2, dealtPlayer, fmtGold(dealtPlayer.total_damage || 0)),
+          p4kApplyCard(3, takenPlayer, fmtGold(takenPlayer.total_hurt || 0)),
+          p4kApplyCard(4, assistPlayer, String(assistPlayer.assist_num || 0)),
+        ]);
       } catch {}
     }
 
@@ -17034,7 +17326,26 @@
       frontEl.src = luPoseUrl(seat && seat.name, 'FRONT');
       sigEl.onerror = () => { sigEl.style.display = 'none'; };
       sigEl.style.display = '';
-      sigEl.src = hlPhotoUrl(seat && seat.name);
+      /* Playoffs: phase 2 = the B&W crop (photos/Dynamic/3_CROPPED BNW, thBnwUrl) with a team-colour tint, like Post 4 Key; a player with
+         no crop falls back to the signature portrait (no grey/tint). Only the photo changes — button-in, bounce and timing are untouched. */
+      const sigFallback = hlPhotoUrl(seat && seat.name);
+      const bnw = (document.documentElement.getAttribute('data-theme') === 'playoffs' && camp) ? thBnwUrl(seat && seat.name, camp.team_simple_name || camp.team_name) : '';
+      const photoBox = sigEl.parentElement;
+      if (photoBox) {
+        photoBox.classList.toggle('p2h-bnw', !!bnw);
+        photoBox.classList.toggle('p2h-tint-blue', side === 'home');
+        photoBox.classList.toggle('p2h-tint-red', side !== 'home');
+      }
+      if (bnw) {
+        sigEl.onerror = () => {
+          sigEl.onerror = () => { sigEl.style.display = 'none'; };
+          if (photoBox) photoBox.classList.remove('p2h-bnw');
+          sigEl.src = sigFallback;
+        };
+        sigEl.src = bnw;
+      } else {
+        sigEl.src = sigFallback;
+      }
 
       /* This scene's seat objects come straight off gamedata-proxy's
          camp_list (main-info API) — that shape has no .kda string field,

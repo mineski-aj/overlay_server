@@ -37,7 +37,12 @@
 const GGC_LEFT = 46, GGC_RIGHT = 845;
 const GGC_CHART_TOP = 14, GGC_CHART_BOTTOM = 194;
 const GGC_TIME_BOX_TOP = 211, GGC_TIME_BOX_H = 24, GGC_TIME_BOX_W = 63; /* +50% over the original 16×42 */
-const GGC_MARK_COUNT = 5; /* including both 0:00 and the point of pressing */
+/* Static time checkpoints (NOT stretched to the game length): 2, 5, 8, 12 and 15 min, then +3 min each (18, 21, 24 ...). A checkpoint appears once
+   the game has reached it. GGC_FIXED_MARKS persistent groups cover up to 15 + 3*(N-5) min; the LAST group is the live "now" point (dot + number
+   only, no time box) so the current value still matches the scoreboard. */
+const GGC_FIXED_MARKS = 24;
+const GGC_MARK_COUNT = GGC_FIXED_MARKS + 1;
+function ggcMarkMinute(i) { return i < 5 ? [2, 5, 8, 12, 15][i] : 15 + 3 * (i - 4); }
 const GGC_LABEL_MARGIN = 22; /* keeps a .ggc-diff-label's text-anchor=middle box from clipping past GGC_LEFT/GGC_RIGHT when its mark sits right at the chart's edge (roughly half a "X.Xk" label's width at 16.5px) */
 const GGC_BLUE = '#5096d7', GGC_RED = '#f41100'; /* line/area chart + axis/diff labels */
 const GGC_ICON_BLUE = '#143ffc', GGC_ICON_RED = '#ee2626'; /* event icons/X marks on the line — deliberately a different, more saturated pair than the line chart's own colors */
@@ -476,11 +481,13 @@ function ggcRenderChart(fullSeries, fullEvents) {
   // gridline/timebox/label/dot/number can all glide via CSS transition
   // between polls instead of snapping.
   const markEls = svg.querySelectorAll('.ggc-mark');
+  const nowX = xScale(ggcDuration);
   for (let i = 0; i < GGC_MARK_COUNT; i++) {
     const isNowMark  = i === GGC_MARK_COUNT - 1;
-    const frac       = i / (GGC_MARK_COUNT - 1);
-    const rawT       = windowStart + frac * (ggcDuration - windowStart);
-    const minuteMark = Math.round(rawT / 60);
+    const minuteMark = isNowMark ? 0 : ggcMarkMinute(i);
+    /* a checkpoint the game hasn't reached yet isn't drawn */
+    if (!isNowMark && (minuteMark * 60 > ggcDuration || minuteMark * 60 < windowStart)) { markEls[i].style.display = 'none'; continue; }
+    markEls[i].style.display = '';
     /* The "now" mark stays pinned to the exact live instant (ggcDuration)
        instead of snapping to the nearest whole minute like the other 4 —
        otherwise it can read up to ~30s stale, which is exactly the gap
@@ -525,6 +532,9 @@ function ggcRenderChart(fullSeries, fullEvents) {
     // "1Min." stays singular; every other value (0, 2, 3, 5, ...) gets the
     // plural "Mins." suffix.
     timeLabel.textContent = minuteMark + (minuteMark > 1 ? 'Mins.' : 'Min.');
+    /* the live "now" point carries no time stamp — just its dot + number */
+    const stampDisp = isNowMark ? 'none' : '';
+    g.querySelector('.ggc-mark-gridline').style.display = stampDisp; timebox.style.display = stampDisp; timeLabel.style.display = stampDisp;
 
     /* Dot marks the exact (t, diffAtT) point the number is labeling —
        size/stroke editable via .ggc-diff-dot in dashboard Edit
@@ -540,7 +550,10 @@ function ggcRenderChart(fullSeries, fullEvents) {
     label.setAttribute('fill', diffLabelColor);
     // The 0:00 mark's diff is always ~0 — showing "0.0k"/"0" there is just
     // clutter at the chart's own baked-in zero line, so skip the label.
-    label.textContent = (i === 0) ? '' : ggcFmtDiff(diffAtT);
+    /* a checkpoint right next to the live point yields its dot/number to it (they would overlap) */
+    const crowded = !isNowMark && Math.abs(x - nowX) < 46;
+    dot.style.display = label.style.display = crowded ? 'none' : '';
+    label.textContent = ggcFmtDiff(diffAtT);
   }
 
   // Events sit in one of 4 fixed horizontal rows instead of directly on

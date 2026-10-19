@@ -16,7 +16,11 @@
 const LWR_LEFT = 46, LWR_RIGHT = 845;
 const LWR_CHART_TOP = 14, LWR_CHART_BOTTOM = 194;
 const LWR_TIME_BOX_TOP = 211, LWR_TIME_BOX_H = 24, LWR_TIME_BOX_W = 63;
-const LWR_MARK_COUNT = 5;       /* including both 0:00 and "now" */
+/* Static time checkpoints, same rule as the Gold Graph: 2, 5, 8, 12, 15 min, then +3 each; shown once the game has reached them. The last group is
+   the live "now" point (dot + number only). */
+const LWR_FIXED_MARKS = 24;
+const LWR_MARK_COUNT = LWR_FIXED_MARKS + 1;
+function lwrMarkMinute(i) { return i < 5 ? [2, 5, 8, 12, 15][i] : 15 + 3 * (i - 4); }
 const LWR_LABEL_MARGIN = 22;    /* keeps an edge mark's % label inside the plot */
 const LWR_BLUE = '#5096d7', LWR_RED = '#f41100';   /* line/area */
 const LWR_LABEL_BLUE = '#143ffc', LWR_LABEL_RED = '#f41100'; /* numbers + header % (same blue as Gold Graph's diff labels) */
@@ -269,9 +273,12 @@ function lwrRenderChart(wr) {
 
   /* 5 evenly-spaced marks, minute-snapped except "now" (pinned to the live edge). */
   const markEls = svg.querySelectorAll('.lwr-mark');
+  const nowX = xScale(now);
   for (let i = 0; i < LWR_MARK_COUNT; i++) {
     const isNow = i === LWR_MARK_COUNT - 1;
-    const minuteMark = Math.round((i / (LWR_MARK_COUNT - 1)) * now / 60);
+    const minuteMark = isNow ? 0 : lwrMarkMinute(i);
+    if (!isNow && minuteMark * 60 > now) { markEls[i].style.display = 'none'; continue; }   // not reached yet
+    markEls[i].style.display = '';
     const t = isNow ? now : Math.max(0, Math.min(now, minuteMark * 60));
     const x = xScale(t);
     const d = isNow ? lastRaw.diff : lwrInterpolate(series, t);
@@ -287,6 +294,8 @@ function lwrRenderChart(wr) {
     const timeLabel = g.querySelector('.lwr-time-label');
     timeLabel.style.transform = `translateX(${(boxX + LWR_TIME_BOX_W / 2).toFixed(1)}px)`;
     timeLabel.textContent = minuteMark + (minuteMark > 1 ? 'Mins.' : 'Min.');
+    const stampDisp = isNow ? 'none' : '';   // the live "now" point carries no time stamp
+    g.querySelector('.lwr-mark-gridline').style.display = stampDisp; g.querySelector('.lwr-timebox').style.display = stampDisp; timeLabel.style.display = stampDisp;
 
     const dot = g.querySelector('.lwr-diff-dot');
     dot.setAttribute('cx', x.toFixed(1));
@@ -297,7 +306,9 @@ function lwrRenderChart(wr) {
     label.style.transform = `translate(${labelX.toFixed(1)}px, ${labelY.toFixed(1)}px)`;
     label.setAttribute('fill', color);
     /* The leading side's % at that moment (so a red-ahead mark reads red's %). */
-    label.textContent = (i === 0) ? '' : lwrFmtPct(50 + Math.abs(d));
+    const crowded = !isNow && Math.abs(x - nowX) < 46;   // a checkpoint next to the live point yields its dot/number
+    dot.style.display = label.style.display = crowded ? 'none' : '';
+    label.textContent = lwrFmtPct(50 + Math.abs(d));
   }
 }
 

@@ -61,12 +61,26 @@ function killEventIsPlayoffs() {
   return document.documentElement.getAttribute('data-theme') === 'playoffs';
 }
 function killEventSponsorLogo(video) {
-  /* Playoffs — the new kill-event art has no sponsor slot. */
-  if (killEventIsPlayoffs()) return null;
+  /* Playoffs — the updated kill-event webms no longer have the sponsor baked in (the previous ones had Smart / Visa
+     painted on the bar), so the same three events get the same logos from the overlay element instead; see
+     killEventApplySponsorFit for the per-logo sizing. */
   if (video === 'turtleslain.webm' && document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
     return null;
   }
   return KILL_EVENT_SPONSOR_LOGO[video] || null;
+}
+
+/* Playoffs sponsor fit. The sponsor PNGs are full 1920x1080 canvases with different margins (Smart's pill spans 1865x534,
+   Visa's logo 1609x519), but the old baked sponsors were Smart 177x50 and Visa 136x44 centred at the same x. The shared
+   clip box (mploverlay_v7::playoffs #kill-event-sponsor-logo-clip, sized for Smart) gives Smart exactly that; Visa's image is
+   shrunk/offset inside the box (inline %, reset for every other logo) so its logo lands on 136x44 at (1225,817). */
+function killEventApplySponsorFit(logo) {
+  var s = killSponsorLogoEl.style;
+  if (killEventIsPlayoffs() && /visa/i.test(logo)) {
+    s.width = '89%'; s.height = '89%'; s.left = '5.4%'; s.top = '13.9%';
+  } else {
+    s.width = ''; s.height = ''; s.left = ''; s.top = '';
+  }
 }
 
 /* ── Timeline pause (all kill events) ──
@@ -344,6 +358,7 @@ function showKillEventPlayer(playerName, role, camp, sponsorLogo, extraHoldMs) {
     killPhotoClipEl.classList.add('ke-in');
     killNametagClipEl.classList.add('ke-in');
     if (sponsorLogo) {
+      killEventApplySponsorFit(sponsorLogo);
       killSponsorLogoEl.src = sponsorLogo;
       killSponsorLogoClipEl.classList.add('ke-in');
     }

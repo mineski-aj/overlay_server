@@ -2161,7 +2161,7 @@
 
   /* Feature toggles that read as a version switch instead of Enabled/Disabled
      (e.g. Team Line-Up V1/V2, rendered inline in that scene's own row). */
-  var toggleLabels = { lineupv2_blue: ['V1', 'V2 · Polaroids'], lineupv2_red: ['V1', 'V2 · Polaroids'], credits_v2: ['V1', 'V2 · Side Panel'] };
+  var toggleLabels = { lineupv2_blue: ['V1', 'V2 · Polaroids'], lineupv2_red: ['V1', 'V2 · Polaroids'], credits_v2: ['V1', 'V2 · Side Panel'], mvp_v2: ['V1', 'V2 · Live Camera'] };
   function applyToggleBtn(feature, enabled) {
     var b = toggleBtns[feature];
     if (!b) return;
@@ -2832,9 +2832,11 @@
           nudges: [ { label: 'Photo', selector: '.hl-player-photo-wrap', fallback: 1360 } ] },
         { name: 'MVP Scene', show: '/overlay/mvp/show', hide: '/overlay/mvp/hide',
           nudges: [
-            { label: 'Hero',  selector: '#mv-hero-img', fallback: 953, topFallback: 74 },
+            { label: 'Hero',  selector: '#mv-hero-img', fallback: 953, topFallback: 74,
+              v2: { toggle: 'mvp_v2', selector: 'html #mvp-page.mv-v2 #mv-hero-img', fallback: 860, topFallback: 90 } },
             { label: 'Photo', selector: '#mv-photo',    fallback: 953, topFallback: 74 },
-          ] },
+          ],
+          versionToggle: 'mvp_v2' },
         { name: 'Credit Reel', show: '/overlay/credits/show', hide: '/overlay/credits/hide', versionToggle: 'credits_v2' },
         /* realButtons: pressing Show again while live steps through the
            banked poses (see routes/bracket.js + buildBracketControls). */
@@ -3204,25 +3206,32 @@
       wrap.appendChild(btn('▶', 'btn-nudge', function () { doNudgeExtra(step); }));
       return wrap;
     }
+    /* A nudge with `v2` retargets to that selector/fallbacks while its feature toggle is on (MVP Scene's Hero
+       follows the V2 hero box in V2 mode). */
+    function nudgeTarget() {
+      return (n.v2 && featureStates[n.v2.toggle] === true) ? n.v2 : n;
+    }
     function doNudge(delta) {
-      nudgeGetCurrentLeft(n.selector, n.fallback).then(function (cur) {
+      var t = nudgeTarget();
+      nudgeGetCurrentLeft(t.selector, t.fallback).then(function (cur) {
         var next = cur + delta;
-        nudgeLeftCache[n.selector] = next;
+        nudgeLeftCache[t.selector] = next;
         fetch('/api/overlay-nudge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file: 'mplfs', selector: n.selector, props: { left: next + 'px' } }),
+          body: JSON.stringify({ file: 'mplfs', selector: t.selector, props: { left: next + 'px' } }),
         }).catch(function () {});
       });
     }
     function doNudgeTop(delta) {
-      nudgeGetCurrentTop(n.selector, n.topFallback).then(function (cur) {
+      var t = nudgeTarget();
+      nudgeGetCurrentTop(t.selector, t.topFallback).then(function (cur) {
         var next = cur + delta;
-        nudgeTopCache[n.selector] = next;
+        nudgeTopCache[t.selector] = next;
         fetch('/api/overlay-nudge', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file: 'mplfs', selector: n.selector, props: { top: next + 'px' } }),
+          body: JSON.stringify({ file: 'mplfs', selector: t.selector, props: { top: next + 'px' } }),
         }).catch(function () {});
       });
     }
@@ -3624,7 +3633,7 @@
     if (body.children.length) body.appendChild(el('div', 'divider'));
     body.appendChild(el('div', 'features-label', 'Heatmap Style (heatmap.html · live)'));
 
-    var DEF = { mapBrightness: null, mapContrast: 1, heat: [1,1,1,1,1,1,1,1,1], markers: { kill: 30, death: 30, assist: 30 } };
+    var DEF = { photo: true, mapBrightness: null, mapContrast: 1, heat: [1,1,1,1,1,1,1,1,1], markers: { kill: 30, death: 30, assist: 30 } };
     var st = JSON.parse(JSON.stringify(DEF));
     var sharedBright = 0.25;
     var timer = null;
@@ -3671,6 +3680,18 @@
     }
     function f2(v) { return Number(v).toFixed(2); }
 
+    // Player photo on/off (heatmap.html only — the plaque, hero art and stats stay).
+    var photoRow = mkRow('Player Photo');
+    var photoBtn = el('button', 'pdebug-trigger', '');
+    function paintPhotoBtn() {
+      var on = st.photo !== false;
+      photoBtn.textContent = on ? '● Shown' : '○ Hidden';
+      photoBtn.style.cssText = on ? 'background:#1a3a2a;border-color:#2a7a4a;color:#44dd88;min-width:84px;' : 'background:#3a1a1a;border-color:#8a2a2a;color:#ff6666;min-width:84px;';
+    }
+    photoBtn.addEventListener('click', function () { st.photo = st.photo === false; paintPhotoBtn(); send(); });
+    photoRow.appendChild(photoBtn);
+    sliders.push({ refresh: paintPhotoBtn }); paintPhotoBtn();
+
     body.appendChild(el('div', '', 'MAP'));
     body.lastChild.style.cssText = 'font-size:10px;color:#666;letter-spacing:.08em;margin:6px 0 2px;';
     var brightRow = mkRow('Brightness');
@@ -3715,7 +3736,7 @@
       fetch('/api/heatmap-config', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return null; }),
     ]).then(function (res) {
       if (res[1] && res[1].mapBrightness != null) sharedBright = res[1].mapBrightness;
-      if (res[0] && res[0].markers && Array.isArray(res[0].heat)) st = res[0];
+      if (res[0] && res[0].markers && Array.isArray(res[0].heat)) { st = res[0]; if (st.photo === undefined) st.photo = true; }
       sliders.forEach(function (c) { c.refresh(); });
     });
   }
@@ -6359,7 +6380,7 @@
   var BRACKET_ELEMENTS = [{ group: 'Bracket Lines', id: '#bracket-img', name: 'Bracket Lines' }];
   BRACKET_DEFAULTS['#br-trophy'] = { left: 1334, top: 228, width: 638, height: 638 };
   BRACKET_ELEMENTS.push({ group: 'Trophy', id: '#br-trophy', name: 'Grand Finals Trophy (video)' });
-  BRACKET_DEFAULTS['#br-header']     = { left: 40,  top: 80,  width: 1028, height: 150 };
+  BRACKET_DEFAULTS['#br-header']     = { left: 40,  top: 50,  width: 1028, height: 150 };
   BRACKET_ELEMENTS.push({ group: 'Header Image', id: '#br-header',     name: 'Header (Playoffs Bracket)' });
   BRACKET_DEFAULTS['#br-grandfinals'] = { left: 1499, top: 718, width: 306, height: 47 };
   BRACKET_ELEMENTS.push({ group: 'Grand Finals Label', id: '#br-grandfinals', name: 'Grand Finals Label' });
@@ -6453,6 +6474,27 @@
     { group: 'MVP Stat Value', id: '#mv-gpm',       name: 'MVP Stat Value (mvp_value)' },
     { group: 'KP% Label', id: '#mv-kp-label',     name: 'KP% Label' },
     { group: 'KP% Value', id: '#mv-kp',           name: 'KP% Value' },
+  ];
+
+  /* MVP Scene V2 (transparent over the live camera) — its own Edit rows. The selectors are scoped to V2
+     ("html #mvp-page.mv-v2 ...", one element-selector more specific than mplfs.html's V2 default CSS, which is
+     !important) so a V2 drag never touches V1's saved positions and vice versa. Everything not listed here
+     (icons, plaque, stats) keeps using the normal MVP Scene rows. */
+  var MV2P = 'html #mvp-page.mv-v2 ';
+  var MV2_DEFAULTS = {};
+  MV2_DEFAULTS[MV2P + '#mv-hero-img']      = { left: 860,  top: 90,  width: 560, height: 560 };
+  MV2_DEFAULTS[MV2P + '#mv-box-bg']        = { left: 953,  top: 74,  width: 867, height: 470 };
+  MV2_DEFAULTS[MV2P + '#mv-gradient-v2']   = { left: 960,  top: 0,   width: 960, height: 1080 };
+  MV2_DEFAULTS[MV2P + '#mv-ofthegame']     = { left: 1086, top: 562, width: 304, height: 57, fontSize: 50 };
+  MV2_DEFAULTS[MV2P + '#mv-matchbox']      = { left: 1402, top: 562, width: 224, height: 57 };
+  MV2_DEFAULTS[MV2P + '#mv-po-matchgame']  = { left: 1122, top: 78,  width: 448, height: 64, fontSize: 56 };
+  var MV2_ELEMENTS = [
+    { group: 'MVP V2 · Hero',     id: MV2P + '#mv-hero-img',     name: 'Hero Image (V2)' },
+    { group: 'MVP V2 · Video',    id: MV2P + '#mv-box-bg',       name: 'MVP Text Video (V2)' },
+    { group: 'MVP V2 · Gradient', id: MV2P + '#mv-gradient-v2',  name: 'Black Gradient (V2)' },
+    { group: 'MVP V2 · Title',    id: MV2P + '#mv-ofthegame',    name: 'Of The Game Text (V2)' },
+    { group: 'MVP V2 · Title',    id: MV2P + '#mv-matchbox',     name: 'Season / Match Box (V2)' },
+    { group: 'MVP V2 · Title',    id: MV2P + '#mv-po-matchgame', name: 'Playoffs Match / Game Title (V2)' },
   ];
 
   /* ── Final Team (mplfs.html) element defaults ────────────────────
@@ -7160,7 +7202,16 @@
       defaultsKey: 'sb_edit_defaults_mplfs_mvp',
       elements:    MV_ELEMENTS,
       defaults:    MV_DEFAULTS,
-      showFn:      'showMvpScene',
+      showFn:      'showMvpSceneV1',
+    },
+    mplfs_mvp_v2: {
+      label:       'MVP Scene V2 · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_mvp_v2',
+      elements:    MV2_ELEMENTS,
+      defaults:    MV2_DEFAULTS,
+      showFn:      'showMvpSceneV2',
     },
     mplfs_finalteam: {
       label:       'Final Team · mplfs',
