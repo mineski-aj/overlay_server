@@ -1056,6 +1056,14 @@ gradients, shown only while `.p4k-bnw` is set (not for the signature fallback) a
 `#kill-event-sponsor-logo-clip` = 1202,778 182x102 (sized so the Smart pill lands on its old 177x50 spot — the PNGs are full 1920x1080 canvases with transparent margins); `killEventApplySponsorFit` shrinks/offsets the Visa
 image inside that box (inline %) so it lands on its old 136x44. The logo pops in with the player popup (300ms in, out at the playoffs pop-out time) instead of riding the video's own timing.
 
+### Playoffs Lord / Turtle spawn videos
+
+`overlay-objectivespawn.js` (`objSpawnPlayNext`) picks `assets/ingame/playoffs/lordspawn.webm` / `turtlespawn.webm` under `data-theme="playoffs"` (10th Anniversary keeps `assets/ingame/anniversary/`, Regular `assets/ingame/`). Same filenames, same trigger logic; read when each spawn plays, so a theme switch applies on the next spawn.
+
+### Playoffs Team Line-Up stinger
+
+`LU_STINGER_SRC_BY_THEME.playoffs` = `/assets/lineup/playoffs/lineupstinger.webm` (shared by Blue AND Red — one `getLuStingerSrc()`); the per-team intro webms are unchanged. Read when Phase 0 starts, so a theme switch applies on the next Show.
+
 ### Final Team logo (mplfs.html `#ft-mpl-logo`)
 
 Playoffs uses the plain MPL logo (no sun burst): `[data-theme="playoffs"] #ft-mpl-logo { content: url('/assets/mpl2026logo.png') }` — same file the Match Board uses. The sun version
