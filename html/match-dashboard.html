@@ -1411,7 +1411,28 @@
         saveMatches(tm);
       });
       ohInp.addEventListener('keydown', function (e) { if (e.key === 'Enter') ohInp.blur(); });
-      ohRow.appendChild(ohLbl); ohRow.appendChild(ohInp);
+      /* editable bar text + show/hide toggle for the Waiting TVC's Open House bar */
+      var ohTxt = document.createElement('input');
+      ohTxt.type = 'text'; ohTxt.className = 'match-oh-inp';
+      ohTxt.placeholder = 'MATCH ' + (i + 1) + ' OPEN HOUSE';
+      ohTxt.value = m.openHouseLabel || '';
+      ohTxt.addEventListener('blur', function () {
+        var tm = getMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { openHouseLabel: ohTxt.value });
+        saveMatches(tm);
+      });
+      ohTxt.addEventListener('keydown', function (e) { if (e.key === 'Enter') ohTxt.blur(); });
+      var ohTgl = document.createElement('label');
+      ohTgl.style.cssText = 'display:flex;align-items:center;gap:4px;font-size:12px;white-space:nowrap;cursor:pointer';
+      var ohChk = document.createElement('input');
+      ohChk.type = 'checkbox'; ohChk.checked = !m.openHouseOff;
+      ohChk.addEventListener('change', function () {
+        var tm = getMatches().slice();
+        tm[i] = Object.assign({}, tm[i], { openHouseOff: !ohChk.checked });
+        saveMatches(tm);
+      });
+      ohTgl.appendChild(ohChk); ohTgl.appendChild(document.createTextNode('Show'));
+      ohRow.appendChild(ohTgl); ohRow.appendChild(ohTxt); ohRow.appendChild(ohInp);
       card.appendChild(ohRow);
       container.appendChild(card);
     });

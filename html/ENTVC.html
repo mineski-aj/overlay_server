@@ -709,6 +709,7 @@
       color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
     }
     .wsm-oh { position: relative; width: 571px; height: 37px; flex: none; }
+    .wsm-oh.wsm-oh-off { display: none; } /* Match Board "show" toggle off: collapses, no dead space */
     .wsm-oh > img { position: absolute; left: 0; top: 0; width: 571px; height: 37px; }
     .wsm-oh-label, .wsm-oh-time {
       position: absolute; top: 0; height: 37px;
@@ -1164,6 +1165,8 @@
         return {
           label: 'MATCH ' + (i + 1),
           openHouse: m.openHouseTime || '',
+          openHouseLabel: m.openHouseLabel || '',
+          openHouseOff: !!m.openHouseOff,
           time:  m.time || '',
           bo,
           star:  !!m.star,
@@ -1197,6 +1200,7 @@
     const WS_CURRENT_MATCH_HIGHLIGHT = 'anniversary/MatchboxHighlight.png';
     // Placeholder until the Open House data is wired up.
     const WS_OPEN_HOUSE_PLACEHOLDER_TIME = '14:30 GMT +8';
+    const escOh = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
     function buildWsMatches(rootId, matches, opts) {
       opts = opts || {};
       const root = document.getElementById(rootId);
@@ -1214,8 +1218,8 @@
           : `<img class="wsm-title" src="${wsTvcAsset('TodayMatches.png')}" alt="Today's Matches">`;
       matches.forEach((m, i) => {
         if (isPlayoffs) {
-          html += `<div class="wsm-oh"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
-            `<span class="wsm-oh-label">MATCH ${i + 1} OPEN HOUSE</span>` +
+          html += `<div class="wsm-oh${m.openHouseOff ? ' wsm-oh-off' : ''}"><img src="${wsTvcAsset('openhouser.png')}" alt="">` +
+            `<span class="wsm-oh-label">${escOh(m.openHouseLabel || ('MATCH ' + (i + 1) + ' OPEN HOUSE'))}</span>` +
             `<span class="wsm-oh-time">${wsFormatTimeGmt8(m.openHouse)}</span></div>`;
         }
         const typeAssets = WS_MATCH_TYPE_ASSETS[m.matchType] || WS_MATCH_TYPE_ASSETS.regular;
@@ -1252,6 +1256,14 @@
       const countClass = 'wsm-count-' + matches.length;
       root.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       root.classList.add(countClass);
+      /* Playoffs: each hidden Open House bar collapses (display:none), so shift the block down by half of what
+         it freed (bar + flex gap) to keep it centred where the full block sat. translate (own property, survives the carousel's transform animations), not top, so it can't
+         fight the Edit tab's !important positions; reset to none whenever every bar is on. */
+      if (isPlayoffs) {
+        const offN = matches.filter(m => m.openHouseOff).length;
+        const gap = parseFloat(getComputedStyle(root).rowGap) || 5;
+        root.style.translate = offN ? '0 ' + (offN * (37 + gap) / 2) + 'px' : '';
+      }
       wsPage.classList.remove('wsm-count-1', 'wsm-count-2', 'wsm-count-3');
       wsPage.classList.add(countClass);
     }
