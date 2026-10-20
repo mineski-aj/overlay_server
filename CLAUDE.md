@@ -951,11 +951,13 @@ on the layer it starts (`svSetClip`; every other scene's start clears it, so it 
 
 ### MVP Scene V2 — transparent over the live camera (mplfs.html, `mvp_v2` featureToggle)
 
-V1/V2 button on the MVP Scene row (`versionToggle`). V2 = `#mvp-page.mv-v2`: NO background (the instant the trigger lands `mvBgCut()` kills the scene loops + idle `#bg-video`, no fade; `transitionToImpl`
-skips `showSceneVideo('mvp')` for V2; `hideMvpScene` restores `#bg-video`), NO signature photo (player's live face shows through), black gradient `#mv-gradient-v2` over the right half, "MATCH n - GAME n" and
-OF THE GAME / icon titles white, smaller hero near the left edge of the MVP text webm. Elements animate in `MV_V2_ELEMENTS_DELAY_MS` (1000ms) after the trigger (webm restarted then; CSS `mvV2*` keyframes).
+V1/V2 button on the MVP Scene row (`versionToggle`). V2 = `#mvp-page.mv-v2`: same background loop as V1 (no longer transparent — `showSceneVideo('mvp')` via `transitionToImpl` as usual), NO signature photo, (the black right-half gradient was removed), OF THE GAME / "MATCH n - GAME n" (`#mv-matchbox-game`/`#mv-po-matchgame`) keep their V1 colours (black in playoffs) — smaller hero near the left edge of the MVP text webm. Elements animate in `MV_V2_ELEMENTS_DELAY_MS` (1000ms) after the trigger (webm restarted then; CSS `mvV2*` keyframes), background first.
 V2 default CSS is `!important` (V1's saved `#mv-hero-img` override is `!important` too); V2 Edit rows (`mplfs_mvp_v2`, `MV2_*` in dashboard.html) save under `html #mvp-page.mv-v2 <id>` so they win and never touch V1.
 V2 hero reuses V1's saved Feather/Intensity. `mplfs_mvp`'s showFn is now `showMvpSceneV1` (forces V1 in the Edit preview). Needs a server restart (`VALID_FEATURES`, `lib/state.js`); no `KNOWN_EVENTS` change.
+
+### MVP Highlights V2 — no player photo (mplfs.html, `hl_v2` featureToggle)
+
+V1/V2 button on the MVP Highlights row (`versionToggle: 'hl_v2'`). V2 = `#highlights-page.hl-v2`: identical scene minus the signature photo (`.hl-player-photo-wrap` and, in playoffs, the corner graphic `#hl-playoffs-coverer` that sits over it are `display:none !important`; `hlApply` skips loading the photo). Class is set in `hlShowImpl` (not flipped while the page is still `hl-on`) and removed on hide. `showHighlights` follows the toggle; `showHighlightsV1/V2` force it (the Edit tab config `mplfs_highlights` previews V1 so the photo stays editable). No new Edit rows. Needs a server restart (`VALID_FEATURES`, `lib/state.js`); no `KNOWN_EVENTS` change.
 
 ### Team Hexagon — playoffs "V3" layout (mplfs.html, `data-theme="playoffs"` only)
 

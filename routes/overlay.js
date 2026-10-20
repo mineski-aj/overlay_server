@@ -1273,7 +1273,7 @@ router.get('/overlay/features', (req, res) => {
 });
 
 // GET /overlay/feature/:feature/enable|disable
-const VALID_FEATURES = ['killevents','items','skypiercer','lordadv','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','lineupv2_blue','lineupv2_red','credits_v2','mvp_v2','draftpredict3_rationale','led_items','led_trinity','led_swap','led_lvl15','led_conceal','led_skypiercer'];
+const VALID_FEATURES = ['killevents','items','skypiercer','lordadv','trinity','swap','lvl15','conceal','fights','objectivespawn','stolengold','debugphotos','draftstats','lineupsecrole_blue','lineupsecrole_red','lineupv2_blue','lineupv2_red','credits_v2','mvp_v2','hl_v2','draftpredict3_rationale','led_items','led_trinity','led_swap','led_lvl15','led_conceal','led_skypiercer'];
 router.get('/overlay/feature/:feature/:action', (req, res) => {
   const { feature, action } = req.params;
   if (!VALID_FEATURES.includes(feature) || !['enable','disable'].includes(action)) {

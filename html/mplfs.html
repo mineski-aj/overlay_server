@@ -1994,6 +1994,9 @@
       position: absolute; left: 1360px; top: -30px; width: 560px; height: 1110px;
       overflow: hidden; z-index: 40;
     }
+    /* MVP Highlights V2 (state.featureToggles.hl_v2): no player photo (nor the playoffs corner graphic that sits over it). */
+    #highlights-page.hl-v2 .hl-player-photo-wrap,
+    #highlights-page.hl-v2 #hl-playoffs-coverer { display: none !important; }
     .hl-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; }
     #hl-plaque {
       position: absolute; left: 1393px; top: 777px; width: 462px; height: 174px;
@@ -2368,19 +2371,11 @@
        !important on purpose — V1's saved Edit-tab overrides on the plain ids (e.g. #mv-hero-img, huge and
        off-canvas) are !important too and would otherwise win; the V2 Edit rows save under
        "html #mvp-page.mv-v2 <id>" (one element-selector more specific), so they beat these defaults. */
-    #mv-gradient-v2 {
-      display: none; position: absolute; left: 960px; top: 0; width: 960px; height: 1080px; z-index: 9;
-      pointer-events: none;
-      background: linear-gradient(to right, rgba(0,0,0,0) 0%, rgba(0,0,0,0.72) 45%, rgba(0,0,0,0.88) 100%);
-    }
-    #mvp-page.mv-v2 #mv-gradient-v2 { display: block; }
     #mvp-page.mv-v2 #mv-photo,
     #mvp-page.mv-v2 #mv-po-herofronter,
     #mvp-page.mv-v2 #mv-title-anniv-bg { display: none !important; }
     #mvp-page.mv-v2 #mv-hero-img { left: 860px !important; top: 90px !important; width: 560px !important; height: 560px !important; }
-    #mvp-page.mv-v2 #mv-matchbox-game,
-    #mvp-page.mv-v2 #mv-po-matchgame,
-    #mvp-page.mv-v2 #mv-ofthegame { color: #fff; opacity: 1; }
+    /* "MATCH n - GAME n" (#mv-matchbox-game / #mv-po-matchgame) keeps its normal V1 colour (black in playoffs). */
     #mvp-page.mv-v2 .mv-icon-title { color: #0a0a0a; } /* SPELL / EMBLEM / IN-GAME EQUIPMENTS stay black */
     /* The page itself does not fade in (the elements animate in individually, below); fading OUT still uses
        #mvp-page's normal 400ms transition because this rule stops matching when .mv-visible is removed. */
@@ -2388,7 +2383,6 @@
     @keyframes mvV2FadeIn  { from { opacity: 0; } to { opacity: 1; } }
     @keyframes mvV2SlideIn { from { opacity: 0; transform: translateX(60px); } to { opacity: 1; transform: none; } }
     @keyframes mvV2RiseIn  { from { opacity: 0; transform: translateY(70px); } to { opacity: 1; transform: none; } }
-    #mvp-page.mv-v2.mv-visible #mv-gradient-v2,
     #mvp-page.mv-v2.mv-visible #mv-box-bg    { animation: mvV2FadeIn 700ms ease both; }
     #mvp-page.mv-v2.mv-visible #mv-hero-img  { animation: mvV2FadeIn 600ms ease 100ms both; }
     #mvp-page.mv-v2.mv-visible #mv-ofthegame,
@@ -7558,7 +7552,6 @@
       </div>
     </div>
     <div id="mvp-page">
-      <div id="mv-gradient-v2"></div>
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
@@ -8392,6 +8385,7 @@
           if (d.feature === 'lineupsecrole_blue') luSecroleEnabled.blue = !!d.enabled;
           if (d.feature === 'lineupsecrole_red')  luSecroleEnabled.red  = !!d.enabled;
           if (d.feature === 'credits_v2') crV2Enabled = !!d.enabled;
+          if (d.feature === 'hl_v2') hlV2Enabled = !!d.enabled;
           if (d.feature === 'mvp_v2') mvV2Enabled = !!d.enabled;
           if (d.feature === 'lineupv2_blue') luV2Enabled.blue = !!d.enabled;
           if (d.feature === 'lineupv2_red')  luV2Enabled.red  = !!d.enabled;
@@ -11491,8 +11485,12 @@
       /* Lightweight WebP copy first, original PNG as fallback — same as
          MVP Scene's #mv-photo (see mvSetImgWithFallback). Also means
          MVP Scene -> Highlights reuses the exact file MVP just loaded. */
-      const photoUrl = hlPhotoUrl(player && player.name);
-      mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
+      if (hlPage.classList.contains('hl-v2')) {
+        photoEl.removeAttribute('src'); /* V2: no signature photo */
+      } else {
+        const photoUrl = hlPhotoUrl(player && player.name);
+        mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
+      }
 
       /* Stats backer below the hero image — same fields/API as MVP
          Scene's own KDA/GPM(or-whatever-mvp_title-says)/KP% (see
@@ -11506,7 +11504,23 @@
       document.getElementById('hlst-mvp-value').textContent = mvFormatStatValue(player && player.mvp_value);
     }
 
-    async function showHighlights() {
+    /* V1/V2 (dashboard: V1/V2 button on the MVP Highlights row). V2 = the same scene without the player photo.
+       hlForce is set only by the Edit tab's preview (showHighlightsV1); a real Show always follows the toggle. */
+    let hlV2Enabled = false;
+    let hlForce = null;
+    function hlUseV2() { return hlForce === null ? hlV2Enabled : hlForce; }
+    const hlFeaturesReady = fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json()).then(d => { if (d && d.hl_v2 !== undefined) hlV2Enabled = !!d.hl_v2; })
+      .catch(() => {});
+    function showHighlights()   { hlForce = null;  return hlShowImpl(); }
+    function showHighlightsV1() { hlForce = false; return hlShowImpl(); }
+    function showHighlightsV2() { hlForce = true;  return hlShowImpl(); }
+
+    async function hlShowImpl() {
+      await hlFeaturesReady;
+      const hlIsV2 = hlUseV2();
+      /* the class must not flip while the scene is still on screen (a quick Show -> Show would pop the photo) */
+      if (!hlPage.classList.contains('hl-on')) hlPage.classList.toggle('hl-v2', hlIsV2);
       const dataPromise = hlFetchMvp();
       /* Fill in + preload #highlights-page WHILE the outgoing scene is
          still fading out (transitionTo awaits its ~420ms hide), instead of
@@ -11546,6 +11560,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           hlPage.classList.remove('hl-on');
+          hlPage.classList.remove('hl-v2');
           hideSceneVideo();
           resolve();
         }, 420);
@@ -11951,15 +11966,9 @@
     const mvFeaturesReady = fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
       .then(r => r.json()).then(d => { if (d && d.mvp_v2 !== undefined) mvV2Enabled = !!d.mvp_v2; })
       .catch(() => {});
-    /* V2: the moment the trigger lands the background goes away (scene loops + idle #bg-video, no fade), then
-       the elements animate in this long after the trigger. */
+    /* V2 keeps V1's background loop (started by transitionToImpl like any scene); the elements animate in this long
+       after the trigger. */
     const MV_V2_ELEMENTS_DELAY_MS = 1000;
-    function mvBgCut() {
-      ++sceneVideoSwapToken; /* cancel any crossfade still in progress */
-      sceneVideoVisible = false;
-      sceneVideoEls.forEach(el => { svSetVisible(el, false, false); el.pause(); });
-      luBgCut(); /* idle #bg-video -> opacity 0; luBgRestore() brings it back on hide */
-    }
 
     function showMvpScene()   { mvForce = null;  return mvShowImpl(); }
     function showMvpSceneV1() { mvForce = false; return mvShowImpl(); }
@@ -11970,7 +11979,6 @@
       const v2 = mvUseV2();
       const t0 = performance.now();
       mvPage.classList.toggle('mv-v2', v2);
-      if (v2) mvBgCut();
       const dataPromise = hlFetchMvp();
       const msPromise   = mvFetchMatchState();
       await transitionTo('mvp');
@@ -11985,9 +11993,8 @@
         if (activeFeature !== 'mvp') return; /* superseded during the delay */
         const bgv = document.getElementById('mv-box-bg');
         try { bgv.currentTime = 0; bgv.play().catch(() => {}); } catch (e) {} /* MVP text animation starts with the elements */
-      } else {
-        showSceneVideo('mvp');
       }
+      showSceneVideo('mvp');
       mvPage.classList.add('mv-on');
       mvFitName(document.getElementById('mv-name')); /* now has real layout to measure against */
       mvFeatherHeroImg(document.getElementById('mv-hero-img')); /* ditto — needs real box size */
@@ -12002,7 +12009,7 @@
         setTimeout(() => {
           mvPage.classList.remove('mv-on');
           hideSceneVideo();
-          if (mvPage.classList.contains('mv-v2')) { luBgRestore(); mvPage.classList.remove('mv-v2'); }
+          mvPage.classList.remove('mv-v2');
           resolve();
         }, 420);
       });
@@ -14393,8 +14400,7 @@
          off directly (see sceneVideoHandoff). try/finally so the flag can
          never get stuck on — that would make every later hideSceneVideo a
          no-op. */
-      const startsOwnBg = !!SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature)
-        && !(newFeature === 'mvp' && mvUseV2()); /* MVP V2 has no background at all */
+      const startsOwnBg = !!SCENE_VIDEO_SRC[newFeature] && !SCENE_VIDEO_DEFERRED_START.has(newFeature);
       sceneVideoHandoff = startsOwnBg;
       try { await transitionTeardown(newFeature); } finally { sceneVideoHandoff = false; }
       if (startsOwnBg) showSceneVideo(newFeature);
