@@ -754,6 +754,14 @@
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-left   { left: 0px;   top: 12px; width: 297px; height: 390px; }
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-middle { left: 105px; top: 0px;  width: 269px; height: 402px; }
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-right  { left: 182px; top: 12px; width: 297px; height: 390px; }
+    /* PANEL (4th carousel page, playoffs only) — same box as Casters; its three photo slots start at the Casters' current playoffs layout
+       and are edited separately (Edit tab -> Panel · mplfs, .ws-panel-slot-*). */
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-left   { left: -64px; top: 31px; width: 297px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-middle { left: 173px; top: 23px; width: 269px; height: 402px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-right  { left: 394px; top: 29px; width: 297px; height: 390px; }
+    /* middle photo stacks above the left and right ones */
+    .ws-panel-slot-left, .ws-panel-slot-right { z-index: 1; }
+    .ws-panel-slot-middle { z-index: 2; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -816,6 +824,7 @@
       <div id="ws-matches"></div>
       <div id="ws-hosts" class="ws-talent-box"></div>
       <div id="ws-casters" class="ws-talent-box"></div>
+      <div id="ws-panel" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
@@ -1500,15 +1509,28 @@
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 
+    /* PANEL — 4th carousel page, playoffs theme only (same CASTER_BOX art, title "PANEL"). Fed by the Match Board's Panel row (ms.panel). */
+    let wsPanelCount = 0, wsPanelLastKey = null;
+    function populateWsPanel(ms) {
+      const isPo = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      const panel = isPo ? ((ms && ms.panel) || []).filter(c => c && c !== 'None').slice(0, TALENT_CASTER_POS_ORDER.length) : [];
+      const key = (isPo ? 'po:' : 'x:') + panel.join('|');
+      if (key === wsPanelLastKey) return;
+      wsPanelLastKey = key;
+      wsPanelCount = populateWsTalentBox('ws-panel', panel, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, undefined, 'Panel');
+      if (wsPanelCount < 1) wsPanelDropIfShowing(WS_PANEL_IDX);
+    }
+
     /* Matches ⇄ Hosts ⇄ Casters carousel — flips every 6s while the waiting
        screen is up, automatically skipping any panel with fewer than 2
        talents configured (Today's Matches always has content). */
-    const WS_PANEL_IDS = ['ws-matches', 'ws-hosts', 'ws-casters'];
-    const WS_MATCHES_IDX = 0, WS_HOSTS_IDX = 1, WS_CASTERS_IDX = 2;
+    const WS_PANEL_IDS = ['ws-matches', 'ws-hosts', 'ws-casters', 'ws-panel'];
+    const WS_MATCHES_IDX = 0, WS_HOSTS_IDX = 1, WS_CASTERS_IDX = 2, WS_PANEL_IDX = 3;
     let wsPanelInt = null, wsPanelCurrent = WS_MATCHES_IDX;
     function wsPanelHasContent(idx) {
       if (idx === WS_HOSTS_IDX) return wsHostsCount >= 1;
       if (idx === WS_CASTERS_IDX) return wsCastersCount >= 1;
+      if (idx === WS_PANEL_IDX) return wsPanelCount >= 1 && document.documentElement.getAttribute('data-theme') === 'playoffs';
       return true;
     }
     function wsNextPanelIndex(from) {
@@ -1586,6 +1608,7 @@
       buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? poWsCount : undefined) || WS_MATCHES).slice(0, isPoWs ? poWsCount : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
+      populateWsPanel(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
       /* Real text now, every theme — mirrored from mplfs.html, see there
@@ -1653,6 +1676,11 @@
       await showWaitingScreen();
       stopWsPanelCycle();
       wsSwapPanel(WS_MATCHES_IDX, WS_CASTERS_IDX);
+    }
+    async function showPanelForEdit() {
+      await showWaitingScreen();
+      stopWsPanelCycle();
+      wsSwapPanel(WS_MATCHES_IDX, WS_PANEL_IDX);
     }
     async function showHostsForEdit() {
       await showWaitingScreen();

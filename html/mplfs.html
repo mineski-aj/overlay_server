@@ -2003,6 +2003,23 @@
     #hl-broll { display: none; position: absolute; left: 1411px; top: 0; width: 509px; height: 1080px; z-index: 1; object-fit: cover; object-position: 50% 50%; }
     #highlights-page.hl-v2 #hl-broll { display: block; }
     #highlights-page.hl-v2 #hl-broll.mv-broll-missing { display: none; }
+    /* playoffs: the b-roll gets Team Hexagon's look (grey + contrast, plus a blue / red corner gradient by the MVP's camp, screen blend) —
+       same gradients as MVP Scene V2's #mv-broll-tint. .hl-red on #highlights-page is set in hlApply. */
+    #hl-broll-tint { display: none; }
+    :where([data-theme="playoffs"]) #highlights-page.hl-v2 #hl-broll { filter: grayscale(1) contrast(1.08); }
+    :where([data-theme="playoffs"]) #highlights-page.hl-v2 #hl-broll-tint {
+      display: block; position: absolute; left: 1411px; top: 0; width: 509px; height: 1080px; z-index: 1;
+      pointer-events: none; mix-blend-mode: screen;
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(10,70,255,0.95) 0%, rgba(0,45,190,0.55) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(0,50,215,0.85) 0%, rgba(0,30,140,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    :where([data-theme="playoffs"]) #highlights-page.hl-v2.hl-red #hl-broll-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(215,30,30,0.80) 0%, rgba(140,15,15,0.40) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(235,45,45,0.90) 0%, rgba(150,25,25,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    #highlights-page.hl-v2 #hl-broll.mv-broll-missing + #hl-broll-tint { display: none !important; }
     #highlights-page.hl-v2 #hl-plaque { left: 1435px !important; }
     #highlights-page.hl-v2 #hl-stats-backer { left: 1434px !important; }
     .hl-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; }
@@ -2408,6 +2425,89 @@
     #mvp-page.mv-v2.mv-visible .mv-rune,
     #mvp-page.mv-v2.mv-visible .mv-item      { animation: mvV2SlideIn 600ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms both; }
     #mvp-page.mv-v2.mv-visible #mv-backer    { animation: mvV2RiseIn 650ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both; }
+
+    /* ── MVP Scene V2 · PLAYOFFS layout: the one long plaque is split in two (art 816x164 each, canvas-absolute) ──
+         LEFT  #mv-backer  = playoffs_mvpfsblueV2/redV2.png (team logo / role / name) + #mv-v2-hero, the square KOTAK hero in
+               its slanted right-hand slot (art x 625..815, left edge slants 625 at the top -> 669 at the bottom, so the
+               hero is clipped to that slant). Centred on the left half (centre x 480 -> left 72).
+         RIGHT #mv-data-v2 = playoffs_mvpfsdataV2.png with KDA / MVP stat / KP% spread across its white area. Centred on the
+               right half (centre x 1440 -> left 1032).
+       The big alpha hero (#mv-hero-img) is not used any more in this layout. Everything is scoped to playoffs + V2 (and is
+       !important like the other V2 defaults, so V1's saved Edit values don't win); the V2 Edit rows win over these (the theme test is wrapped in :where() so it adds no specificity). */
+    #mv-v2-hero, #mv-data-v2 { display: none; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-hero-img { display: none !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer { left: 72px !important; top: 829px !important; width: 816px !important; height: 164px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer .mv-logo { left: 23px !important; top: 27px !important; width: 110px !important; height: 110px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer .mv-role { left: 200px !important; top: 48px !important; width: 68px !important; height: 68px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer #mv-name { left: 285px !important; top: 48px !important; width: 330px !important; height: 67px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer .mv-stat-label,
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-backer .mv-stat-value { display: none !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-v2-hero {
+      display: block; position: absolute; left: 697px; top: 829px; width: 191px; height: 164px; z-index: 16;
+      object-fit: cover; object-position: 50% 28%;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 44px 100%);
+    }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-data-v2 {
+      display: block; position: absolute; left: 1032px; top: 829px; width: 816px; height: 164px; z-index: 15;
+      background: url('/assets/mvp/playoffs/playoffs_mvpfsdataV2.png') no-repeat; background-size: 100% 100%;
+    }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2.mv-visible #mv-v2-hero,
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2.mv-visible #mv-data-v2 { animation: mvV2RiseIn 650ms cubic-bezier(0.2, 0.8, 0.2, 1) 100ms both; }
+    /* data plate: gold strip is y 0..57 (labels centred in it), white below (values centred in it); three even columns */
+    .mv2-stat-label {
+      position: absolute; top: 17px; width: 256px; height: 22px; text-align: center;
+      font-family: 'General Sans', sans-serif; font-weight: 600; font-size: 18px;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
+    .mv2-stat-value {
+      position: absolute; top: 72px; width: 256px; height: 66px; text-align: center;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Anton', sans-serif; font-weight: 400; font-size: 64px;
+      color: #0a0a0a; white-space: nowrap;
+    }
+    #mv2-kda-label, #mv2-kda { left: 24px; }
+    #mv2-gpm-label, #mv2-gpm { left: 280px; }
+    #mv2-kp-label,  #mv2-kp  { left: 536px; }
+
+    /* ── MVP Scene V2 · playoffs: the SPELL / EMBLEM / IN-GAME EQUIPMENTS container scaled to the data plate's width (837 -> 816, x0.975,
+       so 115 -> 112 tall) and centred on the right half (left 1032), 17px above the data plate (top 700, bottom 812). Every element
+       inside is scaled/moved by the same factor around the container's corner, so the spacing is unchanged. Measured from the rendered
+       positions (the saved Edit-tab values), V2 + playoffs only, !important. */
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-stats-back { left: 1032px !important; top: 700px !important; width: 816px !important; height: 112px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-spell-title { left: 1070px !important; top: 709.7px !important; width: 60.4px !important; height: 23.4px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-spell { left: 1070px !important; top: 738px !important; width: 60.4px !important; height: 60.4px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-emblem-title { left: 1180.2px !important; top: 709.7px !important; width: 206.7px !important; height: 23.4px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-rune-main { left: 1181.2px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-rune-1 { left: 1243.6px !important; top: 747.8px !important; width: 37px !important; height: 37px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-rune-2 { left: 1285.5px !important; top: 747.8px !important; width: 37px !important; height: 37px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-rune-3 { left: 1330.3px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-items-title { left: 1446.3px !important; top: 709.7px !important; width: 370.5px !important; height: 23.4px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-0 { left: 1435.6px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-1 { left: 1498px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-2 { left: 1561.4px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-3 { left: 1623.8px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-4 { left: 1687.1px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-item-5 { left: 1749.5px !important; top: 738px !important; width: 56.5px !important; height: 56.5px !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 .mv-icon-title { font-size: 15.6px !important; }
+
+    /* ── MVP Scene V2 · playoffs: the b-roll gets Team Hexagon's look — grey photo + a team-colour corner gradient (screen blend),
+       blue / red by the MVP's camp (.mv-red on #mvp-page, set in mvApply). The tint is its own element over the video. */
+    #mv-broll-tint { display: none; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-broll { filter: grayscale(1) contrast(1.08); }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2 #mv-broll-tint {
+      display: block; position: absolute; left: 0; top: 0; width: 960px; height: 1080px; z-index: 1;
+      pointer-events: none; mix-blend-mode: screen;
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(10,70,255,0.95) 0%, rgba(0,45,190,0.55) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(0,50,215,0.85) 0%, rgba(0,30,140,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2.mv-red #mv-broll-tint {
+      background:
+        radial-gradient(ellipse 115% 85% at 0% 0%,     rgba(215,30,30,0.80) 0%, rgba(140,15,15,0.40) 40%, rgba(0,0,0,0) 100%),
+        radial-gradient(ellipse 105% 75% at 100% 100%, rgba(235,45,45,0.90) 0%, rgba(150,25,25,0.40) 45%, rgba(0,0,0,0) 100%);
+    }
+    #mvp-page.mv-v2 #mv-broll.mv-broll-missing + #mv-broll-tint { display: none !important; }
+    :where([data-theme="playoffs"]) #mvp-page.mv-v2.mv-visible #mv-broll-tint { animation: mvV2FadeIn 600ms ease 100ms both; }
 
     /* ── FINAL TEAM PAGE ── */
     #final-team-page {
@@ -4607,6 +4707,14 @@
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-left   { left: 0px;   top: 12px; width: 297px; height: 390px; }
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-middle { left: 105px; top: 0px;  width: 269px; height: 402px; }
     [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-hosts-slot-right  { left: 182px; top: 12px; width: 297px; height: 390px; }
+    /* PANEL (4th carousel page, playoffs only) — same box as Casters; its three photo slots start at the Casters' current playoffs layout
+       and are edited separately (Edit tab -> Panel · mplfs, .ws-panel-slot-*). */
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-left   { left: -64px; top: 31px; width: 297px; height: 390px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-middle { left: 173px; top: 23px; width: 269px; height: 402px; }
+    [data-theme="playoffs"] .ws-talent-photos.ws-talent-count-3 .ws-panel-slot-right  { left: 394px; top: 29px; width: 297px; height: 390px; }
+    /* middle photo stacks above the left and right ones */
+    .ws-panel-slot-left, .ws-panel-slot-right { z-index: 1; }
+    .ws-panel-slot-middle { z-index: 2; }
 
     /* Panel swap — Today's Matches / Hosts / Casters, cross-fading with a subtle slide every 6s */
     @keyframes ws-panel-in {
@@ -6984,6 +7092,7 @@
       <div id="ws-matches"></div>
       <div id="ws-hosts" class="ws-talent-box"></div>
       <div id="ws-casters" class="ws-talent-box"></div>
+      <div id="ws-panel" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
         <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
@@ -7367,6 +7476,7 @@
     </div>
     <div id="highlights-page">
       <video id="hl-broll" muted loop playsinline preload="auto"></video>
+      <div id="hl-broll-tint"></div>
       <div id="hl-title">MVP HIGHLIGHTS</div>
       <div class="hl-player-photo-wrap"><img class="hl-player-photo" id="hl-player-photo" src="" alt=""></div>
       <img id="hl-playoffs-coverer" src="/assets/mvp/playoffs/highlights/playoffs_mvpcoverer.png" alt="">
@@ -7575,6 +7685,7 @@
     </div>
     <div id="mvp-page">
       <video id="mv-broll" muted loop playsinline preload="auto"></video>
+      <div id="mv-broll-tint"></div>
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
@@ -7607,6 +7718,15 @@
       <img id="mv-item-4" class="mv-item" src="" alt="" onerror="this.style.visibility='hidden'">
       <img id="mv-item-5" class="mv-item" src="" alt="" onerror="this.style.visibility='hidden'">
 
+      <div id="mv-data-v2">
+        <div id="mv2-kda-label" class="mv2-stat-label">KDA</div>
+        <div id="mv2-kda" class="mv2-stat-value">-/-/-</div>
+        <div id="mv2-gpm-label" class="mv2-stat-label">GPM</div>
+        <div id="mv2-gpm" class="mv2-stat-value">-</div>
+        <div id="mv2-kp-label" class="mv2-stat-label">KP%</div>
+        <div id="mv2-kp" class="mv2-stat-value">-</div>
+      </div>
+      <img id="mv-v2-hero" src="" alt="" onerror="this.style.visibility='hidden'">
       <div id="mv-backer">
         <div class="mv-logo"><img id="mv-team-logo" src="" alt="" onerror="this.style.display='none'"></div>
         <div class="mv-role"><img id="mv-role-icon" src="" alt="" onerror="this.style.display='none'"></div>
@@ -9896,15 +10016,28 @@
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 
+    /* PANEL — 4th carousel page, playoffs theme only (same CASTER_BOX art, title "PANEL"). Fed by the Match Board's Panel row (ms.panel). */
+    let wsPanelCount = 0, wsPanelLastKey = null;
+    function populateWsPanel(ms) {
+      const isPo = document.documentElement.getAttribute('data-theme') === 'playoffs';
+      const panel = isPo ? ((ms && ms.panel) || []).filter(c => c && c !== 'None').slice(0, TALENT_CASTER_POS_ORDER.length) : [];
+      const key = (isPo ? 'po:' : 'x:') + panel.join('|');
+      if (key === wsPanelLastKey) return;
+      wsPanelLastKey = key;
+      wsPanelCount = populateWsTalentBox('ws-panel', panel, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, 'Panel');
+      if (wsPanelCount < 1) wsPanelDropIfShowing(WS_PANEL_IDX);
+    }
+
     /* Matches ⇄ Hosts ⇄ Casters carousel — flips every 6s while the waiting
        screen is up, automatically skipping any panel with fewer than 2
        talents configured (Today's Matches always has content). */
-    const WS_PANEL_IDS = ['ws-matches', 'ws-hosts', 'ws-casters'];
-    const WS_MATCHES_IDX = 0, WS_HOSTS_IDX = 1, WS_CASTERS_IDX = 2;
+    const WS_PANEL_IDS = ['ws-matches', 'ws-hosts', 'ws-casters', 'ws-panel'];
+    const WS_MATCHES_IDX = 0, WS_HOSTS_IDX = 1, WS_CASTERS_IDX = 2, WS_PANEL_IDX = 3;
     let wsPanelInt = null, wsPanelCurrent = WS_MATCHES_IDX;
     function wsPanelHasContent(idx) {
       if (idx === WS_HOSTS_IDX) return wsHostsCount >= 1;
       if (idx === WS_CASTERS_IDX) return wsCastersCount >= 1;
+      if (idx === WS_PANEL_IDX) return wsPanelCount >= 1 && document.documentElement.getAttribute('data-theme') === 'playoffs';
       return true;
     }
     function wsNextPanelIndex(from) {
@@ -10298,6 +10431,7 @@
       buildWsMatches('ws-matches', (msToMatchRows(ms, isPoWs ? poWsCount : undefined) || WS_MATCHES).slice(0, isPoWs ? poWsCount : undefined), { currentMatch: ms.match });
       populateWsHosts(ms);
       populateWsCasters(ms);
+      populateWsPanel(ms);
       const countdownLabelEl = document.getElementById('ws-timer-countdown-label');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
       /* Real text now, every theme (was a PNG, see git history/CLAUDE.md if
@@ -10366,6 +10500,11 @@
       await showWaitingScreen();
       stopWsPanelCycle();
       wsSwapPanel(WS_MATCHES_IDX, WS_CASTERS_IDX);
+    }
+    async function showPanelForEdit() {
+      await showWaitingScreen();
+      stopWsPanelCycle();
+      wsSwapPanel(WS_MATCHES_IDX, WS_PANEL_IDX);
     }
     async function showHostsForEdit() {
       await showWaitingScreen();
@@ -11484,6 +11623,7 @@
          the base folder itself differs, so branch inline like
          buildWlSponsor's own asset swap does for the same reason. */
       const isRed = player && player.campid === 2;
+      hlPage.classList.toggle('hl-red', !!isRed);
       const isAnniversaryHl = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const isPlayoffsHl = document.documentElement.getAttribute('data-theme') === 'playoffs';
       plaque.style.backgroundImage = isAnniversaryHl
@@ -11601,6 +11741,7 @@
           hlPage.classList.remove('hl-on');
           mvStopBroll('hl-broll');
           hlPage.classList.remove('hl-v2');
+          hlPage.classList.remove('hl-red');
           hideSceneVideo();
           resolve();
         }, 420);
@@ -11920,7 +12061,11 @@
       const isRed = player && player.campid === 2;
       const isAnniversaryMv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       const isPlayoffsMv = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      document.getElementById('mv-backer').style.backgroundImage = isAnniversaryMv
+      mvPage.classList.toggle('mv-red', !!isRed);
+      const mvPoV2 = isPlayoffsMv && mvPage.classList.contains('mv-v2'); /* playoffs V2: split plaque (see the V2 playoffs CSS) */
+      document.getElementById('mv-backer').style.backgroundImage = mvPoV2
+        ? `url('/assets/mvp/playoffs/playoffs_${isRed ? 'mvpfsredV2' : 'mvpfsblueV2'}.png')`
+        : isAnniversaryMv
         ? `url('/assets/mvp/anniversary/${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`
         : isPlayoffsMv
         ? `url('/assets/mvp/playoffs/playoffs_${isRed ? 'mvpfsred' : 'mvpfsblue'}.png')`
@@ -12012,6 +12157,18 @@
       kpEl.textContent = (player && player.kp != null) ? player.kp + '%' : '-';
       mvFitStatValue(kpEl, 64, 32);
 
+      if (mvPoV2) {
+        const hv = document.getElementById('mv-v2-hero');
+        hv.style.visibility = '';
+        hv.dataset.heroPngFallback = '';
+        hv.removeAttribute('data-hero-png-fallback');
+        hv.src = (player && player.heroid) ? heroWebUrl(player.heroid, '/') : '';
+        document.getElementById('mv2-kda').textContent = (player && player.kda) || '-/-/-';
+        document.getElementById('mv2-gpm-label').textContent = (player && player.mvp_title) || 'GPM';
+        document.getElementById('mv2-gpm').textContent = mvFormatStatValue(player && player.mvp_value);
+        document.getElementById('mv2-kp').textContent = (player && player.kp != null) ? player.kp + '%' : '-';
+      }
+
       mvApplyMatchLabel(ms);
     }
 
@@ -12056,6 +12213,7 @@
       showSceneVideo('mvp');
       mvPage.classList.add('mv-on');
       mvFitName(document.getElementById('mv-name')); /* now has real layout to measure against */
+      if (v2) ['mv2-kda', 'mv2-gpm', 'mv2-kp'].forEach(id => mvFitStatValue(document.getElementById(id), 64, 32));
       mvFeatherHeroImg(document.getElementById('mv-hero-img')); /* ditto — needs real box size */
       void mvPage.offsetWidth; /* force reflow so the opacity transition runs */
       mvPage.classList.add('mv-visible');
@@ -12070,6 +12228,7 @@
           hideSceneVideo();
           mvStopBroll();
           mvPage.classList.remove('mv-v2');
+          mvPage.classList.remove('mv-red');
           resolve();
         }, 420);
       });

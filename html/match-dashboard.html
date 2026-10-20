@@ -444,6 +444,21 @@
         <input type="text" id="en-caster-2" list="talent-list" autocomplete="off" value="None">
       </div>
     </div>
+    <!-- Row 6: Panel -->
+    <div class="meta-row" style="margin-top:10px;">
+      <div class="meta-field grow">
+        <div class="meta-label">Panel 1</div>
+        <input type="text" id="panel-0" list="talent-list" autocomplete="off" value="None">
+      </div>
+      <div class="meta-field grow">
+        <div class="meta-label">Panel 2</div>
+        <input type="text" id="panel-1" list="talent-list" autocomplete="off" value="None">
+      </div>
+      <div class="meta-field grow">
+        <div class="meta-label">Panel 3</div>
+        <input type="text" id="panel-2" list="talent-list" autocomplete="off" value="None">
+      </div>
+    </div>
     <datalist id="talent-list"></datalist>
     <div class="show-label-wrap">
       <span class="show-label-key">Timer</span>
@@ -578,6 +593,7 @@
     hosts:     ['None', 'None', 'None'],
     casters:   ['None', 'None', 'None'],
     enCasters: ['None', 'None', 'None'],
+    panel:     ['None', 'None', 'None'],
   };
 
   /* ── AUTH ── */
@@ -650,10 +666,12 @@
     var hosts     = localState.hosts     || ['None','None','None'];
     var casters   = localState.casters   || ['None','None','None'];
     var enCasters = localState.enCasters || ['None','None','None'];
+    var panel     = localState.panel     || ['None','None','None'];
     [0,1,2].forEach(function (i) {
       var hs = document.getElementById('host-'      + i); if (hs) hs.value = hosts[i]     || 'None';
       var cs = document.getElementById('caster-'    + i); if (cs) cs.value = casters[i]   || 'None';
       var ec = document.getElementById('en-caster-' + i); if (ec) ec.value = enCasters[i] || 'None';
+      var pn = document.getElementById('panel-'     + i); if (pn) pn.value = panel[i]     || 'None';
     });
   }
 
@@ -729,10 +747,12 @@
     var hosts     = s.hosts     || ['None','None','None'];
     var casters   = s.casters   || ['None','None','None'];
     var enCasters = s.enCasters || ['None','None','None'];
+    var panel     = s.panel     || ['None','None','None'];
     [0,1,2].forEach(function (i) {
       var hs = document.getElementById('host-'      + i); if (hs) hs.value = hosts[i]     || 'None';
       var cs = document.getElementById('caster-'    + i); if (cs) cs.value = casters[i]   || 'None';
       var ec = document.getElementById('en-caster-' + i); if (ec) ec.value = enCasters[i] || 'None';
+      var pn = document.getElementById('panel-'     + i); if (pn) pn.value = panel[i]     || 'None';
     });
     updateBadges(s.swapped);
     renderRoster('home');
@@ -1714,6 +1734,12 @@
       enCasters[i] = val;
       localState.enCasters = enCasters;
       push({ enCasters: enCasters });
+    });
+    bindTalentInput(document.getElementById('panel-' + i), function (val) {
+      var panel = (localState.panel || ['None','None','None']).slice();
+      panel[i] = val;
+      localState.panel = panel;
+      push({ panel: panel });
     });
   });
 

@@ -6172,6 +6172,25 @@
     { group: 'Caster Title', id: '.ws-casters-title', name: 'Title Text (Playoffs)' },
   ];
 
+  /* ── Panel (mplfs.html Waiting Screen TVC, playoffs only — 4th carousel page, same box as Casters) ──
+     Starts at the Casters' playoffs layout (see the .ws-panel-slot-* rules in mplfs.html / ENTVC.html). Edits save to the shared
+     'mplfs' bucket, so they apply to ENTVC.html's Panel page too. */
+  var PANEL_DEFAULTS = {
+    '.ws-panel-slot-left':   { left: -64, top: 31, width: 297, height: 390 },
+    '.ws-panel-slot-middle': { left: 173, top: 23, width: 269, height: 402 },
+    '.ws-panel-slot-right':  { left: 394, top: 29, width: 297, height: 390 },
+    '#ws-panel .ws-talent-namebar': { left: 0, top: 463, width: 571, height: 37 },
+    '.ws-panel-title': { left: 0, top: 0, width: 571, height: 61, fontSize: 34 },
+  };
+
+  var PANEL_ELEMENTS = [
+    { group: 'Panel', id: '.ws-panel-slot-left',   name: 'Photo (Left)'   },
+    { group: 'Panel', id: '.ws-panel-slot-middle', name: 'Photo (Middle)' },
+    { group: 'Panel', id: '.ws-panel-slot-right',  name: 'Photo (Right)'  },
+    { group: 'Panel Name', id: '#ws-panel .ws-talent-namebar', name: 'Name Box' },
+    { group: 'Panel Title', id: '.ws-panel-title', name: 'Title Text (Playoffs)' },
+  ];
+
   /* ── Hosts (mplfs.html Waiting Screen TVC) element defaults ─────
      2 or 3 photo slots, same 571×478 container as Casters. The Left/Right
      defaults below are the 2-host layout; Middle only ever renders (and
@@ -6489,8 +6508,17 @@
   MV2_DEFAULTS[MV2P + '#mv-matchbox']      = { left: 1402, top: 562, width: 224, height: 57 };
   MV2_DEFAULTS[MV2P + '#mv-po-matchgame']  = { left: 1216, top: 78,  width: 448, height: 64, fontSize: 56 };
   MV2_DEFAULTS[MV2P + '#mv-broll']         = { left: 0,    top: 0,   width: 960, height: 1080 };
+  /* playoffs split-plaque layout: left plaque (art + square hero move together), right data plate, b-roll tint follows the b-roll */
+  MV2_DEFAULTS[MV2P + '#mv-broll-tint']    = { left: 0,    top: 0,   width: 960, height: 1080 };
+  MV2_DEFAULTS[MV2P + '#mv-backer']        = { left: 72,   top: 829, width: 816, height: 164 };
+  MV2_DEFAULTS[MV2P + '#mv-v2-hero']       = { left: 697,  top: 829, width: 191, height: 164 };
+  MV2_DEFAULTS[MV2P + '#mv-data-v2']       = { left: 1032, top: 829, width: 816, height: 164 };
   var MV2_ELEMENTS = [
     { group: 'MVP V2 · B-roll',    id: MV2P + '#mv-broll',        name: 'Player B-roll Video (V2)' },
+    { group: 'MVP V2 · B-roll',    id: MV2P + '#mv-broll-tint',   name: 'B-roll Team Tint (V2)' },
+    { group: 'MVP V2 · Left Plaque', id: MV2P + '#mv-backer',     name: 'Left Plaque (V2, playoffs)' },
+    { group: 'MVP V2 · Left Plaque', id: MV2P + '#mv-v2-hero',    name: 'Square Hero (V2, playoffs)' },
+    { group: 'MVP V2 · Data',      id: MV2P + '#mv-data-v2',      name: 'Data Plate (V2, playoffs)' },
     { group: 'MVP V2 · Hero',     id: MV2P + '#mv-hero-img',     name: 'Hero Image (V2)' },
     { group: 'MVP V2 · Video',    id: MV2P + '#mv-box-bg',       name: 'MVP Text Video (V2)' },
     { group: 'MVP V2 · Title',    id: MV2P + '#mv-ofthegame',    name: 'Of The Game Text (V2)' },
@@ -7150,6 +7178,15 @@
       elements:    CASTER_ELEMENTS,
       defaults:    CASTER_DEFAULTS,
       showFn:      'showCastersForEdit',
+    },
+    mplfs_panel: {
+      label:       'Panel · mplfs',
+      file:        'mplfs.html',
+      styleFile:   'mplfs',
+      defaultsKey: 'sb_edit_defaults_mplfs_panel',
+      elements:    PANEL_ELEMENTS,
+      defaults:    PANEL_DEFAULTS,
+      showFn:      'showPanelForEdit',
     },
     mplfs_hosts: {
       label:       'Hosts · mplfs',
