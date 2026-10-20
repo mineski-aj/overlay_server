@@ -1997,6 +1997,14 @@
     /* MVP Highlights V2 (state.featureToggles.hl_v2): no player photo (nor the playoffs corner graphic that sits over it). */
     #highlights-page.hl-v2 .hl-player-photo-wrap,
     #highlights-page.hl-v2 #hl-playoffs-coverer { display: none !important; }
+    /* V2 b-roll: photos/broll/<tri>/<ign>.webm in the right strip x 1411..1920 (509x1080, cropped left/right by object-fit: cover),
+       behind everything on the page (z-index 1; the shared looping background is a separate layer under #highlights-page).
+       The plaque + stats backer are centred on that strip (centre x 1665.5) — !important so V1's saved Edit-tab lefts don't win. */
+    #hl-broll { display: none; position: absolute; left: 1411px; top: 0; width: 509px; height: 1080px; z-index: 1; object-fit: cover; object-position: 50% 50%; }
+    #highlights-page.hl-v2 #hl-broll { display: block; }
+    #highlights-page.hl-v2 #hl-broll.mv-broll-missing { display: none; }
+    #highlights-page.hl-v2 #hl-plaque { left: 1435px !important; }
+    #highlights-page.hl-v2 #hl-stats-backer { left: 1434px !important; }
     .hl-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; }
     #hl-plaque {
       position: absolute; left: 1393px; top: 777px; width: 462px; height: 174px;
@@ -2371,6 +2379,12 @@
        !important on purpose — V1's saved Edit-tab overrides on the plain ids (e.g. #mv-hero-img, huge and
        off-canvas) are !important too and would otherwise win; the V2 Edit rows save under
        "html #mvp-page.mv-v2 <id>" (one element-selector more specific), so they beat these defaults. */
+    /* V2 b-roll: the player's broll webm (photos/broll/<tri>/<ign>.webm) on the left half, BEHIND every other element
+       of the scene (z-index 1) but in front of the shared looping background video (a separate layer under #mvp-page). */
+    #mv-broll { display: none; position: absolute; left: 0; top: 0; width: 960px; height: 1080px; z-index: 1; object-fit: cover; }
+    #mvp-page.mv-v2 #mv-broll { display: block; }
+    #mvp-page.mv-v2 #mv-broll.mv-broll-missing { display: none; }
+    #mvp-page.mv-v2.mv-visible #mv-broll { animation: mvV2FadeIn 600ms ease 100ms both; }
     #mvp-page.mv-v2 #mv-photo,
     #mvp-page.mv-v2 #mv-po-herofronter,
     #mvp-page.mv-v2 #mv-title-anniv-bg { display: none !important; }
@@ -3202,8 +3216,12 @@
     [data-theme="playoffs"] .lu-teambar-season,
     [data-theme="playoffs"] .lu-teambar-match { display: none; }
     [data-theme="playoffs"] .lu-photo { -webkit-mask-image: none; mask-image: none; }
-    /* The white bottom feather is retired: the players now stand on the bottom edge of the screen (their boxes end at y=1080), so there is no white band to cover. */
-    [data-theme="playoffs"] .lu-po-feather { display: none; }
+    /* The white bottom feather is back: drawn over the photos (players are z 1-5), under the name tags (z 19/20) and the
+       logo box (z 10 is the title layer; 6 here keeps it below it). The art is 1920x291; sitting flush on the bottom edge
+       would be top 789, moved down 77px -> top 866 (the lowest 77px fall off the canvas). */
+    [data-theme="playoffs"] .lu-po-feather {
+      display: block; position: absolute; left: 0; top: 866px; width: 1920px; height: 291px; z-index: 6; pointer-events: none;
+    }
     [data-theme="playoffs"] .lu-po-logobox {
       display: block; position: absolute; left: 844px; top: 843px; width: 237px; height: 237px; z-index: 10;
     }
@@ -7348,6 +7366,7 @@
       <div id="st-rows"></div>
     </div>
     <div id="highlights-page">
+      <video id="hl-broll" muted loop playsinline preload="auto"></video>
       <div id="hl-title">MVP HIGHLIGHTS</div>
       <div class="hl-player-photo-wrap"><img class="hl-player-photo" id="hl-player-photo" src="" alt=""></div>
       <img id="hl-playoffs-coverer" src="/assets/mvp/playoffs/highlights/playoffs_mvpcoverer.png" alt="">
@@ -7555,6 +7574,7 @@
       </div>
     </div>
     <div id="mvp-page">
+      <video id="mv-broll" muted loop playsinline preload="auto"></video>
       <video id="mv-box-bg" autoplay muted loop playsinline src="/assets/mvp/mvptext.webm"></video>
       <img id="mv-title-anniv-bg" src="/assets/mvp/anniversary/gamemvptitle.png" alt="">
       <img id="mv-anniv-gameflower" src="/assets/mvp/anniversary/gameflower.png" alt="">
@@ -11500,7 +11520,8 @@
          MVP Scene's #mv-photo (see mvSetImgWithFallback). Also means
          MVP Scene -> Highlights reuses the exact file MVP just loaded. */
       if (hlPage.classList.contains('hl-v2')) {
-        photoEl.removeAttribute('src'); /* V2: no signature photo */
+        photoEl.removeAttribute('src'); /* V2: no signature photo — the player's b-roll webm takes its place */
+        mvSetBroll(player, 'hl-broll');
       } else {
         const photoUrl = hlPhotoUrl(player && player.name);
         mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
@@ -11558,6 +11579,10 @@
       }
       showSceneVideo('highlights');
       hlPage.classList.add('hl-on');
+      if (hlPage.classList.contains('hl-v2')) {
+        const brv = document.getElementById('hl-broll');
+        try { brv.currentTime = 0; brv.play().catch(() => {}); } catch (e) {}
+      }
       void hlPage.offsetWidth; /* force reflow so the opacity transition runs */
       hlPage.classList.add('hl-visible');
       /* Now that the page has real layout, fit every shrink-to-fit text
@@ -11574,6 +11599,7 @@
       return new Promise(resolve => {
         setTimeout(() => {
           hlPage.classList.remove('hl-on');
+          mvStopBroll('hl-broll');
           hlPage.classList.remove('hl-v2');
           hideSceneVideo();
           resolve();
@@ -11868,6 +11894,22 @@
       document.getElementById('mv-po-matchgame').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
     }
 
+    /* V2 b-roll: photos/broll/<team tricode lower-case>/<ign>.webm. No file -> the layer is simply hidden. */
+    function mvSetBroll(player, id) {
+      const v = document.getElementById(id || 'mv-broll');
+      const tri = ((player && player.team_simple_name) || '').toLowerCase();
+      const ign = (player && player.name) || '';
+      const src = (tri && ign) ? '/photos/broll/' + encodeURIComponent(tri) + '/' + encodeURIComponent(ign) + '.webm' : '';
+      v.classList.remove('mv-broll-missing');
+      v.onerror = () => { v.classList.add('mv-broll-missing'); };
+      if (!src) { v.classList.add('mv-broll-missing'); v.removeAttribute('src'); return; }
+      if (v.getAttribute('src') !== src) { v.setAttribute('src', src); v.load(); }
+    }
+    function mvStopBroll(id) {
+      const v = document.getElementById(id || 'mv-broll');
+      try { v.pause(); } catch (e) {}
+    }
+
     function mvApply(player, ms) {
       /* campid 1 = left/team1 (blue), campid 2 = right/team2 (red) —
          same convention as MVP Highlights / the main-info API. 10th
@@ -11913,7 +11955,8 @@
 
       const photoEl = document.getElementById('mv-photo');
       if (mvPage.classList.contains('mv-v2')) {
-        photoEl.removeAttribute('src'); /* V2: no signature photo — the live camera shows the player */
+        photoEl.removeAttribute('src'); /* V2: no signature photo — the player's b-roll webm takes its place */
+        mvSetBroll(player);
       } else {
         const photoUrl = hlPhotoUrl(player && player.name);
         mvSetImgWithFallback(photoEl, photoUrl, mvWebUrl(photoUrl, '/hires/SIGNATURE/', '/hires/SIGNATURE_web/'));
@@ -12007,6 +12050,8 @@
         if (activeFeature !== 'mvp') return; /* superseded during the delay */
         const bgv = document.getElementById('mv-box-bg');
         try { bgv.currentTime = 0; bgv.play().catch(() => {}); } catch (e) {} /* MVP text animation starts with the elements */
+        const brv = document.getElementById('mv-broll');
+        try { brv.currentTime = 0; brv.play().catch(() => {}); } catch (e) {}
       }
       showSceneVideo('mvp');
       mvPage.classList.add('mv-on');
@@ -12023,6 +12068,7 @@
         setTimeout(() => {
           mvPage.classList.remove('mv-on');
           hideSceneVideo();
+          mvStopBroll();
           mvPage.classList.remove('mv-v2');
           resolve();
         }, 420);
