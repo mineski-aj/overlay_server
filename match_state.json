@@ -75,7 +75,7 @@
   "week": 8,
   "day": 1,
   "patch": "Starward Decade 1014",
-  "map": "Revealing Wisps",
+  "map": "Golden Turret",
   "hosts": [
     "Odin",
     "Denisse",
@@ -94,9 +94,9 @@
   "countdownLabel": "SHOW STARTS IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 1800
+    "running": true,
+    "endAt": 1792479600267,
+    "remaining": 4148
   },
   "todayMatches": [
     {
@@ -172,7 +172,8 @@
       "time": "5:00 PM",
       "star": false,
       "matchType": "regular",
-      "stageLabel": "UB SEMI FINALS"
+      "stageLabel": "UB SEMI FINALS",
+      "openHouseTime": ""
     },
     {
       "team1Id": "10973",
