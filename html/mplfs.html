@@ -2733,6 +2733,8 @@
     #lu-intro-video   { z-index: 300; }
     #lu-stinger-video { z-index: 301; }
     #lu-intro-video.lu-video-visible, #lu-stinger-video.lu-video-visible { opacity: 1; }
+    /* Playoffs stinger must cover the screen by its own frame 40 — no extra CSS fade-in. */
+    [data-theme="playoffs"] #lu-stinger-video { transition: none; }
 
     /* ── Phase 1 — group photo intro ──
        Full-bleed 1920×1080 team photo (see /photos/Group/<TRICODE>_GROUP.png)
@@ -13474,6 +13476,10 @@
       return LU_STINGER_SRC_BY_THEME[theme] || LU_STINGER_SRC;
     }
     const LU_STINGER_LEAD_MS = 500; // stinger starts this long before the intro ends
+    // Playoffs stinger: frame 40 (60fps) is the cut point where it fully covers the screen.
+    // It starts LU_STINGER_CUT_MS before the intro ends so that frame lands exactly at the intro's end.
+    const LU_STINGER_CUT_MS = 40 / 60 * 1000;
+    function luIsPlayoffs() { return document.documentElement.getAttribute('data-theme') === 'playoffs'; }
     const luIntroVideo   = document.getElementById('lu-intro-video');
     const luStingerVideo = document.getElementById('lu-stinger-video');
     /* One token PER SIDE, not one shared counter — triggering Red right
@@ -13632,26 +13638,51 @@
         introDurationMs = (luIntroVideo.duration || 0) * 1000;
         try { await luIntroVideo.play(); } catch (e) {}
         luFadeInVideoLayer(luIntroVideo, token, side);
-        if (side === 'blue') luBgRestoreSoon(token, side);
+        if (side === 'blue' && !luIsPlayoffs()) luBgRestoreSoon(token, side);
       }
 
-      await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
+      const po = luIsPlayoffs();
+      const introT0 = performance.now();
+      if (po) {
+        /* Playoffs: preload the stinger now (hidden) so it can start the instant it's due,
+           then start it so its frame 40 (full cover) lands when the intro ends. */
+        luStingerVideo.src = getLuStingerSrc();
+        luStingerVideo.currentTime = 0;
+        await luWaitVideoMeta(luStingerVideo);
+        if (token !== luIntroTokens[side]) return;
+        const wait = introDurationMs - LU_STINGER_CUT_MS - (performance.now() - introT0);
+        if (wait > 0) await luDelay(wait);
+      } else {
+        await luDelay(introDurationMs - LU_STINGER_LEAD_MS);
+      }
       if (token !== luIntroTokens[side]) return; /* superseded mid-intro */
 
-      luStingerVideo.src = getLuStingerSrc();
-      luStingerVideo.currentTime = 0;
+      if (!po) {
+        luStingerVideo.src = getLuStingerSrc();
+        luStingerVideo.currentTime = 0;
+      }
       luStingerVideo.style.display = 'block';
-      await luWaitVideoMeta(luStingerVideo);
+      if (!po) await luWaitVideoMeta(luStingerVideo);
       if (token !== luIntroTokens[side]) return; /* superseded while loading the stinger */
       const stingerDurationMs = (luStingerVideo.duration || 0) * 1000;
       try { await luStingerVideo.play(); } catch (e) {}
-      luFadeInVideoLayer(luStingerVideo, token, side);
-      if (side === 'blue') luBgRestoreSoon(token, side); /* no-op if the intro already scheduled it; covers a team with no intro clip */
+      if (po) luStingerVideo.classList.add('lu-video-visible');
+      else luFadeInVideoLayer(luStingerVideo, token, side);
 
-      /* The stinger has taken over — the intro is done, hide it now instead
-         of leaving it lingering underneath until the whole overlay comes
-         down later. */
-      luHideVideoLayer(luIntroVideo);
+      if (po) {
+        /* Hold the intro (and the bg loop, if blue) until the stinger's frame 40 fully covers the screen. */
+        setTimeout(() => {
+          if (token !== luIntroTokens[side]) return;
+          luHideVideoLayer(luIntroVideo);
+          if (side === 'blue') luBgRestore();
+        }, LU_STINGER_CUT_MS);
+      } else {
+        if (side === 'blue') luBgRestoreSoon(token, side); /* no-op if the intro already scheduled it; covers a team with no intro clip */
+        /* The stinger has taken over — the intro is done, hide it now instead
+           of leaving it lingering underneath until the whole overlay comes
+           down later. */
+        luHideVideoLayer(luIntroVideo);
+      }
 
       setTimeout(async () => {
         if (token !== luIntroTokens[side]) return; /* superseded mid-stinger */
