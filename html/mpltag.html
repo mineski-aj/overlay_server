@@ -1058,7 +1058,7 @@
     mapName.textContent = game.map || '';
     var mapLabel = document.createElement('div');
     mapLabel.className = 'ms-map-label';
-    mapLabel.textContent = 'MAP SELECTED';
+    mapLabel.textContent = Number(game.game) === 4 ? 'REMAINING MAP' : 'MAP SELECTED'; /* 4th map = the remaining map */
     map.content.appendChild(mapIcon); map.content.appendChild(mapName); map.content.appendChild(mapLabel);
 
     var win = boxWithContent('ms-winbox', 'ms-winbox-mask');
