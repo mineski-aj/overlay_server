@@ -1494,7 +1494,7 @@
       if (key === wsHostsLastKey) return; /* unchanged — don't disturb a panel mid-display */
       wsHostsLastKey = key;
       const hostPosOrder = hosts.length >= 3 ? TALENT_HOST3_POS_ORDER : TALENT_HOST_POS_ORDER;
-      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'HOST_BOXv1.png', hostPosOrder, undefined, 'Host');
+      wsHostsCount = populateWsTalentBox('ws-hosts', hosts, 'HOST_BOXv1.png', hostPosOrder, undefined, 'Hosts');
       if (wsHostsCount < 1) wsPanelDropIfShowing(WS_HOSTS_IDX);
     }
     let wsCastersCount = 0, wsCastersLastKey = null;
@@ -1505,7 +1505,7 @@
       const key = casters.join('|');
       if (key === wsCastersLastKey) return;
       wsCastersLastKey = key;
-      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, 'ws-encasters', 'Caster');
+      wsCastersCount = populateWsTalentBox('ws-casters', casters, 'CASTER_BOXv1.png', TALENT_CASTER_POS_ORDER, 'ws-encasters', 'Casters');
       if (wsCastersCount < 1) wsPanelDropIfShowing(WS_CASTERS_IDX);
     }
 
