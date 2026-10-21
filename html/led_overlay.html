@@ -2153,7 +2153,7 @@
           const entry = feed.find(e => e.slot === `player${i}`);
           if (!entry) continue;
           /* always assign to fixed plates — swap is handled by setSwap's in-place ekgStates swap */
-          const plateNum = i <= 5 ? i : (11 - i) + 5;  // camp2 reversed: 6→10, 7→9, 8→8, 9→7, 10→6
+          const plateNum = i;  // HRM slots follow seat order for both teams (player6 = seat_1 of camp 2 = plate 6); the old camp2 reversal put Jowm's HRM on Ryota's plate
           const ekg = ekgStates[plateNum];
           if (!ekg) continue;
           ekg.bpm       = parseInt(entry.bpm) || 0;
