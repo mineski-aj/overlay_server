@@ -5718,6 +5718,9 @@
     '.wsm-oh-label, .wsm-oh-time':                   { fontSize: 21 },
     /* Playoffs only — corner tags, Lakas ng Pinas, SUPERFAN ticker. */
     '#ws-superfan':     { left: 628,  top: 997,  width: 899, height: 51 },
+    /* Playoffs only — QR + "SHARE YOUR FEEDBACK!" caption (shared by mplfs.html and ENTVC.html through the same mplfs bucket). */
+    '#ws-qr':           { left: 962,  top: 45,   width: 162, height: 162 },
+    '#ws-qr-text':      { left: 1126, top: 48,   width: 150, height: 54, fontSize: 22 },
   };
   var WS_MATCHES_ELEMENTS = [
     { group: 'Match Row Text', id: '.wsm-band-label, .wsm-band-time, .wsm-band-bo', name: 'Header Text Size' },
@@ -5726,6 +5729,8 @@
     { group: 'Playoffs Title', id: '.wsm-title-text',                              name: 'Title Text Size (Playoffs)' },
     { group: 'Playoffs Open House', id: '.wsm-oh-label, .wsm-oh-time',             name: 'Open House Text Size (Playoffs)' },
     { group: 'Playoffs SuperFan',  id: '#ws-superfan',     name: 'SuperFan Ticker (Playoffs)' },
+    { group: 'Playoffs QR',        id: '#ws-qr',           name: 'QR Code (Playoffs)' },
+    { group: 'Playoffs QR Text',   id: '#ws-qr-text',      name: 'Share Your Feedback Text (Playoffs)' },
   ];
 
   /* ── Waiting Screen TVC — per-match-count layout ──────────────────

@@ -4596,6 +4596,15 @@
     [data-theme="playoffs"] #ws-superfan { display: block; }
     #ws-superfan { position: absolute; left: 628px; top: 997px; width: 899px; height: 51px; }
     #ws-superfan > img { position: absolute; left: 0; top: 0; width: 899px; height: 51px; }
+    /* Playoffs only — "SHARE YOUR FEEDBACK!" QR (assets/Waiting Screen TVC/playoffs/QR.png, 1024x1024 incl. its quiet margin) + its 3-line caption.
+       Independent elements so both can be moved/resized from the Edit tab (Waiting TVC · Today's Matches -> "Playoffs QR"). */
+    #ws-qr, #ws-qr-text { display: none; }
+    [data-theme="playoffs"] #ws-qr { display: block; position: absolute; left: 962px; top: 45px; width: 162px; height: 162px; z-index: 4; }
+    [data-theme="playoffs"] #ws-qr-text {
+      display: block; position: absolute; left: 1126px; top: 48px; width: 150px; height: 54px; z-index: 4;
+      font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 22px; line-height: 0.8; letter-spacing: -0.01em;
+      color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
+    }
     .ws-sf-label, .ws-sf-window span {
       font-family: 'General Sans', sans-serif; font-weight: 800; font-size: 27px;
       text-transform: uppercase; white-space: nowrap;
@@ -7106,6 +7115,8 @@
         <span class="ws-sf-label">MPL PH SUPERFAN CITY</span>
         <div class="ws-sf-window"><div class="ws-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
       </div>
+      <img id="ws-qr" src="/assets/Waiting Screen TVC/playoffs/QR.png" alt="">
+      <div id="ws-qr-text">SHARE<br>YOUR<br>FEEDBACK!</div>
       <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
     <div id="waiting-lobby-page">

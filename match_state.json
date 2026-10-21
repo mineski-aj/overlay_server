@@ -70,7 +70,7 @@
   "series": "BO5",
   "game": 1,
   "match": 1,
-  "swapped": false,
+  "swapped": true,
   "official": true,
   "week": 8,
   "day": 1,
@@ -94,9 +94,9 @@
   "countdownLabel": "SHOW STARTS IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
   "timer": {
-    "running": false,
-    "endAt": null,
-    "remaining": 1800
+    "running": true,
+    "endAt": 1792566005406,
+    "remaining": 15625
   },
   "todayMatches": [
     {
@@ -112,9 +112,9 @@
       "time": "3:00 PM",
       "star": false,
       "matchType": "regular",
-      "openHouseTime": "4:00 PM",
+      "openHouseTime": "2:30 PM",
       "stageLabel": "PLAY-INS",
-      "openHouseLabel": "",
+      "openHouseLabel": "OPENING CEREMONY",
       "openHouseOff": false
     },
     {
@@ -132,7 +132,7 @@
       "matchType": "regular",
       "openHouseTime": "6:30 PM",
       "stageLabel": "PLAY-INS",
-      "openHouseOff": false,
+      "openHouseOff": true,
       "openHouseLabel": ""
     },
     {
@@ -159,7 +159,7 @@
       "team2Name": "",
       "team2Short": "",
       "vsDisplay": "VS",
-      "time": "2:30 PM",
+      "time": "3:00 PM",
       "star": false,
       "matchType": "regular",
       "openHouseTime": "",
@@ -173,7 +173,7 @@
       "team2Name": "",
       "team2Short": "",
       "vsDisplay": "VS",
-      "time": "5:00 PM",
+      "time": "7:00 PM",
       "star": false,
       "matchType": "regular",
       "stageLabel": "UB SEMI FINALS",

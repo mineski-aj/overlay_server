@@ -1066,6 +1066,10 @@ image inside that box (inline %) so it lands on its old 136x44. The logo pops in
 
 `LU_STINGER_SRC_BY_THEME.playoffs` = `/assets/lineup/playoffs/lineupstinger.webm` (shared by Blue AND Red — one `getLuStingerSrc()`); the per-team intro webms are unchanged. Read when Phase 0 starts, so a theme switch applies on the next Show.
 
+### Playoffs Waiting TVC — "SHARE YOUR FEEDBACK!" QR (mplfs.html + ENTVC.html)
+
+`#ws-qr` (`assets/Waiting Screen TVC/playoffs/QR.png`, 1024x1024 incl. its quiet margin; box 962,45 162x162 = the pasted design rect) and `#ws-qr-text` (3 lines SHARE / YOUR / FEEDBACK!, General Sans 800 22px, left 1126 top 48, black) are two independent playoffs-only elements (`display:none` under other themes) mirrored in BOTH pages (Waiting TVC rule). Edit tab: "Today's Matches · Waiting TVC" config (`WS_MATCHES_*`, groups "Playoffs QR" / "Playoffs QR Text"); both pages read the same `mplfs` bucket, so one edit moves both. New selectors, so no Regular override to fight.
+
 ### Final Team logo (mplfs.html `#ft-mpl-logo`)
 
 Playoffs uses the plain MPL logo (no sun burst): `[data-theme="playoffs"] #ft-mpl-logo { content: url('/assets/mpl2026logo.png') }` — same file the Match Board uses. The sun version
