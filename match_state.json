@@ -3,7 +3,7 @@
     "teamId": "10845",
     "name": "Aurora Gaming PH",
     "short": "RORA",
-    "score": 1,
+    "score": 3,
     "lineup": [
       {
         "role": "EXP LANER",
@@ -37,7 +37,7 @@
     "teamId": "11150",
     "name": "Smart Omega",
     "short": "OMG",
-    "score": 0,
+    "score": 2,
     "lineup": [
       {
         "role": "EXP LANER",
@@ -68,14 +68,14 @@
     "coach": "Wurah"
   },
   "series": "BO5",
-  "game": 2,
+  "game": 6,
   "match": 2,
   "swapped": false,
   "official": true,
   "week": 8,
   "day": 1,
   "patch": "Starward Decade 1014",
-  "map": "Healing Turtle",
+  "map": "Golden Turret",
   "hosts": [
     "Odin",
     "Denisse",
@@ -94,9 +94,9 @@
   "countdownLabel": "SHOW RESUMES IN",
   "goodbyeLabel": "SEE YOU TOMORROW",
   "timer": {
-    "running": true,
-    "endAt": 1792582439823,
-    "remaining": 1800
+    "running": false,
+    "endAt": null,
+    "remaining": 0
   },
   "todayMatches": [
     {
@@ -169,9 +169,9 @@
       "team1Id": "10763",
       "team1Name": "Team Liquid PH",
       "team1Short": "TLPH",
-      "team2Id": "",
-      "team2Name": "",
-      "team2Short": "",
+      "team2Id": "10845",
+      "team2Name": "Aurora Gaming PH",
+      "team2Short": "RORA",
       "vsDisplay": "VS",
       "time": "7:00 PM",
       "star": false,
