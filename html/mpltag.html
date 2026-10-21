@@ -2886,6 +2886,17 @@
   /* SUPERFAN ticker text: Dynamic tab "Superfan Ticker" (dynamic_content.json superfan_text), same logic as mplfs.html's applyWsSuperfan —
      canvas measureText (the strip is display:none when this runs), text repeated until one copy fills the 503px window, scroll speed ~70px/s. */
   var SF_DEFAULT = 'COME AND JOIN THE FUN FOR FREE', sfCtx = null;
+  function applySuperfanTitle(raw) {
+    var text = String(raw || '').trim() || 'MPL PH SUPERFAN CITY';
+    var el = document.querySelector('#l3l-superfan .l3l-sf-label');
+    if (!el || el.dataset.text === text) return;
+    el.dataset.text = text;
+    el.textContent = text;
+    if (!sfCtx) sfCtx = document.createElement('canvas').getContext('2d');
+    sfCtx.font = "800 27px 'General Sans'";
+    var w = sfCtx.measureText(text.toUpperCase()).width || 1;
+    el.style.fontSize = Math.min(27, 27 * 350 / w) + 'px';   // shrink long titles to fit the 360px title area
+  }
   function applySuperfan(raw) {
     var text = String(raw || '').trim() || SF_DEFAULT;
     var track = document.querySelector('#l3l-superfan .l3l-sf-track');
@@ -2917,7 +2928,7 @@
   function loadSuperfan() {
     fetch('/api/dynamic-content', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) { applySuperfan(d && d.superfan_text); })
+      .then(function (d) { applySuperfan(d && d.superfan_text); applySuperfanTitle(d && d.superfan_title); })
       .catch(function () {});
   }
 

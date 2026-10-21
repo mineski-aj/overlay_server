@@ -7116,7 +7116,7 @@
         <div class="ws-sf-window"><div class="ws-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
       </div>
       <img id="ws-qr" src="/assets/Waiting Screen TVC/playoffs/QR.png" alt="">
-      <div id="ws-qr-text">SHARE<br>YOUR<br>FEEDBACK!</div>
+      <div id="ws-qr-text">ESPORTS SURVEY</div>
       <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
     <div id="waiting-lobby-page">
@@ -10462,6 +10462,18 @@
        this runs): the text is repeated until one copy fills the 503px
        window, and the scroll duration is set from the copy's width so the
        speed stays ~70px/s whatever the length. */
+    const WS_SF_TITLE_DEFAULT = 'MPL PH SUPERFAN CITY';
+    function applyWsSuperfanTitle(raw) {
+      const text = String(raw || '').trim() || WS_SF_TITLE_DEFAULT;
+      const el = document.querySelector('#ws-superfan .ws-sf-label');
+      if (!el || el.dataset.text === text) return;
+      el.dataset.text = text;
+      el.textContent = text;
+      if (!_wsSfCtx) _wsSfCtx = document.createElement('canvas').getContext('2d');
+      _wsSfCtx.font = "800 27px 'General Sans'";
+      const w = _wsSfCtx.measureText(text.toUpperCase()).width || 1;
+      el.style.fontSize = Math.min(27, 27 * 350 / w) + 'px';   /* shrink long titles to fit the 360px title area */
+    }
     const WS_SF_DEFAULT = 'COME AND JOIN THE FUN FOR FREE';
     let _wsSfCtx = null;
     function applyWsSuperfan(raw) {
@@ -10481,7 +10493,7 @@
     function loadWsSuperfan() {
       fetch('/api/dynamic-content', { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null)
-        .then(d => applyWsSuperfan(d && d.superfan_text))
+        .then(d => { applyWsSuperfan(d && d.superfan_text); applyWsSuperfanTitle(d && d.superfan_title); })
         .catch(() => {});
     }
 
