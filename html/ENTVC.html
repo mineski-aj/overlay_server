@@ -661,10 +661,15 @@
        the black part (white), DAY n on the gold part (dark). */
     [data-theme="playoffs"] #ws-week-label {
       left: 0; top: 123px; width: 735px; height: 35px;
-      justify-content: flex-start; font-size: 34px; font-weight: 800; letter-spacing: 0;
+      justify-content: flex-start; font-size: 30px; font-weight: 800; letter-spacing: 0;
     }
-    [data-theme="playoffs"] #ws-week-label .ws-po-phase { position: absolute; left: 210px; color: #fff; }
-    [data-theme="playoffs"] #ws-week-label .ws-po-day   { position: absolute; left: 618px; color: #0a0a0a; }
+    /* centred in the art's black (199-599) / gold (601-727) sections — same as mplfs.html's Waiting TVC */
+    [data-theme="playoffs"] #ws-week-label .ws-po-phase,
+    [data-theme="playoffs"] #ws-week-label .ws-po-day {
+      position: absolute; top: 0; height: 35px; line-height: 35px; box-sizing: border-box; text-align: center; white-space: nowrap; overflow: hidden;
+    }
+    [data-theme="playoffs"] #ws-week-label .ws-po-phase { left: 199px; width: 401px; padding: 0 14px; color: #fff; }
+    [data-theme="playoffs"] #ws-week-label .ws-po-day   { left: 601px; width: 127px; padding: 0 10px; color: #0a0a0a; }
     [data-theme="playoffs"] #ws-matches, [data-theme="playoffs"] .ws-talent-box { left: 30px; top: 278px; }
     /* Playoffs Waiting TVC layout (per the updated reference screenshot):
        "SHOW STARTS IN:" (one line) + the big countdown sit centered under

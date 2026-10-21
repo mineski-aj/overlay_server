@@ -1001,7 +1001,7 @@ resolve like fetchCmbData's (Map Selection game slot, else Match Board map). Edi
 `MPL PH S18 PLAYOFFS` / `SEASON 18 PLAYOFFS` + `DAY n` sit on the baked bar of `S18_Header_playoffs*.png` (924x158; at y=140 the black section is
 x 199-599, gold 601-727). Text is **30px**, centred in those two sections (`#ts-season/#ts-week`, `#tw-*`, `.ws-po-phase/.ws-po-day` under
 `#ws-/#wl-week-label`), nowrap with side padding (widest text 335px of 401, "DAY n" 86 of 127). Gotcha: the `mplfs::playoffs` Edit bucket
-pinned these font sizes at 34px (`!important`) — they were moved to 30px in `overlay_styles.json`; a CSS-only change would not have shown.
+pinned these font sizes at 34px (`!important`) — they were moved to 30px in `overlay_styles.json`; a CSS-only change would not have shown. ENTVC.html's Waiting TVC `#ws-week-label` now uses the identical rules as mplfs.html (30px, phase/day spans centred in the same 401/127px sections).
 
 ### Match Board under the playoffs theme (match-dashboard.html)
 
