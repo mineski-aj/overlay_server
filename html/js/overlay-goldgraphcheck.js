@@ -351,7 +351,7 @@ registerPollHandler(function(data) {
       const seat1 = c1['seat_' + s]; if (seat1) total1 += seat1.gold || 0;
       const seat2 = c2['seat_' + s]; if (seat2) total2 += seat2.gold || 0;
     }
-    ggcLiveDiff = total1 - total2;
+    if (!featureEnabled.ggc_v2) ggcLiveDiff = total1 - total2; /* V2 sets it from the Gold Info series' last value */
   }
 
   const t1 = document.getElementById('ggc-header-tri-c1');
@@ -620,10 +620,45 @@ function ggcRenderChart(fullSeries, fullEvents) {
 
 let ggcFetchInFlight = false; // skip a poll tick rather than pile up if a fetch is still resolving
 
+/* V2 — Gold Info API (/api/goldinfo-proxy): GOLD_DIFFERENCE_v2 is a per-second comma list (index = game second,
+   positive = camp 1 ahead, negative = camp 2 ahead, absolute gold). Lord/turtle/tower events come from the same
+   payload; kills aren't in it, so they still come from /events. */
+function ggcGoldInfoEvents(g) {
+  const out = [];
+  const push = (type, camp, t, e) => {
+    if (!e || !e.event_type || !(t > 0)) return;
+    if (camp !== 1 && camp !== 2) return;
+    out.push({ type, camp: 'camp' + camp, time_s: t });
+  };
+  (g['Kill-Lord'] || []).forEach(e => push('lord', e.killer_camp || e.campid, e.game_time, e));
+  (g['Kill-Turtle'] || []).forEach(e => push('turtle', e.killer_camp || e.campid, e.game_time, e));
+  Object.keys(g).filter(k => k.indexOf('Kill_tower_') === 0).forEach(k =>
+    (g[k] || []).forEach(e => push('tower', e.killer_camp || e.campid, e.game_time, e)));
+  return out;
+}
+
+async function ggcFetchDataV2() {
+  const [giR, evR] = await Promise.allSettled([
+    fetch('/api/goldinfo-proxy', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('/events', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  if (!ggcShouldShow) return;
+  const g = Array.isArray(giR.value) ? giR.value[0] : giR.value;
+  if (!g || typeof g.GOLD_DIFFERENCE_v2 !== 'string') return; /* keep whatever is drawn */
+  const vals = g.GOLD_DIFFERENCE_v2.split(',').map(Number).filter(Number.isFinite);
+  if (!vals.length) return;
+  const rawSeries = vals.map((diff, t) => ({ t, diff }));
+  ggcLiveDiff = vals[vals.length - 1];
+  const kills = (evR.value?.events || []).filter(e => e.type === 'kill');
+  const events = ggcGoldInfoEvents(g).concat(kills);
+  ggcRenderChart(ggcSmoothSeries(rawSeries, ggcSmoothRadius), events);
+}
+
 async function ggcFetchData() {
   if (ggcFetchInFlight) return;
   ggcFetchInFlight = true;
   try {
+    if (featureEnabled.ggc_v2) { await ggcFetchDataV2(); return; }
     const [posR, evR] = await Promise.allSettled([
       fetch('/positions', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/events', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),

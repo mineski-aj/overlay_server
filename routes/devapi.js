@@ -608,6 +608,46 @@ router.post('/api/winrate-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Gold Info API base URL (Gold Graph Check V2) — GET to read, POST { url } to update.
+// Same { live, web, debug } file shape as every other per-API URL.
+const GOLDINFO_URL_FILE    = path.join(__dirname, '..', 'goldinfo_api_url.json');
+const GOLDINFO_URL_DEFAULT = 'https://mlbb.mrf5.net/api/gold-info/';
+
+router.get('/api/goldinfo-url', (req, res) => {
+  res.json({ url: readUrlForMode(GOLDINFO_URL_FILE, GOLDINFO_URL_DEFAULT) });
+});
+
+router.post('/api/goldinfo-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(GOLDINFO_URL_FILE, url);
+  res.json({ ok: true, url });
+});
+
+// Proxy for Gold Graph Check V2 — 1s cache + shared in-flight fetch (same shape as /api/winrate-proxy).
+let goldinfoCache = { t: 0, body: null };
+let goldinfoInFlight = null;
+router.get('/api/goldinfo-proxy', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  if (goldinfoCache.body && Date.now() - goldinfoCache.t < 1000) return res.json(goldinfoCache.body);
+  try {
+    const url = readUrlForMode(GOLDINFO_URL_FILE, GOLDINFO_URL_DEFAULT).trim();
+    if (!url) return res.status(404).json({ error: 'no gold-info URL configured' });
+    if (!goldinfoInFlight) {
+      goldinfoInFlight = fetch(url, { signal: AbortSignal.timeout(9500) })
+        .then(async r => {
+          if (!r.ok) throw new Error('upstream HTTP ' + r.status);
+          goldinfoCache = { t: Date.now(), body: await r.json() };
+        })
+        .finally(() => { goldinfoInFlight = null; });
+    }
+    await goldinfoInFlight;
+    res.json(goldinfoCache.body);
+  } catch (e) {
+    if (goldinfoCache.body) return res.json(goldinfoCache.body);
+    res.status(502).json({ error: e.message });
+  }
+});
+
 // Server-side proxy for the Live Win Rate overlay (mploverlay_v7) — fetches
 // the Winrate API above ({ camp1: [%...], camp2: [%...], time: [s...] }, one
 // sample per 10s of game time) with a 1s in-memory cache so several open

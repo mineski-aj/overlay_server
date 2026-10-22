@@ -1268,6 +1268,18 @@
   </div>
 
   <div class="settings-section">
+    <div class="settings-section-hdr">Gold Info API (Gold Graph Check V2)</div>
+    <div class="settings-section-body">
+      <div class="settings-row">
+        <label for="goldinfo-api-input">Base URL</label>
+        <input type="text" id="goldinfo-api-input" class="settings-input" placeholder="https://mlbb.mrf5.net/api/gold-info/" spellcheck="false" autocomplete="off" />
+        <button id="goldinfo-api-apply" class="settings-btn">Apply</button>
+        <span id="goldinfo-api-status" class="settings-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
     <div class="settings-section-hdr">Winrate API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -2052,6 +2064,30 @@
   piApiApply.addEventListener('click', savePostInfoApiUrl);
   piApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') savePostInfoApiUrl(); });
 
+  /* ── Gold Info API URL ────────────────────────────────────── */
+  var giApiInput  = document.getElementById('goldinfo-api-input');
+  var giApiApply  = document.getElementById('goldinfo-api-apply');
+  var giApiStatus = document.getElementById('goldinfo-api-status');
+  fetch('/api/goldinfo-url').then(function(r){ return r.json(); }).then(function(d){
+    giApiInput.value = d.url || '';
+  }).catch(function(){});
+  function saveGoldInfoApiUrl() {
+    fetch('/api/goldinfo-url', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: giApiInput.value.trim() })
+    }).then(function(r){ return r.json(); }).then(function(){
+      giApiStatus.textContent = 'Saved ✓';
+      giApiStatus.style.color = '#44cc88';
+      setTimeout(function(){ giApiStatus.textContent = ''; }, 2000);
+    }).catch(function(){
+      giApiStatus.textContent = 'Error';
+      giApiStatus.style.color = '#ff4455';
+    });
+  }
+  giApiApply.addEventListener('click', saveGoldInfoApiUrl);
+  giApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGoldInfoApiUrl(); });
+
   /* ── Winrate API URL ──────────────────────────────────────── */
   var wrApiInput  = document.getElementById('winrate-api-input');
   var wrApiApply  = document.getElementById('winrate-api-apply');
@@ -2161,7 +2197,7 @@
 
   /* Feature toggles that read as a version switch instead of Enabled/Disabled
      (e.g. Team Line-Up V1/V2, rendered inline in that scene's own row). */
-  var toggleLabels = { lineupv2_blue: ['V1', 'V2 · Polaroids'], lineupv2_red: ['V1', 'V2 · Polaroids'], credits_v2: ['V1', 'V2 · Side Panel'], mvp_v2: ['V1', 'V2 · Live Camera'], hl_v2: ['V1', 'V2 · No Photo'] };
+  var toggleLabels = { lineupv2_blue: ['V1', 'V2 · Polaroids'], lineupv2_red: ['V1', 'V2 · Polaroids'], credits_v2: ['V1', 'V2 · Side Panel'], mvp_v2: ['V1', 'V2 · Live Camera'], hl_v2: ['V1', 'V2 · No Photo'], ggc_v2: ['V1 · Positions', 'V2 · Gold Info API'] };
   function applyToggleBtn(feature, enabled) {
     var b = toggleBtns[feature];
     if (!b) return;
@@ -2961,7 +2997,7 @@
         { name: 'Live Team Fight',   key: 'teamfightcheck'   },
         { name: 'Emblem Check',      key: 'emblemcheck'      },
         { name: 'Gold Diff Check',   key: 'golddiffcheck'    },
-        { name: 'Gold Graph Check',  key: 'goldgraphcheck'   },
+        { name: 'Gold Graph Check',  key: 'goldgraphcheck', versionToggle: 'ggc_v2' },
         { name: 'Live Win Rate',     key: 'livewinrate'      },
         { name: 'Side EXP Check',    key: 'sideexpcheck'     },
         { name: 'Side Taken Check',  key: 'sidetakencheck'   },
@@ -4918,6 +4954,16 @@
         checkToggleBtns[ct.key] = tb;
         applyCheckToggleBtn(ct.key, !!checkOverlayStates[ct.key]);
         btnGroup.appendChild(tb);
+
+        /* Optional V1/V2 source switch (Gold Graph Check) — same feature toggle + button style as the Team Line-Up version toggle. */
+        if (ct.versionToggle) {
+          var cvt = el('button', 'btn btn-toggle btn-toggle-off', '');
+          cvt.title = 'Switch this overlay between its V1 and V2 data sources';
+          cvt.addEventListener('click', (function (f) { return function () { toggleFeature(f); }; })(ct.versionToggle));
+          toggleBtns[ct.versionToggle] = cvt;
+          applyToggleBtn(ct.versionToggle, featureStates[ct.versionToggle] === true);
+          btnGroup.appendChild(cvt);
+        }
 
         /* Optional extra action buttons inside this SAME enclosure (e.g.
            BPM Meter's +/-/Clear nudges) — distinct from the card-level

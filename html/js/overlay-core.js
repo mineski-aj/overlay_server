@@ -286,6 +286,7 @@ const featureEnabled = {
   fights:     true,
   objectivespawn: true,
   stolengold: true,
+  ggc_v2: false, // Gold Graph Check source: false = V1, true = V2 (Gold Info API)
 };
 fetch('/overlay/features').then(r => r.json()).then(d => {
   if (d && typeof d === 'object') Object.assign(featureEnabled, d);
