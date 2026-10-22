@@ -1548,7 +1548,8 @@
     #wl-title { display: none; }
     [data-theme="playoffs"] #wl-title { display: block; }
     #wl-title {
-      position: absolute; left: 190px; top: 376px; width: 660px; height: 90px;
+      /* centred over the match box (#wl-match: left 110, width 724) */
+      position: absolute; left: 110px; top: 376px; width: 724px; height: 90px; text-align: center;
       font-family: 'Anton', sans-serif; font-size: 74px; line-height: 90px; letter-spacing: -0.045em;
       color: #0a0a0a; text-transform: uppercase; white-space: nowrap;
     }
@@ -7126,7 +7127,7 @@
       </div>
       <!-- Playoffs-only decorations (hidden under every other theme). Title
            text is a placeholder constant for now. -->
-      <div id="wl-title">NEXT MATCH / PLAY-INS</div>
+      <div id="wl-title">PLAY-INS</div>
       <div id="wl-match"></div>
       <div id="wl-sponsor"></div>
       <div id="wl-timer">
