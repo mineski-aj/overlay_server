@@ -62,3 +62,27 @@ function applyTheme(theme) {
 // so a theme change during a live broadcast applies instantly instead of
 // waiting for a reload. Not auto-wired here since not every page that
 // includes this file has an `sse`/`es` object in scope.
+
+// "MATCH n" label shown on every overlay that names the current match
+// (scoreboard, Draft, MVP, Final Team, Consolidated Post, Post H2H, Middle
+// Board, Map Selection...). Under the PLAYOFFS theme the Match Board's
+// per-match label (todayMatches[n-1].matchLabel) replaces the default;
+// every other theme, and a blank label, keep "MATCH n". `ms` is any
+// /match/state object (needs .todayMatches); without one it falls back to
+// window.MATCH_STATE_CACHE (see matchStateCacheStart for pages with no
+// state of their own).
+function matchLabelFor(num, ms) {
+  var n = num || 1, def = 'MATCH ' + n;
+  if (document.documentElement.getAttribute('data-theme') !== 'playoffs') return def;
+  var list = (ms && ms.todayMatches) || (window.MATCH_STATE_CACHE && window.MATCH_STATE_CACHE.todayMatches) || [];
+  var l = list[n - 1] && String(list[n - 1].matchLabel || '').trim();
+  return l ? l.toUpperCase() : def;
+}
+function matchStateCacheStart(everyMs) {
+  function pull() {
+    fetch('/match/state', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (j) { window.MATCH_STATE_CACHE = j; }).catch(function () {});
+  }
+  pull();
+  setInterval(pull, everyMs || 5000);
+}

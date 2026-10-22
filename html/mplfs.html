@@ -9529,6 +9529,8 @@
         'HOST_BOXv1.png':   'playoffs/HOST_BOXv1.png',
         'CASTER_BOXv1.png': 'playoffs/CASTER_BOXv1.png',
         'MatchBox_REGULAR MATCH.png': 'playoffs/MatchBox_REGULAR MATCH.png',
+        'MatchBox_EPIC RIVALRY.png': 'playoffs/MatchBox_EPIC RIVALRY.png',
+        'MatchBox_ENDURING LEGACY.png': 'playoffs/MatchBox_ENDURING LEGACY.png',
         'TodayMatches.png': 'playoffs/todays_matches.png',
         'openhouser.png':   'playoffs/openhouser.png',
       },
@@ -9665,7 +9667,7 @@
           else if (m.team1Id === aId && m.team2Id === hId) { s1 = state.away.score || 0; s2 = state.home.score || 0; }
         }
         return {
-          label: 'MATCH ' + (i + 1),
+          label: (document.documentElement.getAttribute('data-theme') === 'playoffs' && (m.matchLabel || '').trim()) || ('MATCH ' + (i + 1)),
           stage: m.stageLabel || '',
           openHouse: m.openHouseTime || '',
           openHouseLabel: m.openHouseLabel || '',
@@ -10284,7 +10286,7 @@
         return state.tomorrowMatches.slice(0, n);
       })();
       return (isPoTw ? poSlice : slice).map((m, i) => ({
-        label: 'MATCH ' + (i + 1),
+        label: (document.documentElement.getAttribute('data-theme') === 'playoffs' && (m.matchLabel || '').trim()) || ('MATCH ' + (i + 1)),
         stage: m.stageLabel || '',
         openHouse: m.openHouseTime || '',
         time:  m.time || '',
@@ -10608,7 +10610,7 @@
       const home = state.home || {}, away = state.away || {};
       const s1 = home.score || tm.score1 || 0, s2 = away.score || tm.score2 || 0;
       return {
-        label: 'MATCH ' + matchNum,
+        label: (document.documentElement.getAttribute('data-theme') === 'playoffs' && (tm.matchLabel || '').trim()) || ('MATCH ' + matchNum),
         time: tm.time || '',
         bo,
         matchType: tm.matchType || (tm.star ? 'clash' : 'regular'),
@@ -12054,8 +12056,8 @@
       const homeScore = (ms && ms.home && ms.home.score) || 0;
       const awayScore = (ms && ms.away && ms.away.score) || 0;
       const gameNum   = homeScore + awayScore;
-      document.getElementById('mv-matchbox-game').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
-      document.getElementById('mv-po-matchgame').textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
+      document.getElementById('mv-matchbox-game').textContent = matchLabelFor(matchNum, ms) + ' - GAME ' + gameNum;
+      document.getElementById('mv-po-matchgame').textContent = matchLabelFor(matchNum, ms) + ' - GAME ' + gameNum;
     }
 
     /* V2 b-roll: photos/broll/<team tricode lower-case>/<ign>.webm. No file -> the layer is simply hidden. */
@@ -13075,7 +13077,7 @@
         document.documentElement.getAttribute('data-theme') === 'playoffs'
           ? 'THE PLAYOFFS DAY ' + day
           : 'REGULAR SEASON WEEK ' + week + ' DAY ' + day;
-      document.getElementById('ft-matchbar-series').textContent = 'MATCH ' + matchNum + ' GAME ' + gameNum;
+      document.getElementById('ft-matchbar-series').textContent = matchLabelFor(matchNum, ms) + ' GAME ' + gameNum;
     }
 
     /* Live feed can be slow/unavailable — cap how long the reveal waits
@@ -15325,7 +15327,7 @@
              number, already advanced by the time this recap is shown. */
           const gameNum  = Math.max(1, (ms.game || 1) - 1);
           const matchNum = ms.match || 1;
-          set('cmb-game-label', 'MATCH ' + matchNum + ' - GAME ' + gameNum);
+          set('cmb-game-label', matchLabelFor(matchNum, ms) + ' - GAME ' + gameNum);
 
           /* ms.map is a single field last-overwritten by whichever game's
              map was most recently set on the Match Board's Map Selection
@@ -17745,7 +17747,7 @@
          is shown, so subtract 1. */
       const p2hGameNum = Math.max(1, ((matchState && matchState.game) || 1) - 1);
       if (!midOnly) document.getElementById('p2h-header').textContent =
-        'MATCH ' + ((matchState && matchState.match) || 1) + ' - GAME ' + p2hGameNum;
+        matchLabelFor((matchState && matchState.match) || 1, matchState) + ' - GAME ' + p2hGameNum;
       if (!midOnly) document.getElementById('p2h-gametime-value').textContent = fmtGameTime(gameData && gameData.game_time);
       const p2hTitleEl = document.getElementById('p2h-title');
       p2hTitleEl.textContent = (H2H_ROLE_LABELS[role] || role.toUpperCase()) + (isGoldPage ? ' GOLD DISTRIBUTION' : ' HEAD TO HEAD');
@@ -19082,7 +19084,7 @@
          names the game these numbers actually came from. */
       const gameNum  = Math.max(1, ((ms && ms.game) || 1) - 1);
       const matchNum = (ms && ms.match) || 1;
-      mdbSet('mdb-game-label-text', ms ? ('MATCH ' + matchNum + ' - GAME ' + gameNum) : 'MATCH 0 - GAME 0');
+      mdbSet('mdb-game-label-text', ms ? (matchLabelFor(matchNum, ms) + ' - GAME ' + gameNum) : 'MATCH 0 - GAME 0');
 
       // 'NONE' is an explicit "no map" choice meaning either — Match
       // Board's own dropdown (match-dashboard.html's #map-select) OR

@@ -2286,7 +2286,7 @@
         var matchNum = s.match || 1;
         var gameNum  = (home.score || 0) + (away.score || 0) + 1;
         var mgTxt = document.querySelector('#draft-match-game .draft-match-game-text');
-        if (mgTxt) mgTxt.textContent = 'MATCH ' + matchNum + ' - GAME ' + gameNum;
+        if (mgTxt) mgTxt.textContent = matchLabelFor(matchNum, s) + ' - GAME ' + gameNum;
 
         /* dcoachSwapped only feeds pollCoachBpm()'s coach_home1/coach_away1
            pairing now — coach NAME/headset come from the draft API's
@@ -2332,8 +2332,10 @@
         var isPlayoffsTheme = document.documentElement.getAttribute('data-theme') === 'playoffs';
         var draftBase  = 'assets/draft/' + (isAnniversaryTheme() ? 'anniversary/' : isPlayoffsTheme ? 'playoffs/' : '');
         var draftPlain = draftBase + 'draftbg.png';
-        /* Playoffs has a single draft background (no star-match variants). */
-        var starSuffix = !isPlayoffsTheme && curMatch && starSuffixFor(curMatch.matchType);
+        /* Playoffs has star-match variants for Epic Rivalry / Enduring Legacy
+           (assets/draft/playoffs/draftbg_<SUFFIX>.png); any other matchType
+           has no file there and falls back to the plain background. */
+        var starSuffix = curMatch && starSuffixFor(curMatch.matchType);
         var draftStar  = starSuffix ? draftBase + 'draftbg_' + starSuffix + '.png' : draftPlain;
         setBgWithFallback(scene, draftStar, draftPlain);
 

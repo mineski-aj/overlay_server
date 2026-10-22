@@ -834,6 +834,7 @@
     #l3l-match .l3m-bo    { right: 18px; }
     #l3l-match .l3m-slot { position: absolute; top: 49px; height: 170px; display: flex; align-items: center; justify-content: center; }
     #l3l-match .l3m-tri { font-family: 'Anton', sans-serif; font-size: 52px; color: #fff; text-transform: uppercase; white-space: nowrap; }
+    #l3l-match .l3m-tri.l3m-tri-gold { color: #0a0a0a; } /* Enduring Legacy's side panels are gold */
     #l3l-match .l3m-tri-l { left: 0; width: 119px; }
     #l3l-match .l3m-tri-r { right: 0; width: 119px; }
     #l3l-match .l3m-logo-l { left: 130px; width: 166px; }
@@ -1039,7 +1040,7 @@
     side.box.style.backgroundImage = "url('" + sideAssetUrl(game.tossSide) + "')";
     var title = document.createElement('div');
     title.className = 'ms-title';
-    title.textContent = 'MATCH ' + (matchNum || 1) + ' - GAME ' + game.game;
+    title.textContent = matchLabelFor(matchNum || 1) + ' - GAME ' + game.game;
     var tossLogo = document.createElement('img');
     tossLogo.className = 'ms-toss-logo';
     tossLogo.src = logoUrl(teamShort(game.tossWinner, homeTeam, awayTeam));
@@ -1569,7 +1570,7 @@
   };
 
   restore();
-  connectSSE();
+  matchStateCacheStart(); connectSSE();
 
   /* ── Local debug bar ── */
   document.addEventListener('keydown', function (e) {
@@ -2187,7 +2188,10 @@
      the game starts) — same reasoning as mplfs.html's own 'match' SSE
      listener. */
   var es = createOverlaySSE();
+  /* ?preview=1 (Control-tab iframe): driven only by previewTrigger, never by real SSE/restore. */
+  var MC_PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search);
   es.addEventListener('matchcard', function (e) {
+    if (MC_PREVIEW_ONLY) return;
     try {
       var d = JSON.parse(e.data);
       if (d.action === 'show') mcAnimateIn();
@@ -2205,7 +2209,7 @@
      server default of false, so there's no flash either way. */
   fetch('/overlay/check-overlays', { cache: 'no-store' })
     .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.matchcard) mcAnimateIn(); })
+    .then(function (d) { if (d && d.matchcard && !MC_PREVIEW_ONLY) mcAnimateIn(); })
     .catch(function () {});
 
   /* ── Preview hook — chain onto whatever window.previewTrigger already
@@ -2700,13 +2704,17 @@
     var center = (s1 === 0 && s2 === 0)
       ? '<img class="l3m-vs" src="/assets/Waiting Screen TVC/SCORES/vs.png" alt="VS">'
       : '<div class="l3m-score"><span class="l3m-score-l">' + s1 + '</span><span class="l3m-score-div"></span><span class="l3m-score-r">' + s2 + '</span></div>';
+    var boxByType = { epic: 'MatchBox_EPIC RIVALRY', enduring: 'MatchBox_ENDURING LEGACY' };
+    var mt = tm.matchType || (tm.star ? 'clash' : 'regular');
+    var boxFile = boxByType[mt] || 'MatchBox_REGULAR MATCH';
+    var gold = mt === 'enduring' ? ' l3m-tri-gold' : '';
     root.innerHTML =
-      '<div class="l3m-box"><img class="l3m-bg" src="/assets/Waiting Screen TVC/playoffs/MatchBox_REGULAR MATCH.png" alt="">' +
-      '<span class="l3m-label">MATCH ' + num + '</span><span class="l3m-time">' + esc(tm.time || '') + '</span>' +
+      '<div class="l3m-box"><img class="l3m-bg" src="/assets/Waiting Screen TVC/playoffs/' + boxFile + '.png" alt="">' +
+      '<span class="l3m-label">' + esc(matchLabelFor(num, ms)) + '</span><span class="l3m-time">' + esc(tm.time || '') + '</span>' +
       '<span class="l3m-bo">' + esc((ms.series || 'BO3').toUpperCase()) + '</span>' +
-      '<div class="l3m-slot l3m-tri l3m-tri-l">' + esc(lt) + '</div>' + logo('l', lt) +
+      '<div class="l3m-slot l3m-tri l3m-tri-l' + gold + '">' + esc(lt) + '</div>' + logo('l', lt) +
       '<div class="l3m-slot l3m-center">' + center + '</div>' + logo('r', rt) +
-      '<div class="l3m-slot l3m-tri l3m-tri-r">' + esc(rt) + '</div></div>';
+      '<div class="l3m-slot l3m-tri l3m-tri-r' + gold + '">' + esc(rt) + '</div></div>';
   }
 
   /* ── sponsor loop (same /api/sponsors + slide timing as Waiting Lobby) ── */
@@ -2971,7 +2979,9 @@
   }
 
   var es = createOverlaySSE();
+  var L3L_PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search);
   es.addEventListener('l3lobby', function (e) {
+    if (L3L_PREVIEW_ONLY) return;
     try {
       var d = JSON.parse(e.data);
       if (d.action === 'show') l3lAnimateIn(); else if (d.action === 'hide') l3lAnimateOut();
@@ -2984,7 +2994,7 @@
 
   fetch('/overlay/check-overlays', { cache: 'no-store' })
     .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.l3lobby) l3lAnimateIn(); })
+    .then(function (d) { if (d && d.l3lobby && !L3L_PREVIEW_ONLY) l3lAnimateIn(); })
     .catch(function () {});
 
   var prevTrigger = window.previewTrigger;

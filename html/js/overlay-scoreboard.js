@@ -633,7 +633,7 @@ function sbPollMatchState() {
         if (miWeek) { miWeek.style.fontSize = ''; miWeek.style.whiteSpace = ''; }
         if (miWeek)  miWeek.textContent  = 'WEEK '  + (s.week  != null ? s.week  : 1) + ' - DAY '  + (s.day   != null ? s.day   : 1);
       }
-      if (miMatch) miMatch.textContent = 'MATCH ' + (s.match != null ? s.match : 1) + ' - GAME ' + (s.game  != null ? s.game  : 1);
+      if (miMatch) miMatch.textContent = matchLabelFor(s.match != null ? s.match : 1, s) + ' - GAME ' + (s.game  != null ? s.game  : 1);
 
       /* maxWidth/maxPx come from SB_MI_FIT_CONFIG (see sbFitText above) —
          driven by the saved Patch Box/Caster Box width+fontSize, not
