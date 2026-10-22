@@ -633,7 +633,7 @@ router.get('/api/goldinfo-proxy', async (req, res) => {
     const url = readUrlForMode(GOLDINFO_URL_FILE, GOLDINFO_URL_DEFAULT).trim();
     if (!url) return res.status(404).json({ error: 'no gold-info URL configured' });
     if (!goldinfoInFlight) {
-      goldinfoInFlight = fetch(url, { signal: AbortSignal.timeout(9500) })
+      goldinfoInFlight = fetch(url, { signal: AbortSignal.timeout(2500) })
         .then(async r => {
           if (!r.ok) throw new Error('upstream HTTP ' + r.status);
           goldinfoCache = { t: Date.now(), body: await r.json() };
@@ -643,7 +643,8 @@ router.get('/api/goldinfo-proxy', async (req, res) => {
     await goldinfoInFlight;
     res.json(goldinfoCache.body);
   } catch (e) {
-    if (goldinfoCache.body) return res.json(goldinfoCache.body);
+    // Only serve a stale copy briefly — past that, 502 so Gold Graph Check falls back to V1.
+    if (goldinfoCache.body && Date.now() - goldinfoCache.t < 5000) return res.json(goldinfoCache.body);
     res.status(502).json({ error: e.message });
   }
 });

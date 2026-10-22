@@ -18,6 +18,7 @@ const TFC_PORTRAIT     = 44;
 
 let tfcShouldShow = false;
 let tfcOutTimer   = null;
+let tfcRevealed   = false;     /* panel only slides in once the first damage since show has landed */
 let tfcSnap       = null;      /* { playerIdx: total_damage at show time } */
 const tfcRefs     = {};        /* playerIdx -> { seg, txt, portrait } */
 const tfcTotals   = { b: 0, r: 0 };       /* target (real) totals */
@@ -120,12 +121,43 @@ function tfcUpdate(data) {
   const b = blue.reduce((t, e) => t + e.dmg, 0);
   const r = red.reduce((t, e) => t + e.dmg, 0);
   const total = b + r;
+  if (!tfcRevealed && total <= 0) return; /* waiting for the first damage — stay off-screen instead of showing 0 / 0 */
   const scale = total > 0 ? TFC_W / total : 0;
+  const first = !tfcRevealed;
+  if (first) tfcSetNoTrans(true); /* first frame is drawn already filled, not grown from empty */
   tfcLayoutSide(blue, 0, scale);
   tfcLayoutSide(red, b * scale, scale);
 
   tfcTotals.b = b; tfcTotals.r = r;
-  tfcStartTicker();
+  if (first) {
+    tfcShown.b = b; tfcShown.r = r;
+    tfcBlueEl.textContent = b.toLocaleString('en-US');
+    tfcRedEl.textContent  = r.toLocaleString('en-US');
+    void document.getElementById('teamfight-check-overlay').offsetWidth;
+    tfcSetNoTrans(false);
+    tfcReveal();
+  } else tfcStartTicker();
+}
+
+function tfcSetNoTrans(on) {
+  for (let i = 1; i <= 10; i++) {
+    tfcRefs[i].seg.classList.toggle('tfc-notrans', on);
+    tfcRefs[i].portrait.classList.toggle('tfc-notrans', on);
+  }
+}
+
+/* Slides the panel in (called once, on the first damage after Show). */
+function tfcReveal() {
+  tfcRevealed = true;
+  const clip    = document.getElementById('teamfight-check-clip');
+  const overlay = document.getElementById('teamfight-check-overlay');
+  document.getElementById('kill-event-overlay').classList.add('ke-shift-up');
+  clip.style.display = 'block';
+  /* Double rAF so the hidden-state transform is committed before .tfc-in
+     changes it (same technique as icAnimateIn). */
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    if (tfcShouldShow) overlay.classList.add('tfc-in');
+  }));
 }
 
 /* Ticker: eases each displayed total toward its real value — only runs
@@ -172,24 +204,18 @@ function tfcResetVisuals() {
 
 function tfcAnimateIn() {
   tfcShouldShow = true;
+  tfcRevealed = false;
   clearTimeout(tfcOutTimer);
-  const clip    = document.getElementById('teamfight-check-clip');
-  const overlay = document.getElementById('teamfight-check-overlay');
 
   tfcResetVisuals();
-  document.getElementById('kill-event-overlay').classList.add('ke-shift-up');
+  /* Snapshot now, then wait: the panel stays hidden until a poll shows damage
+     past this snapshot (tfcUpdate -> tfcReveal), so it never opens at 0 / 0. */
   if (lastData) { tfcTakeSnap(lastData); tfcUpdate(lastData); }
-
-  clip.style.display = 'block';
-  /* Double rAF so the hidden-state transform is committed before .tfc-in
-     changes it (same technique as icAnimateIn). */
-  requestAnimationFrame(() => requestAnimationFrame(() => {
-    if (tfcShouldShow) overlay.classList.add('tfc-in');
-  }));
 }
 
 function tfcAnimateOut() {
   tfcShouldShow = false;
+  tfcRevealed = false;
   const clip    = document.getElementById('teamfight-check-clip');
   const overlay = document.getElementById('teamfight-check-overlay');
   overlay.classList.remove('tfc-in');

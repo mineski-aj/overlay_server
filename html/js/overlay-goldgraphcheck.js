@@ -113,6 +113,7 @@ let ggcDuration     = 1; // seconds — module-scope so ggcInterpolate/event pla
    keep reading the /positions-log-derived, smoothed, minute-snapped
    series, which is fine for history but was never a "live" figure. */
 let ggcLiveDiff = null;
+let ggcUsingV2 = false; /* true only while the latest V2 fetch succeeded; otherwise V1 (/positions) drives the chart and ggcLiveDiff */
 
 function ggcFmtDiff(v) {
   // Always the magnitude, never a sign — which team is ahead is already
@@ -351,7 +352,7 @@ registerPollHandler(function(data) {
       const seat1 = c1['seat_' + s]; if (seat1) total1 += seat1.gold || 0;
       const seat2 = c2['seat_' + s]; if (seat2) total2 += seat2.gold || 0;
     }
-    if (!featureEnabled.ggc_v2) ggcLiveDiff = total1 - total2; /* V2 sets it from the Gold Info series' last value */
+    if (!ggcUsingV2) ggcLiveDiff = total1 - total2; /* while V2 is healthy it sets this from the Gold Info series' last value */
   }
 
   const t1 = document.getElementById('ggc-header-tri-c1');
@@ -642,23 +643,25 @@ async function ggcFetchDataV2() {
     fetch('/api/goldinfo-proxy', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('/events', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
   ]);
-  if (!ggcShouldShow) return;
+  if (!ggcShouldShow) return true;
   const g = Array.isArray(giR.value) ? giR.value[0] : giR.value;
-  if (!g || typeof g.GOLD_DIFFERENCE_v2 !== 'string') return; /* keep whatever is drawn */
-  const vals = g.GOLD_DIFFERENCE_v2.split(',').map(Number).filter(Number.isFinite);
-  if (!vals.length) return;
+  const vals = (g && typeof g.GOLD_DIFFERENCE_v2 === 'string') ? g.GOLD_DIFFERENCE_v2.split(',').map(Number).filter(Number.isFinite) : [];
+  if (!vals.length) { ggcUsingV2 = false; return false; } /* unreachable / bad payload — caller falls back to V1 */
+  ggcUsingV2 = true;
   const rawSeries = vals.map((diff, t) => ({ t, diff }));
   ggcLiveDiff = vals[vals.length - 1];
   const kills = (evR.value?.events || []).filter(e => e.type === 'kill');
   const events = ggcGoldInfoEvents(g).concat(kills);
   ggcRenderChart(ggcSmoothSeries(rawSeries, ggcSmoothRadius), events);
+  return true;
 }
 
 async function ggcFetchData() {
   if (ggcFetchInFlight) return;
   ggcFetchInFlight = true;
   try {
-    if (featureEnabled.ggc_v2) { await ggcFetchDataV2(); return; }
+    if (featureEnabled.ggc_v2) { if (await ggcFetchDataV2()) return; } /* V2 failed -> fall through to V1 this tick */
+    else ggcUsingV2 = false;
     const [posR, evR] = await Promise.allSettled([
       fetch('/positions', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('/events', { cache: 'no-store' }).then(r => r.ok ? r.json() : null).catch(() => null),
