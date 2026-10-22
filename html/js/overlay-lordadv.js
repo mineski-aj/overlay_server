@@ -3,14 +3,10 @@
    tricode (blue = camp 1 on the left, red = camp 2 on the right) showing what
    the Lord window is earning: +GOLD, KILLS, TURRET. It stays for LORDADV_SHOW_MS
    (90 s) and its numbers update LIVE on every poll while it is up.
-   Source: camp_list[].kill_lord_advantage = { begin_time, end_time, exp, gold,
-   tower_hp } (also read from data.kill_lord_advantage[campid] if it is ever
-   keyed that way). It auto-triggers once per (camp, begin_time) as soon as
-   begin_time appears (= the Lord just died; end_time is only set when the window
-   closes, ~120 s later, so it is NOT waited for). GOLD is the live adv.gold. The
-   API only gives tower HP, so KILLS and TURRET are the camp's score / kill_tower
-   diffs between the snapshot at begin_time and now (or at end_time once the window
-   has closed) — lordAdvHistory, one entry per poll, trimmed to the last ~15 min.
+   TRIGGER: the poll where camp_list[].kill_lord goes up for a camp (the first poll of a page is only a baseline). The panel shows
+   immediately, starts ticking, and is hidden after LORDADV_SHOW_MS. TICK: GOLD = camp_list[].kill_lord_advantage.gold (live) once the
+   API publishes that window (begin_time at/after the kill; 0 until then); KILLS / TURRET = the camp's score / kill_tower gains since
+   the kill (the API only gives tower HP), from lordAdvHistory snapshots, one per poll, trimmed to the last ~15 min.
    Lives inside #scoreboard-overlay (slides with the scoreboard). Detection is
    self-contained here (registerPollHandler at the bottom). Armable from the
    dashboard (featureEnabled.lordadv). */
@@ -87,42 +83,38 @@ function lordAdvFor(data, camp) {
 
 registerPollHandler(function (data) {
   var gt = data.game_time || 0;
-  var cur = { t: gt, kills: {}, towers: {} };
+  var cur = { t: gt, kills: {}, towers: {}, lords: {} };
   [1, 2].forEach(function (camp) {
     var c = (data.camp_list || []).find(function (x) { return x.campid === camp; });
     cur.kills[camp]  = c ? (parseInt(c.score) || 0) : 0;
     cur.towers[camp] = c ? (parseInt(c.kill_tower) || 0) : 0;
+    cur.lords[camp]  = c ? (parseInt(c.kill_lord) || 0) : 0;
   });
-  if (lordAdvHistory.length && gt < lordAdvHistory[lordAdvHistory.length - 1].t - 5) { lordAdvHistory = []; lordAdvSeen = {}; }  // new game (a fresh game can reuse an old begin_time)
+  if (lordAdvHistory.length && gt < lordAdvHistory[lordAdvHistory.length - 1].t - 5) {   // new game
+    lordAdvHistory = []; lordAdvSeen = {}; lordAdvFirstPoll = true;
+    [1, 2].forEach(hideLordAdv);
+  }
+  var prev = lordAdvHistory.length ? lordAdvHistory[lordAdvHistory.length - 1] : null;
   lordAdvHistory.push(cur);
   while (lordAdvHistory.length > 1 && lordAdvHistory[0].t < gt - 900) lordAdvHistory.shift();
 
-  /* what the window has earned so far: gold = the API's live adv.gold; kills / towers = this camp's diffs since begin_time (up to end_time once the window has closed) */
-  function lordAdvValues(camp, adv) {
-    var a = lordAdvSnapshotAt(adv.begin_time);
-    var b = (adv.end_time > 0 && gt >= adv.end_time) ? (lordAdvSnapshotAt(adv.end_time) || cur) : cur;
-    return { gold: adv.gold || 0, kills: a && b ? b.kills[camp] - a.kills[camp] : 0, towers: a && b ? b.towers[camp] - a.towers[camp] : 0 };
-  }
   [1, 2].forEach(function (camp) {
-    var adv = lordAdvFor(data, camp);
-    if (!adv || !(adv.begin_time > 0)) return;
-    var key = camp + ':' + adv.begin_time;
-    var age = gt - adv.begin_time;                       // seconds since the Lord died
-    if (!lordAdvSeen[key]) {
-      lordAdvSeen[key] = true;                           // once per window, whether or not it ends up shown
-      if (age < 0 || age >= LORDADV_SHOW_MS / 1000) return;   // an old window (page loaded long after it) — don't replay
-      if (!featureEnabled.lordadv) return;
-      var v = lordAdvValues(camp, adv);
-      lordAdvActive[camp] = { key: key, begin: adv.begin_time };
-      // a page that loads mid-window picks up with only the time that is left
-      showLordAdv(camp, v.gold, v.kills, v.towers, Math.max(1000, LORDADV_SHOW_MS - age * 1000));
-      return;
+    /* TRIGGER: the moment this camp's Lord kill count goes up, show the panel right away and keep it for LORDADV_SHOW_MS.
+       The first poll of a page is only a baseline (a page loaded mid-game never replays an old Lord). */
+    if (prev && cur.lords[camp] > prev.lords[camp] && featureEnabled.lordadv) {
+      lordAdvActive[camp] = { startT: gt, base: cur, begin: 0 };
+      showLordAdv(camp, 0, 0, 0, LORDADV_SHOW_MS);
     }
+    /* TICK: while it is up, gold = the API's live advantage gold for THIS kill (its begin_time is at/after the kill, so an older
+       window's numbers are never picked up), kills / turrets = this camp's gains since the kill. */
     var act = lordAdvActive[camp];
-    if (act && act.key === key) {                        // panel is up for this window: live update
-      var u = lordAdvValues(camp, adv);
-      setLordAdvValues(camp, u.gold, u.kills, u.towers);
-    }
+    if (!act) return;
+    var adv = lordAdvFor(data, camp);
+    var mine = adv && adv.begin_time > 0 && adv.begin_time >= act.startT - 10;
+    var a = act.base;
+    if (mine) { var snap = lordAdvSnapshotAt(adv.begin_time); if (snap) a = snap; }
+    var b = (mine && adv.end_time > 0 && gt >= adv.end_time) ? (lordAdvSnapshotAt(adv.end_time) || cur) : cur;
+    setLordAdvValues(camp, mine ? (adv.gold || 0) : 0, b.kills[camp] - a.kills[camp], b.towers[camp] - a.towers[camp]);
   });
   lordAdvFirstPoll = false;
 });
