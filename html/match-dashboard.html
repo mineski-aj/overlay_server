@@ -341,6 +341,15 @@
           <option value="BO7">Best of 7</option>
         </select>
       </div>
+      <div class="meta-field grow">
+        <div class="meta-label">Tomorrow's Format</div>
+        <select id="series-tomorrow">
+          <option value="BO1">Best of 1</option>
+          <option value="BO3">Best of 3</option>
+          <option value="BO5">Best of 5</option>
+          <option value="BO7" selected>Best of 7</option>
+        </select>
+      </div>
       <div class="meta-field">
         <div class="meta-label">Match</div>
         <select id="match-picker">
@@ -726,6 +735,7 @@
   function renderAll() {
     var s = localState;
     document.getElementById('series').value = s.series || 'BO5';
+    document.getElementById('series-tomorrow').value = s.tomorrowSeries || 'BO7';
     var cb = document.getElementById('official-cb');
     cb.checked = !!s.official;
     document.getElementById('official-wrap').classList.toggle('on', !!s.official);
@@ -1074,6 +1084,12 @@
   document.getElementById('series').addEventListener('change', function () {
     localState.series = this.value;
     push({ series: this.value });
+  });
+
+  /* Format for Tomorrow's Schedule (the Format above drives today's matches + the score caps). */
+  document.getElementById('series-tomorrow').addEventListener('change', function () {
+    localState.tomorrowSeries = this.value;
+    push({ tomorrowSeries: this.value });
   });
 
   /* ── COUNTDOWN TIMER (server-authoritative — MM:SS) ──

@@ -353,7 +353,7 @@
       resolved[m.id] = { a: bkResolve(m.a, 'a', st), b: bkResolve(m.b, 'b', st), sa: st.sa || 0, sb: st.sb || 0,
                          date: st.date !== undefined ? st.date : m.date, time: st.time !== undefined ? st.time : m.time,
                          title: m.id === 8 ? 'Best of ' + m.bo + ' Series' : m.stage,
-                         la: lbl(m.a), lb: lbl(m.b) }; /* la/lb: placeholder text while the slot is undecided */
+                         flip: !!st.flip, la: lbl(m.a), lb: lbl(m.b) }; /* la/lb: placeholder text while the slot is undecided */
     });
     fetch('/api/bracket-data', {
       method: 'POST',
@@ -435,6 +435,25 @@
     });
     head.appendChild(when);
     card.appendChild(stage); card.appendChild(head);
+
+    /* On-air order: the overlay puts the higher Standings seed in the blue (top) slot, the lower in red (bottom).
+       The BLUE/RED rows below are only the raw entry order. "Swap" flips the on-air order for this match. */
+    var ta = bkResolve(m.a, 'a', st), tb = bkResolve(m.b, 'b', st);
+    var rk = function (t) { var i = teams.findIndex(function (x) { return x.tri === t; }); return i < 0 ? null : i; };
+    var air = document.createElement('div'); air.className = 'bk-onair';
+    air.style.cssText = 'display:flex;align-items:center;gap:8px;font-size:11px;margin:2px 0 6px';
+    var swapBtn = document.createElement('button'); swapBtn.type = 'button';
+    swapBtn.textContent = '⇅ Swap'; swapBtn.title = 'Flip which team is blue (top) / red (bottom) on the overlay';
+    swapBtn.style.cssText = 'cursor:pointer;padding:2px 8px;border-radius:6px;border:1px solid ' + (st.flip ? '#ffb02e' : '#3a3a4a') + ';background:' + (st.flip ? '#3a2a08' : '#1c1c28') + ';color:#ddd;font-size:11px';
+    swapBtn.addEventListener('click', function () { st.flip = !st.flip; saveBk(); renderBracket(); });
+    var onair = document.createElement('span');
+    if (ta && tb) {
+      var ra = rk(ta), rb = rk(tb), sw = ra != null && rb != null && ra > rb;
+      if (st.flip) sw = !sw;
+      onair.innerHTML = 'On air: <b style="color:#6c8cff">' + (sw ? tb : ta) + '</b> (blue) / <b style="color:#ff5a64">' + (sw ? ta : tb) + '</b> (red)' + (st.flip ? ' · manual' : '');
+    } else onair.textContent = 'On air order set once both teams are known';
+    air.appendChild(swapBtn); air.appendChild(onair);
+    card.appendChild(air);
 
     [['a', 'blue', 'sa'], ['b', 'red', 'sb']].forEach(function (s) {
       var key = s[0], ref = m[key], tri = bkResolve(ref, key, st);

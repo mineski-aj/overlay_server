@@ -2139,7 +2139,7 @@
   };
 
   /* Kill-event player photo test control — see 'Kill event trigger' below */
-  var keePlayerMode    = 'random';
+  var keePlayerMode    = 'live';   /* every dashboard (re)load starts on Live API; Random Test is a per-session manual choice */
   var keSignatureNames = [];
   fetch('/api/signature-photos').then(function(r){ return r.json(); }).then(function(d) {
     keSignatureNames = (d && d.names) || [];

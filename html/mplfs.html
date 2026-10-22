@@ -10274,7 +10274,7 @@
        schedule (see match-dashboard.html's renderTomorrowMatches). */
     function msToTomorrowMatchRows(state) {
       if (!state || !Array.isArray(state.tomorrowMatches) || !state.tomorrowMatches.length) return null;
-      const bo = (state.series || 'BO3').toUpperCase();
+      const bo = (state.tomorrowSeries || 'BO7').toUpperCase();
       const isThreeMatch = computeTomorrowWeekDay(state).day === 2;
       const slice = isThreeMatch ? state.tomorrowMatches.slice(0, 3) : state.tomorrowMatches.slice(-2);
       /* Playoffs: ALWAYS the first 2 matches, or just 1 when the first
@@ -12708,6 +12708,19 @@
     }
 
     const BR_PLAYIN_SEEDS = { 1: { a: '3rd Seed', b: '6th Seed' }, 2: { a: '4th Seed', b: '5th Seed' } };
+    /* Seeding rule: when BOTH teams of a match are known, the higher-ranked team in the Standings (lower rank number,
+       = its position in /standings/state teams[]) always takes the blue (top, 'a') slot and the lower one the red
+       (bottom, 'b') slot — scores travel with their team. Undecided slots / unranked teams are left exactly as given. */
+    let brRank = {};
+    function brSeeded(m) {
+      const ta = String(m.a || '').toUpperCase(), tb = String(m.b || '').toUpperCase();
+      const ra = brRank[ta], rb = brRank[tb];
+      let swap = ra != null && rb != null && ra > rb;
+      /* Standings-dashboard "Swap" button on the match: manual flip on top of the seeding, for when the seeding got it wrong. */
+      if (m.flip && ta && tb) swap = !swap;
+      if (!swap) return m;
+      return Object.assign({}, m, { a: m.b, b: m.a, sa: m.sb, sb: m.sa, la: m.lb, lb: m.la });
+    }
     function brApplyData(data) {
       const res = (data && data.resolved) || {};
       Object.keys(BR_TITLES).forEach(id => {
@@ -12719,7 +12732,7 @@
         brFitText(t);
       });
       Object.keys(BR_CELLS).forEach(id => {
-        const m = res[id] || {};
+        const m = brSeeded(res[id] || {});
         const sa = Number(m.sa) || 0, sb = Number(m.sb) || 0;
         const time = brFmtTime(m.time);
         const info = document.getElementById(`br-m${id}-info`);
@@ -12758,7 +12771,13 @@
 
     async function brLoadData() {
       try {
-        const r = await fetch('/api/bracket-data', { cache: 'no-store' });
+        const [r, rs] = await Promise.all([
+          fetch('/api/bracket-data', { cache: 'no-store' }),
+          fetch('/standings/state', { cache: 'no-store' }).then(x => x.ok ? x.json() : null).catch(() => null),
+        ]);
+        const rank = {};
+        ((rs && rs.teams) || []).forEach((t, i) => { if (t && t.tri) rank[String(t.tri).toUpperCase()] = i + 1; });
+        brRank = rank;
         brApplyData(await r.json());
         return true;
       } catch (e) { return false; }

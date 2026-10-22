@@ -19,7 +19,7 @@
     "3": {
       "a": "FLCN",
       "b": "",
-      "sa": 0,
+      "sa": 3,
       "sb": 0,
       "date": "Oct 22",
       "time": ""
@@ -27,8 +27,8 @@
     "4": {
       "a": "TLPH",
       "b": "",
-      "sa": 0,
-      "sb": 0,
+      "sa": 1,
+      "sb": 3,
       "date": "Oct 22",
       "time": ""
     },
@@ -46,7 +46,8 @@
       "sa": 0,
       "sb": 0,
       "date": "Oct 23",
-      "time": ""
+      "time": "",
+      "flip": false
     },
     "7": {
       "a": "",
@@ -54,7 +55,8 @@
       "sa": 0,
       "sb": 0,
       "date": "Oct 24",
-      "time": ""
+      "time": "",
+      "flip": false
     },
     "8": {
       "a": "",
@@ -62,7 +64,8 @@
       "sa": 0,
       "sb": 0,
       "date": "Oct 25",
-      "time": ""
+      "time": "",
+      "flip": false
     }
   },
   "resolved": {
@@ -74,6 +77,7 @@
       "date": "Oct 21",
       "time": "",
       "title": "Play-Ins / BO5",
+      "flip": false,
       "la": "",
       "lb": ""
     },
@@ -85,50 +89,55 @@
       "date": "Oct 21",
       "time": "",
       "title": "Play-Ins / BO5",
+      "flip": false,
       "la": "",
       "lb": ""
     },
     "3": {
       "a": "FLCN",
       "b": "ONIC",
-      "sa": 0,
+      "sa": 3,
       "sb": 0,
       "date": "Oct 22",
       "time": "",
       "title": "Play-Ins / BO5",
+      "flip": false,
       "la": "",
       "lb": "Winner of Match 1"
     },
     "4": {
       "a": "TLPH",
       "b": "RORA",
-      "sa": 0,
-      "sb": 0,
+      "sa": 1,
+      "sb": 3,
       "date": "Oct 22",
       "time": "",
       "title": "Play-Ins / BO5",
+      "flip": false,
       "la": "",
       "lb": "Winner of Match 2"
     },
     "5": {
-      "a": "",
-      "b": "",
+      "a": "FLCN",
+      "b": "RORA",
       "sa": 0,
       "sb": 0,
       "date": "Oct 23",
       "time": "",
       "title": "Upper Bracket Finals / BO5",
+      "flip": false,
       "la": "Winner of Match 3",
       "lb": "Winner of Match 4"
     },
     "6": {
-      "a": "",
-      "b": "",
+      "a": "ONIC",
+      "b": "TLPH",
       "sa": 0,
       "sb": 0,
       "date": "Oct 23",
       "time": "",
       "title": "Lower Bracket Semi-Finals / BO5",
+      "flip": false,
       "la": "Loser of Match 3",
       "lb": "Loser of Match 4"
     },
@@ -140,6 +149,7 @@
       "date": "Oct 24",
       "time": "",
       "title": "Lower Bracket Finals / BO7",
+      "flip": false,
       "la": "Winner of Match 6",
       "lb": "Loser of Match 5"
     },
@@ -151,6 +161,7 @@
       "date": "Oct 25",
       "time": "",
       "title": "Best of 7 Series",
+      "flip": false,
       "la": "Winner of Match 5",
       "lb": "Winner of Match 7"
     }
