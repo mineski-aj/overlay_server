@@ -9532,6 +9532,7 @@
         'MatchBox_REGULAR MATCH.png': 'playoffs/MatchBox_REGULAR MATCH.png',
         'MatchBox_EPIC RIVALRY.png': 'playoffs/MatchBox_EPIC RIVALRY.png',
         'MatchBox_ENDURING LEGACY.png': 'playoffs/MatchBox_ENDURING LEGACY.png',
+        'MatchBox_GOLDEN RIVALRY.png': 'playoffs/MatchBox_GOLDEN-RIVALRY.png',
         'TodayMatches.png': 'playoffs/todays_matches.png',
         'openhouser.png':   'playoffs/openhouser.png',
       },
@@ -18914,6 +18915,8 @@
     function mbStarSuffixFor(matchType) {
       const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       if (isAnniv && MB_STAR_MATCH_SUFFIX_ANNIV[matchType]) return MB_STAR_MATCH_SUFFIX_ANNIV[matchType];
+      /* Playoffs: Golden Rivalry art is hyphen-named too (assets/postgame/postname_blue_GOLDEN-RIVALRY.png, in the plain postgame folder) */
+      if (document.documentElement.getAttribute('data-theme') === 'playoffs' && matchType === 'golden') return MB_STAR_MATCH_SUFFIX_ANNIV.golden;
       return MB_STAR_MATCH_SUFFIX[matchType];
     }
     function mbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {

@@ -22,6 +22,8 @@ var STAR_MATCH_SUFFIX_ANNIV = {
 function sbStarSuffixFor(matchType) {
   var isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   if (isAnniv && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
+  /* Playoffs: Golden Rivalry art is hyphen-named too (assets/ingame/playoffs/ingamepng2_GOLDEN-RIVALRY.png) */
+  if (document.documentElement.getAttribute('data-theme') === 'playoffs' && matchType === 'golden') return STAR_MATCH_SUFFIX_ANNIV.golden;
   return STAR_MATCH_SUFFIX[matchType];
 }
 /* Called every 3s from sbPollMatchState. Must be a no-op when nothing

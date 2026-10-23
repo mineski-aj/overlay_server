@@ -2704,7 +2704,7 @@
     var center = (s1 === 0 && s2 === 0)
       ? '<img class="l3m-vs" src="/assets/Waiting Screen TVC/SCORES/vs.png" alt="VS">'
       : '<div class="l3m-score"><span class="l3m-score-l">' + s1 + '</span><span class="l3m-score-div"></span><span class="l3m-score-r">' + s2 + '</span></div>';
-    var boxByType = { epic: 'MatchBox_EPIC RIVALRY', enduring: 'MatchBox_ENDURING LEGACY' };
+    var boxByType = { epic: 'MatchBox_EPIC RIVALRY', enduring: 'MatchBox_ENDURING LEGACY', golden: 'MatchBox_GOLDEN-RIVALRY' };
     var mt = tm.matchType || (tm.star ? 'clash' : 'regular');
     var boxFile = boxByType[mt] || 'MatchBox_REGULAR MATCH';
     var gold = mt === 'enduring' ? ' l3m-tri-gold' : '';
