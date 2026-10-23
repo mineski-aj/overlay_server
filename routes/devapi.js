@@ -608,6 +608,140 @@ router.post('/api/winrate-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Most Pick API base URL (Settings → Most Pick API) — GET to read, POST { url } to update.
+// Same { live, web, debug } file shape as every other per-API URL. Feeds the Dynamic Stats tab's
+// PLAYOFFS TREND rows (most_Pick / most_Ban / most_BanPick, 10 heroes each).
+const MOSTPICK_URL_FILE    = path.join(__dirname, '..', 'mostpick_api_url.json');
+const MOSTPICK_URL_DEFAULT = 'http://10.88.120.60:5001/api/most-pick';
+
+router.get('/api/mostpick-url', (req, res) => {
+  res.json({ url: readUrlForMode(MOSTPICK_URL_FILE, MOSTPICK_URL_DEFAULT) });
+});
+
+router.post('/api/mostpick-url', (req, res) => {
+  const url = ((req.body || {}).url || '').trim();
+  writeUrlForMode(MOSTPICK_URL_FILE, url);
+  mostPickCache = { t: 0, body: null }; // new source → drop the cached payload
+  res.json({ ok: true, url });
+});
+
+// 5s cache + one shared in-flight fetch (same shape as /api/winrate-proxy); stale beats blank.
+let mostPickCache = { t: 0, body: null };
+let mostPickInFlight = null;
+async function fetchMostPick() {
+  if (mostPickCache.body && Date.now() - mostPickCache.t < 5000) return mostPickCache.body;
+  const url = readUrlForMode(MOSTPICK_URL_FILE, MOSTPICK_URL_DEFAULT).trim();
+  if (!url) throw new Error('no most-pick URL configured');
+  try {
+    if (!mostPickInFlight) {
+      mostPickInFlight = fetch(url, { signal: AbortSignal.timeout(9500) })
+        .then(async r => {
+          if (!r.ok) throw new Error('upstream HTTP ' + r.status);
+          mostPickCache = { t: Date.now(), body: await r.json() };
+        })
+        .finally(() => { mostPickInFlight = null; });
+    }
+    await mostPickInFlight;
+  } catch (e) {
+    if (mostPickCache.body) return mostPickCache.body;
+    throw e;
+  }
+  return mostPickCache.body;
+}
+router.get('/api/mostpick-proxy', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  try { res.json(await fetchMostPick()); }
+  catch (e) { res.status(502).json({ error: e.message }); }
+});
+
+// ── Dynamic Stats (dashboard "Dynamic Stats" tab) ──────────────────────────
+// Three fixed PLAYOFFS TREND rows whose Data is a ticker built from the Most Pick API
+// ("HERO 12.3% • HERO 11.0% • …", slots 0-9), plus user-added custom rows (title / subtitle /
+// data text, lockable). File: { toggles: { most_pick, most_ban, most_banpick }, rows: [{ id, title, subtitle, data, locked, on }] }.
+const DSTATS_FILE = path.join(__dirname, '..', 'dynamic_stats.json');
+const DSTATS_STATIC = [
+  { id: 'most_pick',    title: 'PLAYOFFS TREND', subtitle: 'Most_Pick',    list: 'most_Pick',    rate: 'pickRate' },
+  { id: 'most_ban',     title: 'PLAYOFFS TREND', subtitle: 'Most_Ban',     list: 'most_Ban',     rate: 'banRate' },
+  { id: 'most_banpick', title: 'PLAYOFFS TREND', subtitle: 'Most_BanPick', list: 'most_BanPick', rate: 'banPickRate' },
+];
+// Ticker belt speed (px/s) for the Headline Ticker Stats overlay — set on the Dynamic Stats tab.
+const DSTATS_SPEED_DEFAULT = 120, DSTATS_SPEED_MIN = 20, DSTATS_SPEED_MAX = 600;
+function dstatsSpeed(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(DSTATS_SPEED_MIN, Math.min(DSTATS_SPEED_MAX, Math.round(n))) : DSTATS_SPEED_DEFAULT;
+}
+// How long each Dynamic Stats row stays up before the ticker switches to the next one (seconds).
+const DSTATS_DURATION_DEFAULT = 10, DSTATS_DURATION_MIN = 3, DSTATS_DURATION_MAX = 120;
+function dstatsDuration(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.max(DSTATS_DURATION_MIN, Math.min(DSTATS_DURATION_MAX, Math.round(n))) : DSTATS_DURATION_DEFAULT;
+}
+function dstatsRead() {
+  try {
+    const j = JSON.parse(fs.readFileSync(DSTATS_FILE, 'utf8'));
+    return { toggles: (j.toggles && typeof j.toggles === 'object') ? j.toggles : {}, rows: Array.isArray(j.rows) ? j.rows : [], titles: (j.titles && typeof j.titles === 'object') ? j.titles : {}, titleLocks: (j.titleLocks && typeof j.titleLocks === 'object') ? j.titleLocks : {}, speed: dstatsSpeed(j.speed === undefined ? DSTATS_SPEED_DEFAULT : j.speed), duration: dstatsDuration(j.duration === undefined ? DSTATS_DURATION_DEFAULT : j.duration) };
+  } catch (e) { return { toggles: {}, rows: [], titles: {}, titleLocks: {}, speed: DSTATS_SPEED_DEFAULT, duration: DSTATS_DURATION_DEFAULT }; }
+}
+function dstatsTicker(body, def) {
+  const list = body && Array.isArray(body[def.list]) ? body[def.list] : [];
+  return list.slice(0, 10).map(h => h.heroname + ' ' + h[def.rate] + '%').join(' • ');
+}
+// Structured version of the same list for overlays that draw hero photos: [{ heroid, name, rate }]
+function dstatsItems(body, def) {
+  const list = body && Array.isArray(body[def.list]) ? body[def.list] : [];
+  return list.slice(0, 10).map(h => ({ heroid: h.heroid, name: h.heroname, rate: h[def.rate] }));
+}
+router.get('/api/dynamic-stats', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const saved = dstatsRead();
+  let body = null, error = null;
+  /* ?overlay=1 (the on-air Headline Ticker): custom rows are plain typed text and must never wait on the Most Pick API.
+     Only ask the API when one of the three trend rows is toggled ON, and then give it at most 1.5 s (stale cache otherwise). */
+  const overlayMode = req.query.overlay === '1';
+  const anyTrendOn = DSTATS_STATIC.some(d => saved.toggles[d.id]);
+  if (!overlayMode || anyTrendOn) {
+    try {
+      body = overlayMode
+        ? await Promise.race([fetchMostPick(), new Promise((_, rej) => setTimeout(() => rej(new Error('Most Pick API slow')), 1500))])
+        : await fetchMostPick();
+    } catch (e) {
+      error = e.message;
+      if (overlayMode) body = mostPickCache.body;
+    }
+  }
+  const rows = DSTATS_STATIC.map(d => ({
+    id: d.id, static: true, title: String(saved.titles[d.id] || '').trim() || d.title, subtitle: d.subtitle,
+    locked: saved.titleLocks[d.id] === undefined ? true : !!saved.titleLocks[d.id],
+    data: dstatsTicker(body, d), items: dstatsItems(body, d), on: !!saved.toggles[d.id],
+  })).concat(saved.rows.map(r => ({
+    id: String(r.id), static: false, title: String(r.title || ''), subtitle: String(r.subtitle || ''),
+    data: String(r.data || ''), locked: !!r.locked, on: !!r.on,
+  })));
+  res.json({ rows, error, speed: saved.speed, duration: saved.duration });
+});
+router.post('/api/dynamic-stats', (req, res) => {
+  const b = req.body || {};
+  const toggles = {};
+  DSTATS_STATIC.forEach(d => { toggles[d.id] = !!(b.toggles && b.toggles[d.id]); });
+  const rows = (Array.isArray(b.rows) ? b.rows : []).slice(0, 100).map(r => ({
+    id: String(r.id || ''), title: String(r.title || ''), subtitle: String(r.subtitle || ''),
+    data: String(r.data || ''), locked: !!r.locked, on: !!r.on,
+  })).filter(r => r.id);
+  const prev = dstatsRead();
+  const titles = {}, titleLocks = {};
+  DSTATS_STATIC.forEach(d => {
+    const t = b.titles && b.titles[d.id] !== undefined ? String(b.titles[d.id]).trim().slice(0, 80) : String(prev.titles[d.id] || '');
+    titles[d.id] = t === d.title ? '' : t;   /* the default isn't stored — an empty entry just means "PLAYOFFS TREND" */
+    titleLocks[d.id] = b.titleLocks && b.titleLocks[d.id] !== undefined ? !!b.titleLocks[d.id] : (prev.titleLocks[d.id] === undefined ? true : !!prev.titleLocks[d.id]);
+  });
+  fs.writeFileSync(DSTATS_FILE, JSON.stringify({
+    toggles, rows, titles, titleLocks,
+    speed: dstatsSpeed(b.speed === undefined ? prev.speed : b.speed),
+    duration: dstatsDuration(b.duration === undefined ? prev.duration : b.duration),
+  }, null, 2));
+  res.set('Cache-Control', 'no-store').json({ ok: true });
+});
+
 // Gold Info API base URL (Gold Graph Check V2) — GET to read, POST { url } to update.
 // Same { live, web, debug } file shape as every other per-API URL.
 const GOLDINFO_URL_FILE    = path.join(__dirname, '..', 'goldinfo_api_url.json');

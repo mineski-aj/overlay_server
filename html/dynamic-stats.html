@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="js/cache-bust.js"></script>
+<script src="js/theme-apply.js"></script>
+<title>Dynamic Stats</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0d0d12;
+    color: #d0d0d8;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 24px;
+    gap: 14px;
+    overflow-y: auto;
+  }
+
+  .page-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 14px; border-bottom: 1px solid #222232; flex-shrink: 0;
+  }
+  .page-title { font-size: 14px; font-weight: 700; color: #fff; letter-spacing: 0.08em; text-transform: uppercase; }
+  .page-note  { font-size: 11px; color: #555; letter-spacing: 0.04em; }
+
+  /* ── Table (CSS grid: Title | Sub Title | Data | Toggle | Row actions) ── */
+  .grid-head, .row {
+    display: grid;
+    grid-template-columns: 190px 170px minmax(260px, 1fr) 96px 112px;
+    gap: 10px;
+    align-items: center;
+  }
+  .grid-head {
+    padding: 0 14px 8px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #555;
+    flex-shrink: 0;
+  }
+  .rows { display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+  .row {
+    background: #13131c; border: 1px solid #1e1e2c; border-radius: 8px; padding: 10px 14px;
+  }
+  .row.is-static { border-color: #2a2a3e; }
+  .row.is-locked { background: #101018; border-color: #2a3a2a; }
+
+  .cell-input {
+    width: 100%; font: inherit; font-size: 13px; color: #e6e6ee;
+    background: #0b0b11; border: 1px solid #25253a; border-radius: 6px; padding: 7px 9px; outline: none;
+  }
+  .cell-input:focus { border-color: #4a6fcf; }
+  .cell-input:disabled { color: #8a8a99; background: #0e0e15; border-color: #1c1c28; cursor: not-allowed; }
+  .static-text {
+    font-size: 13px; font-weight: 600; color: #cfcfdc; padding: 7px 9px; letter-spacing: 0.02em;
+  }
+  .static-sub { color: #9a9ab0; font-weight: 500; }
+  .data-ticker {
+    font-size: 12px; line-height: 1.45; color: #b9c4dc; background: #0b0b11; border: 1px solid #1c1c28;
+    border-radius: 6px; padding: 7px 9px; min-height: 34px; word-break: break-word;
+  }
+  .data-ticker.empty { color: #555; font-style: italic; }
+  textarea.cell-input { resize: vertical; min-height: 34px; line-height: 1.4; }
+
+  .auto-badge {
+    display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #8c7cd8; background: #1e1a33; border: 1px solid #332b55; border-radius: 4px; padding: 2px 6px; margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Toggle ── */
+  .tgl {
+    min-width: 84px; text-align: center; font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+    border-radius: 6px; padding: 7px 0; cursor: pointer; border: 1px solid; font-family: inherit;
+  }
+  .tgl.on  { background: #1a3a2a; border-color: #2a5a3a; color: #44cc88; }
+  .tgl.off { background: #2a1818; border-color: #3a2020; color: #886666; }
+
+  /* ── Row actions ── */
+  .actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .icon-btn {
+    font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; cursor: pointer;
+    color: #ddd; background: #2a2a3e; border: 1px solid #3a3a52; border-radius: 6px; padding: 6px 9px;
+  }
+  .icon-btn:hover:not(:disabled) { background: #34344a; }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .icon-btn.lock.locked { background: #1d3524; border-color: #2f5a3b; color: #55dd88; }
+  .icon-btn.del:hover:not(:disabled) { background: #4a2020; border-color: #6a2a2a; }
+
+  .footer { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .add-btn {
+    font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #cfe0ff; background: #1e2a4a; border: 1px solid #2f4478; border-radius: 6px; padding: 8px 16px; cursor: pointer;
+  }
+  .add-btn:hover { background: #26356a; }
+  .save-btn {
+    font-family: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+    color: #8a8a99; background: #1a1a26; border: 1px solid #2a2a3a; border-radius: 6px; padding: 8px 20px; cursor: default;
+  }
+  .save-btn.dirty { color: #e8fff1; background: #1d6b3d; border-color: #2f9a5a; cursor: pointer; }
+  .save-btn.dirty:hover { background: #24824b; }
+  .speed-box { display: flex; align-items: center; gap: 10px; margin-left: 6px; padding-left: 16px; border-left: 1px solid #25253a; }
+  .speed-box label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #777; }
+  .speed-box input[type=range] { width: 170px; accent-color: #4a6fcf; }
+  .speed-box input[type=number] { width: 66px; font: inherit; font-size: 12px; color: #e6e6ee; background: #0b0b11;
+    border: 1px solid #25253a; border-radius: 6px; padding: 5px 7px; outline: none; }
+  .speed-box input[type=number]:focus { border-color: #4a6fcf; }
+  .speed-box .unit { font-size: 11px; color: #555; }
+  .status { font-size: 11px; color: #555; letter-spacing: 0.04em; }
+  .status.ok { color: #44cc88; } .status.err { color: #ff6677; }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">Dynamic Stats</div>
+  <div class="page-note">PLAYOFFS TREND rows fill themselves from the Most Pick API (Settings) · custom rows are yours</div>
+</div>
+
+<div class="grid-head">
+  <div>Title</div><div>Sub Title</div><div>Data</div><div>Toggle</div><div style="text-align:right">Row</div>
+</div>
+<div class="rows" id="rows"></div>
+
+<div class="footer">
+  <button class="add-btn" id="add-btn">+ Add Row</button>
+  <button class="save-btn" id="save-btn" disabled>Save</button>
+  <div class="speed-box" title="How fast the Headline Ticker Stats data belt scrolls (pixels per second). Default 120.">
+    <label for="speed-range">Ticker speed</label>
+    <input type="range" id="speed-range" min="20" max="400" step="5" value="120">
+    <input type="number" id="speed-num" min="20" max="600" step="5" value="120">
+    <span class="unit">px/s</span>
+  </div>
+  <div class="speed-box" title="How long each row stays on the ticker before it switches to the next one (only matters with 2+ rows toggled ON). Default 10 s.">
+    <label for="dur-range">Row duration</label>
+    <input type="range" id="dur-range" min="3" max="60" step="1" value="10">
+    <input type="number" id="dur-num" min="3" max="120" step="1" value="10">
+    <span class="unit">sec</span>
+  </div>
+  <span class="status" id="status"></span>
+</div>
+
+<script>
+(function () {
+  var rowsEl = document.getElementById('rows');
+  var statusEl = document.getElementById('status');
+  var rows = [];          /* server rows: static rows first, then custom */
+  var speed = 120;        /* ticker belt speed, px/s — saved with the rest */
+  var duration = 10;      /* seconds each row stays up before the ticker switches to the next — saved with the rest */
+  var dirty = false;      /* nothing is written to the server until Save is pressed */
+  var saveBtn = document.getElementById('save-btn');
+
+  function setStatus(txt, cls) {
+    statusEl.textContent = txt || '';
+    statusEl.className = 'status' + (cls ? ' ' + cls : '');
+  }
+
+  function payload() {
+    var toggles = {}, custom = [], titles = {}, titleLocks = {};
+    rows.forEach(function (r) {
+      if (r.static) { toggles[r.id] = !!r.on; titles[r.id] = r.title; titleLocks[r.id] = !!r.locked; }
+      else custom.push({ id: r.id, title: r.title, subtitle: r.subtitle, data: r.data, locked: !!r.locked, on: !!r.on });
+    });
+    return { toggles: toggles, rows: custom, titles: titles, titleLocks: titleLocks, speed: speed, duration: duration };
+  }
+
+  function setDirty(v) {
+    dirty = v;
+    saveBtn.disabled = !v;
+    saveBtn.classList.toggle('dirty', v);
+    if (v) setStatus('Unsaved changes');
+  }
+  function saveNow() {
+    setStatus('Saving…');
+    fetch('/api/dynamic-stats', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload())
+    }).then(function (r) { return r.json(); }).then(function () {
+      setDirty(false);
+      setStatus('Saved ✓', 'ok');
+      setTimeout(function () { setStatus(''); }, 1800);
+    }).catch(function () { setStatus('Save failed', 'err'); });
+  }
+  function markDirty() { setDirty(true); }
+  saveBtn.addEventListener('click', function () { if (dirty) saveNow(); });
+  window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  function el(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt !== undefined) e.textContent = txt;
+    return e;
+  }
+
+  function render() {
+    rowsEl.innerHTML = '';
+    rows.forEach(function (r) { rowsEl.appendChild(buildRow(r)); });
+  }
+
+  function buildToggle(r) {
+    var b = el('button', 'tgl ' + (r.on ? 'on' : 'off'), r.on ? '● ON' : '○ OFF');
+    b.addEventListener('click', function () {
+      r.on = !r.on;
+      b.className = 'tgl ' + (r.on ? 'on' : 'off');
+      b.textContent = r.on ? '● ON' : '○ OFF';
+      markDirty();
+    });
+    return b;
+  }
+
+  function buildRow(r) {
+    var row = el('div', 'row' + (r.static ? ' is-static' : '') + (r.locked ? ' is-locked' : ''));
+    row.dataset.id = r.id;
+
+    if (r.static) {
+      /* Title is editable (locked by default); Sub Title and Data stay automatic — the lock only ever frees the Title box */
+      var inT = document.createElement('input');
+      inT.className = 'cell-input'; inT.type = 'text'; inT.placeholder = 'Title'; inT.spellcheck = false;
+      inT.value = r.title || ''; inT.disabled = !!r.locked;
+      inT.addEventListener('input', function () { r.title = inT.value; markDirty(); });
+      row.appendChild(inT);
+      var st = el('div', 'static-text static-sub', r.subtitle); st.appendChild(el('span', 'auto-badge', 'auto'));
+      row.appendChild(st);
+      var d = el('div', 'data-ticker' + (r.data ? '' : ' empty'), r.data || 'waiting for the Most Pick API…');
+      d.className += ' js-data';
+      row.appendChild(d);
+      row.appendChild(buildToggle(r));
+      var sAct = el('div', 'actions');
+      var sLock = el('button', 'icon-btn lock' + (r.locked ? ' locked' : ''), r.locked ? '🔒 Locked' : '🔓 Lock');
+      sLock.title = 'Unlock to edit this row\'s Title';
+      sLock.addEventListener('click', function () {
+        r.locked = !r.locked;
+        inT.disabled = r.locked;
+        row.className = 'row is-static' + (r.locked ? ' is-locked' : '');
+        sLock.className = 'icon-btn lock' + (r.locked ? ' locked' : '');
+        sLock.textContent = r.locked ? '🔒 Locked' : '🔓 Lock';
+        markDirty();
+      });
+      sAct.appendChild(sLock);
+      row.appendChild(sAct);
+      return row;
+    }
+
+    function field(key, ph, multiline) {
+      var i = document.createElement(multiline ? 'textarea' : 'input');
+      i.className = 'cell-input';
+      if (!multiline) i.type = 'text'; else i.rows = 1;
+      i.placeholder = ph; i.value = r[key] || ''; i.disabled = !!r.locked; i.spellcheck = false;
+      i.addEventListener('input', function () { r[key] = i.value; markDirty(); });
+      return i;
+    }
+    var inTitle = field('title', 'Title'), inSub = field('subtitle', 'Sub Title'), inData = field('data', 'Data', true);
+    row.appendChild(inTitle); row.appendChild(inSub); row.appendChild(inData);
+    row.appendChild(buildToggle(r));
+
+    var act = el('div', 'actions');
+    var lock = el('button', 'icon-btn lock' + (r.locked ? ' locked' : ''), r.locked ? '🔒 Locked' : '🔓 Lock');
+    var del = el('button', 'icon-btn del', '✕');
+    del.title = r.locked ? 'Unlock to delete' : 'Delete row';
+    del.disabled = !!r.locked;
+    lock.addEventListener('click', function () {
+      r.locked = !r.locked;
+      row.className = 'row' + (r.locked ? ' is-locked' : '');
+      [inTitle, inSub, inData].forEach(function (i) { i.disabled = r.locked; });
+      lock.className = 'icon-btn lock' + (r.locked ? ' locked' : '');
+      lock.textContent = r.locked ? '🔒 Locked' : '🔓 Lock';
+      del.disabled = r.locked; del.title = r.locked ? 'Unlock to delete' : 'Delete row';
+      markDirty();
+    });
+    del.addEventListener('click', function () {
+      if (r.locked) return;
+      if (!window.confirm('Delete this row?')) return;
+      rows = rows.filter(function (x) { return x !== r; });
+      render(); markDirty();
+    });
+    act.appendChild(lock); act.appendChild(del);
+    row.appendChild(act);
+    return row;
+  }
+
+  document.getElementById('add-btn').addEventListener('click', function () {
+    rows.push({ id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), static: false, title: '', subtitle: '', data: '', locked: false, on: false });
+    render(); markDirty();
+    var last = rowsEl.lastElementChild; if (last) { var i = last.querySelector('input'); if (i) i.focus(); }
+  });
+
+  /* ticker speed control — slider + number box stay in sync; changing it only marks the page unsaved */
+  var speedRange = document.getElementById('speed-range'), speedNum = document.getElementById('speed-num');
+  function setSpeedUi(v) { speed = v; speedRange.value = Math.min(400, v); speedNum.value = v; }
+  function speedChanged(v) {
+    v = Math.max(20, Math.min(600, Math.round(Number(v) || 120)));
+    setSpeedUi(v); markDirty();
+  }
+  speedRange.addEventListener('input', function () { speedChanged(speedRange.value); });
+  speedNum.addEventListener('change', function () { speedChanged(speedNum.value); });
+
+  /* row duration control — same behaviour as the speed control */
+  var durRange = document.getElementById('dur-range'), durNum = document.getElementById('dur-num');
+  function setDurUi(v) { duration = v; durRange.value = Math.min(60, v); durNum.value = v; }
+  function durChanged(v) {
+    v = Math.max(3, Math.min(120, Math.round(Number(v) || 10)));
+    setDurUi(v); markDirty();
+  }
+  durRange.addEventListener('input', function () { durChanged(durRange.value); });
+  durNum.addEventListener('change', function () { durChanged(durNum.value); });
+
+  /* initial load */
+  function load() {
+    fetch('/api/dynamic-stats', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      rows = d.rows || [];
+      if (typeof d.speed === 'number') setSpeedUi(d.speed);
+      if (typeof d.duration === 'number') setDurUi(d.duration);
+      render();
+      if (d.error) setStatus('Most Pick API: ' + d.error, 'err');
+    }).catch(function () { setStatus('Could not load Dynamic Stats', 'err'); });
+  }
+
+  /* the three ticker rows follow the API — refresh only their Data text, never touch anything being edited */
+  function refreshTickers() {
+    fetch('/api/dynamic-stats', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+      (d.rows || []).forEach(function (n) {
+        if (!n.static) return;
+        var mine = rows.filter(function (x) { return x.id === n.id; })[0];
+        if (mine) mine.data = n.data;
+        var node = rowsEl.querySelector('.row[data-id="' + n.id + '"] .js-data');
+        if (node) { node.textContent = n.data || 'waiting for the Most Pick API…'; node.classList.toggle('empty', !n.data); }
+      });
+      if (!d.error && /^Most Pick API/.test(statusEl.textContent)) setStatus('');
+    }).catch(function () {});
+  }
+
+  load();
+  setInterval(refreshTickers, 10000);
+})();
+</script>
+</body>
+</html>

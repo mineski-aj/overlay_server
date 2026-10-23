@@ -340,6 +340,21 @@ router.get('/overlay/l3lobby/hide', (req, res) => {
   res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
 });
 
+// Headline Ticker Stats (mpldynamicpc.html, "MPL L3 Dynamic PC") — plain checkOverlays
+// pattern. The page pulls the headline (/api/dynamic-content) and the ticker rows
+// (/api/dynamic-stats) itself, so no data in the payload.
+// GET /overlay/headlineticker/show|hide
+router.get('/overlay/headlineticker/show', (req, res) => {
+  state.checkOverlays.headlineticker = true;
+  state.overlayClients.forEach(c => { try { c.write('event: headlineticker\ndata: {"action":"show"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "show" });
+});
+router.get('/overlay/headlineticker/hide', (req, res) => {
+  state.checkOverlays.headlineticker = false;
+  state.overlayClients.forEach(c => { try { c.write('event: headlineticker\ndata: {"action":"hide"}\n\n'); } catch {} });
+  res.set({ "Cache-Control": "no-store" }).json({ ok: true, action: "hide" });
+});
+
 // Player H2H — one of 5 roles at a time, mutually exclusive (unlike the
 // plain checkOverlays pattern above). The client itself is responsible
 // for animating the previously-shown role out before animating a newly

@@ -10221,6 +10221,12 @@
       /* Playoffs: Days 1-3 = 2 matches, Days 4-5 = 1 (Regular/Anniversary untouched). */
       const poCount = (state && (state.day || 1) >= 4) ? 1 : 2;
       const rows = (msToMatchRows(state, isPoTs ? poCount : undefined) || TS_MATCHES).slice(0, isPoTs ? poCount : undefined);
+      /* Playoffs title follows the count: one match -> "Today's Match", otherwise "Today's Matches" (only touched when it changes). */
+      if (isPoTs) {
+        const tsT = document.getElementById('ts-title');
+        const tsText = rows.length === 1 ? 'Today’s Match' : 'Today’s Matches';
+        if (tsT && ((tsT.firstChild && tsT.firstChild.nodeType === 3) ? tsT.firstChild.nodeValue : tsT.textContent) !== tsText) tsT.textContent = tsText;
+      }
       /* Tags the match container AND the whole page with the live match
          count so the dashboard Edit tab can save a separate layout per
          2-match/3-match day (see mplfs_todayschedule_2m/3m in
@@ -10273,6 +10279,11 @@
        Today's Schedule (see tsmRowHtml above). Match count for the
        previewed day follows the same 3-match-on-Day-2 rule as today's
        schedule (see match-dashboard.html's renderTomorrowMatches). */
+    /* Playoffs: how many matches Tomorrow's Schedule shows — day 4/5 = 1, day 2/3 = 2 (a GRAND FINALS label on match 1 still forces 1). */
+    function poTomorrowCount(state) {
+      const first = (state && state.tomorrowMatches && state.tomorrowMatches[0]) || {};
+      return (computeTomorrowWeekDay(state).day >= 4 || /grand\s*finals?/i.test(first.stageLabel || '')) ? 1 : 2;
+    }
     function msToTomorrowMatchRows(state) {
       if (!state || !Array.isArray(state.tomorrowMatches) || !state.tomorrowMatches.length) return null;
       const bo = (state.tomorrowSeries || 'BO7').toUpperCase();
@@ -10281,12 +10292,7 @@
       /* Playoffs: ALWAYS the first 2 matches, or just 1 when the first
          match's label is GRAND FINALS. */
       const isPoTw = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      const poSlice = (() => {
-        const first = state.tomorrowMatches[0] || {};
-        /* Tomorrow's day 4/5 = 1 match, day 2/3 = 2 (a GRAND FINALS label on match 1 still forces 1). */
-        const n = (computeTomorrowWeekDay(state).day >= 4 || /grand\s*finals?/i.test(first.stageLabel || '')) ? 1 : 2;
-        return state.tomorrowMatches.slice(0, n);
-      })();
+      const poSlice = state.tomorrowMatches.slice(0, poTomorrowCount(state));
       return (isPoTw ? poSlice : slice).map((m, i) => ({
         label: (document.documentElement.getAttribute('data-theme') === 'playoffs' && (m.matchLabel || '').trim()) || ('MATCH ' + (i + 1)),
         stage: m.stageLabel || '',
@@ -10357,7 +10363,10 @@
         /* Playoffs: clone of Today's Schedule — fixed TOMORROW'S MATCHES, fitted
            to the title room left of the sponsor box with scaleX via canvas measureText (the scene
            is display:none when this runs, so no DOM measuring). */
-        el.textContent = "TOMORROW\u2019S MATCHES";
+        /* one match -> "TOMORROW'S MATCH", otherwise "TOMORROW'S MATCHES" (no state yet = plural) */
+        const twCount = (state && Array.isArray(state.tomorrowMatches) && state.tomorrowMatches.length)
+          ? Math.min(poTomorrowCount(state), state.tomorrowMatches.length) : 2;
+        el.textContent = twCount === 1 ? "TOMORROW\u2019S MATCH" : "TOMORROW\u2019S MATCHES";
         if (!_tsMeasureCtx) _tsMeasureCtx = document.createElement('canvas').getContext('2d');
         _tsMeasureCtx.font = "120px 'Anton'";
         const w = _tsMeasureCtx.measureText(el.textContent).width;

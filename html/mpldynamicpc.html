@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <base href="/">
+  <script src="html/js/cache-bust.js"></script>
+  <script src="html/js/theme-apply.js"></script>
+  <script src="html/js/event-log-client.js"></script>
+  <script src="html/js/overlay-sse-shim.js"></script>
+  <title>MPL L3 Dynamic PC</title>
+  <style>
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 600;
+      font-display: block;
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 700;
+      font-display: block;
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'General Sans';
+      font-weight: 500;
+      font-display: block;
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+    }
+    @font-face {
+      font-family: 'Anton';
+      font-weight: 400;
+      font-display: block;
+      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── BROADCAST CANVAS (transparent 1920x1080) ── */
+    html, body { width: 1920px; height: 1080px; overflow: hidden; background: transparent;
+                 font-family: 'General Sans', 'Segoe UI', system-ui, sans-serif; }
+    #canvas { width: 1920px; height: 1080px; position: relative; overflow: hidden; }
+
+    /* ── Headline Ticker Stats ──
+       #hdp-root is only the show/hide + left->right wipe shell. Plate, headline (white container) and ticker
+       (gold container) are each their own absolutely-positioned element so the Edit tab can move them separately. */
+    #hdp-root { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; display: none; pointer-events: none;
+                clip-path: inset(0 100% 0 0); }
+    #hdp-plate { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+
+    #hdp-headline { position: absolute; left: 291px; top: 896px; width: 1212px; height: 72px;
+                    display: flex; align-items: center; justify-content: center; overflow: hidden;
+                    font-family: 'Anton', sans-serif; font-weight: 400; font-size: 60px; line-height: 1; color: #0a0a0a;
+                    white-space: nowrap; }
+    #hdp-headline .hdp-h-text { display: inline-block; white-space: nowrap; transition: opacity 250ms ease; }
+    #hdp-headline .hdp-h-text.hdp-fade { opacity: 0; }
+
+    #hdp-ticker { position: absolute; left: 306px; top: 989px; width: 1182px; height: 35px;
+                  display: flex; align-items: center; overflow: hidden;
+                  font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 18px; color: #0a0a0a; white-space: nowrap; }
+    /* label = TITLE over SUB TITLE (two short lines inside the 35px bar), so the hero strip gets the room */
+    #hdp-ticker .hdp-label { flex: none; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;
+                  padding-right: .8em; margin-right: .8em; border-right: 2px solid rgba(10,10,10,.35); height: 1.6em;
+                  text-transform: uppercase; line-height: 1; }
+    #hdp-ticker .hdp-label .hdp-t { font-weight: 700; font-size: .6em; letter-spacing: .08em; opacity: .75; }
+    #hdp-ticker .hdp-label .hdp-s { font-weight: 700; font-size: .9em; letter-spacing: .02em; margin-top: .08em; }
+    /* data window: a continuous belt streams right -> left; the mask fades items out before they reach the divider line */
+    #hdp-ticker .hdp-items { flex: 1; position: relative; height: 100%; overflow: hidden;
+                  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 90px, #000 calc(100% - 24px), transparent 100%);
+                          mask-image: linear-gradient(to right, transparent 0, #000 90px, #000 calc(100% - 24px), transparent 100%); }
+    #hdp-ticker .hdp-belt { position: absolute; left: 0; top: 0; width: 0; height: 100%; will-change: transform; }
+    #hdp-ticker .hdp-it { position: absolute; top: 0; height: 100%; display: inline-flex; align-items: center; gap: .4em; white-space: nowrap; }
+    #hdp-ticker .hdp-ph { width: 1.6em; height: 1.6em; border-radius: .25em; object-fit: cover; background: rgba(10,10,10,.12); flex: none; }
+    #hdp-ticker .hdp-nm { text-transform: uppercase; letter-spacing: .01em; }
+    #hdp-ticker .hdp-rt { font-weight: 600; opacity: .85; }
+    /* switching rows: the old row slides DOWN while fading out, the new one drops in from above (down fade) */
+    #hdp-ticker .hdp-label, #hdp-ticker .hdp-items { transition: transform 330ms cubic-bezier(.4, 0, .2, 1), opacity 330ms ease; }
+    #hdp-ticker.hdp-out .hdp-label, #hdp-ticker.hdp-out .hdp-items { transform: translateY(110%); opacity: 0; }
+    #hdp-ticker.hdp-pre .hdp-label, #hdp-ticker.hdp-pre .hdp-items { transform: translateY(-110%); opacity: 0; transition: none; }
+  </style>
+</head>
+<body>
+<div id="canvas">
+  <div id="hdp-root">
+    <img id="hdp-plate" src="/assets/Dynamic L3s/Headline Ticker.png" alt="">
+    <div id="hdp-headline"><span class="hdp-h-text"></span></div>
+    <div id="hdp-ticker"><div class="hdp-label"></div><div class="hdp-items"></div></div>
+  </div>
+</div>
+
+<script>
+/* ── MPL L3 Dynamic PC — Headline Ticker Stats ─────────────────────────────
+   checkOverlays key + SSE event 'headlineticker' (routes/overlay.js). Revealed left -> right with a clip-path wipe.
+   • Headline (white container, Anton)  = Dynamic tab → Match Headline (/api/dynamic-content `match_headline`), shrunk to fit.
+   • Ticker (gold container, General Sans) = Dynamic Stats rows toggled ON (/api/dynamic-stats):  TITLE · SUB TITLE · DATA.
+     Hero rows (Most Pick / Most Ban / Most Contested) show the hero photo (hero/thumb) + name + rate. The data is a continuous belt:
+     items stream right -> left at BELT_SPEED, fade out under a CSS mask before the divider line, and loop forever. With 2+ rows ON the
+     ticker switches to the next row every ROW_MS (10 s, a real timer) with a down-fade; a row toggled ON takes over straight away
+     the same way, and a row toggled OFF is dropped. */
+(function () {
+  var ROOT = document.getElementById('hdp-root');
+  var HEAD = document.querySelector('#hdp-headline .hdp-h-text');
+  var HEAD_BOX = document.getElementById('hdp-headline');
+  var TICK = document.getElementById('hdp-ticker');
+  var LABEL = TICK.querySelector('.hdp-label');
+  var ITEMS = TICK.querySelector('.hdp-items');
+
+  var IN_MS = 900, OUT_MS = 700, ROW_MS = 10000,   /* default; the Dynamic Stats tab's "Row duration" overrides it */ FADE_MS = 250, POLL_MS = 10000, HEAD_POLL_MS = 4000;
+  var SUB_NAMES = { most_pick: 'MOST PICK', most_ban: 'MOST BAN', most_banpick: 'MOST CONTESTED' };
+
+  var on = false, token = 0, rows = [];
+  var outTimer = null, pollTimer = null, headTimer = null, headText = null;
+
+  function pretty(s) { return String(s || '').replace(/_/g, ' ').trim().toUpperCase(); }
+
+  /* ── headline (white container) ── */
+  var _ctx = null;
+  function measure(txt, font) {
+    if (!_ctx) _ctx = document.createElement('canvas').getContext('2d');
+    _ctx.font = font;
+    return _ctx.measureText(txt).width;
+  }
+  function fitHeadline() {
+    HEAD.style.fontSize = '';
+    var cs = getComputedStyle(HEAD_BOX);
+    var base = parseFloat(cs.fontSize), box = parseFloat(cs.width);
+    var txt = HEAD.textContent;
+    if (!txt || !(base > 0) || !(box > 0)) return;
+    var w = measure(txt, '400 ' + base + 'px Anton');   /* canvas measure — no dependency on the (possibly hidden) layout */
+    if (w > box) HEAD.style.fontSize = (base * box / w) + 'px';
+  }
+  function setHeadline(txt, animate) {
+    if (txt === headText) return;
+    headText = txt;
+    if (!animate) { HEAD.textContent = txt; fitHeadline(); return; }
+    HEAD.classList.add('hdp-fade');
+    setTimeout(function () { HEAD.textContent = txt; fitHeadline(); HEAD.classList.remove('hdp-fade'); }, FADE_MS);
+  }
+  function fetchHeadline() {
+    return fetch('/api/dynamic-content', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (d) { return String((d && d.match_headline) || '').trim(); }).catch(function () { return null; });
+  }
+
+  /* ── ticker rows (gold container) ── */
+  function fetchRows() {
+    return fetch('/api/dynamic-stats?overlay=1', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (d) {
+        var sp = Number(d.speed);
+        if (isFinite(sp) && sp >= 20 && sp <= 600) BELT_SPEED = sp;
+        var du = Number(d.duration);
+        if (isFinite(du) && du >= 3 && du <= 120 && du * 1000 !== ROW_MS) {
+          ROW_MS = du * 1000;
+          scheduleRotate();            /* restart the countdown with the new length (no-op until rows are on air) */
+        }
+        return (d.rows || []).filter(function (r) { return r.on && (r.static ? (r.items && r.items.length) : (r.data || r.title || r.subtitle)); }); })
+      .catch(function () { return null; });
+  }
+
+  function buildLabel(r) {
+    LABEL.innerHTML = '';
+    if (!r) return;
+    var t = document.createElement('span'); t.className = 'hdp-t'; t.textContent = pretty(r.title);
+    LABEL.appendChild(t);
+    var sub = SUB_NAMES[r.id] || pretty(r.subtitle);
+    if (sub) { var s = document.createElement('span'); s.className = 'hdp-s'; s.textContent = sub; LABEL.appendChild(s); }
+  }
+
+  /* ── the belt (shows ONE row at a time) ── */
+  var BELT_SPEED = 120;          /* px per second — default; the Dynamic Stats tab's "Ticker speed" overrides it (saved server-side, picked up within POLL_MS) */
+  var GAP = 36, TEXT_GAP = 90;   /* spacing after a hero item / a custom text item */
+  var START_X = 90;              /* first item starts just past the fade zone */
+  var REBASE_AT = 20000;         /* keep the translate small on long runs */
+  var belt = document.createElement('div'); belt.className = 'hdp-belt'; ITEMS.appendChild(belt);
+  var offset = 0, beltEnd = START_X, winW = 0, rafId = 0, lastT = 0;
+  var live = [];                 /* [{ el, x, w }] items currently on the belt */
+  var curId = null, unit = null, unitPos = 0;   /* the row on air + where we are in its current pass */
+  var rowTimer = null, swapTimer = null;
+
+  function rowUnit(r) {          /* one full pass of a row, built from its latest data */
+    if (r.static) return r.items.map(function (h) { return { kind: 'hero', h: h }; });
+    return [{ kind: 'text', text: String(r.data || '') }];
+  }
+  function makeItem(d) {
+    var it = document.createElement('span'); it.className = 'hdp-it';
+    if (d.kind === 'hero') {
+      var img = document.createElement('img'); img.className = 'hdp-ph'; img.alt = '';
+      img.onerror = function () { img.style.visibility = 'hidden'; };
+      img.src = '/hero/thumb/HERO_' + d.h.heroid + '_KOTAK.png';
+      var nm = document.createElement('span'); nm.className = 'hdp-nm'; nm.textContent = d.h.name;
+      var rt = document.createElement('span'); rt.className = 'hdp-rt'; rt.textContent = d.h.rate + '%';
+      it.appendChild(img); it.appendChild(nm); it.appendChild(rt);
+    } else {
+      it.textContent = d.text;
+    }
+    return it;
+  }
+  function appendItem(d, gap) {
+    var el = makeItem(d);
+    el.style.left = beltEnd + 'px';
+    belt.appendChild(el);
+    var w = el.offsetWidth;
+    live.push({ el: el, x: beltEnd, w: w });
+    beltEnd += w + gap;
+  }
+  function rowById(id) { for (var i = 0; i < rows.length; i++) if (rows[i].id === id) return rows[i]; return null; }
+
+  /* keep the belt filled a little past the right edge of the window, looping the on-air row */
+  function fill() {
+    var r = curId ? rowById(curId) : null;
+    if (!r) return;
+    var guard = 0;
+    while (beltEnd - offset < winW + 400 && guard++ < 60) {
+      if (!unit || unitPos === 0) unit = rowUnit(r);          /* fresh data on every pass */
+      if (!unit.length) { unit = null; break; }
+      appendItem(unit[unitPos], r.static ? GAP : TEXT_GAP);
+      unitPos = (unitPos + 1) % unit.length;
+    }
+  }
+
+  function buildLabelFor(r) { buildLabel(r); }
+  function resetBelt() {
+    belt.innerHTML = ''; live = [];
+    offset = 0; beltEnd = START_X; lastT = 0;
+    unit = null; unitPos = 0;
+    belt.style.transform = 'translate3d(0,0,0)';
+  }
+  function rebase() {
+    var d = offset;
+    live.forEach(function (o) { o.x -= d; o.el.style.left = o.x + 'px'; });
+    beltEnd -= d; offset = 0;
+  }
+  function frame(t) {
+    rafId = requestAnimationFrame(frame);
+    var dt = lastT ? Math.min(0.1, (t - lastT) / 1000) : 0;
+    lastT = t;
+    offset += BELT_SPEED * dt;
+    belt.style.transform = 'translate3d(' + (-offset) + 'px,0,0)';
+    while (live.length && live[0].x + live[0].w < offset - 4) belt.removeChild(live.shift().el);   /* long gone off the left */
+    fill();
+    if (offset > REBASE_AT) rebase();
+  }
+
+  /* put a row on air; animate = down-fade the old content out and the new one in */
+  function showRowNow(r) {
+    clearTimeout(swapTimer);
+    curId = r ? r.id : null;
+    resetBelt();
+    buildLabelFor(r);
+    winW = ITEMS.clientWidth || winW || 860;
+    fill();
+  }
+  function switchTo(r, animate) {
+    clearTimeout(swapTimer);
+    if (!animate) { showRowNow(r); return; }
+    TICK.classList.add('hdp-out');
+    swapTimer = setTimeout(function () {
+      showRowNow(r);
+      TICK.classList.add('hdp-pre'); TICK.classList.remove('hdp-out');
+      void TICK.offsetWidth;                      /* commit the "above, hidden" start state, then let it drop into place */
+      TICK.classList.remove('hdp-pre');
+    }, 340);
+  }
+
+  /* 2+ rows ON: every ROW_MS hand over to the next one (loops); a single row never rotates */
+  function scheduleRotate() {
+    clearTimeout(rowTimer);
+    if (!on || rows.length < 2) return;
+    rowTimer = setTimeout(function () {
+      if (!on || rows.length < 2) return;
+      var at = rows.findIndex(function (r) { return r.id === curId; });
+      switchTo(rows[(at + 1) % rows.length], true);
+      scheduleRotate();
+    }, ROW_MS);
+  }
+
+  function startBelt() {
+    stopBelt();
+    TICK.classList.remove('hdp-out', 'hdp-pre');
+    resetBelt();
+    winW = ITEMS.clientWidth || 860;
+    var first = rows.length ? rows[0] : null;
+    showRowNow(first);
+    if (!first) LABEL.innerHTML = '';
+    rafId = requestAnimationFrame(frame);
+    scheduleRotate();
+  }
+  function stopBelt() {
+    if (rafId) cancelAnimationFrame(rafId); rafId = 0;
+    clearTimeout(rowTimer); clearTimeout(swapTimer);
+  }
+
+  function pollRows() {
+    fetchRows().then(function (list) {
+      if (!on || !list) return;
+      var before = rows.map(function (r) { return r.id; });
+      rows = list;
+      winW = ITEMS.clientWidth || winW;
+      var added = rows.filter(function (r) { return before.indexOf(r.id) < 0; });
+      var curStill = curId && rowById(curId);
+      if (curStill) {                        /* title/sub title edited on the Dynamic Stats tab while this row is on air */
+        var tEl = LABEL.querySelector('.hdp-t');
+        if (tEl && tEl.textContent !== pretty(curStill.title)) buildLabel(curStill);
+      }
+      if (added.length) {                    /* a row was toggled ON: it takes over now (down fade) and the 10 s clock restarts */
+        switchTo(added[0], true); scheduleRotate();
+      } else if (!curStill) {                /* the on-air row was toggled OFF (or nothing was on): next one, or empty */
+        if (rows.length) { switchTo(rows[0], true); scheduleRotate(); }
+        else { curId = null; switchTo(null, true); clearTimeout(rowTimer); }
+      } else {
+        scheduleRotateIfNeeded(before.length);
+      }
+    });
+  }
+  /* rows were removed but the on-air one remains: just make sure the rotation clock matches how many are left */
+  function scheduleRotateIfNeeded(prevCount) {
+    if (rows.length < 2) clearTimeout(rowTimer);
+    else if (prevCount < 2) scheduleRotate();
+  }
+
+  /* ── show / hide ── */
+  function hdpAnimateIn() {
+    if (on) return;
+    on = true; clearTimeout(outTimer);
+    var my = ++token;
+    /* load the content BEFORE the wipe so the plate reveals with its text already on it */
+    Promise.all([
+      fetchHeadline(), fetchRows(),
+      (document.fonts && document.fonts.load) ? Promise.all([document.fonts.load('60px Anton'), document.fonts.load('700 18px "General Sans"')]).catch(function () {}) : null
+    ]).then(function (res) {
+      if (!on || my !== token) return;
+      headText = null; setHeadline(res[0] || '', false);
+      rows = res[1] || [];
+      ROOT.style.display = 'block';
+      ROOT.style.transition = 'none';
+      ROOT.style.clipPath = 'inset(0 100% 0 0)';
+      startBelt();
+      void ROOT.offsetWidth;
+      ROOT.style.transition = 'clip-path ' + IN_MS + 'ms cubic-bezier(0.65, 0, 0.25, 1)';
+      ROOT.style.clipPath = 'inset(0 0 0 0)';
+      pollTimer = setInterval(pollRows, POLL_MS);
+      headTimer = setInterval(function () {
+        fetchHeadline().then(function (t) { if (on && t !== null) setHeadline(t, true); });
+      }, HEAD_POLL_MS);
+    });
+  }
+  function hdpAnimateOut() {
+    if (!on) return;
+    on = false; token++;
+    clearInterval(pollTimer); clearInterval(headTimer);
+    ROOT.style.transition = 'clip-path ' + OUT_MS + 'ms cubic-bezier(0.65, 0, 0.35, 1)';
+    ROOT.style.clipPath = 'inset(0 0 0 100%)';
+    outTimer = setTimeout(function () {
+      ROOT.style.display = 'none'; ROOT.style.transition = 'none'; ROOT.style.clipPath = 'inset(0 100% 0 0)';
+      stopBelt(); belt.innerHTML = ''; live = []; curId = null; LABEL.innerHTML = ''; TICK.classList.remove('hdp-out', 'hdp-pre');
+    }, OUT_MS + 60);
+  }
+
+  /* ── wiring ── */
+  var es = createOverlaySSE();
+  var PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search);
+  es.addEventListener('headlineticker', function (e) {
+    if (PREVIEW_ONLY) return;
+    try {
+      var d = JSON.parse(e.data);
+      if (d.action === 'show') hdpAnimateIn(); else if (d.action === 'hide') hdpAnimateOut();
+    } catch (err) {}
+  });
+  fetch('/overlay/check-overlays', { cache: 'no-store' })
+    .then(function (r) { return r.json(); })
+    .then(function (d) { if (d && d.headlineticker && !PREVIEW_ONLY) hdpAnimateIn(); })
+    .catch(function () {});
+
+  window.previewTrigger = function (event, action) {
+    if (event === 'headlineticker') { if (action === 'hide') hdpAnimateOut(); else hdpAnimateIn(); }
+  };
+  window.hdpAnimateIn = hdpAnimateIn;
+  window.hdpAnimateOut = hdpAnimateOut;
+
+  /* dashboard Edit-tab position/size overrides (same injection as mpltag.html) */
+  fetch('/api/overlay-styles?file=mpldynamicpc').then(function (r) { return r.json(); }).then(function (styles) {
+    if (!styles || !Object.keys(styles).length) return;
+    var css = Object.keys(styles).map(function (sel) {
+      var props = styles[sel];
+      var decls = Object.keys(props).map(function (prop) {
+        var cssProp = prop === 'fontSize' ? 'font-size' : prop;
+        return cssProp + ':' + props[prop] + ' !important';
+      }).join(';');
+      return sel + '{' + decls + '}';
+    }).join('\n');
+    var st = document.createElement('style'); st.id = 'hdp-overrides'; st.textContent = css; document.head.appendChild(st);
+    fitHeadline();
+  }).catch(function () {});
+})();
+</script>
+</body>
+</html>
