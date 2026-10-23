@@ -10877,6 +10877,20 @@
       wlPlayerInt = null;
     }
 
+    /* Shrink-to-fit the title to its box via canvas measureText (not DOM layout — the scene is display:none while this runs) */
+    let _wlMeasureCtx = null;
+    function wlFitTitle(el) {
+      el.style.fontSize = '';
+      const cs = getComputedStyle(el);
+      const base = parseFloat(cs.fontSize), box = parseFloat(cs.width);
+      if (!el.textContent || !(base > 0) || !(box > 0)) return;
+      if (!_wlMeasureCtx) _wlMeasureCtx = document.createElement('canvas').getContext('2d');
+      if (document.fonts && !el._fontRefit && !document.fonts.check(base + 'px Anton')) { el._fontRefit = true; document.fonts.load(base + 'px Anton').then(() => wlFitTitle(el)).catch(() => {}); }
+      _wlMeasureCtx.font = base + 'px Anton';
+      if ('letterSpacing' in _wlMeasureCtx) _wlMeasureCtx.letterSpacing = (-0.045 * base) + 'px';
+      const w = _wlMeasureCtx.measureText(el.textContent).width;
+      if (w > box) el.style.fontSize = (base * box / w) + 'px';
+    }
     function updateWlFromState(ms) {
       if (!ms) return;
       syncClockOffset(ms);
@@ -10894,6 +10908,15 @@
         }
       }
       buildWlMatch(ms);
+      /* Playoffs title: "NEXT MATCH / " only from the day's 2nd match on (upper = 1st, middle = 2nd, lower = 3rd row of Today's Matches) */
+      const wlTitle = document.getElementById('wl-title');
+      if (wlTitle) {
+        /* second half = the current match's stage field from the Match Board (e.g. LB SEMI-FINAL); PLAY-INS only when it's empty */
+        const wlTm = (ms.todayMatches || [])[(ms.match || 1) - 1] || {};
+        const wlStage = String(wlTm.stageLabel || '').trim().toUpperCase() || 'PLAY-INS';
+        wlTitle.textContent = ((ms.match || 1) >= 2 ? 'NEXT MATCH / ' : '') + wlStage;
+        wlFitTitle(wlTitle);
+      }
       const labelImg = document.getElementById('wl-timer-label-img');
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
       if (labelImg.textContent !== label) labelImg.textContent = label;
