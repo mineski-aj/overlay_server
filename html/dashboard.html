@@ -924,6 +924,8 @@
 <!-- Page: Dynamic Stats (PLAYOFFS TREND tickers from the Most Pick API + custom rows) -->
 <div id="page-dynamicstats" class="page">
   <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;padding-bottom:10px;flex-shrink:0;">
+    <button class="btn btn-copy" id="dynstats-copy-route-btn" title="Every row toggled ON, as a vMix Data Source (use vMix's own auto-next-row)" style="font-size:12px;padding:5px 14px;">Copy Route (vMix)</button>
+    <button class="btn btn-copy" id="dynstats-copy-rotating-btn" title="One row at a time, rotating by the Row duration set on this tab — poll it from vMix" style="font-size:12px;padding:5px 14px;">Copy Rotating Route (vMix)</button>
     <a href="/html/dynamic-stats.html" target="_blank" class="btn btn-open" style="font-size:12px;padding:5px 14px;text-decoration:none;">Open ↗</a>
   </div>
   <iframe src="/html/dynamic-stats.html" style="width:100%;flex:1;border:none;min-height:0;"></iframe>
@@ -3217,6 +3219,10 @@
   (function () {
     var b = document.getElementById('dynamic-copy-route-btn');
     if (b) b.addEventListener('click', function () { copyRoute('/api/dynamic-content/vmix', 'Dynamic Content (vMix) route', b); });
+    var s1 = document.getElementById('dynstats-copy-route-btn');
+    if (s1) s1.addEventListener('click', function () { copyRoute('/api/dynamic-stats/vmix', 'Dynamic Stats (vMix) route', s1); });
+    var s2 = document.getElementById('dynstats-copy-rotating-btn');
+    if (s2) s2.addEventListener('click', function () { copyRoute('/api/dynamic-stats/vmix/current', 'Dynamic Stats rotating (vMix) route', s2); });
   })();
 
   function el(tag, cls, text) {

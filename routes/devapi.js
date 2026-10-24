@@ -719,6 +719,59 @@ router.get('/api/dynamic-stats', async (req, res) => {
   })));
   res.json({ rows, error, speed: saved.speed, duration: saved.duration });
 });
+
+// ── vMix feeds for the Dynamic Stats ticker ────────────────────────────────
+// vMix Data Sources needs a JSON ARRAY of flat row objects (same reason as /api/dynamic-content/vmix), so these
+// return arrays of { row, total, title, subtitle, data, hero1_name, hero1_rate, hero1_photo … hero10_* }.
+//   GET /api/dynamic-stats/vmix          every row toggled ON (let vMix's own "auto next row" rotate them)
+//   GET /api/dynamic-stats/vmix/current  ONE row, rotating server-side every saved Row duration — poll it and the
+//                                        shown row follows the Dynamic Stats tab's setting (and toggles) automatically
+const DSTATS_SUB_NAMES = { most_pick: 'MOST PICK', most_ban: 'MOST BAN', most_banpick: 'MOST CONTESTED' };
+async function dstatsOnAirRows() {
+  const saved = dstatsRead();
+  let body = null;
+  if (DSTATS_STATIC.some(d => saved.toggles[d.id])) {
+    try { body = await Promise.race([fetchMostPick(), new Promise((_, rej) => setTimeout(() => rej(new Error('slow')), 3000))]); }
+    catch (e) { body = mostPickCache.body; }
+  }
+  const rows = [];
+  DSTATS_STATIC.forEach(d => {
+    if (!saved.toggles[d.id]) return;
+    const items = dstatsItems(body, d);
+    if (!items.length) return;
+    rows.push({ title: String(saved.titles[d.id] || '').trim() || d.title, subtitle: DSTATS_SUB_NAMES[d.id], data: dstatsTicker(body, d), items });
+  });
+  saved.rows.forEach(r => {
+    if (!r.on) return;
+    rows.push({ title: String(r.title || ''), subtitle: String(r.subtitle || ''), data: String(r.data || ''), items: [] });
+  });
+  return { rows, saved };
+}
+function dstatsVmixRow(r, index, total, base) {
+  const pretty = s => String(s || '').replace(/_/g, ' ').trim().toUpperCase();
+  const o = { row: index, total, title: pretty(r && r.title), subtitle: pretty(r && r.subtitle), data: (r && r.data) || '' };
+  for (let k = 0; k < 10; k++) {
+    const h = r && r.items && r.items[k];
+    o['hero' + (k + 1) + '_name']  = h ? h.name : '';
+    o['hero' + (k + 1) + '_rate']  = h ? h.rate + '%' : '';
+    o['hero' + (k + 1) + '_photo'] = h ? base + '/hero/thumb/HERO_' + h.heroid + '_KOTAK.png' : '';   /* absolute URL — vMix needs one */
+  }
+  return o;
+}
+router.get('/api/dynamic-stats/vmix', async (req, res) => {
+  const { rows } = await dstatsOnAirRows();
+  const base = req.protocol + '://' + req.get('host');
+  const out = rows.map((r, i) => dstatsVmixRow(r, i + 1, rows.length, base));
+  res.set('Cache-Control', 'no-store').json(out.length ? out : [dstatsVmixRow(null, 0, 0, base)]);
+});
+router.get('/api/dynamic-stats/vmix/current', async (req, res) => {
+  const { rows, saved } = await dstatsOnAirRows();
+  const base = req.protocol + '://' + req.get('host');
+  if (!rows.length) return res.set('Cache-Control', 'no-store').json([dstatsVmixRow(null, 0, 0, base)]);
+  /* time-based, so every pull (any machine, any vMix) agrees on which row is current */
+  const idx = Math.floor(Date.now() / (saved.duration * 1000)) % rows.length;
+  res.set('Cache-Control', 'no-store').json([dstatsVmixRow(rows[idx], idx + 1, rows.length, base)]);
+});
 router.post('/api/dynamic-stats', (req, res) => {
   const b = req.body || {};
   const toggles = {};
