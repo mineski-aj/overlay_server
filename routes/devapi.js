@@ -506,13 +506,20 @@ router.post('/api/dynamic-content', (req, res) => {
 // binds title fields to columns of a table) — a bare object like the
 // editor's own /api/dynamic-content is treated as an invalid/unreadable
 // feed. Same underlying file, just wrapped in a one-row array for vMix.
-router.get('/api/dynamic-content/vmix', (req, res) => {
+router.get('/api/dynamic-content/vmix', async (req, res) => {
   let data;
   try {
     data = JSON.parse(fs.readFileSync(DYNAMIC_FILE, 'utf8'));
   } catch {
     data = DYNAMIC_DEFAULTS;
   }
+  /* One link for everything: the Dynamic Stats row that is "on air" right now (rotating every saved Row duration, toggles
+     respected) is added to the same row under stats_* columns — stats_title, stats_subtitle, stats_data, stats_row,
+     stats_total and stats_hero1_name / _rate / _photo … stats_hero10_*. Never let it break the Dynamic fields. */
+  try {
+    const cur = await dstatsCurrentVmix(req);
+    Object.keys(cur).forEach(k => { data['stats_' + k] = cur[k]; });
+  } catch (e) { /* Dynamic fields still go out untouched */ }
   res.set('Cache-Control', 'no-store').json([data]);
 });
 
@@ -758,6 +765,14 @@ function dstatsVmixRow(r, index, total, base) {
   }
   return o;
 }
+/* The flat vMix row that is on air right now (time-based rotation over the rows toggled ON). */
+async function dstatsCurrentVmix(req) {
+  const { rows, saved } = await dstatsOnAirRows();
+  const base = req.protocol + '://' + req.get('host');
+  if (!rows.length) return dstatsVmixRow(null, 0, 0, base);
+  const idx = Math.floor(Date.now() / (saved.duration * 1000)) % rows.length;   /* every pull, from any machine, agrees on the row */
+  return dstatsVmixRow(rows[idx], idx + 1, rows.length, base);
+}
 router.get('/api/dynamic-stats/vmix', async (req, res) => {
   const { rows } = await dstatsOnAirRows();
   const base = req.protocol + '://' + req.get('host');
@@ -765,12 +780,7 @@ router.get('/api/dynamic-stats/vmix', async (req, res) => {
   res.set('Cache-Control', 'no-store').json(out.length ? out : [dstatsVmixRow(null, 0, 0, base)]);
 });
 router.get('/api/dynamic-stats/vmix/current', async (req, res) => {
-  const { rows, saved } = await dstatsOnAirRows();
-  const base = req.protocol + '://' + req.get('host');
-  if (!rows.length) return res.set('Cache-Control', 'no-store').json([dstatsVmixRow(null, 0, 0, base)]);
-  /* time-based, so every pull (any machine, any vMix) agrees on which row is current */
-  const idx = Math.floor(Date.now() / (saved.duration * 1000)) % rows.length;
-  res.set('Cache-Control', 'no-store').json([dstatsVmixRow(rows[idx], idx + 1, rows.length, base)]);
+  res.set('Cache-Control', 'no-store').json([await dstatsCurrentVmix(req)]);
 });
 router.post('/api/dynamic-stats', (req, res) => {
   const b = req.body || {};

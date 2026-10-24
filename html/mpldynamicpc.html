@@ -76,6 +76,8 @@
     #hdp-ticker .hdp-label, #hdp-ticker .hdp-items { transition: transform 330ms cubic-bezier(.4, 0, .2, 1), opacity 330ms ease; }
     #hdp-ticker.hdp-out .hdp-label, #hdp-ticker.hdp-out .hdp-items { transform: translateY(110%); opacity: 0; }
     #hdp-ticker.hdp-pre .hdp-label, #hdp-ticker.hdp-pre .hdp-items { transform: translateY(-110%); opacity: 0; transition: none; }
+    /* ?ticker=1 — ticker-only browser source: just the rotating label + data on a transparent canvas */
+    html.hdp-ticker-only #hdp-plate, html.hdp-ticker-only #hdp-headline { display: none; }
   </style>
 </head>
 <body>
@@ -103,6 +105,27 @@
   var TICK = document.getElementById('hdp-ticker');
   var LABEL = TICK.querySelector('.hdp-label');
   var ITEMS = TICK.querySelector('.hdp-items');
+
+  /* Ticker-only mode (a copy-able link for vMix / OBS): ?ticker=1  ->  no plate, no headline, no wipe, always running, transparent.
+     &crop=1 shrinks the canvas to the ticker box itself (placed at 0,0) so it can be dropped anywhere; without it the ticker sits at its
+     normal on-air position on the 1920x1080 canvas (layer it over your own graphic). &color=ffffff recolours the text (default dark). */
+  var QS = location.search;
+  var TICKER_ONLY = /[?&]ticker=1(?:&|$)/.test(QS);
+  var CROP = TICKER_ONLY && /[?&]crop=1(?:&|$)/.test(QS);
+  var COLOR = (QS.match(/[?&]color=([0-9a-fA-F]{3,8})(?:&|$)/) || [])[1] || '';
+  if (TICKER_ONLY) {
+    document.documentElement.classList.add('hdp-ticker-only');
+    if (COLOR) TICK.style.color = '#' + COLOR;
+  }
+  function applyTickerOnlyLayout() {
+    if (!CROP) return;
+    var cs = getComputedStyle(TICK);
+    TICK.style.setProperty('left', '0px', 'important');
+    TICK.style.setProperty('top', '0px', 'important');
+    [document.documentElement, document.body, document.getElementById('canvas'), ROOT].forEach(function (e) {
+      e.style.setProperty('width', cs.width, 'important'); e.style.setProperty('height', cs.height, 'important');
+    });
+  }
 
   var IN_MS = 900, OUT_MS = 700, ROW_MS = 10000,   /* default; the Dynamic Stats tab's "Row duration" overrides it */ FADE_MS = 250, POLL_MS = 10000, HEAD_POLL_MS = 4000;
   var SUB_NAMES = { most_pick: 'MOST PICK', most_ban: 'MOST BAN', most_banpick: 'MOST CONTESTED' };
@@ -331,11 +354,17 @@
       rows = res[1] || [];
       ROOT.style.display = 'block';
       ROOT.style.transition = 'none';
-      ROOT.style.clipPath = 'inset(0 100% 0 0)';
-      startBelt();
-      void ROOT.offsetWidth;
-      ROOT.style.transition = 'clip-path ' + IN_MS + 'ms cubic-bezier(0.65, 0, 0.25, 1)';
-      ROOT.style.clipPath = 'inset(0 0 0 0)';
+      if (TICKER_ONLY) {
+        ROOT.style.clipPath = 'none';
+        applyTickerOnlyLayout();
+        startBelt();
+      } else {
+        ROOT.style.clipPath = 'inset(0 100% 0 0)';
+        startBelt();
+        void ROOT.offsetWidth;
+        ROOT.style.transition = 'clip-path ' + IN_MS + 'ms cubic-bezier(0.65, 0, 0.25, 1)';
+        ROOT.style.clipPath = 'inset(0 0 0 0)';
+      }
       pollTimer = setInterval(pollRows, POLL_MS);
       headTimer = setInterval(function () {
         fetchHeadline().then(function (t) { if (on && t !== null) setHeadline(t, true); });
@@ -358,7 +387,7 @@
   var es = createOverlaySSE();
   var PREVIEW_ONLY = /[?&]preview=1(?:&|$)/.test(location.search);
   es.addEventListener('headlineticker', function (e) {
-    if (PREVIEW_ONLY) return;
+    if (PREVIEW_ONLY || TICKER_ONLY) return;
     try {
       var d = JSON.parse(e.data);
       if (d.action === 'show') hdpAnimateIn(); else if (d.action === 'hide') hdpAnimateOut();
@@ -366,8 +395,9 @@
   });
   fetch('/overlay/check-overlays', { cache: 'no-store' })
     .then(function (r) { return r.json(); })
-    .then(function (d) { if (d && d.headlineticker && !PREVIEW_ONLY) hdpAnimateIn(); })
+    .then(function (d) { if (d && d.headlineticker && !PREVIEW_ONLY && !TICKER_ONLY) hdpAnimateIn(); })
     .catch(function () {});
+  if (TICKER_ONLY) hdpAnimateIn();   /* the ticker-only source is always on */
 
   window.previewTrigger = function (event, action) {
     if (event === 'headlineticker') { if (action === 'hide') hdpAnimateOut(); else hdpAnimateIn(); }
@@ -388,6 +418,7 @@
     }).join('\n');
     var st = document.createElement('style'); st.id = 'hdp-overrides'; st.textContent = css; document.head.appendChild(st);
     fitHeadline();
+    applyTickerOnlyLayout();
   }).catch(function () {});
 })();
 </script>
