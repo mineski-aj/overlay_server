@@ -1045,6 +1045,14 @@
     }
     #waiting-lobby-page.wl-on { display: block; }
     #waiting-lobby-page.wl-visible { opacity: 1; }
+    /* Waiting Lobby V2 "Grand Finals" (state.featureToggles.wl_v2): everything except the SHOW STARTS IN timer and the
+       sponsor loop is removed. Its timer/sponsor positions are Edit-tab rows scoped to .wl-v2 (config mplfs_lobby_v2). */
+    #waiting-lobby-page.wl-v2 #wl-header,
+    #waiting-lobby-page.wl-v2 #wl-title,
+    #waiting-lobby-page.wl-v2 #wl-match,
+    #waiting-lobby-page.wl-v2 .wl-player,
+    #waiting-lobby-page.wl-v2 .wl-namebox,
+    #waiting-lobby-page.wl-v2 #wl-redcorner { display: none !important; }
     #wl-header {
       position: absolute;
       left: 40px; top: 80px;
@@ -8541,6 +8549,7 @@
           if (d.feature === 'lineupsecrole_red')  luSecroleEnabled.red  = !!d.enabled;
           if (d.feature === 'credits_v2') crV2Enabled = !!d.enabled;
           if (d.feature === 'hl_v2') hlV2Enabled = !!d.enabled;
+          if (d.feature === 'wl_v2') wlV2Enabled = !!d.enabled;
           if (d.feature === 'mvp_v2') mvV2Enabled = !!d.enabled;
           if (d.feature === 'lineupv2_blue') luV2Enabled.blue = !!d.enabled;
           if (d.feature === 'lineupv2_red')  luV2Enabled.red  = !!d.enabled;
@@ -9322,6 +9331,7 @@
     // SCENE_VIDEO_SRC_BY_THEME.playoffs; anything unlisted uses this.
     const PLAYOFFS_DEFAULT_VIDEO = '/assets/z_playoffs%20background/playoffsbg_theme.webm';
     function getSceneVideoSrc(feature) {
+      if (feature === 'lobby' && typeof wlV2Active !== 'undefined' && wlV2Active) return WL_V2_VIDEO_SRC; /* Waiting Lobby V2 (all themes) */
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
       const themed = SCENE_VIDEO_SRC_BY_THEME[theme] && SCENE_VIDEO_SRC_BY_THEME[theme][feature];
       if (themed) return themed;
@@ -10930,7 +10940,7 @@
       const label = ms.countdownLabel === 'SHOW RESUMES IN' ? 'SHOW RESUMES IN' : 'SHOW STARTS IN';
       if (labelImg.textContent !== label) labelImg.textContent = label;
       wlTimerState = ms.timer || WS_TIMER_DEFAULT;
-      startWlPlayerCycle(ms);
+      if (!wlV2Active) startWlPlayerCycle(ms); /* V2 has no player photos */
     }
 
     const WL_REDCORNER_SRC = WL_ASSET + 'redcorner.webm';
@@ -10966,7 +10976,25 @@
       wlRedcornerEl.play().catch(() => {});
     }
 
-    async function showWaitingLobby() {
+    /* V1/V2 "Grand Finals" (dashboard: V1/V2 button on the Waiting Lobby row). V2 = only the timer + sponsor loop over its
+       own background loop. wlForce is set only by the Edit tab previews (showWaitingLobbyV1/V2); a real Show follows the toggle.
+       wlV2Active is the value snapshotted at Show time — getSceneVideoSrc('lobby') reads it. */
+    let wlV2Enabled = false;
+    let wlForce = null;
+    let wlV2Active = false;
+    const WL_V2_VIDEO_SRC = '/assets/annivloop.webm'; /* placeholder until the Grand Finals loop exists */
+    const wlFeaturesReady = fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
+      .then(r => r.json()).then(d => { if (d && d.wl_v2 !== undefined) wlV2Enabled = !!d.wl_v2; })
+      .catch(() => {});
+    function wlPreviewPrepV2() { wlPage.classList.add('wl-v2'); } /* Edit tab: class must exist before drag handlers attach */
+    function showWaitingLobbyV1() { wlForce = false; return showWaitingLobbyImpl(); }
+    function showWaitingLobbyV2() { wlForce = true;  return showWaitingLobbyImpl(); }
+    function showWaitingLobby()   { wlForce = null;  return showWaitingLobbyImpl(); }
+
+    async function showWaitingLobbyImpl() {
+      await wlFeaturesReady;
+      wlV2Active = wlForce === null ? wlV2Enabled : wlForce;
+      wlPage.classList.toggle('wl-v2', wlV2Active);
       const msPromise = fetch(buildUrl('/match/state'), { cache: 'no-store' })
         .then(r => r.ok ? r.json() : null).catch(() => null);
       await transitionTo('lobby');
@@ -10974,7 +11002,7 @@
       if (activeFeature !== 'lobby') return; /* superseded while awaiting match state */
       updateWlFromState(ms);
       showSceneVideo('lobby');
-      syncWlRedcorner();
+      if (!wlV2Active) syncWlRedcorner();
       startWlTimer();
       startWlSponsorLoop();
       wlPage.classList.add('wl-on');
