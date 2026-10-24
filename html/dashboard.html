@@ -637,6 +637,34 @@
       cursor: pointer;
     }
     #edit-config-select:focus { border-color: #4455aa; outline: none; }
+    /* Searchable, grouped scene picker (drives the hidden #edit-config-select) */
+    #edit-combo { position: relative; }
+    #edit-combo-input {
+      width: 100%; height: 32px; box-sizing: border-box;
+      background: #1a1a2a; border: 1px solid #333355; border-radius: 5px;
+      color: #e8e8f0; font-size: 13px; font-weight: 600; padding: 0 28px 0 10px;
+    }
+    #edit-combo-input:focus { border-color: #4455aa; outline: none; }
+    #edit-combo-clear {
+      position: absolute; right: 4px; top: 4px; width: 24px; height: 24px; border: 0; border-radius: 4px;
+      background: transparent; color: #8a8aa8; font-size: 16px; line-height: 1; cursor: pointer;
+    }
+    #edit-combo-clear:hover { color: #fff; background: #2a2a40; }
+    #edit-combo-list {
+      position: absolute; left: 0; right: 0; top: 36px; z-index: 50; max-height: 62vh; overflow-y: auto;
+      background: #14141f; border: 1px solid #333355; border-radius: 6px; box-shadow: 0 10px 30px rgba(0,0,0,.55); padding: 4px;
+    }
+    #edit-combo-list .ec-group {
+      position: sticky; top: -4px; background: #14141f; padding: 7px 8px 3px; font-size: 10px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase; color: #6b6b8c;
+    }
+    #edit-combo-list .ec-item {
+      padding: 6px 10px; border-radius: 4px; font-size: 13px; color: #d4d4e4; cursor: pointer;
+    }
+    #edit-combo-list .ec-item.hi { background: #232340; color: #fff; }
+    #edit-combo-list .ec-item.cur { color: #8fa4ff; font-weight: 700; }
+    #edit-combo-list .ec-item mark { background: transparent; color: #ffcc44; font-weight: 700; }
+    #edit-combo-list .ec-empty { padding: 12px 10px; font-size: 12px; color: #77778f; }
     #edit-panel-actions {
       display: flex;
       gap: 8px;
@@ -976,7 +1004,12 @@
     <div id="edit-panel">
       <div id="edit-panel-hdr">
         <div id="edit-panel-title-row">
-          <select id="edit-config-select"></select>
+          <select id="edit-config-select" hidden></select>
+          <div id="edit-combo">
+            <input id="edit-combo-input" type="text" autocomplete="off" spellcheck="false" placeholder="Search scenes to edit…">
+            <button id="edit-combo-clear" type="button" title="Clear search" hidden>×</button>
+            <div id="edit-combo-list" hidden></div>
+          </div>
         </div>
         <div id="edit-panel-actions">
           <button class="edit-btn" id="edit-btn-defaults">Load Defaults</button>
@@ -5702,8 +5735,9 @@
     { group: 'Headline Ticker Plate',    id: '#hdp-plate',    name: 'Plate Art'            },
     { group: 'Headline Ticker Headline', id: '#hdp-headline', name: 'Headline (white box)' },
     { group: 'Headline Ticker Ticker',   id: '#hdp-ticker',   name: 'Ticker (gold box)'    },
-    { group: 'Headline Ticker Sponsor Title', id: '#hdp-spon-cat',  name: 'Sponsor Title (strip)' },
-    { group: 'Headline Ticker Sponsor Logo',  id: '#hdp-spon-logo', name: 'Sponsor Logo'          },
+    /* same group = arrow-key nudges move the whole sponsor loop (title + logo) together; each row still edits on its own */
+    { group: 'Headline Ticker Sponsor Loop', id: '#hdp-spon-cat',  name: 'Sponsor Title (strip)' },
+    { group: 'Headline Ticker Sponsor Loop', id: '#hdp-spon-logo', name: 'Sponsor Logo'          },
   ];
 
   var L3L_ELEMENTS = [
@@ -8553,6 +8587,9 @@
     var config = EDIT_CONFIGS[key];
     if (!config) return;
     currentConfigKey = key;
+    var cfgSel = document.getElementById('edit-config-select');
+    if (cfgSel && cfgSel.value !== key) cfgSel.value = key;
+    if (window.editComboSync) window.editComboSync();
     SB_ELEMENTS      = config.elements;
     SB_DEFAULTS      = config.defaults;
     window.SB_ELEMENTS = SB_ELEMENTS;
@@ -8713,6 +8750,79 @@
     });
     sel.value = currentConfigKey;
     sel.addEventListener('change', function() { loadConfig(sel.value); });
+
+    /* ── Searchable, grouped picker on top of the hidden select ──
+       Label "Scene · Page" -> grouped under "Page" (everything else under "Other"), sorted, filtered as you type
+       (matches scene OR page, every typed word must match), arrow keys + Enter, Esc closes. */
+    var input = document.getElementById('edit-combo-input'), list = document.getElementById('edit-combo-list');
+    var clearBtn = document.getElementById('edit-combo-clear');
+    var items = keys.map(function(k) {
+      var label = EDIT_CONFIGS[k].label, i = label.lastIndexOf(' · ');
+      return { key: k, label: label, name: i < 0 ? label : label.slice(0, i), group: i < 0 ? 'Other' : label.slice(i + 3) };
+    });
+    var shown = [], hi = 0;
+    function esc(t) { return t.replace(/[&<>]/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+    function mark(text, words) {
+      var out = esc(text);
+      words.forEach(function(w) { if (w) out = out.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'ig'), '<mark>$1</mark>'); });
+      return out;
+    }
+    function currentLabel() { return EDIT_CONFIGS[sel.value] ? EDIT_CONFIGS[sel.value].label : ''; }
+    function render(query) {
+      var words = query.toLowerCase().split(/\s+/).filter(Boolean);
+      shown = items.filter(function(it) {
+        var hay = (it.name + ' ' + it.group).toLowerCase();
+        return words.every(function(w) { return hay.indexOf(w) >= 0; });
+      }).sort(function(a, b) {
+        if (a.group === 'Other' || b.group === 'Other') { if (a.group !== b.group) return a.group === 'Other' ? 1 : -1; }
+        return a.group.localeCompare(b.group) || a.name.localeCompare(b.name);
+      });
+      list.innerHTML = '';
+      if (!shown.length) { list.innerHTML = '<div class="ec-empty">No scene matches “' + esc(query) + '”</div>'; return; }
+      var lastGroup = null;
+      shown.forEach(function(it, idx) {
+        if (it.group !== lastGroup) {
+          lastGroup = it.group;
+          var g = document.createElement('div'); g.className = 'ec-group'; g.textContent = it.group; list.appendChild(g);
+        }
+        var row = document.createElement('div');
+        row.className = 'ec-item' + (it.key === sel.value ? ' cur' : '');
+        row.dataset.idx = idx;
+        row.innerHTML = mark(it.name, words);
+        row.addEventListener('mousedown', function(e) { e.preventDefault(); choose(idx); });
+        row.addEventListener('mousemove', function() { setHi(idx, false); });
+        list.appendChild(row);
+      });
+      var curIdx = shown.findIndex(function(it) { return it.key === sel.value; });
+      setHi(words.length ? 0 : Math.max(0, curIdx), !words.length);
+    }
+    function setHi(idx, scroll) {
+      hi = idx;
+      var rows = list.querySelectorAll('.ec-item');
+      rows.forEach(function(r) { r.classList.toggle('hi', Number(r.dataset.idx) === idx); });
+      var r = list.querySelector('.ec-item.hi');
+      if (r && scroll) r.scrollIntoView({ block: 'nearest' });
+    }
+    function open() { list.hidden = false; render(input.dataset.typed === '1' ? input.value : ''); }
+    function close() { list.hidden = true; input.dataset.typed = ''; input.value = currentLabel(); clearBtn.hidden = true; }
+    function choose(idx) {
+      var it = shown[idx]; if (!it) return;
+      sel.value = it.key; sel.dispatchEvent(new Event('change'));
+      close(); input.blur();
+    }
+    input.value = currentLabel();
+    input.addEventListener('focus', function() { input.select(); open(); });
+    input.addEventListener('input', function() { input.dataset.typed = '1'; clearBtn.hidden = !input.value; list.hidden = false; render(input.value); });
+    input.addEventListener('blur', function() { setTimeout(close, 0); });
+    clearBtn.addEventListener('mousedown', function(e) { e.preventDefault(); input.value = ''; input.dataset.typed = '1'; clearBtn.hidden = true; render(''); input.focus(); });
+    input.addEventListener('keydown', function(e) {
+      e.stopPropagation(); /* the Edit tab's arrow-key handler must not nudge elements while typing */
+      if (e.key === 'ArrowDown') { e.preventDefault(); if (list.hidden) open(); else setHi(Math.min(shown.length - 1, hi + 1), true); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); setHi(Math.max(0, hi - 1), true); }
+      else if (e.key === 'Enter') { e.preventDefault(); choose(hi); }
+      else if (e.key === 'Escape') { close(); input.blur(); }
+    });
+    window.editComboSync = function() { if (document.activeElement !== input) input.value = currentLabel(); };
   })();
 
   /* Init: load iframe on first Edit tab click */

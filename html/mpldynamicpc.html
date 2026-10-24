@@ -52,7 +52,7 @@
                     display: flex; align-items: center; justify-content: center; overflow: hidden;
                     font-family: 'Anton', sans-serif; font-weight: 400; font-size: 60px; line-height: 1; color: #0a0a0a;
                     white-space: nowrap; }
-    #hdp-headline .hdp-h-text { display: inline-block; white-space: nowrap; transition: opacity 250ms ease; }
+    #hdp-headline .hdp-h-text { text-transform: uppercase; display: inline-block; white-space: nowrap; transition: opacity 250ms ease; }
     #hdp-headline .hdp-h-text.hdp-fade { opacity: 0; }
 
     #hdp-ticker { position: absolute; left: 306px; top: 989px; width: 1182px; height: 35px;
@@ -141,7 +141,7 @@
   }
 
   var IN_MS = 900, OUT_MS = 700, ROW_MS = 10000,   /* default; the Dynamic Stats tab's "Row duration" overrides it */ FADE_MS = 250, POLL_MS = 10000, HEAD_POLL_MS = 4000;
-  var SUB_NAMES = { most_pick: 'MOST PICK', most_ban: 'MOST BAN', most_banpick: 'MOST CONTESTED' };
+  var SUB_NAMES = { most_pick: 'MOST PICKED', most_ban: 'MOST BANNED', most_banpick: 'MOST CONTESTED' };
 
   var on = false, token = 0, rows = [];
   var outTimer = null, pollTimer = null, headTimer = null, headText = null;
@@ -165,6 +165,7 @@
     if (w > box) HEAD.style.fontSize = (base * box / w) + 'px';
   }
   function setHeadline(txt, animate) {
+    txt = String(txt || '').toUpperCase();   /* headline is always ALL CAPS, whatever the Dynamic tab holds (also keeps the fit measure exact) */
     if (txt === headText) return;
     headText = txt;
     if (!animate) { HEAD.textContent = txt; fitHeadline(); return; }
