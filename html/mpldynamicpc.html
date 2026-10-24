@@ -7,6 +7,7 @@
   <script src="html/js/theme-apply.js"></script>
   <script src="html/js/event-log-client.js"></script>
   <script src="html/js/overlay-sse-shim.js"></script>
+  <script src="html/js/sponsor-cursor.js"></script>
   <title>MPL L3 Dynamic PC</title>
   <style>
     @font-face {
@@ -76,6 +77,16 @@
     #hdp-ticker .hdp-label, #hdp-ticker .hdp-items { transition: transform 330ms cubic-bezier(.4, 0, .2, 1), opacity 330ms ease; }
     #hdp-ticker.hdp-out .hdp-label, #hdp-ticker.hdp-out .hdp-items { transform: translateY(110%); opacity: 0; }
     #hdp-ticker.hdp-pre .hdp-label, #hdp-ticker.hdp-pre .hdp-items { transform: translateY(-110%); opacity: 0; transition: none; }
+    /* Sponsor loop in the plate's empty gray container (right): category title (no box behind it) over a transparent logo area */
+    #hdp-spon-cat { position: absolute; left: 1548px; top: 889px; width: 214px; height: 32px; z-index: 2;
+                    display: flex; align-items: center; justify-content: center; overflow: hidden; white-space: nowrap;
+                    font-family: 'General Sans', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: .06em; text-transform: uppercase; color: #0a0a0a;
+                    transition: opacity 300ms ease; }
+    #hdp-spon-logo { position: absolute; left: 1548px; top: 925px; width: 214px; height: 102px; z-index: 2;
+                     display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    #hdp-spon-logo img { max-width: 88%; max-height: 88%; object-fit: contain; transition: opacity 300ms ease; }
+    #hdp-spon-cat.hdp-spon-fade, #hdp-spon-logo img.hdp-spon-fade { opacity: 0; }
+    html.hdp-ticker-only #hdp-spon-cat, html.hdp-ticker-only #hdp-spon-logo { display: none; }
     /* ?ticker=1 — ticker-only browser source: just the rotating label + data on a transparent canvas */
     html.hdp-ticker-only #hdp-plate, html.hdp-ticker-only #hdp-headline { display: none; }
   </style>
@@ -86,6 +97,8 @@
     <img id="hdp-plate" src="/assets/Dynamic L3s/Headline Ticker.png" alt="">
     <div id="hdp-headline"><span class="hdp-h-text"></span></div>
     <div id="hdp-ticker"><div class="hdp-label"></div><div class="hdp-items"></div></div>
+    <div id="hdp-spon-cat" class="hdp-spon-fade"></div>
+    <div id="hdp-spon-logo"><img class="hdp-spon-fade" alt=""></div>
   </div>
 </div>
 
@@ -339,6 +352,67 @@
     else if (prevCount < 2) scheduleRotate();
   }
 
+  /* ── sponsor loop (right container): the Sponsors page's list (no Joytify), per-sponsor duration and category ── */
+  var SPON_CAT = document.getElementById('hdp-spon-cat');
+  var SPON_IMG = document.querySelector('#hdp-spon-logo img');
+  var sponList = [], sponIdx = 0, sponTimer = null, sponTok = 0, sponSwapTimer = null;
+
+  function fitSponCat(txt) {          /* shrink the category text to the strip via canvas measure (no layout dependency) */
+    SPON_CAT.style.fontSize = '';
+    var cs = getComputedStyle(SPON_CAT);
+    var base = parseFloat(cs.fontSize), box = parseFloat(cs.width) - 16;
+    if (!txt || !(base > 0) || !(box > 0)) return;
+    var w = measure(txt, '700 ' + base + 'px "General Sans"') + txt.length * base * 0.06;   /* + letter-spacing */
+    if (w > box) SPON_CAT.style.fontSize = (base * box / w) + 'px';
+  }
+  function sponShow(my, first) {
+    if (!on || my !== sponTok || !sponList.length) return;
+    var sp = sponList[sponIdx];
+    var probe = new Image();
+    var advance = function () {
+      sponTimer = setTimeout(function () {
+        if (!on || my !== sponTok) return;
+        sponIdx = (sponIdx + 1) % sponList.length;
+        sponShow(my, false);
+      }, Math.max(1000, sp.dur || 3000));
+    };
+    probe.onload = function () {
+      if (!on || my !== sponTok) return;
+      var apply = function () {
+        if (!on || my !== sponTok) return;
+        var cat = String(sp.category || '').toUpperCase();
+        SPON_CAT.textContent = cat; fitSponCat(cat);
+        SPON_IMG.src = sp.src;
+        SPON_CAT.classList.remove('hdp-spon-fade'); SPON_IMG.classList.remove('hdp-spon-fade');
+        if (window.SponsorCursor) SponsorCursor.aired(sponIdx);
+        advance();
+      };
+      if (first) apply();
+      else { SPON_CAT.classList.add('hdp-spon-fade'); SPON_IMG.classList.add('hdp-spon-fade'); sponSwapTimer = setTimeout(apply, 320); }
+    };
+    probe.onerror = function () {      /* a broken logo file must not stall the loop */
+      if (!on || my !== sponTok) return;
+      sponIdx = (sponIdx + 1) % sponList.length;
+      sponTimer = setTimeout(function () { sponShow(my, first); }, 200);
+    };
+    probe.src = sp.src;
+  }
+  function sponStart() {
+    if (TICKER_ONLY) return;
+    var my = ++sponTok;
+    clearTimeout(sponTimer); clearTimeout(sponSwapTimer);
+    /* ?sponsorspage=1 = the Sponsors page's own list: the logos hidden for it on the dashboard's Sponsors tab (Joytify today) are left out here too */
+    fetch('/api/sponsors?sponsorspage=1', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (list) {
+      if (!on || my !== sponTok || !list || !list.length) return;
+      sponList = list;
+      sponIdx = window.SponsorCursor ? SponsorCursor.start(list.length) : 0;   /* continue after the last sponsor any loop aired */
+      sponShow(my, true);
+    }).catch(function () {});
+  }
+  function sponStop() {
+    sponTok++; clearTimeout(sponTimer); clearTimeout(sponSwapTimer);
+  }
+
   /* ── show / hide ── */
   function hdpAnimateIn() {
     if (on) return;
@@ -365,6 +439,7 @@
         ROOT.style.transition = 'clip-path ' + IN_MS + 'ms cubic-bezier(0.65, 0, 0.25, 1)';
         ROOT.style.clipPath = 'inset(0 0 0 0)';
       }
+      sponStart();
       pollTimer = setInterval(pollRows, POLL_MS);
       headTimer = setInterval(function () {
         fetchHeadline().then(function (t) { if (on && t !== null) setHeadline(t, true); });
@@ -375,11 +450,13 @@
     if (!on) return;
     on = false; token++;
     clearInterval(pollTimer); clearInterval(headTimer);
+    sponStop();
     ROOT.style.transition = 'clip-path ' + OUT_MS + 'ms cubic-bezier(0.65, 0, 0.35, 1)';
     ROOT.style.clipPath = 'inset(0 0 0 100%)';
     outTimer = setTimeout(function () {
       ROOT.style.display = 'none'; ROOT.style.transition = 'none'; ROOT.style.clipPath = 'inset(0 100% 0 0)';
-      stopBelt(); belt.innerHTML = ''; live = []; curId = null; LABEL.innerHTML = ''; TICK.classList.remove('hdp-out', 'hdp-pre');
+      stopBelt(); belt.innerHTML = ''; live = []; curId = null; LABEL.innerHTML = '';
+      SPON_CAT.textContent = ''; SPON_CAT.classList.add('hdp-spon-fade'); SPON_IMG.classList.add('hdp-spon-fade'); TICK.classList.remove('hdp-out', 'hdp-pre');
     }, OUT_MS + 60);
   }
 
