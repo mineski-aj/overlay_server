@@ -1052,6 +1052,7 @@
     #waiting-lobby-page.wl-v2 #wl-match,
     #waiting-lobby-page.wl-v2 .wl-player,
     #waiting-lobby-page.wl-v2 .wl-namebox,
+    #waiting-lobby-page.wl-v2 #wl-timer-label,
     #waiting-lobby-page.wl-v2 #wl-redcorner { display: none !important; }
     #wl-header {
       position: absolute;
@@ -9428,7 +9429,15 @@
     /* Credit Reel V2 only shows the background in its right-hand panel — the layer that plays it is clipped to
        x >= clipPx. The clip lives on the layer element and is reset whenever a layer is (re)started for any
        other scene, so it can never leak into another scene's background. */
-    function svSetClip(el, px) { el.style.clipPath = px ? 'inset(0 0 0 ' + px + 'px)' : ''; }
+    function svSetClip(el, px) {
+      el.style.clipPath = px ? 'inset(0 0 0 ' + px + 'px)' : '';
+      /* Playoffs background has "SEASON 18 PLAYOFFS" (top) and "PALAG NA TO" (bottom) baked into it. In Credits V2's
+         right-hand panel, zoom the layer 12% around (panel left edge, mid-height) so those two lines fall off the
+         top/bottom of the frame; the panel's left edge stays at x=1440. Cleared with the clip by every other scene. */
+      const zoom = px && document.documentElement.getAttribute('data-theme') === 'playoffs';
+      el.style.transformOrigin = zoom ? px + 'px 540px' : '';
+      el.style.transform = zoom ? 'scale(1.12)' : '';
+    }
 
     function showSceneVideo(feature) {
       const src = getSceneVideoSrc(feature);
@@ -10982,7 +10991,7 @@
     let wlV2Enabled = false;
     let wlForce = null;
     let wlV2Active = false;
-    const WL_V2_VIDEO_SRC = '/assets/annivloop.webm'; /* placeholder until the Grand Finals loop exists */
+    const WL_V2_VIDEO_SRC = '/assets/Waiting%20Lobby%20GRAND%20FINALS.webm';
     const wlFeaturesReady = fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
       .then(r => r.json()).then(d => { if (d && d.wl_v2 !== undefined) wlV2Enabled = !!d.wl_v2; })
       .catch(() => {});
