@@ -5845,6 +5845,22 @@
       mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 88%, transparent 100%);
     }
     #credits-scroll-v2 { padding: 0 28px; box-sizing: border-box; }
+    /* Playoffs V2: the whole background is assets/credits/creditsbg.png (transparent -> black gradient, left to right)
+       + the reel. No scene video / idle video / #credits-fade-v2. The MPL logo is permanently centred at the top of the
+       panel and the reel fades out just below it. White text; sponsor logos come from /sponsors/white/. */
+    #credits-bg-v2, #credits-logo-v2 { display: none; position: absolute; pointer-events: none; }
+    #credits-bg-v2 { left: 0; top: 0; width: 1920px; height: 1080px; }
+    #credits-logo-v2 { left: 1584px; top: 48px; width: 192px; height: auto; }   /* centred on the panel (x 1440..1920 -> 1680) */
+    [data-theme="playoffs"] #credits-page.cr-v2 #credits-bg-v2,
+    [data-theme="playoffs"] #credits-page.cr-v2 #credits-logo-v2 { display: block; }
+    [data-theme="playoffs"] #credits-page.cr-v2 #credits-fade-v2 { display: none; }
+    [data-theme="playoffs"] #credits-page.cr-v2 #credits-viewport-v2 {
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, transparent 226px, black 320px, black 950px, transparent 1080px);
+      mask-image: linear-gradient(to bottom, transparent 0, transparent 226px, black 320px, black 950px, transparent 1080px);
+    }
+    [data-theme="playoffs"] #credits-scroll-v2 .cr-logo-title,
+    [data-theme="playoffs"] #credits-scroll-v2 .cr-heading,
+    [data-theme="playoffs"] #credits-scroll-v2 .cr-line { color: #fff; }
     #credits-scroll-v2 .cr-heading,
     #credits-scroll-v2 .cr-line,
     #credits-scroll-v2 .cr-logo-title { max-width: 100%; overflow-wrap: anywhere; }
@@ -7763,6 +7779,7 @@
       </div>
     </div>
     <div id="credits-page">
+      <img id="credits-bg-v2" src="/assets/credits/creditsbg.png" alt="">
       <div id="credits-viewport">
         <div id="credits-scroll"></div>
       </div>
@@ -7770,6 +7787,7 @@
       <div id="credits-viewport-v2" class="cr-v2-only">
         <div id="credits-scroll-v2"></div>
       </div>
+      <img id="credits-logo-v2" src="/assets/mpl2026logo.png" alt="">
     </div>
     <div id="bracket-page">
       <video id="br-header-bg" src="/assets/z_playoffs%20background/HEADER%20BG_1920x250.webm" muted loop playsinline preload="auto"></video>
@@ -9440,6 +9458,7 @@
     }
 
     function showSceneVideo(feature) {
+      if (feature === 'credits' && crOwnBg()) { hideSceneVideo(); return; }   // Credit Reel V2 (playoffs): background is creditsbg.png, nothing underneath
       const src = getSceneVideoSrc(feature);
       const clipPx = (feature === 'credits' && crUseV2()) ? 1440 : 0;
 
@@ -12366,6 +12385,8 @@
     let crV2Enabled = false;
     let crForce = null;
     function crUseV2() { return crForce === null ? crV2Enabled : crForce; }
+    /* Playoffs V2 draws its own background image, so no scene/idle video at all. */
+    function crOwnBg() { return crUseV2() && document.documentElement.getAttribute('data-theme') === 'playoffs'; }
     fetch(buildUrl('/overlay/features'), { cache: 'no-store' })
       .then(r => r.json()).then(d => { if (d && d.credits_v2 !== undefined) crV2Enabled = !!d.credits_v2; })
       .catch(() => {});
@@ -12414,14 +12435,15 @@
        it, in the exact order set on the dashboard's Sponsors tab — same
        /sponsors/ files and category list /api/sponsors serves to the live
        loops, just laid out as a static list instead of a timed loop. */
-    function crBuildSponsorItems(categories) {
+    function crBuildSponsorItems(categories, white) {
       const items = [];
       (categories || []).forEach(cat => {
         const logos = cat.logos || [];
         if (!logos.length) return;
         items.push({ type: 'heading', text: cat.name });
         logos.forEach(file => {
-          items.push({ type: 'logo', src: '/sponsors/' + encodeURIComponent(file), title: '' });
+          const src = '/sponsors/' + encodeURIComponent(file);
+          items.push({ type: 'logo', src: white ? '/sponsors/white/' + encodeURIComponent(file) : src, fallback: white ? src : '', title: '' });
         });
         items.push({ type: 'space', height: 40 });
       });
@@ -12455,7 +12477,7 @@
 
     function crBuild(items) {
       crScroll.innerHTML = items.map(item => {
-        if (item.type === 'logo')    return `<div class="cr-logo-row">${item.title ? `<div class="cr-logo-title">${crEsc(item.title)}</div>` : ''}<img src="${item.src}" alt="" onerror="this.style.display='none'"></div>`;
+        if (item.type === 'logo')    return `<div class="cr-logo-row">${item.title ? `<div class="cr-logo-title">${crEsc(item.title)}</div>` : ''}<img src="${item.src}" alt="" onerror="${item.fallback ? `this.onerror=function(){this.style.display='none'};this.src='${item.fallback}'` : `this.style.display='none'`}"></div>`;
         if (item.type === 'heading') return `<div class="cr-heading">${crEsc(item.text)}</div>`;
         if (item.type === 'line')    return `<div class="cr-line">${crEsc(item.text)}</div>`;
         if (item.type === 'space')   return `<div class="cr-space" style="height:${item.height}px"></div>`;
@@ -12486,7 +12508,7 @@
       crViewport = (v2 ? CR_EL.v2 : CR_EL.v1).viewport;
       crScroll   = (v2 ? CR_EL.v2 : CR_EL.v1).scroll;
       clearTimeout(crBgRestoreTimer);
-      crBgVideo.style.clipPath = v2 ? 'inset(0 0 0 1440px)' : '';   // idle background stays transparent on the left too
+      crBgVideo.style.clipPath = crOwnBg() ? 'inset(0 0 0 100%)' : v2 ? 'inset(0 0 0 1440px)' : '';   // idle background stays transparent on the left too
       const textPromise      = crFetchText();
       const speedPromise     = crFetchSpeed();
       const stylePromise     = crFetchStyle();
@@ -12495,10 +12517,10 @@
       const [text, speed, style, sponsorCategories] = await Promise.all([textPromise, speedPromise, stylePromise, sponsorsPromise]);
       if (activeFeature !== 'credits') return; /* superseded while awaiting */
       crApplyStyle(style);
-      crBuild([...crBuildSponsorItems(sponsorCategories), ...crParseText(text)]);
+      crBuild([...crBuildSponsorItems(sponsorCategories, crOwnBg()), ...crParseText(text)]);
       await preloadMedia(crScroll.querySelectorAll('img'), 1500);
       if (activeFeature !== 'credits') return; /* superseded while preloading */
-      showSceneVideo('credits');
+      showSceneVideo('credits');   // no-op for playoffs V2 (own background image)
       crPage.classList.add('cr-on');
       void crPage.offsetWidth; /* force reflow so the opacity transition runs */
       crPage.classList.add('cr-visible');
