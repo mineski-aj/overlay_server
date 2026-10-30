@@ -3,6 +3,13 @@
    Talent/roster/logo PNGs get swapped on disk under the same filename mid-show,
    so a plain reload isn't enough to guarantee the new file actually loads. */
 (function () {
+  // Remote viewers (Cloudflare Tunnel, https) skip the per-load ?v= bust —
+  // it forced every image to re-download through the tunnel on every load.
+  // Freshness there comes from the server's revalidate (ETag/304) headers.
+  var h = location.hostname;
+  var isLocal = h === 'localhost' || h === '127.0.0.1' || /^(10|192\.168)\./.test(h) ||
+                /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /\.local$/.test(h);
+  if (!isLocal) return;
   var CACHE_BUST = Date.now();
   var IMG_EXT_RE = /\.(png|jpg|jpeg|gif|webp)(\?.*)?$/i;
   var HAS_V_RE = /[?&]v=\d+($|&)/;

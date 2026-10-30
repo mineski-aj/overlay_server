@@ -1116,6 +1116,34 @@ router.post('/api/draft-recap-url', (req, res) => {
   res.json({ ok: true, url });
 });
 
+// Remote viewers (Cloudflare Tunnel) can't reach the draft APIs on our LAN /
+// localhost, so Draft.html reads them through these server-side proxies.
+// A short shared cache + in-flight de-dup means any number of remote viewers
+// cost at most ~2 upstream requests per second per feed.
+function cachedUpstreamProxy(urlFile, urlDefault, ttlMs) {
+  let cache = null, cacheAt = 0, cacheUrl = '', inFlight = null;
+  return async (req, res) => {
+    const url = readUrlForMode(urlFile, urlDefault).trim();
+    if (!url) return res.status(404).json({ error: 'no URL configured' });
+    if (cache && cacheUrl === url && Date.now() - cacheAt < ttlMs) {
+      return res.set('Cache-Control', 'no-store').json(cache);
+    }
+    try {
+      if (!inFlight) {
+        inFlight = fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(6000) })
+          .then(r => { if (!r.ok) throw new Error('upstream ' + r.status); return r.json(); })
+          .then(j => { cache = j; cacheAt = Date.now(); cacheUrl = url; return j; })
+          .finally(() => { inFlight = null; });
+      }
+      res.set('Cache-Control', 'no-store').json(await inFlight);
+    } catch (e) {
+      res.status(502).json({ error: e.message });
+    }
+  };
+}
+router.get('/api/draft-proxy',       cachedUpstreamProxy(DRAFT_URL_FILE,       DRAFT_URL_DEFAULT,       500));
+router.get('/api/draft-recap-proxy', cachedUpstreamProxy(DRAFT_RECAP_URL_FILE, DRAFT_RECAP_URL_DEFAULT, 2000));
+
 // Draft Predict API URL — GET to read, POST { url } to update. This is the
 // FULL upstream URL (authKey + judgeId included), not a base — routes/proxy.js
 // forwards to it as-is. judgeId is tied to a specific match/judge session, so

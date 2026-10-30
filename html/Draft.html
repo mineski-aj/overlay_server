@@ -1733,10 +1733,18 @@
      different battleid, forcing a reload loop the instant the two sources
      disagree (e.g. DEFAULT_URL's local game client vs. a remote draft feed
      watching a different match entirely). */
+  /* Remote viewers (Cloudflare Tunnel) can't reach the draft API on our
+     LAN/localhost — read it through the server's /api/draft-proxy instead. */
+  var DRAFT_IS_REMOTE = (function () {
+    var h = location.hostname;
+    return !(h === 'localhost' || h === '127.0.0.1' || /^(10|192\.168)\./.test(h) ||
+             /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /\.local$/.test(h));
+  })();
   fetch('/api/draft-url').then(function(r){ return r.json(); }).then(function(d){
     if (d.url) apiUrl = d.url;
+    if (DRAFT_IS_REMOTE) apiUrl = '/api/draft-proxy';
     startPolling();
-  }).catch(function(){ startPolling(); });
+  }).catch(function(){ if (DRAFT_IS_REMOTE) apiUrl = '/api/draft-proxy'; startPolling(); });
 
   /* Player photo names (basenames with both FRONT + VICTORY variants). */
   var PLAYER_PHOTO_NAMES  = [];
@@ -1771,7 +1779,8 @@
   var draftRecapApiUrl = 'https://theapi.dpdns.org/api/previous-draft/';
   fetch('/api/draft-recap-url').then(function(r){ return r.json(); }).then(function(d){
     if (d.url) draftRecapApiUrl = d.url;
-  }).catch(function(){});
+    if (DRAFT_IS_REMOTE) draftRecapApiUrl = '/api/draft-recap-proxy';
+  }).catch(function(){ if (DRAFT_IS_REMOTE) draftRecapApiUrl = '/api/draft-recap-proxy'; });
 
   /* Player photo layout — matches .player-photo / .photo-canvas CSS width */
   var PHOTO_W = 333;

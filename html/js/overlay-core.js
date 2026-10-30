@@ -130,7 +130,14 @@ function normalizeId(val) {
   return s;
 }
 var currentApiUrl = localStorage.getItem('overlayApiUrl') || DEFAULT_URL;
-function getApiUrl() { return currentApiUrl; }
+// Remote viewers (Cloudflare Tunnel) can't reach the game API on our LAN /
+// localhost, so they read the server's own 1-second cached copy instead.
+var OVERLAY_IS_REMOTE = (function () {
+  var h = location.hostname;
+  return !(h === 'localhost' || h === '127.0.0.1' || /^(10|192\.168)\./.test(h) ||
+           /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /\.local$/.test(h));
+})();
+function getApiUrl() { return OVERLAY_IS_REMOTE ? '/api/gamedata-proxy' : currentApiUrl; }
 // masterPoll() below guards against overlapping ticks with isFetching, but
 // that guard only resets in fetchData()'s own finally block — plain
 // fetch() has no default timeout, so an unreachable game API (silently

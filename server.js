@@ -180,12 +180,65 @@ app.post('/match/team-lineups', function (req, res) {
   res.json({ ok: true });
 });
 
+// True for viewers coming in through a public tunnel (Cloudflare Tunnel or
+// Tailscale Funnel) rather than from this machine / the venue LAN.
+function isRemoteRequest(req) {
+  const h = req.headers;
+  if (h['cf-connecting-ip'] || h['tailscale-funnel-request'] || h['x-forwarded-for']) return true;
+  const host = String(h.host || '').split(':')[0];
+  return !(host === 'localhost' || host === '127.0.0.1' || /^(10|192\.168)\./.test(host) ||
+           /^172\.(1[6-9]|2\d|3[01])\./.test(host) || /\.local$/.test(host) || host === '');
+}
+
+// Remote viewers only: gzip text responses (HTML/JS/JSON — mplfs.html alone
+// is 1.3MB) and swap large PNGs for their pre-built WebP copy in .webcache/
+// (Tools/build-remote-webp.js) — same URL, ~5-10x fewer bytes. Never touches
+// live SSE streams, never serves a copy older than its source PNG.
+const compression = require('compression');
+const remoteGzip = compression({
+  filter: (req, res) => {
+    if (!isRemoteRequest(req)) return false;
+    if (String(res.getHeader('Content-Type') || '').includes('event-stream')) return false;
+    return compression.filter(req, res);
+  },
+});
+app.use((req, res, next) => (req.path.endsWith('/events') ? next() : remoteGzip(req, res, next)));
+
+const WEBCACHE_DIR = path.join(__dirname, '.webcache');
+app.use((req, res, next) => {
+  if (req.method !== 'GET' || !/\.png$/i.test(req.path) || !isRemoteRequest(req)) return next();
+  let rel;
+  try { rel = path.normalize(decodeURIComponent(req.path)).replace(/^[\/\\]+/, ''); } catch (e) { return next(); }
+  if (rel.startsWith('..')) return next();
+  const src = path.join(__dirname, rel);
+  const webp = path.join(WEBCACHE_DIR, rel + '.webp');
+  fs.stat(webp, (e1, w) => {
+    if (e1) return next();
+    fs.stat(src, (e2, s) => {
+      if (e2 || s.mtimeMs > w.mtimeMs) return next(); // missing source or stale copy → original PNG
+      res.setHeader('Cache-Control', 'max-age=60, stale-while-revalidate=3600');
+      res.sendFile(webp, { headers: { 'Content-Type': 'image/webp' }, dotfiles: 'allow' }, (err) => { if (err && !res.headersSent) next(); });
+    });
+  });
+});
+
 // Static assets — HTML files served fresh, other assets cached for 1 day
 app.use(express.static(path.join(__dirname), {
   maxAge: '1d',
   index: false,
   setHeaders: function(res, filePath) {
     const p = filePath.split(path.sep).join('/'); // normalize Windows backslashes for the checks below
+    // Remote viewers (Cloudflare Tunnel / Tailscale Funnel) get
+    // revalidate-only caching: the browser keeps its copy and asks "changed?"
+    // (ETag → 304, a few bytes) instead of re-downloading over the tunnel.
+    // Swapped files still show up on the next load. Local behaviour unchanged.
+    if (res.req && isRemoteRequest(res.req)) {
+      // Images/video: use the cached copy instantly for 60s, then refresh in
+      // the background (no per-image round trip on every load). Pages/JS/CSS
+      // still revalidate every time so code changes land immediately.
+      res.setHeader('Cache-Control', /\.(html|js|css|json)$/i.test(p) ? 'no-cache' : 'max-age=60, stale-while-revalidate=3600');
+      return;
+    }
     if (p.endsWith('.html') || p.endsWith('.css') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/') || p.includes('/assets/ingame/') || p.includes('/anniversary/') || p.includes('/assets/matchcard/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
