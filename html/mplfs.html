@@ -10826,11 +10826,11 @@
     let wlPlayerIdx = 0, wlPlayerInt = null;
     let wlPhotoLayer = { blue: 0, red: 0 };
 
-    /* /hires/LEFT/<ign>_LEFT.png for the home side, /hires/RIGHT/<ign>_RIGHT.png
+    /* /hires/LEFT_web/<ign>_LEFT.webp for the home side, /hires/RIGHT_web/<ign>_RIGHT.webp
        for the away side (blue = home, red = away). */
     function wlPhotoUrl(ign, side) {
       const folder = side === 'blue' ? 'LEFT' : 'RIGHT';
-      return '/hires/' + folder + '/' + encodeURIComponent(ign + '_' + folder + '.png');
+      return '/hires/' + folder + '_web/' + encodeURIComponent(ign + '_' + folder + '.webp');
     }
     /* /hires/<POSE>/<ign>_<POSE>.png -> /hires/<POSE>_web/<ign>_<POSE>.webp (the full-size ~60 KB WebP set from the OPTIMIZE commit, same one the MVP
        scenes use). Anything not under /hires/<POSE>/ comes back unchanged. Used by Team Line-Up + Waiting Lobby, which fall back to the PNG on error. */
@@ -11645,11 +11645,11 @@
       return heroid ? '/herohighlights/' + heroid + 'heromvp.png' : '';
     }
 
-    /* /hires/SIGNATURE/<ign>_SIGNATURE.png — same convention as the
+    /* /hires/SIGNATURE_web/<ign>_SIGNATURE.webp — same convention as the
        Team Line-Up / Waiting Lobby LEFT/RIGHT hires cutouts, just the
        signature-pose crop instead of a side-facing one. */
     function hlPhotoUrl(ign) {
-      return ign ? '/hires/SIGNATURE/' + encodeURIComponent(ign + '_SIGNATURE.png') : '';
+      return ign ? '/hires/SIGNATURE_web/' + encodeURIComponent(ign + '_SIGNATURE.webp') : '';
     }
 
     /* Starts from a size that nearly fills the box height, then shrinks
@@ -13371,7 +13371,7 @@
       .catch(() => {});
 
     function luPoseUrl(ign, pose) {
-      return '/hires/' + pose + '/' + encodeURIComponent(ign + '_' + pose) + '.png';
+      return '/hires/' + pose + '_web/' + encodeURIComponent(ign + '_' + pose) + '.webp';
     }
 
     /* Which pose folder each slot buttons into, independent of team color —
@@ -19323,7 +19323,7 @@
       const files = pbPhotoManifest[pose] || [];
       if (!files.length) return null;
       if (pbDebugPhotos) return '/photos/' + pose + '/' + files[Math.floor(Math.random() * files.length)];
-      const exact = (name + '_' + pose + '_resized.png').toLowerCase();
+      const exact = (name + '_' + pose + '_resized.webp').toLowerCase();
       const match = files.find(f => f.toLowerCase() === exact);
       return match ? '/photos/' + pose + '/' + match : null;
     }

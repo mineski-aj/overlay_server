@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base href="/">
+<title>Overlay Prewarm</title>
+<style>
+  :root { --bg:#101216; --card:#1a1d24; --line:#2a2f3a; --fg:#e8eaf0; --dim:#8b93a3; --acc:#edc555; --ok:#4cc38a; --bad:#ff6b6b; }
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px 16px; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui, sans-serif; }
+  main { max-width:720px; margin:0 auto; }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.sub { color:var(--dim); margin:0 0 18px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  label { display:flex; gap:10px; align-items:center; cursor:pointer; }
+  .meta { color:var(--dim); font-size:13px; margin-left:auto; white-space:nowrap; }
+  .bar { height:6px; background:var(--line); border-radius:3px; margin-top:8px; overflow:hidden; }
+  .bar > i { display:block; height:100%; width:0; background:var(--acc); transition:width .2s; }
+  .bar.done > i { background:var(--ok); }
+  .row { display:flex; gap:10px; align-items:center; margin:14px 0; flex-wrap:wrap; }
+  button { background:var(--acc); color:#111; border:0; border-radius:8px; padding:9px 18px; font:600 14px system-ui; cursor:pointer; }
+  button.alt { background:var(--card); color:var(--fg); border:1px solid var(--line); }
+  button:disabled { opacity:.45; cursor:default; }
+  select { background:var(--card); color:var(--fg); border:1px solid var(--line); border-radius:8px; padding:8px; }
+  #log { font:12px/1.5 ui-monospace, monospace; color:var(--dim); max-height:180px; overflow:auto; white-space:pre-wrap; }
+  .bad { color:var(--bad); } .ok { color:var(--ok); }
+  #banner.ready { border-color:var(--ok); color:var(--ok); }
+  #banner.partial { border-color:var(--acc); color:var(--acc); }
+  .note { color:var(--dim); font-size:13px; margin-top:16px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Overlay prewarm</h1>
+  <p class="sub">Downloads videos and photos into this browser's cache before the show, so scenes start instantly. Leave this page open until every bar is green.</p>
+
+  <div id="banner" class="card" style="display:none"></div>
+  <div id="sets"></div>
+
+  <div class="row">
+    <select id="theme">
+      <option value="">Current theme</option>
+      <option value="all">All themes (bigger)</option>
+      <option value="regular">Regular</option>
+      <option value="10th_anniversary">10th Anniversary</option>
+      <option value="playoffs">Playoffs</option>
+    </select>
+    <button id="go">Start prewarm</button>
+    <button id="stop" class="alt" disabled>Stop</button>
+    <button id="verify" class="alt">Re-check cache</button>
+    <span id="total" class="meta" style="margin-left:0"></span>
+  </div>
+  <div class="card"><div class="bar" id="allbar"><i></i></div><div id="log"></div></div>
+
+  <p class="note">The cache belongs to the browser that opens this page. For OBS, add this page as a browser source in the same OBS that runs the overlays. Files you change on the server are re-downloaded automatically next time you run it. Add <code>?auto=1</code> to start immediately, and <code>&amp;sets=draft-heroes,photos</code> to pick sets.</p>
+</main>
+
+<script>
+(function () {
+  var CONCURRENCY = 3;
+  var qs = new URLSearchParams(location.search);
+  var setsEl = document.getElementById('sets'), logEl = document.getElementById('log');
+  var goBtn = document.getElementById('go'), stopBtn = document.getElementById('stop');
+  var themeSel = document.getElementById('theme'), totalEl = document.getElementById('total');
+  var allBar = document.getElementById('allbar');
+  var manifest = null, running = false, aborter = null, verifying = false;
+  var cachedUrl = {}; // url -> true when verified in this browser's cache and unchanged
+  var bannerEl = document.getElementById('banner'), verifyBtn = document.getElementById('verify');
+  var state = {}; // key -> { done, total, bytes, bytesDone, bar, meta }
+
+  themeSel.value = qs.get('theme') || '';
+
+  function mb(b) { return (b / 1048576).toFixed(b > 10485760 ? 0 : 1) + ' MB'; }
+  function log(msg, cls) {
+    var d = document.createElement('div'); if (cls) d.className = cls; d.textContent = msg;
+    logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+  }
+  function stamp(u) { try { return localStorage.getItem('pw:' + u); } catch (e) { return null; } }
+  function setStamp(u, m) { try { localStorage.setItem('pw:' + u, String(m)); } catch (e) {} }
+
+  function render() {
+    setsEl.innerHTML = ''; state = {};
+    var want = qs.get('sets') ? qs.get('sets').split(',') : null;
+    Object.keys(manifest.sets).forEach(function (key) {
+      var s = manifest.sets[key];
+      var on = want ? want.indexOf(key) >= 0 : s.def;
+      var card = document.createElement('div'); card.className = 'card';
+      card.innerHTML = '<label><input type="checkbox" data-set="' + key + '"' + (on ? ' checked' : '') + '> ' +
+        '<span>' + s.label + '</span><span class="meta"></span></label><div class="bar"><i></i></div>';
+      setsEl.appendChild(card);
+      state[key] = { done: 0, total: s.files.length, bytes: s.bytes, bytesDone: 0,
+        bar: card.querySelector('.bar'), meta: card.querySelector('.meta'), box: card.querySelector('input') };
+      state[key].meta.textContent = s.count + ' files · ' + mb(s.bytes);
+    });
+    updateTotal();
+  }
+  function selected() { return Object.keys(state).filter(function (k) { return state[k].box.checked; }); }
+  function updateTotal() {
+    var keys = selected(), b = 0, d = 0;
+    keys.forEach(function (k) { b += state[k].bytes; d += state[k].bytesDone; });
+    totalEl.textContent = keys.length ? mb(d) + ' / ' + mb(b) : '';
+    allBar.firstElementChild.style.width = (b ? Math.min(100, d / b * 100) : 0) + '%';
+  }
+  function updateSet(k) {
+    var st = state[k];
+    st.bar.firstElementChild.style.width = (st.bytes ? Math.min(100, st.bytesDone / st.bytes * 100) : 100) + '%';
+    st.meta.textContent = st.done + '/' + st.total + ' · ' + mb(st.bytesDone) + ' / ' + mb(st.bytes);
+    st.bar.classList.toggle('done', st.done >= st.total);
+    updateTotal();
+  }
+
+  // Show what is ALREADY in the cache (set by verify()), not progress of a run.
+  function showCached(k) {
+    var st = state[k], files = manifest.sets[k].files, n = 0, b = 0;
+    files.forEach(function (f) { if (cachedUrl[f.u]) { n++; b += f.s; } });
+    st.done = n; st.bytesDone = b;
+    st.bar.firstElementChild.style.width = (st.bytes ? b / st.bytes * 100 : 100) + '%';
+    st.bar.classList.toggle('done', n >= st.total);
+    st.meta.textContent = n >= st.total ? '\u2713 Ready \u00b7 ' + st.total + ' files \u00b7 ' + mb(st.bytes)
+      : n + '/' + st.total + ' ready \u00b7 ' + mb(b) + ' / ' + mb(st.bytes);
+    st.meta.className = 'meta' + (n >= st.total ? ' ok' : '');
+    updateTotal();
+  }
+  function showBanner() {
+    var keys = selected(), missing = 0;
+    keys.forEach(function (k) { missing += state[k].total - state[k].done; });
+    bannerEl.style.display = keys.length ? '' : 'none';
+    bannerEl.className = 'card ' + (missing ? 'partial' : 'ready');
+    bannerEl.textContent = missing
+      ? missing + ' file(s) in the selected sets are not in this browser\u2019s cache yet \u2014 press Start prewarm to fetch just those.'
+      : '\u2713 Ready \u2014 everything selected is already in this browser\u2019s cache. No need to run it again.';
+  }
+
+  // Checks the browser's HTTP cache WITHOUT downloading ('only-if-cached' never
+  // hits the network). A file counts as ready if it is cached and its mtime
+  // matches the last successful prewarm; otherwise it is fetched again.
+  async function verify() {
+    if (verifying || running || !manifest) return;
+    verifying = true; verifyBtn.disabled = goBtn.disabled = true;
+    bannerEl.style.display = ''; bannerEl.className = 'card'; bannerEl.textContent = 'Checking what is already cached\u2026';
+    cachedUrl = {};
+    var jobs = [];
+    Object.keys(manifest.sets).forEach(function (k) { manifest.sets[k].files.forEach(function (f) { jobs.push(f); }); });
+    var supported = true;
+    async function w() {
+      while (jobs.length) {
+        var f = jobs.shift();
+        if (stamp(f.u) !== String(f.m)) continue;
+        try {
+          var r = await fetch(f.u, { cache: 'only-if-cached', mode: 'same-origin' });
+          if (r.ok) cachedUrl[f.u] = true;
+          if (r.body) r.body.cancel();
+        } catch (e) { supported = false; }
+      }
+    }
+    await Promise.all(Array.from({ length: 8 }, w));
+    if (!supported) { // browser can't probe its cache: fall back to "was prewarmed before"
+      Object.keys(manifest.sets).forEach(function (k) { manifest.sets[k].files.forEach(function (f) { if (stamp(f.u) === String(f.m)) cachedUrl[f.u] = true; }); });
+    }
+    Object.keys(state).forEach(showCached);
+    showBanner();
+    verifying = false; verifyBtn.disabled = goBtn.disabled = false;
+  }
+
+  // Full-body download, discarded: the browser's HTTP cache keeps the entry.
+  // Unchanged files hit the cache ('force-cache', free); files whose mtime
+  // changed since the last run bypass it ('reload') so the new copy replaces it.
+  async function fetchOne(f, signal) {
+    if (cachedUrl[f.u]) return f.s; // verified in cache, unchanged: nothing to do
+    var changed = stamp(f.u) !== String(f.m);
+    var res = await fetch(f.u, { cache: changed ? 'reload' : 'force-cache', signal: signal });
+    if (!res.ok) throw new Error(res.status + ' ' + f.u);
+    var reader = res.body.getReader(), n = 0;
+    for (;;) { var r = await reader.read(); if (r.done) break; n += r.value.length; }
+    setStamp(f.u, f.m); cachedUrl[f.u] = true;
+    return n;
+  }
+
+  async function run() {
+    if (running) return;
+    var keys = selected(); if (!keys.length) return;
+    running = true; aborter = new AbortController();
+    goBtn.disabled = true; stopBtn.disabled = false; logEl.textContent = '';
+    var queue = [], failed = 0;
+    keys.forEach(function (k) { state[k].done = 0; state[k].bytesDone = 0; manifest.sets[k].files.forEach(function (f) { queue.push({ k: k, f: f }); }); updateSet(k); });
+    log('Starting: ' + queue.length + ' files');
+    async function worker() {
+      while (queue.length && !aborter.signal.aborted) {
+        var job = queue.shift(), st = state[job.k];
+        try { await fetchOne(job.f, aborter.signal); }
+        catch (e) { if (aborter.signal.aborted) return; failed++; log('FAILED ' + decodeURIComponent(job.f.u) + ' (' + e.message + ')', 'bad'); }
+        st.done++; st.bytesDone += job.f.s; updateSet(job.k);
+      }
+    }
+    await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+    var stopped = aborter.signal.aborted;
+    log(stopped ? 'Stopped.' : (failed ? 'Finished with ' + failed + ' failed file(s).' : 'All done — cache is warm.'), stopped || failed ? 'bad' : 'ok');
+    running = false; goBtn.disabled = false; stopBtn.disabled = true;
+    Object.keys(state).forEach(showCached); showBanner();
+  }
+
+  function load() {
+    var t = themeSel.value;
+    return fetch('/api/prewarm-manifest' + (t ? '?theme=' + encodeURIComponent(t) : ''), { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (m) { manifest = m; render(); log('Manifest loaded (' + m.themes.join(', ') + ')'); return verify(); });
+  }
+
+  setsEl.addEventListener('change', function () { updateTotal(); showBanner(); });
+  verifyBtn.addEventListener('click', verify);
+  themeSel.addEventListener('change', function () { if (!running) load(); });
+  goBtn.addEventListener('click', run);
+  stopBtn.addEventListener('click', function () { if (aborter) aborter.abort(); });
+
+  load().then(function () { if (qs.get('auto') === '1') run(); })
+    .catch(function (e) { log('Could not load manifest: ' + e.message, 'bad'); });
+})();
+</script>
+</body>
+</html>

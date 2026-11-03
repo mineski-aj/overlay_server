@@ -204,6 +204,10 @@ const remoteGzip = compression({
 });
 app.use((req, res, next) => (req.path.endsWith('/events') ? next() : remoteGzip(req, res, next)));
 
+// Remote viewers never get the full-size /hires PNGs (WebP copy or 404).
+const remoteAssets = require('./lib/remoteAssets');
+app.use(remoteAssets.hiresGate(isRemoteRequest));
+
 const WEBCACHE_DIR = path.join(__dirname, '.webcache');
 app.use((req, res, next) => {
   if (req.method !== 'GET' || !/\.png$/i.test(req.path) || !isRemoteRequest(req)) return next();
@@ -236,7 +240,8 @@ app.use(express.static(path.join(__dirname), {
       // Images/video: use the cached copy instantly for 60s, then refresh in
       // the background (no per-image round trip on every load). Pages/JS/CSS
       // still revalidate every time so code changes land immediately.
-      res.setHeader('Cache-Control', /\.(html|js|css|json)$/i.test(p) ? 'no-cache' : 'max-age=60, stale-while-revalidate=3600');
+      res.setHeader('Cache-Control', /\.(html|js|css|json)$/i.test(p) ? 'no-cache'
+        : (remoteAssets.remoteCacheControl(p) || 'max-age=60, stale-while-revalidate=3600'));
       return;
     }
     if (p.endsWith('.html') || p.endsWith('.css') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/') || p.includes('/assets/ingame/') || p.includes('/anniversary/') || p.includes('/assets/matchcard/')) {
@@ -259,6 +264,7 @@ app.use(require('./routes/proxy'));
 app.use(require('./routes/dashboard'));
 app.use(require('./routes/overlayStyles'));
 app.use(require('./routes/devapi'));
+app.use(require('./routes/prewarm'));
 
 // Debug: log unmatched routes
 app.use(function (req, res, next) {

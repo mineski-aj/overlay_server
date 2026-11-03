@@ -264,13 +264,13 @@ function killEventPhotoSrc(playerName) {
   /* 10th Anniversary — the bigger 484x484 box (see #kill-event-photo-clip
      CSS) uses the full-resolution /hires signature instead of the
      regular-theme pre-resized one, so it doesn't look soft when scaled
-     up. Naming differs slightly: hires/SIGNATURE/<name>_SIGNATURE.png,
+     up. Naming differs slightly: hires/SIGNATURE_web/<name>_SIGNATURE.webp,
      no "_resized" suffix. */
   var th = document.documentElement.getAttribute('data-theme');
   if (th === '10th_anniversary' || th === 'playoffs') {
-    return 'hires/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE.png';
+    return 'hires/SIGNATURE_web/' + encodeURIComponent(playerName) + '_SIGNATURE.webp';
   }
-  return 'photos/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.png';
+  return 'photos/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.webp';
 }
 
 function killNametagBgSrc(camp) {

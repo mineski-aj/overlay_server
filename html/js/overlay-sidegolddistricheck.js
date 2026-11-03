@@ -73,13 +73,13 @@ function sgdcRoleIconSrc(role, camp1, camp2) {
   return label ? `role/${encodeURIComponent(label)}.png` : '';
 }
 
-/* /photos/LEFT/<ign>_LEFT_resized.png (home) / /photos/RIGHT/<ign>_RIGHT_resized.png
+/* /photos/LEFT/<ign>_LEFT_resized.webp (home) / /photos/RIGHT/<ign>_RIGHT_resized.webp
    (away) — same convention as mplfs.html's wlPhotoUrl (Waiting Lobby
    spotlight), just the lower-res /photos folder instead of /hires. */
 function sgdcPhotoSrc(name, side) {
   if (!name) return '';
   const folder = side === 'home' ? 'LEFT' : 'RIGHT';
-  return `/photos/${folder}/${encodeURIComponent(name + '_' + folder + '_resized.png')}`;
+  return `/photos/${folder}/${encodeURIComponent(name + '_' + folder + '_resized.webp')}`;
 }
 
 /* posthero/<heroid>_POST_HERO.png — same asset convention as

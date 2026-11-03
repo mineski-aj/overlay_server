@@ -22,20 +22,20 @@ function skdcCampClass(camp) {
   return camp === 1 ? 'skdc-camp-blue' : 'skdc-camp-red';
 }
 
-/* /photos/SIGNATURE/<name>_SIGNATURE_resized.png — same convention as
+/* /photos/SIGNATURE/<name>_SIGNATURE_resized.webp — same convention as
    overlay-killevents.js's killEventPhotoSrc, for the featured player. */
 function skdcSignaturePhotoSrc(name) {
   if (!name) return '';
-  return `/photos/SIGNATURE/${encodeURIComponent(name)}_SIGNATURE_resized.png`;
+  return `/photos/SIGNATURE/${encodeURIComponent(name)}_SIGNATURE_resized.webp`;
 }
-/* /photos/FRONT/<name>_FRONT_resized.png for the 5 stat-bar photos —
+/* /photos/FRONT/<name>_FRONT_resized.webp for the 5 stat-bar photos —
    always FRONT regardless of that row's own camp (unlike
    sidegolddistricheck's LEFT/RIGHT-per-side sgdcPhotoSrc; this box is
    always in the same physical position within its row, not tied to
    team side). */
 function skdcSidePhotoSrc(name) {
   if (!name) return '';
-  return `/photos/FRONT/${encodeURIComponent(name + '_FRONT_resized.png')}`;
+  return `/photos/FRONT/${encodeURIComponent(name + '_FRONT_resized.webp')}`;
 }
 function skdcHeroSrc(heroid) {
   return heroid ? heroWebUrl(heroid) : '';

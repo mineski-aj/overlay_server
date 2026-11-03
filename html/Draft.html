@@ -4577,7 +4577,7 @@
     p.photoPhase = 'front';
 
     var img = e.photoImg;
-    img.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    img.src = 'photos/FRONT/' + name + '_FRONT_resized.webp';
     img.style.display = 'block';
     img.style.opacity = '0';
     img.className = 'player-photo photo-front-size';
@@ -4593,7 +4593,7 @@
       img.style.transform = 'translateX(-50%) translateY(0)';
       img.classList.add('photo-quick-out');
       p.photoTimer2 = setTimeout(function () {
-        img.src = 'photos/VICTORY/' + name + '_VICTORY_resized.png';
+        img.src = 'photos/VICTORY/' + name + '_VICTORY_resized.webp';
         img.className = 'player-photo';
         img.style.opacity = '0';
         void img.offsetWidth;

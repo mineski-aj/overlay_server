@@ -1089,7 +1089,7 @@
     if (!name || p.idleName === name) return;
     resetPlayerPhoto(e, p);
     p.idleName = name; p.photoName = name; p.photoPhase = 'front';
-    e.photo.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    e.photo.src = 'photos/FRONT/' + name + '_FRONT_resized.webp';
     e.photo.className = 'dr-photo front'; e.photo.style.display = 'block'; e.photo.style.opacity = '';
     void e.photo.offsetWidth;
     e.photo.classList.add('entering');
@@ -1105,7 +1105,7 @@
       img.style.transform = 'translateX(-50%) translateY(0)';
       img.classList.add('quickout');
       p.t2 = setTimeout(() => {
-        img.src = 'photos/VICTORY/' + p.photoName + '_VICTORY_resized.png';
+        img.src = 'photos/VICTORY/' + p.photoName + '_VICTORY_resized.webp';
         img.className = 'dr-photo'; img.style.transform = ''; img.style.opacity = '0';
         void img.offsetWidth;
         img.classList.add('bouncein');

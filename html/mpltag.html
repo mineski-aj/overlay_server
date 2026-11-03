@@ -1611,7 +1611,7 @@
     roamer:  { seat: 5, title: 'ROAMER HEAD-TO-HEAD' },
   };
 
-  var photoNameMap = null; // {UPPERNAME: "Exact_FRONT.png"} from /api/hires-front-names
+  var photoNameMap = null; // {UPPERNAME: "Exact_FRONT.webp"} from /api/hires-front-names
   fetch('/api/hires-front-names', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
     photoNameMap = (d && d.names) || {};
   }).catch(function () { photoNameMap = {}; });
@@ -1619,7 +1619,7 @@
   function photoUrl(name) {
     var key = String(name || '').toUpperCase();
     var file = photoNameMap && photoNameMap[key];
-    return '/hires/FRONT/' + (file ? file : encodeURIComponent(name || '') + '_FRONT.png');
+    return '/hires/FRONT_web/' + (file ? file : encodeURIComponent(name || '') + '_FRONT.webp');
   }
   function heroUrl(heroId) { return '/hero/HERO_' + heroId + '_KOTAK.png'; }
   // role/*.png on disk are named in fixed uppercase ("GOLD LANER.png"),
@@ -2771,7 +2771,7 @@
   }
   function photoUrlOriginal(ign, side) {
     var f = side === 'blue' ? 'LEFT' : 'RIGHT';
-    return '/hires/' + f + '/' + encodeURIComponent(ign + '_' + f + '.png');
+    return '/hires/' + f + '_web/' + encodeURIComponent(ign + '_' + f + '.webp');
   }
   /* Pre-load + pre-decode the whole lineup in the background, one photo at a time with gaps, so by the time a player's turn comes the image is
      already in the cache and decoded (decode() runs off the main thread). Holds the Image objects so they stay cached. */
