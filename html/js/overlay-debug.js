@@ -29,8 +29,8 @@ function buildT3Browser() {
     cell.className = 't3-cell';
     cell.dataset.id = id;
     const img = document.createElement('img');
-    img.src = `Items/${id}.png`;
-    img.onerror = () => { img.onerror = null; img.src = `Items/99999.png`; };
+    img.src = `assets/game/items/${id}.png`;
+    img.onerror = () => { img.onerror = null; img.src = `assets/game/items/99999.png`; };
     const lbl = document.createElement('span');
     lbl.textContent = id;
     cell.appendChild(img);
@@ -117,12 +117,10 @@ for (let i = 1; i <= 10; i++) {
 }
 
 /* Load game API URL from server */
+/* The page polls the server's /api/gamedata-proxy (see overlay-core.js); the upstream Battledata URL is only
+   shown here for reference. */
 fetch('/api/game-url').then(r => r.json()).then(d => {
-  if (d.url) {
-    currentApiUrl = d.url;
-    localStorage.setItem('overlayApiUrl', d.url);
-  }
-  document.getElementById('api-url-display').textContent = currentApiUrl;
+  document.getElementById('api-url-display').textContent = currentApiUrl + '  (upstream: ' + (d.url || '—') + ')';
 }).catch(() => {
   document.getElementById('api-url-display').textContent = currentApiUrl;
 });
@@ -343,8 +341,8 @@ document.getElementById('stolengold-show-btn').addEventListener('click', () => s
 document.getElementById('stolengold-hide-btn').addEventListener('click', () => sgAnimateOut());
 
 /* ── Start polling ── */
-setInterval(masterPoll, 1000);
-masterPoll();
+/* Game API refresh rate (Settings -> Game API Refresh Rate, default 150ms) — see html/js/game-refresh.js */
+if (window.GameRefresh) GameRefresh.loop(masterPoll); else { setInterval(masterPoll, 1000); masterPoll(); }
 
 /* ── SSE — fight show/hide (instant) + debugoff ── */
 (function() {

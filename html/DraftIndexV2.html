@@ -13,19 +13,19 @@
       font-family: 'General Sans';
       font-weight: 600;
       font-display: block;
-      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 700;
       font-display: block;
-      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
     }
     @font-face {
       font-family: 'Anton';
       font-weight: 400;
       font-display: block;
-      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+      src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype');
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -137,7 +137,7 @@
       position: absolute;
       left: 299px; top: 311px;
       width: 1308px; height: 472px;
-      background-image: url('/assets/index/anniversary/annivindex.png');
+      background-image: url('/assets/overlay/index/anniversary/annivindex.png');
       background-repeat: no-repeat;
       background-size: 100% 100%;
       opacity: 0;
@@ -149,15 +149,15 @@
       background-repeat: no-repeat;
       background-size: 100% 100%;
     }
-    #di-blue-box { left: 166px;  top: 340px; background-image: url('/assets/index/indexblue.png'); }
-    #di-red-box  { left: 1429px; top: 342px; background-image: url('/assets/index/indexred.png'); }
+    #di-blue-box { left: 166px;  top: 340px; background-image: url('/assets/overlay/index/indexblue.png'); }
+    #di-red-box  { left: 1429px; top: 342px; background-image: url('/assets/overlay/index/indexred.png'); }
     /* 10th Anniversary — same filenames, reskinned art under
-       assets/index/anniversary/, same convention as mplfs.html's
+       assets/overlay/index/anniversary/, same convention as mplfs.html's
        p4kAsset/mbAsset. */
-    [data-theme="10th_anniversary"] #di-blue-box { background-image: url('/assets/index/anniversary/indexblue.png'); }
-    [data-theme="10th_anniversary"] #di-red-box  { background-image: url('/assets/index/anniversary/indexred.png'); }
-    [data-theme="playoffs"] #di-blue-box { background-image: url('/assets/index/playoffs/indexblue.png'); }
-    [data-theme="playoffs"] #di-red-box  { background-image: url('/assets/index/playoffs/indexred.png'); }
+    [data-theme="10th_anniversary"] #di-blue-box { background-image: url('/assets/overlay/index/anniversary/indexblue.png'); }
+    [data-theme="10th_anniversary"] #di-red-box  { background-image: url('/assets/overlay/index/anniversary/indexred.png'); }
+    [data-theme="playoffs"] #di-blue-box { background-image: url('/assets/overlay/index/playoffs/indexblue.png'); }
+    [data-theme="playoffs"] #di-red-box  { background-image: url('/assets/overlay/index/playoffs/indexred.png'); }
 
     .di-team-logo {
       position: absolute;
@@ -356,7 +356,7 @@
          players as ROLE ICON + NAME, left to right EXP, JUNGLE, MID, ROAM,
          GOLD,
        - 2s after the scene animates in, the five players' heroes
-         (posthero/) animate into the empty space above and below the band,
+         (assets/hero/post/) animate into the empty space above and below the band,
          hold 4s, then animate out. Independent of phase 2.
        Shares the original's SSE event, restore state, and Edit-tab styles. */
     #dv2-band {
@@ -435,13 +435,13 @@
 <div id="di-root">
 
   <div id="di-phase1">
-    <img id="di-smart-logo-p1" src="/assets/index/indexsmart.png" alt="">
+    <img id="di-smart-logo-p1" src="/assets/overlay/index/indexsmart.png" alt="">
     <div id="di-title-text">DRAFT INDEX</div>
   </div>
 
   <div id="di-phase2">
     <div id="di-anniv-bg"></div>
-    <img id="di-smart-logo-p2" src="/assets/index/indexsmart.png" alt="">
+    <img id="di-smart-logo-p2" src="/assets/overlay/index/indexsmart.png" alt="">
 
     <div id="di-blue-box" class="di-team-box">
       <img id="di-blue-logo" class="di-team-logo" alt="">
@@ -638,7 +638,7 @@
     diFitTeamName(nameBox, nameText, 34, 18);
     logoEl.onerror = function () { logoEl.style.display = 'none'; };
     logoEl.style.display = '';
-    logoEl.src = logoTri ? '/logos/' + encodeURIComponent(logoTri) + '.png' : '';
+    logoEl.src = logoTri ? '/assets/team/logos/' + encodeURIComponent(logoTri) + '.png' : '';
   }
 
   /* ── Data fetch ──────────────────────────────────────────────── */
@@ -772,7 +772,7 @@
     });
   }
 
-  /* ── Data-content opacity (logos/names/stat numbers/bar values) ──
+  /* ── Data-content opacity (assets/team/logos/names/stat numbers/bar values) ──
      Separate from diRevealPhase2()'s shell animation (box slide-in, mini
      logo pop, bars container fade) on purpose — this scene is sponsored
      and must always reveal on schedule, never delayed waiting on the
@@ -781,7 +781,7 @@
      real data actually lands, whenever that is relative to the shell
      reveal — see diTransitionToPhase2(). Bar LABELS aren't included
      here since they're static (from DI_BARS), not fetched. */
-  /* Split into two independently-gated groups — team identity (logos/
+  /* Split into two independently-gated groups — team identity (assets/team/logos/
      names) comes from /match/state + /api/gamedata-proxy, stats
      (counters/lineup numbers/bars) comes from /api/lineuprate-data —
      two unrelated upstreams that fail independently, so one group can
@@ -955,9 +955,9 @@
   /* Background loop per theme — same files the other scenes use. */
   function dv2BgSrc() {
     var theme = document.documentElement.getAttribute('data-theme');
-    if (theme === 'playoffs') return '/assets/z_playoffs%20background/playoffsbg_theme.webm';
-    if (theme === '10th_anniversary') return '/assets/annivloopsun.webm';
-    return '/assets/bgloopsun2.webm';
+    if (theme === 'playoffs') return '/assets/webm/playoffs/playoffsbg_theme.webm';
+    if (theme === '10th_anniversary') return '/assets/webm/annivloopsun.webm';
+    return '/assets/webm/bgloopsun2.webm';
   }
 
   /* Canvas measureText fit (never DOM layout — the scene may be display:none
@@ -986,7 +986,7 @@
         var icon = document.createElement('img');
         icon.className = 'dv2-role';
         icon.alt = '';
-        icon.src = 'role/' + encodeURIComponent(role) + '.png';
+        icon.src = 'assets/game/role/' + encodeURIComponent(role) + '.png';
         icon.onerror = function () { icon.style.display = 'none'; };
         var name = document.createElement('div');
         name.className = 'dv2-name';
@@ -1098,7 +1098,7 @@
     var shut = 'polygon(' + cx + 'px 0px, ' + cx + 'px 0px, ' + cx + 'px ' + h + 'px, ' + cx + 'px ' + h + 'px)';
     return { w: w, h: h, left: i * DV2_PITCH - DV2_SLANT, top: side === 'blue' ? 0 : 885, full: full, shut: shut };
   }
-  function dv2HeroUrl(heroid) { return 'posthero/' + heroid + '_POST_HERO.png'; }
+  function dv2HeroUrl(heroid) { return 'assets/hero/post/' + heroid + '_POST_HERO.png'; }
 
   /* cubic-bezier(x1,y1,x2,y2) as a JS function, so the window open/close can
      be pre-sampled into keyframes (see dv2WindowFrames). */

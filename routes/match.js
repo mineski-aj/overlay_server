@@ -5,7 +5,7 @@ const path       = require('path');
 const router     = express.Router();
 const matchState = require('../lib/matchState');
 
-const CONFIG_PATH = path.join(__dirname, '..', 'config.json');
+const CONFIG_PATH = path.join(__dirname, '..', 'data', 'config.json');
 
 function getPassword() {
   try {

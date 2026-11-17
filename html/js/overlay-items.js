@@ -14,7 +14,7 @@ function buildItemOverlay(i) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/overlay/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');
@@ -102,7 +102,7 @@ function triggerItem(i, itemId, timeStr, core) {
   outerGuard = setTimeout(cleanup, 6500);
 
   timeNum.textContent = timeStr || '--:--';
-  itemIcon.src = itemId ? `Items/${itemId}.png` : '';
+  itemIcon.src = itemId ? `assets/game/items/${itemId}.png` : '';
   resetItem(i);
   clip.style.display = 'block';
   requestAnimationFrame(() => requestAnimationFrame(() => {

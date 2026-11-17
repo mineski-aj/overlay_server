@@ -250,6 +250,7 @@
       .then(function (data) {
         config = { categories: data.categories || [], hiddenInIngame: data.hiddenInIngame || [], hiddenInSponsorsPage: data.hiddenInSponsorsPage || [] };
         files  = data.availableFiles || [];
+        if (data.base) sponsorBase = data.base;
         render();
       })
       .catch(function () { console.warn('Could not load sponsors-config'); });
@@ -285,7 +286,8 @@
   document.getElementById('save-btn').addEventListener('click', save);
 
   /* ── HELPERS ── */
-  function logoUrl(file) { return '/sponsors/' + encodeURIComponent(file); }
+  var sponsorBase = '/assets/sponsor/MAIN/';
+  function logoUrl(file) { return sponsorBase + encodeURIComponent(file); }
   function newCatId() { return 'cat_' + Date.now().toString(36) + Math.floor(Math.random() * 1000); }
   function assignedFiles() {
     var s = {};

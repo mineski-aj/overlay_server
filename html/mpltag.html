@@ -13,25 +13,25 @@
       font-family: 'General Sans';
       font-weight: 600;
       font-display: block;
-      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 700;
       font-display: block;
-      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 500;
       font-display: block;
-      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype');
     }
     @font-face {
       font-family: 'Anton';
       font-weight: 400;
       font-display: block;
-      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+      src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype');
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -120,7 +120,7 @@
        and slides via translateY inside it. */
     .ms-mapbox {
       left: 0; top: 0; width: 100%; height: 100%;
-      background-image: url('/assets/mapselect/mapbacker.png');
+      background-image: url('/assets/overlay/mapselect/mapbacker.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
     .ms-map-icon {
@@ -144,13 +144,13 @@
     /* Win box — same "lives inside a mask" deal as the map box above. */
     .ms-winbox {
       left: 0; top: 0; width: 100%; height: 100%;
-      background-image: url('/assets/mapselect/mapwin.png');
+      background-image: url('/assets/overlay/mapselect/mapwin.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
-    /* Playoffs art (same sizes) — assets/mapselect/playoffs/. The side boxes'
+    /* Playoffs art (same sizes) — assets/overlay/mapselect/playoffs/. The side boxes'
        playoffs art is picked in JS (sideAssetUrl). */
-    [data-theme="playoffs"] .ms-mapbox { background-image: url('/assets/mapselect/playoffs/mapbacker.png'); }
-    [data-theme="playoffs"] .ms-winbox { background-image: url('/assets/mapselect/playoffs/mapwin.png'); }
+    [data-theme="playoffs"] .ms-mapbox { background-image: url('/assets/overlay/mapselect/playoffs/mapbacker.png'); }
+    [data-theme="playoffs"] .ms-winbox { background-image: url('/assets/overlay/mapselect/playoffs/mapwin.png'); }
 
     /* ── Phase 2/3 "emerge from behind" reveal (ENTRANCE ONLY — hiding
        still uses the exact same fade-left-and-out as every other box,
@@ -242,8 +242,8 @@
     }
     .ms-sideonly.ms-sideonly-visible { opacity: 1; transform: translateX(0); }
     .ms-sideonly.ms-no-anim { transition: none; }
-    .ms-sideonly-blue { background-image: url('/assets/mapselect/blueselect.png'); }
-    .ms-sideonly-red  { background-image: url('/assets/mapselect/redselect.png'); }
+    .ms-sideonly-blue { background-image: url('/assets/overlay/mapselect/blueselect.png'); }
+    .ms-sideonly-red  { background-image: url('/assets/overlay/mapselect/redselect.png'); }
 
     /* Every child position below is LOCAL to .ms-sideonly's own 495x147
        box, straight from the pasted design spec — its background-color/
@@ -327,12 +327,12 @@
     }
     .ph2h-back {
       position: absolute; left: 0; top: 56px; width: 1319px; height: 247px;
-      background-image: url('/assets/L3h2h/playerh2hback.png');
+      background-image: url('/assets/overlay/L3h2h/playerh2hback.png');
       background-size: 100% 100%; background-repeat: no-repeat;
     }
     /* 10th Anniversary — same filenames, reskinned art under
-       assets/L3h2h/anniversary/, same convention as p4kAsset/mbAsset. */
-    [data-theme="10th_anniversary"] .ph2h-back { background-image: url('/assets/L3h2h/anniversary/playerh2hback.png'); }
+       assets/overlay/L3h2h/anniversary/, same convention as p4kAsset/mbAsset. */
+    [data-theme="10th_anniversary"] .ph2h-back { background-image: url('/assets/overlay/L3h2h/anniversary/playerh2hback.png'); }
     /* Stacking (front to back): nameplate > photo > hero. */
     .ph2h-photo {
       position: absolute; width: 303px; height: 303px;
@@ -353,14 +353,14 @@
       background-size: 100% 100%; background-repeat: no-repeat;
       z-index: 3;
     }
-    .ph2h-plate.ph2h-home { left: 0px;    background-image: url('/assets/L3h2h/playerh2hblue.png'); }
-    .ph2h-plate.ph2h-away { left: 1007px; background-image: url('/assets/L3h2h/playerh2hred.png');  } /* mirrored: 1319 - 0 - 312 */
+    .ph2h-plate.ph2h-home { left: 0px;    background-image: url('/assets/overlay/L3h2h/playerh2hblue.png'); }
+    .ph2h-plate.ph2h-away { left: 1007px; background-image: url('/assets/overlay/L3h2h/playerh2hred.png');  } /* mirrored: 1319 - 0 - 312 */
     /* 10th Anniversary — same convention as .ph2h-back above. */
-    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-home { background-image: url('/assets/L3h2h/anniversary/playerh2hblue.png'); }
-    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-away { background-image: url('/assets/L3h2h/anniversary/playerh2hred.png'); }
+    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-home { background-image: url('/assets/overlay/L3h2h/anniversary/playerh2hblue.png'); }
+    [data-theme="10th_anniversary"] .ph2h-plate.ph2h-away { background-image: url('/assets/overlay/L3h2h/anniversary/playerh2hred.png'); }
 
     /* Rendered pure black regardless of the source icon's own color —
-       role/*.png icons are a light taupe, not black. */
+       assets/game/role/*.png icons are a light taupe, not black. */
     .ph2h-role { position: absolute; top: 10px; width: 46px; height: 46px; object-fit: contain; filter: brightness(0); }
     .ph2h-plate.ph2h-home .ph2h-role { left: 10px;  }
     .ph2h-plate.ph2h-away .ph2h-role { left: 256px; } /* mirrored: 312 - 10 - 46 */
@@ -381,15 +381,15 @@
 
     .ph2h-title {
       position: absolute; left: 392px; top: -31px; width: 532px; height: 59px;
-      background-image: url('/assets/L3h2h/playerh2h%20title.png');
+      background-image: url('/assets/overlay/L3h2h/playerh2h%20title.png');
       background-size: 100% 100%; background-repeat: no-repeat;
       overflow: hidden; border-radius: 8px; z-index: 6;
     }
     /* 10th Anniversary — same filename, reskinned art under
-       assets/L3h2h/anniversary/ (the on-disk filename really does have
+       assets/overlay/L3h2h/anniversary/ (the on-disk filename really does have
        a literal space — %20-encoded here same as the Regular rule
        above). */
-    [data-theme="10th_anniversary"] .ph2h-title { background-image: url('/assets/L3h2h/anniversary/playerh2h%20title.png'); }
+    [data-theme="10th_anniversary"] .ph2h-title { background-image: url('/assets/overlay/L3h2h/anniversary/playerh2h%20title.png'); }
     .ph2h-title-sheen {
       position: absolute; top: 0; left: -60%; width: 40%; height: 100%;
       background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.85) 50%, transparent 100%);
@@ -470,7 +470,7 @@
 
     /* ── Local debug bar (press ` to toggle) ── */
     /* ── [FEATURE: match-card] Match Card — two independent team-logo
-       video loops (assets/matchcard/*_LOOP_*.webm, already-animated
+       video loops (assets/overlay/matchcard/*_LOOP_*.webm, already-animated
        art) for the live match's blue/red teams. Each side is its own
        clip+burst+video stack, independently positioned/sized from the
        Edit tab (per CLAUDE.md's "every element independently editable"
@@ -868,13 +868,13 @@
   <div id="mc-next-match"><div id="mc-next-match-text">NEXT MATCH</div></div>
   <div id="mc-blue-clip"><div id="mc-blue-burst"></div><video id="mc-blue-video" loop muted playsinline preload="auto"></video></div>
   <div id="mc-red-clip"><div id="mc-red-burst"></div><video id="mc-red-video" loop muted playsinline preload="auto"></video></div>
-  <div id="mc-vs-clip"><video id="mc-vs-video" src="/assets/matchcard/vs_matchcard.webm" muted playsinline preload="auto"></video></div>
+  <div id="mc-vs-clip"><video id="mc-vs-video" src="/assets/overlay/matchcard/vs_matchcard.webm" muted playsinline preload="auto"></video></div>
   <!-- [FEATURE: l3-lobby] special Waiting Lobby strip; see the last IIFE in this file's script block. -->
   <div id="l3l-root">
-    <div id="l3l-bg"><video id="l3l-bg-video" src="/assets/z_playoffs background/playoffsbg_theme.webm" loop muted playsinline preload="auto"></video></div>
+    <div id="l3l-bg"><video id="l3l-bg-video" src="/assets/webm/playoffs/playoffsbg_theme.webm" loop muted playsinline preload="auto"></video></div>
     <div id="l3l-goldline"></div>
     <div id="l3l-superfan"><div class="l3l-sf-inner">
-      <img src="/assets/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
+      <img src="/assets/overlay/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
       <span class="l3l-sf-label">MPL PH SUPERFAN CITY</span>
       <div class="l3l-sf-window"><div class="l3l-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
     </div></div>
@@ -895,12 +895,12 @@
     </div>
     <div id="l3l-match"></div>
     <div class="l3l-namebox l3l-namebox-blue">
-      <img class="l3l-namebox-bg" src="/assets/Waiting Lobby/Blue_NameBox.png" alt="">
+      <img class="l3l-namebox-bg" src="/assets/overlay/Waiting Lobby/Blue_NameBox.png" alt="">
       <div class="l3l-namebox-logo"><img class="l3l-slide-el" id="l3l-blue-logo" src="" alt="" onerror="this.style.display='none'"></div>
       <div class="l3l-namebox-name l3l-slide-el" id="l3l-blue-name"></div>
     </div>
     <div class="l3l-namebox l3l-namebox-red">
-      <img class="l3l-namebox-bg" src="/assets/Waiting Lobby/Red_NameBox.png" alt="">
+      <img class="l3l-namebox-bg" src="/assets/overlay/Waiting Lobby/Red_NameBox.png" alt="">
       <div class="l3l-namebox-logo"><img class="l3l-slide-el" id="l3l-red-logo" src="" alt="" onerror="this.style.display='none'"></div>
       <div class="l3l-namebox-name l3l-slide-el" id="l3l-red-name"></div>
     </div>
@@ -925,7 +925,7 @@
           <div class="bpmtag-spicy-pop" id="bpmtag-spicy-pop"><img class="bpmtag-spicy" id="bpmtag-spicy" alt=""></div>
           <div class="bpmtag-spicetext-pop" id="bpmtag-spicetext-pop"><img class="bpmtag-spicetext" id="bpmtag-spicetext" alt=""></div>
         </div>
-        <video class="bpmtag-boom" id="bpmtag-boom" src="/assets/noisemeter/boom.webm" muted playsinline preload="auto"></video>
+        <video class="bpmtag-boom" id="bpmtag-boom" src="/assets/overlay/noisemeter/boom.webm" muted playsinline preload="auto"></video>
       </div>
     </div>
   </div>
@@ -988,9 +988,9 @@
     MAPSEL_PAGE.style.transform = scale < 1 ? 'scale(' + scale.toFixed(4) + ')' : '';
   }
 
-  function logoUrl(short)  { return '/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
-  function mapIconUrl(name) { return '/maps/' + encodeURIComponent(name || '') + '.png'; }
-  function sideAssetUrl(side) { return '/assets/mapselect/' + (isAnniv() ? 'anniversary/' : isPlayoffs() ? 'playoffs/' : '') + 'mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
+  function logoUrl(short)  { return '/assets/team/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
+  function mapIconUrl(name) { return '/assets/game/maps/' + encodeURIComponent(name || '') + '.png'; }
+  function sideAssetUrl(side) { return '/assets/overlay/mapselect/' + (isAnniv() ? 'anniversary/' : isPlayoffs() ? 'playoffs/' : '') + 'mapselect' + (side === 'red' ? 'red' : 'blue') + '.png'; }
 
   function fitText(el, maxSize, minSize) {
     var size = maxSize;
@@ -1619,10 +1619,10 @@
   function photoUrl(name) {
     var key = String(name || '').toUpperCase();
     var file = photoNameMap && photoNameMap[key];
-    return '/hires/FRONT/' + (file ? file : encodeURIComponent(name || '') + '_FRONT.png');
+    return '/assets/photo/hires/FRONT/' + (file ? file : encodeURIComponent(name || '') + '_FRONT.png');
   }
-  function heroUrl(heroId) { return '/hero/HERO_' + heroId + '_KOTAK.png'; }
-  // role/*.png on disk are named in fixed uppercase ("GOLD LANER.png"),
+  function heroUrl(heroId) { return '/assets/hero/full/HERO_' + heroId + '_KOTAK.png'; }
+  // assets/game/role/*.png on disk are named in fixed uppercase ("GOLD LANER.png"),
   // not whatever case the API's ROLE_NAME happens to send — same
   // roleFile() normalization mplfs.html uses everywhere it draws a role
   // icon (matched on a substring so "Gold Laner"/"GOLD"/etc all resolve).
@@ -1635,7 +1635,7 @@
     if (r.indexOf('jung') !== -1) return 'JUNGLER';
     return (role || '').toUpperCase();
   }
-  function roleUrl(roleName) { return '/role/' + encodeURIComponent(roleFile(roleName)) + '.png'; }
+  function roleUrl(roleName) { return '/assets/game/role/' + encodeURIComponent(roleFile(roleName)) + '.png'; }
 
   function fitText(el, maxSize, minSize) {
     var size = maxSize;
@@ -2028,7 +2028,7 @@
 /* ── [FEATURE: match-card] Match Card ──────────────────────────────────
    Simple checkOverlays-pattern panel (see CLAUDE.md "Simpler show/hide")
    — two independently-positioned team-logo video loops
-   (assets/matchcard/<TRICODE>_LOOP_1000x1000_5mbps.webm, already-animated
+   (assets/overlay/matchcard/<TRICODE>_LOOP_1000x1000_5mbps.webm, already-animated
    art baked in — the entrance transition below on TOP of that loop is
    this page's own "eye-catching" reveal) for the live match's blue/red
    teams.
@@ -2074,7 +2074,7 @@
   }
 
   function cardUrl(tricode) {
-    return tricode ? '/assets/matchcard/' + encodeURIComponent(tricode) + '_LOOP_1000x1000_5mbps.webm' : '';
+    return tricode ? '/assets/overlay/matchcard/' + encodeURIComponent(tricode) + '_LOOP_1000x1000_5mbps.webm' : '';
   }
 
   function setSide(video, tricode) {
@@ -2318,7 +2318,7 @@
   const SPICE_SCALE = [1, 1.1, 1.2];
   const SPICY_SHAKE = 2.5; // rumble was tuned for the small meter box; the spicy art is much bigger
   const fireEl = document.getElementById('bpmtag-fire');
-  ['spicy','spicetext'].forEach(n => [1,2,3].forEach(t => { new Image().src = `/assets/noisemeter/${n}${t}.png`; }));
+  ['spicy','spicetext'].forEach(n => [1,2,3].forEach(t => { new Image().src = `/assets/overlay/noisemeter/${n}${t}.png`; }));
   /* Heat-diffusion fire sim. Per-tier source heat + cooling set the flame
      height/brightness. 30fps cap; stops itself when hidden or tier is off. */
   const FW = 128, FH = 48;
@@ -2385,8 +2385,8 @@
     if (t === spiceTier) return;
     spiceTier = t;
     if (!t) { spicyEl.classList.remove('on'); spiceTextEl.classList.remove('on'); return; }
-    spicyEl.src = `/assets/noisemeter/spicy${t}.png`;
-    spiceTextEl.src = `/assets/noisemeter/spicetext${t}.png`;
+    spicyEl.src = `/assets/overlay/noisemeter/spicy${t}.png`;
+    spiceTextEl.src = `/assets/overlay/noisemeter/spicetext${t}.png`;
     // Individual `scale` property (not `transform`) so the tier pop and the shake don't fight.
     // Big, obvious pop: snap up to 1.35x fast, then settle to the tier size with an overshoot.
     spicePop(spicyPop, SPICE_SCALE[t-1]);
@@ -2699,17 +2699,17 @@
     var lt = home.short || tm.team1Short || '', rt = away.short || tm.team2Short || '';
     var s1 = home.score || tm.score1 || 0, s2 = away.score || tm.score2 || 0;
     var logo = function (side, tri) {
-      return '<div class="l3m-slot l3m-logo-' + side + '">' + (tri ? '<img src="/logos/' + encodeURIComponent(tri) + '.png" onerror="this.style.display=\'none\'" alt="">' : '') + '</div>';
+      return '<div class="l3m-slot l3m-logo-' + side + '">' + (tri ? '<img src="/assets/team/logos/' + encodeURIComponent(tri) + '.png" onerror="this.style.display=\'none\'" alt="">' : '') + '</div>';
     };
     var center = (s1 === 0 && s2 === 0)
-      ? '<img class="l3m-vs" src="/assets/Waiting Screen TVC/SCORES/vs.png" alt="VS">'
+      ? '<img class="l3m-vs" src="/assets/overlay/Waiting Screen TVC/SCORES/vs.png" alt="VS">'
       : '<div class="l3m-score"><span class="l3m-score-l">' + s1 + '</span><span class="l3m-score-div"></span><span class="l3m-score-r">' + s2 + '</span></div>';
     var boxByType = { epic: 'MatchBox_EPIC RIVALRY', enduring: 'MatchBox_ENDURING LEGACY', golden: 'MatchBox_GOLDEN-RIVALRY' };
     var mt = tm.matchType || (tm.star ? 'clash' : 'regular');
     var boxFile = boxByType[mt] || 'MatchBox_REGULAR MATCH';
     var gold = mt === 'enduring' ? ' l3m-tri-gold' : '';
     root.innerHTML =
-      '<div class="l3m-box"><img class="l3m-bg" src="/assets/Waiting Screen TVC/playoffs/' + boxFile + '.png" alt="">' +
+      '<div class="l3m-box"><img class="l3m-bg" src="/assets/overlay/Waiting Screen TVC/playoffs/' + boxFile + '.png" alt="">' +
       '<span class="l3m-label">' + esc(matchLabelFor(num, ms)) + '</span><span class="l3m-time">' + esc(tm.time || '') + '</span>' +
       '<span class="l3m-bo">' + esc((ms.series || 'BO3').toUpperCase()) + '</span>' +
       '<div class="l3m-slot l3m-tri l3m-tri-l' + gold + '">' + esc(lt) + '</div>' + logo('l', lt) +
@@ -2764,14 +2764,14 @@
   /* ── player rotation (Waiting Lobby's exact photo + name animation) ── */
   /* Perf (vMix): the originals are 1000x1000 PNGs (~1 MB each) and a swap loads + decodes TWO of them at once (blue + red) while the video
      background / ticker / sponsor loop run — that stalled the whole page in vMix's embedded browser. Overlay-only 640x640 WebP copies live in
-     /hires_l3/ (~55 KB, same framing, 5x fewer pixels to decode); if one is missing the original PNG is used. */
+     /assets/photo/hires_l3/ (~55 KB, same framing, 5x fewer pixels to decode); if one is missing the original PNG is used. */
   function photoUrl(ign, side) {
     var f = side === 'blue' ? 'LEFT' : 'RIGHT';
-    return '/hires_l3/' + f + '/' + encodeURIComponent(ign + '_' + f + '.webp');
+    return '/assets/photo/hires_l3/' + f + '/' + encodeURIComponent(ign + '_' + f + '.webp');
   }
   function photoUrlOriginal(ign, side) {
     var f = side === 'blue' ? 'LEFT' : 'RIGHT';
-    return '/hires/' + f + '/' + encodeURIComponent(ign + '_' + f + '.png');
+    return '/assets/photo/hires/' + f + '/' + encodeURIComponent(ign + '_' + f + '.png');
   }
   /* Pre-load + pre-decode the whole lineup in the background, one photo at a time with gaps, so by the time a player's turn comes the image is
      already in the cache and decoded (decode() runs off the main thread). Holds the Image objects so they stay cached. */
@@ -2813,7 +2813,7 @@
     setTimeout(function () {
       nameEl.textContent = ign || '';
       logoEl.style.display = '';
-      logoEl.src = (player && player.role) ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
+      logoEl.src = (player && player.role) ? '/assets/game/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
       els.forEach(function (el) { el.classList.add('l3l-no-transition'); el.classList.remove('l3l-slide-out'); el.classList.add('l3l-slide-in'); });
       void nameEl.offsetWidth;
       els.forEach(function (el) { el.classList.remove('l3l-no-transition', 'l3l-slide-in'); });

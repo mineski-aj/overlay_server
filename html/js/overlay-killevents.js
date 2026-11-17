@@ -38,20 +38,20 @@ function killEventTeamLogoSrc(camp, tricodeOverride) {
   /* Manual-test-only override (dashboard's Wipe Out Random Test) — picks
      any team's tricode directly instead of needing a live match's camp_list
      loaded. Real live-detected wipeouts never send this. */
-  if (tricodeOverride) return '/logos/' + encodeURIComponent(tricodeOverride) + '.png';
+  if (tricodeOverride) return '/assets/team/logos/' + encodeURIComponent(tricodeOverride) + '.png';
   if (!lastData || !lastData.camp_list) return null;
   var cid = camp === 'red' ? 2 : 1;
   var c = lastData.camp_list.find(function(cc) { return cc.campid === cid; });
   var name = c && c.team_simple_name ? c.team_simple_name.toUpperCase().trim() : '';
-  return name ? '/logos/' + encodeURIComponent(name) + '.png' : null;
+  return name ? '/assets/team/logos/' + encodeURIComponent(name) + '.png' : null;
 }
 
 /* Kill events sponsored by a specific brand — the sponsor logo only
    shows for these videos, popping in alongside the photo. */
 var KILL_EVENT_SPONSOR_LOGO = {
-  'doublekill.webm':  'assets/ingame/ingamesmart.png',
-  'turtleslain.webm': 'assets/ingame/ingamesmart.png',
-  'triplekill.webm':  'assets/ingame/ingamevisawhite.png',
+  'doublekill.webm':  'assets/overlay/ingame/ingamesmart.png',
+  'turtleslain.webm': 'assets/overlay/ingame/ingamesmart.png',
+  'triplekill.webm':  'assets/overlay/ingame/ingamevisawhite.png',
 };
 /* 10th Anniversary — Turtle Slain runs unsponsored (Double Kill and
    Triple Kill keep their logos). previewKillEventSponsor() below picks
@@ -158,8 +158,8 @@ function killEventHoldExtensionMs(video) {
   var cfg = KILL_EVENT_PAUSE[video];
   return cfg ? cfg.pauseMs : 0;
 }
-/* 10th Anniversary — assets/motion/anniversary/ has its own version of
-   every kill event video, same filenames as the regular assets/motion/. */
+/* 10th Anniversary — assets/webm/motion/anniversary/ has its own version of
+   every kill event video, same filenames as the regular assets/webm/motion/. */
 var KILL_EVENT_PLAYOFFS_VIDEO = {
   'firstblood.webm':  '1_FIRST_BLOOD_1920x1080.webm',
   'doublekill.webm':  '2_DOUBLE_KILL_1920x1080.webm',
@@ -172,12 +172,12 @@ var KILL_EVENT_PLAYOFFS_VIDEO = {
 };
 function killEventVideoPath(video) {
   if (killEventIsPlayoffs() && KILL_EVENT_PLAYOFFS_VIDEO[video]) {
-    return 'assets/ingame/playoffs/motion/' + KILL_EVENT_PLAYOFFS_VIDEO[video];
+    return 'assets/overlay/ingame/playoffs/motion/' + KILL_EVENT_PLAYOFFS_VIDEO[video];
   }
   if (document.documentElement.getAttribute('data-theme') === '10th_anniversary') {
-    return 'assets/motion/anniversary/' + video;
+    return 'assets/webm/motion/anniversary/' + video;
   }
-  return 'assets/motion/' + video;
+  return 'assets/webm/motion/' + video;
 }
 var killPauseArmed  = false; /* true until the current video's pause point has fired once */
 var killPauseRvfcId = null;  /* pending requestVideoFrameCallback handle, if in use */
@@ -264,23 +264,23 @@ function killEventPhotoSrc(playerName) {
   /* 10th Anniversary — the bigger 484x484 box (see #kill-event-photo-clip
      CSS) uses the full-resolution /hires signature instead of the
      regular-theme pre-resized one, so it doesn't look soft when scaled
-     up. Naming differs slightly: hires/SIGNATURE/<name>_SIGNATURE.png,
+     up. Naming differs slightly: assets/photo/hires/SIGNATURE/<name>_SIGNATURE.png,
      no "_resized" suffix. */
   var th = document.documentElement.getAttribute('data-theme');
   if (th === '10th_anniversary' || th === 'playoffs') {
-    return 'hires/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE.png';
+    return 'assets/photo/hires/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE.png';
   }
-  return 'photos/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.png';
+  return 'assets/photo/SIGNATURE/' + encodeURIComponent(playerName) + '_SIGNATURE_resized.png';
 }
 
 function killNametagBgSrc(camp) {
   if (killEventIsPlayoffs()) {
-    return 'assets/lineup/playoffs/playoffs_' + (camp === 'red' ? 'red' : 'blue') + 'box.png';
+    return 'assets/overlay/lineup/playoffs/playoffs_' + (camp === 'red' ? 'red' : 'blue') + 'box.png';
   }
   var file = 'kill' + (camp === 'red' ? 'red' : 'blue') + 'back.png';
   return document.documentElement.getAttribute('data-theme') === '10th_anniversary'
-    ? 'assets/ingame/anniversary/' + file
-    : 'assets/ingame/' + file;
+    ? 'assets/overlay/ingame/anniversary/' + file
+    : 'assets/overlay/ingame/' + file;
 }
 
 /* Shrink-to-fit text (binary search font-size) — same approach as

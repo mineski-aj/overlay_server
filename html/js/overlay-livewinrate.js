@@ -85,7 +85,7 @@ function lwrBuildPanel() {
 
   const bg = document.createElement('img');
   bg.className = 'lwr-bg';
-  bg.src = '/assets/ingame/graphbarback.png';
+  bg.src = '/assets/overlay/ingame/graphbarback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -93,9 +93,9 @@ function lwrBuildPanel() {
   headerBg.className = 'lwr-header-bg';
   /* Playoffs: Gold Graph Check's gold-title-trapezoid header art (same 887x60 layout). */
   { const th = document.documentElement.getAttribute('data-theme');
-    headerBg.src = th === '10th_anniversary' ? '/assets/ingame/anniversary/graph_header.png'
-                 : th === 'playoffs'         ? '/assets/ingame/playoffs/graph_header.png'
-                 :                             '/assets/ingame/graph_header.png'; }
+    headerBg.src = th === '10th_anniversary' ? '/assets/overlay/ingame/anniversary/graph_header.png'
+                 : th === 'playoffs'         ? '/assets/overlay/ingame/playoffs/graph_header.png'
+                 :                             '/assets/overlay/ingame/graph_header.png'; }
   headerBg.alt = '';
   overlay.appendChild(headerBg);
 
@@ -209,7 +209,7 @@ registerPollHandler(function(data) {
     if (img && name && img.dataset.team !== name) {
       img.dataset.team  = name;
       img.style.display = 'none';
-      img.src = '/logos/' + name + '.png';
+      img.src = '/assets/team/logos/' + name + '.png';
     }
   });
 });

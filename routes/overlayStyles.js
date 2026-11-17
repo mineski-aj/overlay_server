@@ -6,7 +6,7 @@ const path    = require('path');
 const state   = require('../lib/state');
 const { getTheme } = require('../lib/theme');
 
-const STYLES_FILE = path.join(__dirname, '..', 'overlay_styles.json');
+const STYLES_FILE = path.join(__dirname, '..', 'data', 'overlay_styles.json');
 
 function load() {
   try { return JSON.parse(fs.readFileSync(STYLES_FILE, 'utf8')); }

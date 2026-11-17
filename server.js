@@ -25,7 +25,7 @@ const matchState = require('./lib/matchState');
 const teamLineups = require('./lib/teamLineups');
 
 function getMatchPassword() {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8')).dashboard_password || ''; }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, 'data', 'config.json'), 'utf8')).dashboard_password || ''; }
   catch (e) { return ''; }
 }
 
@@ -157,7 +157,7 @@ app.post('/api/roster', function (req, res) {
     return res.status(400).json({ error: 'Payload must include teams and players' });
   }
   try {
-    fs.writeFileSync(path.join(__dirname, 'mainroster.json'), JSON.stringify(data, null, 2));
+    fs.writeFileSync(path.join(__dirname, 'data', 'mainroster.json'), JSON.stringify(data, null, 2));
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: 'Could not write mainroster.json' });
@@ -186,7 +186,7 @@ app.use(express.static(path.join(__dirname), {
   index: false,
   setHeaders: function(res, filePath) {
     const p = filePath.split(path.sep).join('/'); // normalize Windows backslashes for the checks below
-    if (p.endsWith('.html') || p.endsWith('.css') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/logos/') || p.includes('/photos/TALENTS/') || p.includes('/assets/ingame/') || p.includes('/anniversary/') || p.includes('/assets/matchcard/')) {
+    if (p.endsWith('.html') || p.endsWith('.css') || p.includes('/html/js/') || p.endsWith('mainroster.json') || p.includes('/assets/team/logos/') || p.includes('/assets/photo/TALENTS/') || p.includes('/assets/overlay/ingame/') || p.includes('/anniversary/') || p.includes('/assets/overlay/matchcard/')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }

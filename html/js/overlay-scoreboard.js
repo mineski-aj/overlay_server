@@ -3,8 +3,8 @@
 /* Star match backgrounds (Epic Rivalry, Enduring Legacy, etc. — see
    html/match-dashboard.html's MATCH_TYPES for the full label list) —
    same suffix convention as the asset filenames on disk
-   (assets/ingame/ingamepng2_<SUFFIX>.png / assets/ingame/anniversary/
-   ingamepng2_<SUFFIX>.png / assets/ingame/playoffs/ingamepng2_<SUFFIX>.png). Not every matchType has art in every theme
+   (assets/overlay/ingame/ingamepng2_<SUFFIX>.png / assets/overlay/ingame/anniversary/
+   ingamepng2_<SUFFIX>.png / assets/overlay/ingame/playoffs/ingamepng2_<SUFFIX>.png). Not every matchType has art in every theme
    (or at all yet) — resolved at runtime via #scoreboard-bg's own onerror
    (it's a real <img>, unlike Draft.html's CSS-background #scene) rather
    than a hardcoded whitelist, so a newly-dropped-in asset just works
@@ -22,7 +22,7 @@ var STAR_MATCH_SUFFIX_ANNIV = {
 function sbStarSuffixFor(matchType) {
   var isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   if (isAnniv && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
-  /* Playoffs: Golden Rivalry art is hyphen-named too (assets/ingame/playoffs/ingamepng2_GOLDEN-RIVALRY.png) */
+  /* Playoffs: Golden Rivalry art is hyphen-named too (assets/overlay/ingame/playoffs/ingamepng2_GOLDEN-RIVALRY.png) */
   if (document.documentElement.getAttribute('data-theme') === 'playoffs' && matchType === 'golden') return STAR_MATCH_SUFFIX_ANNIV.golden;
   return STAR_MATCH_SUFFIX[matchType];
 }
@@ -65,10 +65,10 @@ function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
   bg.id  = 'scoreboard-bg';
   var sbInitTheme = document.documentElement.getAttribute('data-theme');
   bg.src = sbInitTheme === '10th_anniversary'
-    ? 'assets/ingame/anniversary/ingamepng2.png'
+    ? 'assets/overlay/ingame/anniversary/ingamepng2.png'
     : sbInitTheme === 'playoffs'
-    ? 'assets/ingame/playoffs/ingamepng2.png'
-    : 'assets/ingame/ingamepng2.png';
+    ? 'assets/overlay/ingame/playoffs/ingamepng2.png'
+    : 'assets/overlay/ingame/ingamepng2.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -148,7 +148,7 @@ function sbSetImgWithFallback(imgEl, primarySrc, fallbackSrc) {
     el.id = id;
     var icon = document.createElement('img');
     icon.className = 'sb-goldlead-icon';
-    icon.src = 'assets/ingame/ingameitemgold.png';
+    icon.src = 'assets/overlay/ingame/ingameitemgold.png';
     icon.alt = '';
     var amount = document.createElement('span');
     amount.className = 'sb-goldlead-amount';
@@ -386,7 +386,7 @@ registerPollHandler(function(data) {
     if (limg1 && lname1 && limg1.dataset.team !== lname1) {
       limg1.dataset.team    = lname1;
       limg1.style.display   = 'none';
-      limg1.src             = '/logos/' + lname1 + '.png';
+      limg1.src             = '/assets/team/logos/' + lname1 + '.png';
     }
   }
   if (li2) {
@@ -395,7 +395,7 @@ registerPollHandler(function(data) {
     if (limg2 && lname2 && limg2.dataset.team !== lname2) {
       limg2.dataset.team    = lname2;
       limg2.style.display   = 'none';
-      limg2.src             = '/logos/' + lname2 + '.png';
+      limg2.src             = '/assets/team/logos/' + lname2 + '.png';
     }
   }
 
@@ -670,7 +670,7 @@ function sbPollMatchState() {
         }
         if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
           mapLogoImg.dataset.map = mapVal;
-          mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+          mapLogoImg.src = '/assets/game/maps/' + encodeURIComponent(mapVal) + '.png';
         }
       }
 
@@ -685,7 +685,7 @@ function sbPollMatchState() {
       var isEnduring  = curMatch && curMatch.matchType === 'enduring';
       var isAnniv     = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
       var isPlayoffs  = document.documentElement.getAttribute('data-theme') === 'playoffs';
-      var ingameBase  = 'assets/ingame/' + (isAnniv ? 'anniversary/' : isPlayoffs ? 'playoffs/' : '');
+      var ingameBase  = 'assets/overlay/ingame/' + (isAnniv ? 'anniversary/' : isPlayoffs ? 'playoffs/' : '');
       var ingamePlain = ingameBase + 'ingamepng2.png';
       var starSuffix  = curMatch && sbStarSuffixFor(curMatch.matchType);
       var ingameStar  = starSuffix ? ingameBase + 'ingamepng2_' + starSuffix + '.png' : ingamePlain;

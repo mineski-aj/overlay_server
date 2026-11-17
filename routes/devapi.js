@@ -6,6 +6,9 @@ const path    = require('path');
 const state   = require('../lib/state');
 const { getApiMode, setApiMode, readUrlForMode, writeUrlForMode } = require('../lib/apiMode');
 const { getTheme, setTheme } = require('../lib/theme');
+const { normalizeGameFeed } = require('../lib/rawAdapter');
+const feedDerived = require('../lib/feedDerived');
+const { getGameRefreshMs, setGameRefreshMs, MIN_MS: GAME_REFRESH_MIN, MAX_MS: GAME_REFRESH_MAX } = require('../lib/gameRefresh');
 
 // LIVE/DEBUG API mode — Settings page's "dangerous debug button". Every
 // per-API URL setting below stores BOTH a live and a debug value; this
@@ -45,7 +48,7 @@ router.post('/api/theme', (req, res) => {
 });
 
 router.get('/api/sub-info', (req, res) => {
-  const samplePath = path.join(__dirname, '..', 'sub-info_sample.json');
+  const samplePath = path.join(__dirname, '..', 'data', 'sub-info_sample.json');
   try {
     const data = fs.readFileSync(samplePath, "utf8");
     res.setHeader("Content-Type", "application/json");
@@ -53,11 +56,21 @@ router.get('/api/sub-info', (req, res) => {
   } catch (e) {
     res.status(500).json({ error: "sub-info_sample.json not found" });
   }
+});
+
+// DEBUG-mode game feed for the M8 V2 branch: the RAW battle-feed sample. Point Settings ->
+// Game API (DEBUG) at http://localhost:<port>/api/battledata-m8 — it goes through the same
+// raw -> seat_N adapter as a live feed (lib/rawAdapter.js).
+router.get('/api/battledata-m8', (req, res) => {
+  try {
+    res.set('Cache-Control', 'no-store').type('application/json')
+       .send(fs.readFileSync(path.join(__dirname, '..', 'data', 'battledata_sample_m8.txt'), 'utf8'));
+  } catch (e) { res.status(500).json({ error: 'battledata_sample_m8.txt not found' }); }
 });
 
 // Also handle trailing slash variant
 router.get('/api/sub-info/', (req, res) => {
-  const samplePath = path.join(__dirname, '..', 'sub-info_sample.json');
+  const samplePath = path.join(__dirname, '..', 'data', 'sub-info_sample.json');
   try {
     const data = fs.readFileSync(samplePath, "utf8");
     res.setHeader("Content-Type", "application/json");
@@ -67,12 +80,21 @@ router.get('/api/sub-info/', (req, res) => {
   }
 });
 
-// Sponsor logos + categorization — logos live in /sponsors/, categorization
+// Sponsor logos + categorization — logos live in /assets/sponsor/<SET>/, categorization
 // (grouping, per-category loop duration, display order) is edited from the
 // dashboard's Sponsors tab and persisted to sponsors_config.json.
-const SPONSORS_DIR         = path.join(__dirname, '..', 'sponsors');
-const SPONSORS_CONFIG_FILE = path.join(__dirname, '..', 'sponsors_config.json');
-const CONFIG_FILE          = path.join(__dirname, '..', 'config.json');
+// Four independent logo sets live in assets/sponsor/<SET>/ (each with its own white/ subfolder).
+// Every sponsor route takes an optional ?set=MAIN|MY|PH|ID; default is MAIN.
+// Categories (sponsors_config.json) are shared: a logo filename missing from a set is simply skipped.
+const SPONSOR_SETS         = ['MAIN', 'MY', 'PH', 'ID'];
+const DEFAULT_SPONSOR_SET  = 'MAIN';
+const SPONSORS_ROOT        = path.join(__dirname, '..', 'assets', 'sponsor');
+function sponsorSet(req) {
+  const s = String((req && req.query && req.query.set) || '').toUpperCase();
+  return SPONSOR_SETS.includes(s) ? s : DEFAULT_SPONSOR_SET;
+}
+const SPONSORS_CONFIG_FILE = path.join(__dirname, '..', 'data', 'sponsors_config.json');
+const CONFIG_FILE          = path.join(__dirname, '..', 'data', 'config.json');
 
 function getDashboardPassword() {
   try {
@@ -82,9 +104,9 @@ function getDashboardPassword() {
   }
 }
 
-function readSponsorFiles() {
+function readSponsorFiles(set) {
   try {
-    return fs.readdirSync(SPONSORS_DIR).filter(f => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f));
+    return fs.readdirSync(path.join(SPONSORS_ROOT, set || DEFAULT_SPONSOR_SET)).filter(f => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(f));
   } catch (e) {
     return [];
   }
@@ -115,7 +137,8 @@ function readSponsorsConfig() {
 // Every other loop (Waiting Lobby, Waiting Screen TVC, Today's/Tomorrow's
 // Schedule, Draft, Credit Reel) passes neither flag and always shows everything.
 router.get('/api/sponsors', (req, res) => {
-  const files  = new Set(readSponsorFiles());
+  const set    = sponsorSet(req);
+  const files  = new Set(readSponsorFiles(set));
   const config = readSponsorsConfig();
   const hiddenIngame = req.query.ingame ? new Set(config.hiddenInIngame) : null;
   const hiddenSponsorsPage = req.query.sponsorspage ? new Set(config.hiddenInSponsorsPage) : null;
@@ -126,7 +149,7 @@ router.get('/api/sponsors', (req, res) => {
       if (!files.has(f)) return;
       if (hiddenIngame && hiddenIngame.has(f)) return;
       if (hiddenSponsorsPage && hiddenSponsorsPage.has(f)) return;
-      sponsors.push({ src: '/sponsors/' + encodeURIComponent(f), dur, category: cat.name });
+      sponsors.push({ src: '/assets/sponsor/' + set + '/' + encodeURIComponent(f), dur, category: cat.name });
     });
   });
   res.set('Cache-Control', 'no-store').json(sponsors);
@@ -136,11 +159,15 @@ router.get('/api/sponsors', (req, res) => {
 // (so the UI can show unassigned logos alongside categorized ones).
 router.get('/api/sponsors-config', (req, res) => {
   const config = readSponsorsConfig();
+  const set = sponsorSet(req);
   res.set('Cache-Control', 'no-store').json({
+    set,
+    sets: SPONSOR_SETS,
+    base: '/assets/sponsor/' + set + '/',
     categories: config.categories,
     hiddenInIngame: config.hiddenInIngame,
     hiddenInSponsorsPage: config.hiddenInSponsorsPage,
-    availableFiles: readSponsorFiles(),
+    availableFiles: readSponsorFiles(set),
   });
 });
 
@@ -165,7 +192,7 @@ router.post('/api/sponsors-config', (req, res) => {
 // Credit Reel content — plain text, edited from the dashboard's Edit tab
 // (or by hand-editing this file / pasting into the textarea) and rendered
 // by mplfs.html's crParseText(). GET to read, POST { text } to update.
-const CREDITS_TEXT_FILE = path.join(__dirname, '..', 'credits_reel.txt');
+const CREDITS_TEXT_FILE = path.join(__dirname, '..', 'data', 'credits_reel.txt');
 
 router.get('/api/credits-text', (req, res) => {
   try {
@@ -182,7 +209,7 @@ router.post('/api/credits-text', (req, res) => {
 });
 
 // Credit Reel scroll speed, in px/sec — GET to read, POST { speed } to update
-const CREDITS_SPEED_FILE = path.join(__dirname, '..', 'credits_speed.json');
+const CREDITS_SPEED_FILE = path.join(__dirname, '..', 'data', 'credits_speed.json');
 
 router.get('/api/credits-speed', (req, res) => {
   try {
@@ -204,7 +231,7 @@ router.post('/api/credits-speed', (req, res) => {
 // overlay-stolengold.js every time the banner is about to auto-show,
 // same pattern as credits-speed above. Does not affect the manual
 // show/hide toggle, which stays up until explicitly hidden.
-const STOLENGOLD_DURATION_FILE = path.join(__dirname, '..', 'stolengold_duration.json');
+const STOLENGOLD_DURATION_FILE = path.join(__dirname, '..', 'data', 'stolengold_duration.json');
 
 router.get('/api/stolengold-duration', (req, res) => {
   try {
@@ -225,7 +252,7 @@ router.post('/api/stolengold-duration', (req, res) => {
 // Control-tab box and mplfs.html's showPostHeatmap() fetch this fresh (no
 // caching), so tuning it from the dashboard affects the next time the scene
 // is shown, same pattern as credits-speed above.
-const HEATMAP_CONFIG_FILE = path.join(__dirname, '..', 'heatmap_config.json');
+const HEATMAP_CONFIG_FILE = path.join(__dirname, '..', 'data', 'heatmap_config.json');
 const HEATMAP_CONFIG_DEFAULT = { camp: null, seat: 1, from: 0, to: 600, playbackSec: 15, photoOffsetX: 0, mapBrightness: 0.25 };
 
 router.get('/api/heatmap-config', (req, res) => {
@@ -264,7 +291,7 @@ router.post('/api/heatmap-config', (req, res) => {
 // event marker. GET to read, POST to update (partial OK); every POST is broadcast as the 'heatmap_style' SSE event
 // WITH the full style as its payload, so heatmap.html applies slider drags live without re-fetching anything.
 // mapBrightness null = "follow the shared Post Heatmap Controls brightness" (heatmap_config.json).
-const HEATMAP_STYLE_FILE = path.join(__dirname, '..', 'heatmap_style.json');
+const HEATMAP_STYLE_FILE = path.join(__dirname, '..', 'data', 'heatmap_style.json');
 const HEATMAP_STYLE_DEFAULT = { photo: true, mapBrightness: null, mapContrast: 1, heat: [1, 1, 1, 1, 1, 1, 1, 1, 1], markers: { kill: 30, death: 30, assist: 30 } };
 function heatmapStyleClean(b, base) {
   const num = (v, lo, hi, d) => { const n = Number(v); return isFinite(n) && v !== null && v !== '' ? Math.max(lo, Math.min(hi, n)) : d; };
@@ -303,7 +330,7 @@ router.post('/api/heatmap-style', (req, res) => {
 // as heatmap_config above; tuning it from the dashboard's role selector
 // affects an already-showing Post H2H scene immediately via the
 // 'h2h_config' SSE broadcast below, and the next Show either way.
-const H2H_CONFIG_FILE = path.join(__dirname, '..', 'h2h_config.json');
+const H2H_CONFIG_FILE = path.join(__dirname, '..', 'data', 'h2h_config.json');
 const H2H_CONFIG_DEFAULT = { role: 'gold_laner' };
 const H2H_VALID_ROLES = ['jungler', 'gold_laner', 'exp_laner', 'mid_laner', 'roamer'];
 
@@ -330,7 +357,7 @@ router.post('/api/h2h-config', (req, res) => {
 });
 
 // Credit Reel font sizes, in px — GET to read, POST { headingSize, bodySize } to update
-const CREDITS_STYLE_FILE = path.join(__dirname, '..', 'credits_style.json');
+const CREDITS_STYLE_FILE = path.join(__dirname, '..', 'data', 'credits_style.json');
 
 router.get('/api/credits-style', (req, res) => {
   try {
@@ -353,7 +380,7 @@ router.post('/api/credits-style', (req, res) => {
 // every element on that side (portraits, items, gold) together, so the
 // whole blue/red half can be nudged in one edit instead of repositioning
 // each row by hand. GET to read, POST the full object to update.
-const ITEMCHECK_LAYOUT_FILE = path.join(__dirname, '..', 'itemcheck_layout.json');
+const ITEMCHECK_LAYOUT_FILE = path.join(__dirname, '..', 'data', 'itemcheck_layout.json');
 const ITEMCHECK_LAYOUT_DEFAULTS = { goldGap: 26, homeOffsetX: 0, homeOffsetY: 0, awayOffsetX: 0, awayOffsetY: 0 };
 
 router.get('/api/itemcheck-layout', (req, res) => {
@@ -401,7 +428,7 @@ router.post('/api/seat-arrangement', (req, res) => {
 });
 
 // Game API base URL — GET to read, POST { url } to update
-const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
+const GAME_URL_FILE = path.join(__dirname, '..', 'data', 'game_api_url.json');
 
 router.get('/api/game-url', (req, res) => {
   res.json({ url: readUrlForMode(GAME_URL_FILE, '') });
@@ -415,7 +442,7 @@ router.post('/api/game-url', (req, res) => {
 
 // Standings API base URL — GET to read, POST { url } to update. Read fresh
 // on every tick by lib/pollers.js's pollStandings(), same as GAME_URL_FILE.
-const STANDINGS_URL_FILE    = path.join(__dirname, '..', 'standings_api_url.json');
+const STANDINGS_URL_FILE    = path.join(__dirname, '..', 'data', 'standings_api_url.json');
 const STANDINGS_API_DEFAULT = 'http://10.88.120.60:5001/api/standing/';
 
 router.get('/api/standings-url', (req, res) => {
@@ -429,10 +456,10 @@ router.post('/api/standings-url', (req, res) => {
 });
 
 // Player photo manifest — returns available filenames per pose for client-side lookup
-const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
+const PHOTOS_DIR = path.join(__dirname, '..', 'assets', 'photo');
 
 // GET /api/signature-photos — player names (igns) with a SIGNATURE cutout
-// available in photos/SIGNATURE/, e.g. for the kill-event photo popup.
+// available in assets/photo/SIGNATURE/, e.g. for the kill-event photo popup.
 // Filename convention: <ign>_SIGNATURE_resized.png
 router.get('/api/signature-photos', (req, res) => {
   try {
@@ -447,7 +474,7 @@ router.get('/api/signature-photos', (req, res) => {
 
 // GET /api/team-logos — tricodes with a logo available in logos/, e.g. for
 // the dashboard's Wipe Out Random Test (see keTrigger in dashboard.html).
-const LOGOS_DIR = path.join(__dirname, '..', 'logos');
+const LOGOS_DIR = path.join(__dirname, '..', 'assets', 'team', 'logos');
 router.get('/api/team-logos', (req, res) => {
   try {
     const tricodes = fs.readdirSync(LOGOS_DIR)
@@ -476,7 +503,7 @@ router.get('/api/photo-manifest', (req, res) => {
 });
 
 // Dynamic content — GET to read, POST { ph_ticker, en_ticker, ph_headline, en_headline, match_headline, superfan_text, superfan_title } to update
-const DYNAMIC_FILE = path.join(__dirname, '..', 'dynamic_content.json');
+const DYNAMIC_FILE = path.join(__dirname, '..', 'data', 'dynamic_content.json');
 const DYNAMIC_DEFAULTS = { ph_ticker: '', en_ticker: '', ph_headline: '', en_headline: '', match_headline: '', superfan_text: '', superfan_title: '' };
 
 router.get('/api/dynamic-content', (req, res) => {
@@ -558,7 +585,7 @@ function fetchGamedataFresh(gameUrl) {
   gamedataFreshInFlight = fetch(gameUrl, { signal: controller.signal })
     .then(async (r) => {
       if (!r.ok) throw new Error(`upstream ${r.status}`);
-      return r.json();
+      return normalizeGameFeed(await r.json());   // raw M8 feed -> seat_N shape
     })
     .finally(() => {
       clearTimeout(timer);
@@ -567,8 +594,21 @@ function fetchGamedataFresh(gameUrl) {
   return gamedataFreshInFlight;
 }
 
+// Game API refresh rate (ms) — Settings -> "Game API Refresh Rate". GET { ms, min, max }, POST { ms }.
+router.get('/api/game-refresh', (req, res) => {
+  res.set('Cache-Control', 'no-store').json({ ms: getGameRefreshMs(), min: GAME_REFRESH_MIN, max: GAME_REFRESH_MAX });
+});
+router.post('/api/game-refresh', (req, res) => {
+  try { res.json({ ok: true, ms: setGameRefreshMs((req.body || {}).ms), min: GAME_REFRESH_MIN, max: GAME_REFRESH_MAX }); }
+  catch (e) { res.status(400).json({ error: e.message }); }
+});
+
 router.get('/api/gamedata-proxy', async (req, res) => {
-  if (state.lastGameData && req.query.fresh !== '1') {
+  // ?fresh=1 used to force a live upstream read. The poller now refreshes every game-refresh interval
+  // (150ms default), so a cache that recent IS fresh — serve it instead of hitting the upstream once per
+  // caller. Falls through to a live fetch only if the cache is missing or stale (poller stalled).
+  const freshEnough = state.lastGameData && state.lastGameDataAt && (Date.now() - state.lastGameDataAt) <= Math.max(1500, getGameRefreshMs() * 4);
+  if (state.lastGameData && (req.query.fresh !== '1' || freshEnough)) {
     return res.set('Cache-Control', 'no-store').json(state.lastGameData);
   }
   try {
@@ -586,7 +626,7 @@ router.get('/api/gamedata-proxy', async (req, res) => {
 // jungle-buff counts, but this one does, in camp_list[].enemy_area_get
 // (an array of per-time-window deltas — sum them for a running total, see
 // mplfs.html's fetchCmbData/fetchMiddleBoardData).
-const POST_INFO_URL_FILE    = path.join(__dirname, '..', 'post_info_api_url.json');
+const POST_INFO_URL_FILE    = path.join(__dirname, '..', 'data', 'post_info_api_url.json');
 const POST_INFO_URL_DEFAULT = 'http://10.88.120.60:5001/api/post-info/';
 
 router.get('/api/post-info-url', (req, res) => {
@@ -602,7 +642,7 @@ router.post('/api/post-info-url', (req, res) => {
 // Winrate API base URL — GET to read, POST { url } to update. Same
 // { live, web, debug } file shape as every other per-API URL; all three
 // modes start on the same endpoint. Setting only for now (no consumer yet).
-const WINRATE_URL_FILE    = path.join(__dirname, '..', 'winrate_api_url.json');
+const WINRATE_URL_FILE    = path.join(__dirname, '..', 'data', 'winrate_api_url.json');
 const WINRATE_URL_DEFAULT = 'https://mlbb.mrf5.net/api/winrate/';
 
 router.get('/api/winrate-url', (req, res) => {
@@ -618,7 +658,7 @@ router.post('/api/winrate-url', (req, res) => {
 // Most Pick API base URL (Settings → Most Pick API) — GET to read, POST { url } to update.
 // Same { live, web, debug } file shape as every other per-API URL. Feeds the Dynamic Stats tab's
 // PLAYOFFS TREND rows (most_Pick / most_Ban / most_BanPick, 10 heroes each).
-const MOSTPICK_URL_FILE    = path.join(__dirname, '..', 'mostpick_api_url.json');
+const MOSTPICK_URL_FILE    = path.join(__dirname, '..', 'data', 'mostpick_api_url.json');
 const MOSTPICK_URL_DEFAULT = 'http://10.88.120.60:5001/api/most-pick';
 
 router.get('/api/mostpick-url', (req, res) => {
@@ -665,7 +705,7 @@ router.get('/api/mostpick-proxy', async (req, res) => {
 // Three fixed PLAYOFFS TREND rows whose Data is a ticker built from the Most Pick API
 // ("HERO 12.3% • HERO 11.0% • …", slots 0-9), plus user-added custom rows (title / subtitle /
 // data text, lockable). File: { toggles: { most_pick, most_ban, most_banpick }, rows: [{ id, title, subtitle, data, locked, on }] }.
-const DSTATS_FILE = path.join(__dirname, '..', 'dynamic_stats.json');
+const DSTATS_FILE = path.join(__dirname, '..', 'data', 'dynamic_stats.json');
 const DSTATS_STATIC = [
   { id: 'most_pick',    title: 'PLAYOFFS TREND', subtitle: 'Most_Pick',    list: 'most_Pick',    rate: 'pickRate' },
   { id: 'most_ban',     title: 'PLAYOFFS TREND', subtitle: 'Most_Ban',     list: 'most_Ban',     rate: 'banRate' },
@@ -761,7 +801,7 @@ function dstatsVmixRow(r, index, total, base) {
     const h = r && r.items && r.items[k];
     o['hero' + (k + 1) + '_name']  = h ? h.name : '';
     o['hero' + (k + 1) + '_rate']  = h ? h.rate + '%' : '';
-    o['hero' + (k + 1) + '_photo'] = h ? base + '/hero/thumb/HERO_' + h.heroid + '_KOTAK.png' : '';   /* absolute URL — vMix needs one */
+    o['hero' + (k + 1) + '_photo'] = h ? base + '/assets/hero/full/thumb/HERO_' + h.heroid + '_KOTAK.png' : '';   /* absolute URL — vMix needs one */
   }
   return o;
 }
@@ -807,7 +847,7 @@ router.post('/api/dynamic-stats', (req, res) => {
 
 // Gold Info API base URL (Gold Graph Check V2) — GET to read, POST { url } to update.
 // Same { live, web, debug } file shape as every other per-API URL.
-const GOLDINFO_URL_FILE    = path.join(__dirname, '..', 'goldinfo_api_url.json');
+const GOLDINFO_URL_FILE    = path.join(__dirname, '..', 'data', 'goldinfo_api_url.json');
 const GOLDINFO_URL_DEFAULT = 'https://mlbb.mrf5.net/api/gold-info/';
 
 router.get('/api/goldinfo-url', (req, res) => {
@@ -901,7 +941,7 @@ router.get('/api/postinfo-proxy', async (req, res) => {
 });
 
 // HRM Server (heartrate ingestion) base URL — GET to read, POST { url } to update
-const HRM_URL_FILE    = path.join(__dirname, '..', 'hrm_api_url.json');
+const HRM_URL_FILE    = path.join(__dirname, '..', 'data', 'hrm_api_url.json');
 const HRM_URL_DEFAULT = 'http://<HRM-SERVER-IP>:5055';
 
 router.get('/api/hrm-url', (req, res) => {
@@ -915,7 +955,7 @@ router.post('/api/hrm-url', (req, res) => {
 });
 
 // Team Head to Head (Team Hexagon) API base URL — GET to read, POST { url } to update
-const HEXAGON_URL_FILE    = path.join(__dirname, '..', 'hexagon_api_url.json');
+const HEXAGON_URL_FILE    = path.join(__dirname, '..', 'data', 'hexagon_api_url.json');
 const HEXAGON_URL_DEFAULT = 'https://theapi.dpdns.org/api/teamh2h/';
 
 router.get('/api/hexagon-url', (req, res) => {
@@ -944,7 +984,7 @@ router.get('/api/hexagon-data', async (req, res) => {
 });
 
 // Player H2H (Gold Laner head-to-head) API base URL — GET to read, POST { url } to update
-const PLAYERH2H_URL_FILE    = path.join(__dirname, '..', 'playerh2h_api_url.json');
+const PLAYERH2H_URL_FILE    = path.join(__dirname, '..', 'data', 'playerh2h_api_url.json');
 const PLAYERH2H_URL_DEFAULT = 'https://theapi.dpdns.org/api/playerh2h/';
 
 router.get('/api/playerh2h-url', (req, res) => {
@@ -971,7 +1011,7 @@ router.get('/api/playerh2h-data', async (req, res) => {
 });
 
 // Gold vs Gold Sector (Side Gold Distri panel) API base URL — GET to read, POST { url } to update
-const GOLDDISTRI_URL_FILE    = path.join(__dirname, '..', 'golddistri_api_url.json');
+const GOLDDISTRI_URL_FILE    = path.join(__dirname, '..', 'data', 'golddistri_api_url.json');
 const GOLDDISTRI_URL_DEFAULT = 'https://theapi.dpdns.org/api/gold_vs_gold_sector';
 
 router.get('/api/golddistri-url', (req, res) => {
@@ -986,6 +1026,7 @@ router.post('/api/golddistri-url', (req, res) => {
 
 // Server-side proxy — fetches the Gold vs Gold Sector API and returns JSON, avoids browser CORS issues
 router.get('/api/golddistri-data', async (req, res) => {
+  if (feedDerived.hasRawFeed()) return res.set('Cache-Control', 'no-store').json(feedDerived.goldDistri());   // M8: built from the raw feed
   try {
     const url = readUrlForMode(GOLDDISTRI_URL_FILE, GOLDDISTRI_URL_DEFAULT).trim();
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -997,8 +1038,20 @@ router.get('/api/golddistri-data', async (req, res) => {
   }
 });
 
+// Dashboard selectors for the two derived panels above (lib/feedDerived.js). Fire-and-forget GETs so they
+// work as dashboard buttons and as copyable routes; the panels pick the change up on their next poll.
+router.get('/overlay/distri/gold-role/:role', (req, res) => {
+  try { res.set('Cache-Control', 'no-store').json({ ok: true, role: feedDerived.setDistriRole(req.params.role) }); }
+  catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
+router.get('/overlay/distri/kda/:camp/:role', (req, res) => {
+  try { res.set('Cache-Control', 'no-store').json(Object.assign({ ok: true }, feedDerived.setKdaSelection(req.params.camp, req.params.role))); }
+  catch (e) { res.status(400).json({ ok: false, error: e.message }); }
+});
+router.get('/api/distri-selection', (req, res) => res.set('Cache-Control', 'no-store').json(feedDerived.getSelection()));
+
 // Get Selection (Side KDA Distri panel) API base URL — GET to read, POST { url } to update
-const KDADISTRI_URL_FILE    = path.join(__dirname, '..', 'kdadistri_api_url.json');
+const KDADISTRI_URL_FILE    = path.join(__dirname, '..', 'data', 'kdadistri_api_url.json');
 const KDADISTRI_URL_DEFAULT = 'https://theapi.dpdns.org/api/get-selection/';
 
 router.get('/api/kdadistri-url', (req, res) => {
@@ -1013,6 +1066,7 @@ router.post('/api/kdadistri-url', (req, res) => {
 
 // Server-side proxy — fetches the Get Selection API and returns JSON, avoids browser CORS issues
 router.get('/api/kdadistri-data', async (req, res) => {
+  if (feedDerived.hasRawFeed()) return res.set('Cache-Control', 'no-store').json(feedDerived.kdaDistri());   // M8: built from the raw feed
   try {
     const url = readUrlForMode(KDADISTRI_URL_FILE, KDADISTRI_URL_DEFAULT).trim();
     const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
@@ -1025,7 +1079,7 @@ router.get('/api/kdadistri-data', async (req, res) => {
 });
 
 // MVP Highlights (game-mvp/view) API base URL — GET to read, POST { url } to update
-const HIGHLIGHTS_URL_FILE    = path.join(__dirname, '..', 'highlights_api_url.json');
+const HIGHLIGHTS_URL_FILE    = path.join(__dirname, '..', 'data', 'highlights_api_url.json');
 const HIGHLIGHTS_URL_DEFAULT = 'https://theapi.dpdns.org/api/game-mvp/view/';
 
 router.get('/api/highlights-url', (req, res) => {
@@ -1054,7 +1108,7 @@ router.get('/api/highlights-data', async (req, res) => {
 });
 
 // Draft Index (Line-Up Rate) API base URL — GET to read, POST { url } to update
-const LINEUPRATE_URL_FILE    = path.join(__dirname, '..', 'lineuprate_api_url.json');
+const LINEUPRATE_URL_FILE    = path.join(__dirname, '..', 'data', 'lineuprate_api_url.json');
 const LINEUPRATE_URL_DEFAULT = 'https://theapi.dpdns.org/api/line-up-rate/';
 
 router.get('/api/lineuprate-url', (req, res) => {
@@ -1087,7 +1141,7 @@ router.get('/api/lineuprate-data', async (req, res) => {
 // Draft (pick/ban) API base URL — GET to read, POST { url } to update.
 // Separate from /api/game-url: Draft.html polls this dedicated endpoint
 // (draft-info-only format) instead of the general game-data feed.
-const DRAFT_URL_FILE    = path.join(__dirname, '..', 'draft_api_url.json');
+const DRAFT_URL_FILE    = path.join(__dirname, '..', 'data', 'draft_api_url.json');
 const DRAFT_URL_DEFAULT = 'https://theapi.dpdns.org/sql/draft-info-only/';
 
 router.get('/api/draft-url', (req, res) => {
@@ -1103,7 +1157,7 @@ router.post('/api/draft-url', (req, res) => {
 // Draft Recap API base URL — GET to read, POST { url } to update. Draft.html's
 // Draft Recap panel (previous-draft format) polls this dedicated endpoint,
 // separate from the live draft-info-only feed above.
-const DRAFT_RECAP_URL_FILE    = path.join(__dirname, '..', 'draft_recap_api_url.json');
+const DRAFT_RECAP_URL_FILE    = path.join(__dirname, '..', 'data', 'draft_recap_api_url.json');
 const DRAFT_RECAP_URL_DEFAULT = 'https://theapi.dpdns.org/api/previous-draft/';
 
 router.get('/api/draft-recap-url', (req, res) => {
@@ -1120,7 +1174,7 @@ router.post('/api/draft-recap-url', (req, res) => {
 // FULL upstream URL (authKey + judgeId included), not a base — routes/proxy.js
 // forwards to it as-is. judgeId is tied to a specific match/judge session, so
 // this needs updating each time that changes.
-const PREDICTIONS_URL_FILE    = path.join(__dirname, '..', 'predictions_api_url.json');
+const PREDICTIONS_URL_FILE    = path.join(__dirname, '..', 'data', 'predictions_api_url.json');
 const PREDICTIONS_URL_DEFAULT = 'https://r3z8c353h3.ap-southeast-1.awsapprunner.com/api/live/predictions?authKey=18a86b9d-a35f-40d9-94ce-726779b3514a&judgeId=1370583970';
 
 router.get('/api/predictions-url', (req, res) => {

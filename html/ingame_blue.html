@@ -5,17 +5,18 @@
 <base href="/">
 <script src="html/js/cache-bust.js"></script>
 <script src="html/js/theme-apply.js"></script>
+<script src="html/js/game-refresh.js"></script>
 <title>Ingame Blue Team</title>
 <style>
 @font-face {
   font-family: 'Anton';
   font-weight: 400;
-  src: url('fonts/Anton-Regular.ttf') format('truetype');
+  src: url('assets/fonts/Anton-Regular.ttf') format('truetype');
 }
 @font-face {
   font-family: 'GeneralSans';
   font-weight: 700;
-  src: url('fonts/GeneralSans-Bold.otf') format('opentype');
+  src: url('assets/fonts/GeneralSans-Bold.otf') format('opentype');
 }
 
 html, body {
@@ -60,10 +61,10 @@ html, body {
    the 6 repeated static tags (same content:url() technique used
    elsewhere for static per-theme image swaps in this project). */
 [data-theme="10th_anniversary"] .pb-bg {
-  content: url('assets/ingame/anniversary/blue_box2.png');
+  content: url('assets/overlay/ingame/anniversary/blue_box2.png');
 }
 [data-theme="playoffs"] .pb-bg {
-  content: url('assets/ingame/playoffs/blue_box2.png');
+  content: url('assets/overlay/ingame/playoffs/blue_box2.png');
 }
 
 /* ── Hero photo — fits the green box2 slot, cropped top/bottom ── */
@@ -434,7 +435,7 @@ html, body {
 
   <!-- ── P1 ── -->
   <div class="playerbox" id="p1">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p1-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p1-hp-fill"></div>
@@ -458,29 +459,29 @@ html, body {
     <div class="pb-kdagold" id="p1-kdagold">
       <div class="pb-kda" id="p1-kill">0/0/0</div>
       <div class="pb-gold-row">
-        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <img class="pb-gold-icon" src="assets/overlay/ingame/ingameitemgold.png" alt="">
         <div class="pb-gold-text" id="p1-gold">0</div>
       </div>
     </div>
     <div class="pb-items" id="p1-items">
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
     </div>
     <div class="pb-bpm-box" id="p1-bpm-box">
       <div id="p1-bpm-heart" class="pb-bpm-heart">&#10084;</div>
       <div id="p1-bpm-num"   class="pb-bpm-num">--</div>
       <div class="pb-bpm-unit">BPM</div>
     </div>
-    <img class="pb-detected" id="p1-detected" src="assets/ingame/detectedinfinix.png" alt="">
+    <img class="pb-detected" id="p1-detected" src="assets/overlay/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P2 ── -->
   <div class="playerbox" id="p2">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p2-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p2-hp-fill"></div>
@@ -504,29 +505,29 @@ html, body {
     <div class="pb-kdagold" id="p2-kdagold">
       <div class="pb-kda" id="p2-kill">0/0/0</div>
       <div class="pb-gold-row">
-        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <img class="pb-gold-icon" src="assets/overlay/ingame/ingameitemgold.png" alt="">
         <div class="pb-gold-text" id="p2-gold">0</div>
       </div>
     </div>
     <div class="pb-items" id="p2-items">
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
     </div>
     <div class="pb-bpm-box" id="p2-bpm-box">
       <div id="p2-bpm-heart" class="pb-bpm-heart">&#10084;</div>
       <div id="p2-bpm-num"   class="pb-bpm-num">--</div>
       <div class="pb-bpm-unit">BPM</div>
     </div>
-    <img class="pb-detected" id="p2-detected" src="assets/ingame/detectedinfinix.png" alt="">
+    <img class="pb-detected" id="p2-detected" src="assets/overlay/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P3 ── -->
   <div class="playerbox" id="p3">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p3-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p3-hp-fill"></div>
@@ -550,29 +551,29 @@ html, body {
     <div class="pb-kdagold" id="p3-kdagold">
       <div class="pb-kda" id="p3-kill">0/0/0</div>
       <div class="pb-gold-row">
-        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <img class="pb-gold-icon" src="assets/overlay/ingame/ingameitemgold.png" alt="">
         <div class="pb-gold-text" id="p3-gold">0</div>
       </div>
     </div>
     <div class="pb-items" id="p3-items">
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
     </div>
     <div class="pb-bpm-box" id="p3-bpm-box">
       <div id="p3-bpm-heart" class="pb-bpm-heart">&#10084;</div>
       <div id="p3-bpm-num"   class="pb-bpm-num">--</div>
       <div class="pb-bpm-unit">BPM</div>
     </div>
-    <img class="pb-detected" id="p3-detected" src="assets/ingame/detectedinfinix.png" alt="">
+    <img class="pb-detected" id="p3-detected" src="assets/overlay/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P4 ── -->
   <div class="playerbox" id="p4">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p4-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p4-hp-fill"></div>
@@ -596,29 +597,29 @@ html, body {
     <div class="pb-kdagold" id="p4-kdagold">
       <div class="pb-kda" id="p4-kill">0/0/0</div>
       <div class="pb-gold-row">
-        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <img class="pb-gold-icon" src="assets/overlay/ingame/ingameitemgold.png" alt="">
         <div class="pb-gold-text" id="p4-gold">0</div>
       </div>
     </div>
     <div class="pb-items" id="p4-items">
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
     </div>
     <div class="pb-bpm-box" id="p4-bpm-box">
       <div id="p4-bpm-heart" class="pb-bpm-heart">&#10084;</div>
       <div id="p4-bpm-num"   class="pb-bpm-num">--</div>
       <div class="pb-bpm-unit">BPM</div>
     </div>
-    <img class="pb-detected" id="p4-detected" src="assets/ingame/detectedinfinix.png" alt="">
+    <img class="pb-detected" id="p4-detected" src="assets/overlay/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P5 ── -->
   <div class="playerbox" id="p5">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
     <div class="pb-hp-wrap">
       <div class="pb-hp-ghost" id="p5-hp-ghost"></div>
       <div class="pb-hp-fill"  id="p5-hp-fill"></div>
@@ -642,29 +643,29 @@ html, body {
     <div class="pb-kdagold" id="p5-kdagold">
       <div class="pb-kda" id="p5-kill">0/0/0</div>
       <div class="pb-gold-row">
-        <img class="pb-gold-icon" src="assets/ingame/ingameitemgold.png" alt="">
+        <img class="pb-gold-icon" src="assets/overlay/ingame/ingameitemgold.png" alt="">
         <div class="pb-gold-text" id="p5-gold">0</div>
       </div>
     </div>
     <div class="pb-items" id="p5-items">
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
-      <div class="item-slot"><img class="item-img" src="items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
+      <div class="item-slot"><img class="item-img" src="assets/game/items/99999.png" data-item-id="9999"></div>
     </div>
     <div class="pb-bpm-box" id="p5-bpm-box">
       <div id="p5-bpm-heart" class="pb-bpm-heart">&#10084;</div>
       <div id="p5-bpm-num"   class="pb-bpm-num">--</div>
       <div class="pb-bpm-unit">BPM</div>
     </div>
-    <img class="pb-detected" id="p5-detected" src="assets/ingame/detectedinfinix.png" alt="">
+    <img class="pb-detected" id="p5-detected" src="assets/overlay/ingame/detectedinfinix.png" alt="">
   </div>
 
   <!-- ── P6 empty slot ── -->
   <div class="playerbox" id="p6">
-    <img class="pb-bg" src="assets/ingame/blue_box2.png" alt="">
+    <img class="pb-bg" src="assets/overlay/ingame/blue_box2.png" alt="">
   </div>
 
 </div>
@@ -751,8 +752,8 @@ function updateItems(key, equipList) {
     const slotEl = p.itemSlots[i];
     const imgEl  = slotEl.querySelector('img');
     imgEl.dataset.itemId = newId;
-    imgEl.src = newId === '9999' ? 'items/99999.png' : `items/${newId}.png`;
-    imgEl.onerror = () => { imgEl.src = 'items/99999.png'; };
+    imgEl.src = newId === '9999' ? 'assets/game/items/99999.png' : `assets/game/items/${newId}.png`;
+    imgEl.onerror = () => { imgEl.src = 'assets/game/items/99999.png'; };
     if (newId !== '9999') {
       imgEl.classList.remove('item-pop');
       void imgEl.offsetWidth;
@@ -781,7 +782,7 @@ function applyRole(idx, elId) {
   if (!role) return;
   const el = document.getElementById(elId);
   if (!el) return;
-  el.src = `role/${encodeURIComponent(role)}.png`;
+  el.src = `assets/game/role/${encodeURIComponent(role)}.png`;
   el.onerror = () => { el.src = ''; };
 }
 
@@ -803,7 +804,7 @@ function updatePlayer(pos, seat) {
   const heroEl = document.getElementById(key + '-hero');
   if (heroEl && heroEl.dataset.hero !== String(seat.heroid)) {
     heroEl.dataset.hero = seat.heroid;
-    heroEl.src = `posthero/${seat.heroid}_POST_HERO.png`;
+    heroEl.src = `assets/hero/post/${seat.heroid}_POST_HERO.png`;
     heroEl.onerror = () => { heroEl.src = ''; };
   }
 
@@ -888,8 +889,7 @@ function init() {
 /* ── Boot ── */
 init();
 loadRoles();
-pollGame();
-setInterval(pollGame, 1000);
+if (window.GameRefresh) GameRefresh.loop(pollGame); else { pollGame(); setInterval(pollGame, 1000); }   // Game API refresh rate (Settings)
 
 /* ══════════════════════════════════════════════════
    BPM meter — heart + number per player

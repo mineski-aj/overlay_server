@@ -27,10 +27,10 @@
 (function () {
   'use strict';
 
-  var GOLD_SRC    = "/assets/Today's Schedule/playoffs/GOLD BG_612x242.webm";
+  var GOLD_SRC    = "/assets/overlay/Today's Schedule/playoffs/GOLD BG_612x242.webm";
   var STROKE_CLR  = '#b47e00';   /* dark gold — the Bracket header art's own outline colour */
   var GOLD_TINT   = '#fff0d4';   /* multiplied over the video: its lemon-yellow (~#e5d466) -> the Bracket art's warm gold (~#e9c853) */
-  var HDR_DIR     = '/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs';
+  var HDR_DIR     = '/assets/overlay/Waiting Screen TVC/playoffs/S18_Header_playoffs';
   var MASK_SCALE  = 2;           /* canvas text masks are drawn at 2x for crisp edges */
   var OUTER_GLOW  = 'drop-shadow(0 0 4px rgba(40, 26, 0, 0.32))';   /* subtle dark outer glow — lifts the gold off the white playoffs background */
   var RING_PX     = 2.5;         /* dark-gold ring width, drawn INSIDE the glyph edge like the Bracket header art */

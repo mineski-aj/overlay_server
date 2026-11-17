@@ -19,19 +19,19 @@
       font-family: 'General Sans';
       font-weight: 500;
       font-display: block;
-      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 700;
       font-display: block;
-      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
     }
     @font-face {
       font-family: 'Anton';
       font-weight: 400;
       font-display: block;
-      src: local('Anton'), local('Anton Regular'), url('fonts/Anton-Regular.ttf') format('truetype');
+      src: local('Anton'), local('Anton Regular'), url('assets/fonts/Anton-Regular.ttf') format('truetype');
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -48,7 +48,7 @@
       position: absolute;
       top: 0; left: 0;
       width: 1920px; height: 1080px;
-      background: url('assets/draft/draftbg.png') no-repeat 0 0 / 1920px 1080px;
+      background: url('assets/overlay/draft/draftbg.png') no-repeat 0 0 / 1920px 1080px;
       transform: translateY(0);
       transition: transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -59,10 +59,10 @@
        Legacy variant of its own, so JS always picks this file for that
        theme regardless of matchType. */
     [data-theme="10th_anniversary"] #scene {
-      background-image: url('assets/draft/anniversary/draftbg.png');
+      background-image: url('assets/overlay/draft/anniversary/draftbg.png');
     }
     [data-theme="playoffs"] #scene {
-      background-image: url('assets/draft/playoffs/draftbg.png');
+      background-image: url('assets/overlay/draft/playoffs/draftbg.png');
     }
     /* Hidden state slides fully below the frame; base rule above carries
        the "in" transition (slides upward to show), this carries the
@@ -205,7 +205,7 @@
     [data-theme="playoffs"] .card-tri { width: 61px; height: 31px; }
     [data-theme="playoffs"] .card-tri::before {
       left: 0; top: 0; width: 100%; height: 100%;
-      background-image: url('assets/draft/playoffs/playoffs_trianglesdraft.png');
+      background-image: url('assets/overlay/draft/playoffs/playoffs_trianglesdraft.png');
     }
     [data-theme="playoffs"] .card-tri-bottom::before { transform: scaleY(-1); }
 
@@ -245,7 +245,7 @@
     .plate {
       position: absolute;
       top: 0; left: 0; right: 0; height: 168px;
-      background: url('assets/draft/plateback.png') no-repeat center center / cover;
+      background: url('assets/overlay/draft/plateback.png') no-repeat center center / cover;
     }
     /* 10th Anniversary — separate blue-side/red-side plate art (regular
        theme uses the same plateback.png for both sides). .plates-camp-1
@@ -253,15 +253,15 @@
        buildPickPlates/showPickAnim below for the same split applied to
        hero banners and the picking*.webm animations. */
     [data-theme="10th_anniversary"] .plates-camp-1 .plate {
-      background-image: url('assets/draft/anniversary/plateback1.png');
+      background-image: url('assets/overlay/draft/anniversary/plateback1.png');
     }
     [data-theme="10th_anniversary"] .plates-camp-2 .plate {
-      background-image: url('assets/draft/anniversary/plateback2.png');
+      background-image: url('assets/overlay/draft/anniversary/plateback2.png');
     }
 
     /* Playoffs — gold plate back for both sides. */
     [data-theme="playoffs"] .plate {
-      background-image: url('assets/draft/playoffs/playoffs_draftgold.png');
+      background-image: url('assets/overlay/draft/playoffs/playoffs_draftgold.png');
     }
 
     /* Content wrapper — fills the plate width so cropping scales with it */
@@ -1000,7 +1000,7 @@
       position: absolute;
       inset: 0;
       z-index: -1;
-      background-image: url('/assets/draft/mapbacker_v2.png');
+      background-image: url('/assets/overlay/draft/mapbacker_v2.png');
       background-size: 100% 100%;
       transition: opacity .45s linear;
     }
@@ -1009,7 +1009,7 @@
        expand/collapse animation is the shared one every theme uses. Map
        icon/name/description positions are seeded in the Draft::playoffs bucket
        of overlay_styles.json (copied from 10th Anniversary — same art layout). */
-    [data-theme="playoffs"] #draft-map::before { background-image: url('/assets/draft/playoffs/mapbacker_v2.png'); }
+    [data-theme="playoffs"] #draft-map::before { background-image: url('/assets/overlay/draft/playoffs/mapbacker_v2.png'); }
     /* ── Map Detail v2 — the map bug (#draft-map, art mapbacker_v2.png
        403x62, same width as the description plate) itself expands:
        OPEN slides the whole bug up 56px (so the stack's bottom edge lands
@@ -1022,16 +1022,16 @@
       left: 758px; top: 655px;
       width: 403px; height: 125px;
       z-index: 49;
-      background-image: url('/assets/draft/mapdetail_v2.png');
+      background-image: url('/assets/overlay/draft/mapdetail_v2.png');
       background-size: 100% 100%;
       transform: translateY(56px);
       clip-path: inset(0 0 56px 0);
       transition: transform .55s cubic-bezier(.4,0,.2,1), clip-path .55s cubic-bezier(.4,0,.2,1);
       pointer-events: none;
     }
-    [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/draft/playoffs/mapdetail_v2.png'); }
+    [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/overlay/draft/playoffs/mapdetail_v2.png'); }
     #mapdetail2-plate.md2-open { transform: none; clip-path: inset(0 0 0 0); }
-    [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/draft/playoffs/mapdetail_v2.png'); }
+    [data-theme="playoffs"] #mapdetail2-plate { background-image: url('/assets/overlay/draft/playoffs/mapdetail_v2.png'); }
     #mapdetail2-desc {
       position: absolute;
       left: 165px; top: 66px;
@@ -1232,19 +1232,19 @@
     }
     #dr-blue-bg {
       left: 0px; top: 562px;
-      background-image: url('assets/draft/recapblue.png');
+      background-image: url('assets/overlay/draft/recapblue.png');
       transform: translateX(-450px);
     }
     #dr-red-bg {
       left: 1522px; top: 562px;
-      background-image: url('assets/draft/recapred.png');
+      background-image: url('assets/overlay/draft/recapred.png');
       transform: translateX(450px);
     }
     [data-theme="10th_anniversary"] #dr-blue-bg {
-      background-image: url('assets/draft/anniversary/recapblue.png');
+      background-image: url('assets/overlay/draft/anniversary/recapblue.png');
     }
     [data-theme="10th_anniversary"] #dr-red-bg {
-      background-image: url('assets/draft/anniversary/recapred.png');
+      background-image: url('assets/overlay/draft/anniversary/recapred.png');
     }
     #draftrecap-page.draftrecap-visible #dr-blue-bg,
     #draftrecap-page.draftrecap-visible #dr-red-bg {
@@ -1688,7 +1688,7 @@
   /* Star match backgrounds (Epic Rivalry, Enduring Legacy, etc. — see
      html/match-dashboard.html's MATCH_TYPES for the full label list) —
      same suffix convention as the asset filenames on disk
-     (assets/draft/draftbg_<SUFFIX>.png / assets/draft/anniversary/
+     (assets/overlay/draft/draftbg_<SUFFIX>.png / assets/overlay/draft/anniversary/
      draftbg_<SUFFIX>.png). Not every matchType has art in every theme
      (or at all yet) — resolved at runtime via Image() preload (this is a
      CSS background-image, not an <img>, so onerror isn't usable directly)
@@ -1706,7 +1706,7 @@
   };
   function starSuffixFor(matchType) {
     if (isAnniversaryTheme() && STAR_MATCH_SUFFIX_ANNIV[matchType]) return STAR_MATCH_SUFFIX_ANNIV[matchType];
-    /* Playoffs: Golden Rivalry art is hyphen-named too (assets/draft/playoffs/draftbg_GOLDEN-RIVALRY.png) */
+    /* Playoffs: Golden Rivalry art is hyphen-named too (assets/overlay/draft/playoffs/draftbg_GOLDEN-RIVALRY.png) */
     if (document.documentElement.getAttribute('data-theme') === 'playoffs' && matchType === 'golden') return STAR_MATCH_SUFFIX_ANNIV.golden;
     return STAR_MATCH_SUFFIX[matchType];
   }
@@ -1781,11 +1781,11 @@
   var NAME_TOP = 1028;
   /* role string → icon filename */
   var ROLE_MAP = {
-    'exp_laner':  'role/EXP LANER.png',
-    'jungler':    'role/JUNGLER.png',
-    'mid_laner':  'role/MID LANER.png',
-    'roamer':     'role/ROAMER.png',
-    'gold_laner': 'role/GOLD LANER.png',
+    'exp_laner':  'assets/game/role/EXP LANER.png',
+    'jungler':    'assets/game/role/JUNGLER.png',
+    'mid_laner':  'assets/game/role/MID LANER.png',
+    'roamer':     'assets/game/role/ROAMER.png',
+    'gold_laner': 'assets/game/role/GOLD LANER.png',
   };
   /* ordered list — seat index fallback when all roles missing */
   var ALL_ROLES = ['exp_laner', 'jungler', 'mid_laner', 'roamer', 'gold_laner'];
@@ -1989,8 +1989,8 @@
         /* Playoffs: no blue/red pick loop at all — the gold plate back +
            picking_bg webm replace it (src left unset so nothing loads). */
         if (!isPlayoffsDraft()) vid.src = isAnniversaryTheme()
-          ? (campid === 1 ? 'assets/draft/anniversary/motion/bluepickbg1.webm' : 'assets/draft/anniversary/motion/redpickbg1.webm')
-          : (campid === 1 ? 'assets/draft/motion/bluepickbg1.webm' : 'assets/draft/motion/redpickbg1.webm');
+          ? (campid === 1 ? 'assets/overlay/draft/anniversary/motion/bluepickbg1.webm' : 'assets/overlay/draft/anniversary/motion/redpickbg1.webm')
+          : (campid === 1 ? 'assets/overlay/draft/motion/bluepickbg1.webm' : 'assets/overlay/draft/motion/redpickbg1.webm');
         vid.loop = true; vid.muted = true;
         vid.playsInline = true; vid.preload = 'none';
         plate.appendChild(vid); /* direct child of plate so it scales with the full width */
@@ -2009,10 +2009,10 @@
            (both sides use the same white file; there's no separate
            blue/red distinction once it's white). */
         pickAnim.src = isAnniversaryTheme()
-          ? (campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
+          ? (campid === 1 ? 'assets/overlay/draft/anniversary/motion/pickingblue.webm' : 'assets/overlay/draft/anniversary/motion/pickingred.webm')
           : isPlayoffsDraft()
-            ? 'assets/draft/playoffs/motion/picking_bg_150x170.webm'
-            : (campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
+            ? 'assets/overlay/draft/playoffs/motion/picking_bg_150x170.webm'
+            : (campid === 1 ? 'assets/webm/motion/pickingblue.webm' : 'assets/webm/motion/pickingred.webm');
         pickAnim.loop = true; pickAnim.muted = true;
         pickAnim.playsInline = true; pickAnim.preload = 'none';
         plate.appendChild(pickAnim);
@@ -2053,7 +2053,7 @@
            for both the hero reveal and the photo erase come from
            heroMatteVid's baked alpha below. */
         var matteVid = document.createElement('video');
-        matteVid.src = isPlayoffsDraft() ? 'assets/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/draft/motion/s17_matte2.webm';
+        matteVid.src = isPlayoffsDraft() ? 'assets/overlay/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/overlay/draft/motion/s17_matte2.webm';
         matteVid.muted = true; matteVid.playsInline = true;
         matteVid.preload = 'none'; matteVid.style.display = 'none';
         plateContent.appendChild(matteVid);
@@ -2064,7 +2064,7 @@
            hero reveal can composite on the GPU via destination-in
            instead of getImageData/putImageData every frame. */
         var heroMatteVid = document.createElement('video');
-        heroMatteVid.src = isPlayoffsDraft() ? 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/draft/motion/s17_matte2_alpha.webm';
+        heroMatteVid.src = isPlayoffsDraft() ? 'assets/overlay/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/overlay/draft/motion/s17_matte2_alpha.webm';
         heroMatteVid.muted = true; heroMatteVid.playsInline = true;
         heroMatteVid.preload = 'none'; heroMatteVid.style.display = 'none';
         plateContent.appendChild(heroMatteVid);
@@ -2080,8 +2080,8 @@
         var bannerImg = document.createElement('img');
         bannerImg.className = 'hero-banner-img';
         bannerImg.src = isAnniversaryTheme()
-          ? (campid === 1 ? 'assets/draft/anniversary/bluehero.png' : 'assets/draft/anniversary/redhero.png')
-          : (campid === 1 ? 'assets/draft/bluehero.png' : 'assets/draft/redhero.png');
+          ? (campid === 1 ? 'assets/overlay/draft/anniversary/bluehero.png' : 'assets/overlay/draft/anniversary/redhero.png')
+          : (campid === 1 ? 'assets/overlay/draft/bluehero.png' : 'assets/overlay/draft/redhero.png');
         bannerImg.alt = '';
         banner.appendChild(bannerImg);
 
@@ -2233,7 +2233,7 @@
         if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
           banIcon = document.createElement('img');
           banIcon.className = 'ban-icon';
-          banIcon.src = 'assets/draft/playoffs/playoffs_bandrafticon.png';
+          banIcon.src = 'assets/overlay/draft/playoffs/playoffs_bandrafticon.png';
           banIcon.alt = '';
           bp.appendChild(banIcon);
         }
@@ -2318,7 +2318,7 @@
           }
           if (mapLogoImg && mapLogoImg.dataset.map !== mapVal) {
             mapLogoImg.dataset.map = mapVal;
-            mapLogoImg.src = '/maps/' + encodeURIComponent(mapVal) + '.png';
+            mapLogoImg.src = '/assets/game/maps/' + encodeURIComponent(mapVal) + '.png';
           }
         }
 
@@ -2332,10 +2332,10 @@
         var curMatch   = (s.todayMatches || [])[(s.match || 1) - 1];
         var isEnduring = curMatch && curMatch.matchType === 'enduring';
         var isPlayoffsTheme = document.documentElement.getAttribute('data-theme') === 'playoffs';
-        var draftBase  = 'assets/draft/' + (isAnniversaryTheme() ? 'anniversary/' : isPlayoffsTheme ? 'playoffs/' : '');
+        var draftBase  = 'assets/overlay/draft/' + (isAnniversaryTheme() ? 'anniversary/' : isPlayoffsTheme ? 'playoffs/' : '');
         var draftPlain = draftBase + 'draftbg.png';
         /* Playoffs has star-match variants for Epic Rivalry / Enduring Legacy
-           (assets/draft/playoffs/draftbg_<SUFFIX>.png); any other matchType
+           (assets/overlay/draft/playoffs/draftbg_<SUFFIX>.png); any other matchType
            has no file there and falls back to the plain background. */
         var starSuffix = curMatch && starSuffixFor(curMatch.matchType);
         var draftStar  = starSuffix ? draftBase + 'draftbg_' + starSuffix + '.png' : draftPlain;
@@ -2643,7 +2643,7 @@
       if (heroid !== pickSlot.prevHeroid) {
         pickSlot.prevHeroid = heroid;
         if (heroid > 0) {
-          pickSlot.vid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+          pickSlot.vid.src = 'assets/hero/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
           /* Prefetch while hidden only buffers the clip; playback
              starts in drAnimateIn so a hidden recap costs no decode. */
           if (drShouldShow) {
@@ -2815,7 +2815,7 @@
      be shown/hidden/positioned completely separately from v1 and v2.
      Architecturally identical to v2, not a new redesign:
      1) Hero art is resolved from candidates[].heroName via
-        heronames.json (id -> hero/HERO_<id>_KOTAK.png) — no numeric
+        heronames.json (id -> assets/hero/full/HERO_<id>_KOTAK.png) — no numeric
         heroid anywhere, no DP_HERO_CONVERSIONS table.
      2) "Which candidate actually got picked/banned" is read straight
         from THIS SAME /proxy/predictions response's own draftState
@@ -2833,7 +2833,7 @@
      case-insensitive per spec, punctuation/spacing must still match
      exactly, e.g. "Yi Sun-shin" vs "YI SUN-SHIN"). */
   var DP3_HERO_ID_BY_NAME = {};
-  fetch('/heronames.json', { cache: 'no-store' })
+  fetch('/data/heronames.json', { cache: 'no-store' })
     .then(function (r) { return r.json(); })
     .then(function (list) {
       (list || []).forEach(function (h) {
@@ -2842,16 +2842,16 @@
     })
     .catch(function (err) { console.error('Draft Predict v3: could not load heronames.json', err); });
 
-  /* 200x200 thumbnails of hero/HERO_<id>_KOTAK.png (those are 1000x1000,
+  /* 200x200 thumbnails of assets/hero/full/HERO_<id>_KOTAK.png (those are 1000x1000,
      ~1.3 MB each). Every use in this page displays them at <= ~90px, but
      each carousel init / ban reveal was decoding + uploading the full
      bitmap (4 MB of RGBA each) — a real main-thread/GPU hitch right when
-     the draft sequence is busiest. hero/thumb/ is generated from the
+     the draft sequence is busiest. assets/hero/full/thumb/ is generated from the
      originals; onerror falls back to the full-size file so a hero added
      without a thumb still renders. */
-  function heroThumbSrc(id) { return 'hero/thumb/HERO_' + id + '_KOTAK.png'; }
+  function heroThumbSrc(id) { return 'assets/hero/full/thumb/HERO_' + id + '_KOTAK.png'; }
   function heroThumbFallback(img, id) {
-    img.onerror = function () { img.onerror = null; img.src = 'hero/HERO_' + id + '_KOTAK.png'; };
+    img.onerror = function () { img.onerror = null; img.src = 'assets/hero/full/HERO_' + id + '_KOTAK.png'; };
   }
 
   function dp3HeroImgSrc(heroName) {
@@ -4021,7 +4021,7 @@
     dp3BlueAiBtnEl = document.createElement('video');
     dp3BlueAiBtnEl.id = 'dp3-ai-button-blue';
     dp3BlueAiBtnEl.className = 'dp3-ai-button';
-    dp3BlueAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp3BlueAiBtnEl.src = '/assets/overlay/draft/ai_button.webm';
     dp3BlueAiBtnEl.loop = true;
     dp3BlueAiBtnEl.muted = true;
     dp3BlueAiBtnEl.playsInline = true;
@@ -4031,7 +4031,7 @@
     dp3RedAiBtnEl = document.createElement('video');
     dp3RedAiBtnEl.id = 'dp3-ai-button-red';
     dp3RedAiBtnEl.className = 'dp3-ai-button';
-    dp3RedAiBtnEl.src = '/assets/draft/ai_button.webm';
+    dp3RedAiBtnEl.src = '/assets/overlay/draft/ai_button.webm';
     dp3RedAiBtnEl.loop = true;
     dp3RedAiBtnEl.muted = true;
     dp3RedAiBtnEl.playsInline = true;
@@ -4568,7 +4568,7 @@
     p.photoPhase = 'front';
 
     var img = e.photoImg;
-    img.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    img.src = 'assets/photo/FRONT/' + name + '_FRONT_resized.png';
     img.style.display = 'block';
     img.style.opacity = '0';
     img.className = 'player-photo photo-front-size';
@@ -4584,7 +4584,7 @@
       img.style.transform = 'translateX(-50%) translateY(0)';
       img.classList.add('photo-quick-out');
       p.photoTimer2 = setTimeout(function () {
-        img.src = 'photos/VICTORY/' + name + '_VICTORY_resized.png';
+        img.src = 'assets/photo/VICTORY/' + name + '_VICTORY_resized.png';
         img.className = 'player-photo';
         img.style.opacity = '0';
         void img.offsetWidth;
@@ -4785,13 +4785,13 @@
       cvs.style.display = 'none';
       e.dstatsRect.parentNode.insertBefore(cvs, e.dstatsText);
       var vid = document.createElement('video');
-      vid.src = 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm';
+      vid.src = 'assets/overlay/draft/playoffs/motion/picking_reveal_150x170_alpha.webm';
       vid.muted = true; vid.playsInline = true; vid.preload = 'auto';
       vid.style.display = 'none';
       e.dstatsRect.parentNode.appendChild(vid);
       o = e.dstatsPoOut = { cvs: cvs, ctx: cvs.getContext('2d'), vid: vid, raf: null };
     }
-    if (!dstatsPoBg) { dstatsPoBg = new Image(); dstatsPoBg.src = 'assets/draft/playoffs/playoffs_draftgold.png'; }
+    if (!dstatsPoBg) { dstatsPoBg = new Image(); dstatsPoBg.src = 'assets/overlay/draft/playoffs/playoffs_draftgold.png'; }
     var hv = e.heroVid;
     var natW = hv.videoWidth || 168, natH = hv.videoHeight || 300;
     var H = Math.round(natH * 168 / natW);
@@ -5169,7 +5169,7 @@
     if (heroid !== p.heroid) {
       if (heroid > 0) {
         /* Load and play the hero WebM */
-        e.heroVid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+        e.heroVid.src = 'assets/hero/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
         e.heroVid.currentTime = 0;
 
         if (p.heroid !== undefined) {
@@ -5587,7 +5587,7 @@
             le.img.dataset.team  = name;
             le.img.style.display = 'none';
             le.fb.style.display  = '';
-            le.img.src           = '/logos/' + name + '.png';
+            le.img.src           = '/assets/team/logos/' + name + '.png';
           }
         });
 

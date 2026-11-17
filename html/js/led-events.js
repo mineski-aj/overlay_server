@@ -35,7 +35,7 @@ const ROAMING_BOOT_CATS = {
   direhit:   new Set(['1514','3514','3524','3534','3544','3554','3564','3574']),
 };
 const CONCEAL_CAT_LABEL = { conceal:'CONCEAL', encourage:'ENCOURAGE', favor:'FAVOR', direhit:'DIRE HIT' };
-const CONCEAL_CAT_IMG   = { conceal:'assets/conceal.webp', encourage:'assets/encourage.webp', favor:'assets/favor.webp', direhit:'assets/direhit.webp' };
+const CONCEAL_CAT_IMG   = { conceal:'assets/overlay/ingame/conceal.webp', encourage:'assets/overlay/ingame/encourage.webp', favor:'assets/overlay/ingame/favor.webp', direhit:'assets/overlay/ingame/direhit.webp' };
 
 /* ── Feature toggles (dashboard Control tab → /overlay/feature/led_xxx/enable|disable) ── */
 const featureEnabled = { led_items: true, led_trinity: true, led_swap: true, led_lvl15: true, led_conceal: true, led_skypiercer: true };
@@ -406,7 +406,7 @@ function renderTfd(data) {
       if (h >= 1) cumBottom += h;
       if (e.heroid && hero.dataset.id !== String(e.heroid)) {
         hero.dataset.id = String(e.heroid);
-        hero.src = `posthero/${e.heroid}_POST_HERO.png`;
+        hero.src = `assets/hero/post/${e.heroid}_POST_HERO.png`;
       }
       hero.className = 'tfd-seg-hero' + (e.dead ? ' dead' : '');
       hero.style.opacity = h >= HERO_MIN ? '1' : '0';
@@ -458,7 +458,7 @@ async function showTeamFight() {
         if (!p?.heroid) continue;
         const { hero } = tfdSt[side].segs[s - 1];
         hero.dataset.id = String(p.heroid);
-        hero.src = `posthero/${p.heroid}_POST_HERO.png`;
+        hero.src = `assets/hero/post/${p.heroid}_POST_HERO.png`;
       }
     });
   }
@@ -482,20 +482,20 @@ registerPollHandler(function(data) { renderTfd(data); });
 // ════════════════════════════════════════════════════════
 //  FEATURE 4: DRAFT PREDICT
 // ════════════════════════════════════════════════════════
-/* Hero art: candidates[].heroName → heronames.json id → posthero/<id>_POST_HERO.png
+/* Hero art: candidates[].heroName → heronames.json id → assets/hero/post/<id>_POST_HERO.png
    (replaces the old hand-maintained hex-heroId → number table). Names are matched
    case-insensitively; punctuation/spacing must match, e.g. "Yi Sun-shin". */
 const DP_HERO_ID_BY_NAME = {};
 function dpHeroArt(name) {
   const id = DP_HERO_ID_BY_NAME[String(name || '').trim().toLowerCase()];
-  return id ? `posthero/${id}_POST_HERO.png` : null;
+  return id ? `assets/hero/post/${id}_POST_HERO.png` : null;
 }
 function dpFillArt(el) {
   const img = el.querySelector('img');
   const src = dpHeroArt(el.dataset.heroName);
   if (img && src && img.dataset.src !== src) { img.dataset.src = src; img.style.opacity = ''; img.src = src; }
 }
-fetch('/heronames.json', { cache: 'no-store' }).then(r => r.json()).then(list => {
+fetch('/data/heronames.json', { cache: 'no-store' }).then(r => r.json()).then(list => {
   (list || []).forEach(h => { if (h && h.name) DP_HERO_ID_BY_NAME[String(h.name).trim().toLowerCase()] = h.id; });
   // cards built before the names arrived get their art now
   [dpLeftC, dpRightC].forEach(c => { if (c) c.cardEls.forEach(dpFillArt); });
@@ -1088,7 +1088,7 @@ function buildPlateEvent(n) {
   const card = document.createElement('div');
   card.className = 'led-evt-card';
   card.innerHTML =
-    `<img class="led-evt-bg" src="assets/led/eventback.png" alt="">` +
+    `<img class="led-evt-bg" src="assets/overlay/led/eventback.png" alt="">` +
     `<span class="led-evt-label"></span>` +
     `<span class="led-evt-value"></span>` +
     `<div class="led-evt-time"><span class="led-evt-time-num">--:--</span><span class="led-evt-time-unit">MIN</span></div>` +
@@ -1115,10 +1115,10 @@ function buildPlateEvent(n) {
 }
 
 function setIcon(img, src, fallback) {
-  img.onerror = () => { img.onerror = null; img.src = fallback || 'items/99999.png'; };
+  img.onerror = () => { img.onerror = null; img.src = fallback || 'assets/game/items/99999.png'; };
   img.src = src;
 }
-function itemIcon(img, id) { setIcon(img, id ? `items/${id}.png` : 'items/99999.png'); }
+function itemIcon(img, id) { setIcon(img, id ? `assets/game/items/${id}.png` : 'assets/game/items/99999.png'); }
 
 function resetCard(r) {
   r.clip.classList.remove('evt-in', 'led-p2', 'led-slower');

@@ -197,7 +197,7 @@
     }
     [data-theme="10th_anniversary"] #ws-header img {
       width: 1432px; height: 397px;
-      content: url('/assets/Waiting Screen TVC/anniversary/S18_Header.png');
+      content: url('/assets/overlay/Waiting Screen TVC/anniversary/S18_Header.png');
     }
     [data-theme="10th_anniversary"] #ws-week-label {
       left: 396px; top: 202px;
@@ -249,7 +249,7 @@
     /* 10th Anniversary — mirrored from mplfs.html (see there for why this
        is content: url() instead of wsTvcAsset()). */
     [data-theme="10th_anniversary"] #ws-timer-label-bg {
-      content: url('/assets/Waiting Screen TVC/anniversary/timeback.png');
+      content: url('/assets/overlay/Waiting Screen TVC/anniversary/timeback.png');
     }
     /* "SHOW STARTS IN"/"SHOW RESUMES IN" — mirrored from mplfs.html, see
        there for details (left corrected to 1262px — see there for why). */
@@ -629,7 +629,7 @@
     [data-theme="playoffs"] #ws-superfan { display: block; }
     #ws-superfan { position: absolute; left: 628px; top: 997px; width: 899px; height: 51px; }
     #ws-superfan > img { position: absolute; left: 0; top: 0; width: 899px; height: 51px; }
-    /* Playoffs only — "SHARE YOUR FEEDBACK!" QR (assets/Waiting Screen TVC/playoffs/QR.png, 1024x1024 incl. its quiet margin) + its 3-line caption.
+    /* Playoffs only — "SHARE YOUR FEEDBACK!" QR (assets/overlay/Waiting Screen TVC/playoffs/QR.png, 1024x1024 incl. its quiet margin) + its 3-line caption.
        Independent elements so both can be moved/resized from the Edit tab (Waiting TVC · Today's Matches -> "Playoffs QR"). */
     #ws-qr, #ws-qr-text { display: none; }
     [data-theme="playoffs"] #ws-qr { display: block; position: absolute; left: 962px; top: 45px; width: 162px; height: 162px; z-index: 4; }
@@ -655,7 +655,7 @@
     [data-theme="playoffs"] #ws-header { left: 30px; top: 60px; width: 924px; height: 158px; }
     [data-theme="playoffs"] #ws-header img {
       width: 924px; height: 158px;
-      content: url('/assets/Waiting Screen TVC/playoffs/S18_Header_playoffs_notext.png'); /* title is drawn gold by po-gold-text.js */
+      content: url('/assets/overlay/Waiting Screen TVC/playoffs/S18_Header_playoffs_notext.png'); /* title is drawn gold by po-gold-text.js */
     }
     /* Chip text lives on the header art's own bar (art y 123–158): phase on
        the black part (white), DAY n on the gold part (dark). */
@@ -819,7 +819,7 @@
 
   <!-- ── BROADCAST CANVAS ── -->
   <div id="canvas">
-    <video id="bg-video" src="/assets/bgloop.webm" autoplay loop muted playsinline></video>
+    <video id="bg-video" src="/assets/webm/bgloop.webm" autoplay loop muted playsinline></video>
     <!-- Shared background for the 5 video-backed scenes below (Waiting
          Screen TVC, Waiting Lobby, Team Hexagon, Today's Schedule,
          Standings) — two stacked layers (crossfade pattern, same idea as
@@ -832,7 +832,7 @@
     <video id="scene-video-1" loop muted playsinline preload="auto"></video>
     <div id="waiting-screen-page">
       <div id="ws-header">
-        <img src="/assets/Waiting Screen TVC/S18_Header.png" alt="MPL Philippines — Season 18 Regular Season">
+        <img src="/assets/overlay/Waiting Screen TVC/S18_Header.png" alt="MPL Philippines — Season 18 Regular Season">
         <div id="ws-week-label">WEEK 8 DAY 3</div>
       </div>
       <div id="ws-matches"></div>
@@ -841,20 +841,20 @@
       <div id="ws-panel" class="ws-talent-box"></div>
       <div id="ws-sponsor"></div>
       <div id="ws-timer">
-        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/Waiting Screen TVC/timeback.png" alt=""></div>
+        <div id="ws-timer-label"><img id="ws-timer-label-bg" src="/assets/overlay/Waiting Screen TVC/timeback.png" alt=""></div>
         <div id="ws-timer-value"><span class="ws-timer-glow">30:30</span><span class="ws-timer-fill">30:30</span></div>
       </div>
       <div id="ws-timer-countdown-label" aria-label="Show starts in">SHOW<br>STARTS&nbsp;<span class="ws-cd-in">IN:</span></div>
       <!-- Playoffs-only decorations (display:none under every other theme).
            Text is real HTML; SUPERFAN ticker text is a placeholder for now. -->
       <div id="ws-superfan">
-        <img src="/assets/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
+        <img src="/assets/overlay/Waiting Screen TVC/playoffs/superfanrunner.png" alt="">
         <span class="ws-sf-label">MPL PH SUPERFAN CITY</span>
         <div class="ws-sf-window"><div class="ws-sf-track"><span>COME AND JOIN THE FUN FOR FREE</span><span>COME AND JOIN THE FUN FOR FREE</span></div></div>
       </div>
-      <img id="ws-qr" src="/assets/Waiting Screen TVC/playoffs/QR.png" alt="">
+      <img id="ws-qr" src="/assets/overlay/Waiting Screen TVC/playoffs/QR.png" alt="">
       <div id="ws-qr-text">ESPORTS SURVEY</div>
-      <img id="ws-anniv-logo" src="/assets/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
+      <img id="ws-anniv-logo" src="/assets/overlay/Waiting Lobby/anniversary/10thannivlogo.png" alt="">
     </div>
   </div>
 
@@ -975,7 +975,7 @@
     ════════════════════════════════════════════════ */
     const sceneVideoEls = [document.getElementById('scene-video-0'), document.getElementById('scene-video-1')];
     const SCENE_VIDEO_SRC = {
-      waiting: '/assets/bgloopsun2.webm',
+      waiting: '/assets/webm/bgloopsun2.webm',
     };
     // Per-theme background override, mirrored from mplfs.html's Waiting
     // TVC per the ENTVC mirroring rule (CLAUDE.md) — Waiting Lobby is NOT
@@ -983,10 +983,10 @@
     // 'lobby' entry belongs in this table.
     const SCENE_VIDEO_SRC_BY_THEME = {
       'playoffs': {
-        waiting: '/assets/z_playoffs%20background/playoffsbg_waiting.webm',
+        waiting: '/assets/webm/playoffs/playoffsbg_waiting.webm',
       },
       '10th_anniversary': {
-        waiting: '/assets/phase2_annivloopsun.webm',
+        waiting: '/assets/webm/phase2_annivloopsun.webm',
       },
     };
     function getSceneVideoSrc(feature) {
@@ -1000,9 +1000,9 @@
     // per explicit request for this file's own default (deliberately a
     // different file, annivloopwaves.webm, than mplfs.html's bg-video
     // override, annivloop.webm — not a mirroring gap).
-    const BG_VIDEO_SRC = '/assets/bgloop.webm';
+    const BG_VIDEO_SRC = '/assets/webm/bgloop.webm';
     const BG_VIDEO_SRC_BY_THEME = {
-      '10th_anniversary': '/assets/phase2_annivloopwaves.webm',
+      '10th_anniversary': '/assets/webm/phase2_annivloopwaves.webm',
     };
     function applyBgVideoTheme() {
       const theme = document.documentElement.getAttribute('data-theme') || 'regular';
@@ -1050,7 +1050,7 @@
 
     /* Today's Matches config — edit here (or feed from server later) */
     const WS_ASSET    = '/assets/Waiting Screen/';
-    const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
+    const WS_TVC_ASSET = '/assets/overlay/Waiting Screen TVC/';
     // Per-theme Waiting TVC asset overrides — mirrored from mplfs.html per
     // the ENTVC mirroring rule (CLAUDE.md). Scoped to buildWsMatches below
     // (this file's only Waiting-TVC-box-art call site) — see mplfs.html's
@@ -1199,8 +1199,8 @@
           bo,
           star:  !!m.star,
           matchType: m.matchType || (m.star ? 'clash' : 'regular'),
-          left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
-          right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
+          left:  { tri: m.team1Short || '', logo: m.team1Short ? '/assets/team/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
+          right: { tri: m.team2Short || '', logo: m.team2Short ? '/assets/team/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
           score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
         };
       });
@@ -1368,7 +1368,7 @@
 
     /* Hosts / Casters panels — alternate with Today's Matches every 6s. Each
        talent's cutout photo lives at a fixed position folder —
-       /photos/TALENTS/<Position>/<NAME>_<POSITION>.png — matching the
+       /assets/photo/TALENTS/<Position>/<NAME>_<POSITION>.png — matching the
        Left/Middle/Right crop it was made for. Hosts use Left/Right when only
        2 are configured, Left/Middle/Right once a 3rd is added; Casters
        always use Left/Middle/Right (3 slots) in the order the match board
@@ -1377,7 +1377,7 @@
     const TALENT_HOST3_POS_ORDER  = ['Left', 'Middle', 'Right'];
     const TALENT_CASTER_POS_ORDER = ['Left', 'Middle', 'Right'];
     function talentPhotoTag(name, pos, slotClass) {
-      const src = `/photos/TALENTS/${pos}/${name.toUpperCase()}_${pos.toUpperCase()}.png`;
+      const src = `/assets/photo/TALENTS/${pos}/${name.toUpperCase()}_${pos.toUpperCase()}.png`;
       const cls = slotClass ? `ws-talent-photo-slot ${slotClass}` : 'ws-talent-photo-slot';
       return `<div class="${cls}"><img class="ws-talent-photo" ` +
         `src="${src}" onerror="this.style.display='none'" alt="${name}"></div>`;

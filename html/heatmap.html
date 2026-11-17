@@ -12,19 +12,19 @@
   <style>
     @font-face {
       font-family: 'Anton'; font-weight: 400; font-display: block;
-      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+      src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype');
     }
     @font-face {
       font-family: 'General Sans'; font-weight: 400 500; font-display: block;
-      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans'; font-weight: 600; font-display: block;
-      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans'; font-weight: 700 900; font-display: block;
-      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -175,7 +175,7 @@
     .hm-player-photo { width: 100%; height: 100%; object-fit: contain; object-position: 50% 0%; display: block; transition: transform 200ms ease; }
     #hm-plaque {
       position: absolute; left: 901px; top: 744px; width: 462px; height: 174px;
-      z-index: 42; background: url('/assets/highlights/mvphlblue.png') no-repeat; background-size: 100% 100%;
+      z-index: 42; background: url('/assets/overlay/highlights/mvphlblue.png') no-repeat; background-size: 100% 100%;
     }
     /* ── Time Focus — new panel next to the plaque (flush against its
        right edge: plaque spans x901–1363, this spans x1363–1825), showing
@@ -186,7 +186,7 @@
        range, filled by hmApplyPlayerCard/hmFormatTimeRange. */
     #hm-timefocus {
       position: absolute; left: 1363px; top: 744px; width: 462px; height: 174px;
-      z-index: 41; background: url('/assets/postgame/heatmap_timeback.png') no-repeat; background-size: 100% 100%;
+      z-index: 41; background: url('/assets/overlay/postgame/heatmap_timeback.png') no-repeat; background-size: 100% 100%;
     }
     #hm-timefocus-title {
       position: absolute; left: 0; top: 0; width: 462px; height: 56px;
@@ -209,7 +209,7 @@
       position: absolute; left: 77px; top: 5px; width: 45px; height: 45px;
       display: flex; align-items: center; justify-content: center;
     }
-    .hm-role img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); } /* role/*.png icons — forced solid black */
+    .hm-role img { width: 100%; height: 100%; object-fit: contain; filter: brightness(0); } /* assets/game/role/*.png icons — forced solid black */
     .hm-name {
       position: absolute; left: 157px; top: 5px; width: 298px; height: 43px;
       display: flex; align-items: center; justify-content: center;
@@ -233,7 +233,7 @@
     #hm-stats-backer {
       position: absolute; left: 902px; top: 917px; width: 463px; height: 48px;
       z-index: 40;
-      background: url('/assets/highlights/mvphlstats.png') no-repeat;
+      background: url('/assets/overlay/highlights/mvphlstats.png') no-repeat;
       background-size: 100% 100%;
     }
     .hmst-label {
@@ -285,7 +285,7 @@
     <div id="heatmap-page">
       <div id="hm-title">PLAYER HEATMAP</div>
       <div class="hm-map-box">
-        <img class="hm-map-bg" src="/assets/consolidated_post/consomap.png" alt="">
+        <img class="hm-map-bg" src="/assets/overlay/consolidated_post/consomap.png" alt="">
         <canvas id="hm-heat-canvas"></canvas>
         <canvas id="hm-dot-canvas"></canvas>
         <div class="hm-scanlines"></div>
@@ -347,11 +347,11 @@
     }
 
     function hlHeroImg(heroid) {
-      return heroid ? '/herohighlights/' + heroid + 'heromvp.png' : '';
+      return heroid ? '/assets/hero/highlights/' + heroid + 'heromvp.png' : '';
     }
 
     function hlPhotoUrl(ign) {
-      return ign ? '/hires/SIGNATURE/' + encodeURIComponent(ign + '_SIGNATURE.png') : '';
+      return ign ? '/assets/photo/hires/SIGNATURE/' + encodeURIComponent(ign + '_SIGNATURE.png') : '';
     }
 
     function mvFormatStatValue(v) {
@@ -891,7 +891,7 @@
       const cardCamp = Number(cfg.camp) || 1;
       const cardSeat = Number(cfg.seat) || 1;
       document.getElementById('hm-plaque').style.backgroundImage =
-        `url('/assets/highlights/${cardCamp === 2 ? 'mvphlred' : 'mvphlblue'}.png')`;
+        `url('/assets/overlay/highlights/${cardCamp === 2 ? 'mvphlred' : 'mvphlblue'}.png')`;
 
       const logoEl   = document.getElementById('hm-team-logo');
       const roleEl   = document.getElementById('hm-role-icon');
@@ -918,11 +918,11 @@
         const tricode = (player.team_simple_name || '').toUpperCase();
         logoEl.onerror = () => { logoEl.style.display = 'none'; };
         logoEl.style.display = '';
-        logoEl.src = tricode ? '/logos/' + encodeURIComponent(tricode) + '.png' : '';
+        logoEl.src = tricode ? '/assets/team/logos/' + encodeURIComponent(tricode) + '.png' : '';
 
         roleEl.onerror = () => { roleEl.style.display = 'none'; };
         roleEl.style.display = '';
-        roleEl.src = player.role ? '/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
+        roleEl.src = player.role ? '/assets/game/role/' + encodeURIComponent(roleFile(player.role)) + '.png' : '';
 
         nameEl.textContent = player.name || '';
         /* Not fit here — see hlApply's identical comment: #heatmap-page is

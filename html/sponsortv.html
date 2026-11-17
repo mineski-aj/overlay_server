@@ -9,22 +9,22 @@
   <style>
     @font-face {
       font-family: 'Anton';
-      src: url('/fonts/Anton-Regular.ttf') format('truetype');
+      src: url('/assets/fonts/Anton-Regular.ttf') format('truetype');
       font-weight: 400; font-style: normal;
     }
     @font-face {
       font-family: 'General Sans';
-      src: url('/fonts/GeneralSans-Medium.otf') format('opentype');
+      src: url('/assets/fonts/GeneralSans-Medium.otf') format('opentype');
       font-weight: 500; font-style: normal;
     }
     @font-face {
       font-family: 'General Sans';
-      src: url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+      src: url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype');
       font-weight: 600; font-style: normal;
     }
     @font-face {
       font-family: 'General Sans';
-      src: url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
       font-weight: 700; font-style: normal;
     }
 
@@ -191,12 +191,12 @@
 </head>
 <body>
   <div id="scene">
-    <video id="bg-video" src="/assets/bgloopwaves.webm" autoplay loop muted playsinline></video>
+    <video id="bg-video" src="/assets/webm/bgloopwaves.webm" autoplay loop muted playsinline></video>
     <script>
       /* Playoffs background — swapped before the default loop gets a chance
          to load (theme-apply.js's synchronous read already ran). */
       if (document.documentElement.getAttribute('data-theme') === 'playoffs') {
-        document.getElementById('bg-video').src = '/assets/z_playoffs%20background/playoffsbg_theme.webm';
+        document.getElementById('bg-video').src = '/assets/webm/playoffs/playoffsbg_theme.webm';
       }
     </script>
     <div id="stv-content">
@@ -210,8 +210,8 @@
     function buildUrl(path) { return window.location.origin + path; }
 
     const WS_ASSET     = '/assets/Waiting Screen/';
-    const WS_TVC_ASSET = '/assets/Waiting Screen TVC/';
-    const TS_ASSET      = "/assets/Today's Schedule/";
+    const WS_TVC_ASSET = '/assets/overlay/Waiting Screen TVC/';
+    const TS_ASSET      = "/assets/overlay/Today's Schedule/";
     const IS_PLAYOFFS   = document.documentElement.getAttribute('data-theme') === 'playoffs';
     /* Waiting TVC match-container art per match type (same table as mplfs.html).
        Playoffs only overrides the Regular box; the star-match boxes fall back to
@@ -260,8 +260,8 @@
           bo,
           star:  !!m.star,
           matchType: m.matchType || (m.star ? 'clash' : 'regular'),
-          left:  { tri: m.team1Short || '', logo: m.team1Short ? '/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
-          right: { tri: m.team2Short || '', logo: m.team2Short ? '/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
+          left:  { tri: m.team1Short || '', logo: m.team1Short ? '/assets/team/logos/' + encodeURIComponent(m.team1Short) + '.png' : null },
+          right: { tri: m.team2Short || '', logo: m.team2Short ? '/assets/team/logos/' + encodeURIComponent(m.team2Short) + '.png' : null },
           score: (s1 === 0 && s2 === 0) ? null : { l: s1, r: s2 },
         };
       });
@@ -269,7 +269,7 @@
 
     /* Guards against rebuilding on every 3s poll tick when nothing actually
        changed — innerHTML rebuild destroys and recreates every <img>, which
-       (combined with cache-bust.js's ?v= busting + /logos/'s no-store
+       (combined with cache-bust.js's ?v= busting + /assets/team/logos/'s no-store
        Cache-Control) forces a real network re-fetch of every team logo each
        time. Invisible over localhost's near-zero latency, but a visible
        flicker once vMix on another PC is pulling those images over the LAN

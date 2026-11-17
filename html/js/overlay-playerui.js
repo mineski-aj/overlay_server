@@ -1,6 +1,6 @@
 /* ── [FEATURE: player-ui] ─────────────────────────────────────────
    Coordinates below are measured directly off
-   assets/ingame/ui/uiblue.png / uired.png (180×89 each) — see the
+   assets/overlay/ingame/ui/uiblue.png / uired.png (180×89 each) — see the
    CSS block in mploverlay_v7.css for the full measurement notes.
    5 cards per side, stacked downward with no gap. */
 const PUI_TOPS       = [348, 437, 526, 615, 704];
@@ -56,9 +56,9 @@ function puiBuildCard(i) {
   /* 10th Anniversary versions are the same 180x89 (see the coordinate
      comment at the top of this file), so no layout recalculation needed. */
   const puiIsAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-  const puiDir = puiIsAnniv ? 'assets/ingame/anniversary/ui/'
-    : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/'
-    : 'assets/ingame/ui/';
+  const puiDir = puiIsAnniv ? 'assets/overlay/ingame/anniversary/ui/'
+    : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/'
+    : 'assets/overlay/ingame/ui/';
   bg.src = puiDir + (side === 'home' ? 'uiblue.png' : 'uired.png');
   bg.alt = '';
   card.appendChild(bg);
@@ -81,7 +81,7 @@ function puiBuildCard(i) {
   goldRow.className = 'pui-gold';
   const goldIcon = document.createElement('img');
   goldIcon.className = 'pui-gold-icon';
-  goldIcon.src = side === 'home' ? 'assets/ingame/ui/uigold.png' : 'assets/ingame/ui/uigoldred.png';
+  goldIcon.src = side === 'home' ? 'assets/overlay/ingame/ui/uigold.png' : 'assets/overlay/ingame/ui/uigoldred.png';
   goldIcon.alt = '';
   const goldText = document.createElement('span');
   goldRow.appendChild(goldIcon);

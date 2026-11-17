@@ -7,7 +7,7 @@ const state   = require('../lib/state');
 
 // GET /fights-static — fights.json (for debug mode)
 router.get('/fights-static', (req, res) => {
-  const file = path.join(__dirname, '..', 'fights.json');
+  const file = path.join(__dirname, '..', 'data', 'fights.json');
   if (!fs.existsSync(file)) {
     return res.status(404).json({ error: "fights.json not found" });
   }

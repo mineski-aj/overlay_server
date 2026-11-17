@@ -21,20 +21,20 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.join(__dirname, '..');
 const JOBS = [
-  { src: 'heromvp',         dest: 'heromvp_web',         maxHeight: 1080 },
+  { src: 'assets/hero/mvp',  dest: 'assets/hero/mvp_web', maxHeight: 1080 },
   // Player pose photos (1000x1000, ~1MB each) — size kept, WebP only.
-  { src: 'hires/SIGNATURE', dest: 'hires/SIGNATURE_web', maxHeight: 1080 },
-  { src: 'hires/FRONT',     dest: 'hires/FRONT_web',     maxHeight: 1080 },
-  { src: 'hires/LEFT',      dest: 'hires/LEFT_web',      maxHeight: 1080 },
-  { src: 'hires/RIGHT',     dest: 'hires/RIGHT_web',     maxHeight: 1080 },
-  { src: 'hires/VICTORY',   dest: 'hires/VICTORY_web',   maxHeight: 1080 },
-  { src: 'hires/DEFEAT',    dest: 'hires/DEFEAT_web',    maxHeight: 1080 },
+  { src: 'assets/photo/hires/SIGNATURE', dest: 'assets/photo/hires/SIGNATURE_web', maxHeight: 1080 },
+  { src: 'assets/photo/hires/FRONT',     dest: 'assets/photo/hires/FRONT_web',     maxHeight: 1080 },
+  { src: 'assets/photo/hires/LEFT',      dest: 'assets/photo/hires/LEFT_web',      maxHeight: 1080 },
+  { src: 'assets/photo/hires/RIGHT',     dest: 'assets/photo/hires/RIGHT_web',     maxHeight: 1080 },
+  { src: 'assets/photo/hires/VICTORY',   dest: 'assets/photo/hires/VICTORY_web',   maxHeight: 1080 },
+  { src: 'assets/photo/hires/DEFEAT',    dest: 'assets/photo/hires/DEFEAT_web',    maxHeight: 1080 },
   // Hero square icons: 1000x1000 (~870KB) but shown as small icons (e.g.
   // 86x62 on Post Carry's card) — 512px is still several times sharper
   // than any slot they're used in so far. If a future scene shows these
   // bigger than ~512px, raise this and re-run (copies get regenerated
   // only when older than their source, so delete hero_web/ first).
-  { src: 'hero',            dest: 'hero_web',            maxHeight: 512 },
+  { src: 'assets/hero/full', dest: 'assets/hero/web',     maxHeight: 512 },
 ];
 const QUALITY = 90;
 

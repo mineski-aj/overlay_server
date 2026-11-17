@@ -5,13 +5,14 @@
 <base href="/">
 <script src="html/js/cache-bust.js"></script>
 <script src="html/js/theme-apply.js"></script>
+<script src="html/js/game-refresh.js"></script>
 <script src="html/js/overlay-sse-shim.js"></script>
 <title>LED Overlay</title>
 <style>
-  @font-face { font-family: 'Anton'; font-weight: 400; src: url('fonts/Anton-Regular.ttf') format('truetype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('fonts/GeneralSans-Bold.otf') format('opentype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('fonts/GeneralSans-Semibold.otf') format('opentype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('fonts/GeneralSans-Medium.otf') format('opentype'); }
+  @font-face { font-family: 'Anton'; font-weight: 400; src: url('assets/fonts/Anton-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('assets/fonts/GeneralSans-Bold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('assets/fonts/GeneralSans-Semibold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('assets/fonts/GeneralSans-Medium.otf') format('opentype'); }
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
@@ -31,7 +32,7 @@
     position: absolute;
     width: 1024px;
     height: 1024px;
-    background-image: url('assets/led/goldborder.png');
+    background-image: url('assets/overlay/led/goldborder.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     top: 0;
@@ -51,11 +52,11 @@
   }
 
   /* Left plates — P1 to P5, stacked from top-left */
-  #plate-1  { left: 12px; top: 12px;   background-image: url('assets/led/plateleft.png'); }
-  #plate-2  { left: 12px; top: 212px;  background-image: url('assets/led/plateleft.png'); }
-  #plate-3  { left: 12px; top: 412px;  background-image: url('assets/led/plateleft.png'); }
-  #plate-4  { left: 12px; top: 612px;  background-image: url('assets/led/plateleft.png'); }
-  #plate-5  { left: 12px; top: 812px;  background-image: url('assets/led/plateleft.png'); }
+  #plate-1  { left: 12px; top: 12px;   background-image: url('assets/overlay/led/plateleft.png'); }
+  #plate-2  { left: 12px; top: 212px;  background-image: url('assets/overlay/led/plateleft.png'); }
+  #plate-3  { left: 12px; top: 412px;  background-image: url('assets/overlay/led/plateleft.png'); }
+  #plate-4  { left: 12px; top: 612px;  background-image: url('assets/overlay/led/plateleft.png'); }
+  #plate-5  { left: 12px; top: 812px;  background-image: url('assets/overlay/led/plateleft.png'); }
 
   /* ── Item slots ── */
   .item-slot {
@@ -92,7 +93,7 @@
      One 502x89 card per plate (built by led-events.js) sitting over the
      item row. Wipes in from the plate's outer edge (home: left, away:
      right) like v7's .evt-clip/.evt-card, label on top, value or item
-     boxes below. Art: assets/led/eventback.png. */
+     boxes below. Art: assets/overlay/led/eventback.png. */
   .led-evt-clip {
     position: absolute; left: 241px; top: 109px;
     width: 502px; height: 89px;
@@ -203,8 +204,8 @@
 /* ── Feature 1: Team HP Bar ── */
 #feature-teamhp {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none;
 }
 .thp-track {
@@ -294,7 +295,7 @@
    of the bottom 4px so the panel's own bottom border stays. */
 .mid-panel::after {
   content: ''; display: none; position: absolute; left: 0; top: 357px; width: 100%; height: 663px;
-  background: url('assets/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
+  background: url('assets/overlay/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
   z-index: 0; pointer-events: none;
 }
 .mid-panel.led-mid-out::after, .mid-panel.led-mid-back::after { display: block; }
@@ -311,8 +312,8 @@
 /* ── Feature 2: Win Probability ── */
 #feature-winrate {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .wpr-track {
@@ -378,8 +379,8 @@
 /* ── Feature 3: Teamfight Damage ── */
 #feature-teamfight {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .tfd-col {
@@ -439,8 +440,8 @@
 @keyframes shimmer { 0%{transform:translateX(-110%)} 100%{transform:translateX(210%)} }
 #feature-draftpredict {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .dp-col {
@@ -932,7 +933,7 @@
     width: 242px;
     height: 1024px;
     top: 0;
-    background-image: url('assets/led/sidebacker.png');
+    background-image: url('assets/overlay/led/sidebacker.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     z-index: 1;
@@ -1013,11 +1014,11 @@
   }
 
   /* Right plates — P6 to P10, stacked from top-right */
-  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/led/plateright.png'); }
-  #plate-7  { right: 12px; top: 212px; background-image: url('assets/led/plateright.png'); }
-  #plate-8  { right: 12px; top: 412px; background-image: url('assets/led/plateright.png'); }
-  #plate-9  { right: 12px; top: 612px; background-image: url('assets/led/plateright.png'); }
-  #plate-10 { right: 12px; top: 812px; background-image: url('assets/led/plateright.png'); }
+  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-7  { right: 12px; top: 212px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-8  { right: 12px; top: 412px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-9  { right: 12px; top: 612px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-10 { right: 12px; top: 812px; background-image: url('assets/overlay/led/plateright.png'); }
 
   /* ── Swap mode buttons ── */
   .dbg-btn.active-home { background: #0a1a0a; color: #00e375; border-color: #008452; }
@@ -1119,13 +1120,13 @@
           fill="#161616" font-family="Anton" font-size="28" id="p1-level-text"></text>
       </svg>
     </div>
-    <div class="role-icon"><img src="role/EXP LANER.png" alt=""></div>
-    <div class="item-slot" id="p1-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p1-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p1-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p1-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p1-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p1-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/EXP LANER.png" alt=""></div>
+    <div class="item-slot" id="p1-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p1-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate" id="plate-2">
     <div class="_20900" id="p2-gold">--</div>
@@ -1143,13 +1144,13 @@
     <div class="spell-icon" id="p2-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p2-hp-wrap"><div class="hp-ghost" id="p2-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p2-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p2-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p2-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p2-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/JUNGLER.png" alt=""></div>
-    <div class="item-slot" id="p2-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p2-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p2-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p2-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p2-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p2-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/JUNGLER.png" alt=""></div>
+    <div class="item-slot" id="p2-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p2-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate" id="plate-3">
     <div class="_20900" id="p3-gold">--</div>
@@ -1167,13 +1168,13 @@
     <div class="spell-icon" id="p3-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p3-hp-wrap"><div class="hp-ghost" id="p3-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p3-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p3-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p3-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p3-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/MID LANER.png" alt=""></div>
-    <div class="item-slot" id="p3-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p3-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p3-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p3-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p3-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p3-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/MID LANER.png" alt=""></div>
+    <div class="item-slot" id="p3-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p3-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate" id="plate-4">
     <div class="_20900" id="p4-gold">--</div>
@@ -1191,13 +1192,13 @@
     <div class="spell-icon" id="p4-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p4-hp-wrap"><div class="hp-ghost" id="p4-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p4-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p4-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p4-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p4-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/ROAMER.png" alt=""></div>
-    <div class="item-slot" id="p4-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p4-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p4-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p4-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p4-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p4-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/ROAMER.png" alt=""></div>
+    <div class="item-slot" id="p4-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p4-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate" id="plate-5">
     <div class="_20900" id="p5-gold">--</div>
@@ -1215,13 +1216,13 @@
     <div class="spell-icon" id="p5-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p5-hp-wrap"><div class="hp-ghost" id="p5-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p5-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p5-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p5-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p5-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/GOLD LANER.png" alt=""></div>
-    <div class="item-slot" id="p5-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p5-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p5-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p5-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p5-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p5-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/GOLD LANER.png" alt=""></div>
+    <div class="item-slot" id="p5-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p5-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
 
   <!-- Right column: Players 6–10 -->
@@ -1241,13 +1242,13 @@
     <div class="spell-icon" id="p6-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p6-hp-wrap"><div class="hp-ghost" id="p6-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p6-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p6-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p6-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p6-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/EXP LANER.png" alt=""></div>
-    <div class="item-slot" id="p6-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p6-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p6-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p6-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p6-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p6-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/EXP LANER.png" alt=""></div>
+    <div class="item-slot" id="p6-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p6-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate camp2" id="plate-7">
     <div class="_20900" id="p7-gold">--</div>
@@ -1265,13 +1266,13 @@
     <div class="spell-icon" id="p7-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p7-hp-wrap"><div class="hp-ghost" id="p7-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p7-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p7-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p7-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p7-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/JUNGLER.png" alt=""></div>
-    <div class="item-slot" id="p7-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p7-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p7-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p7-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p7-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p7-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/JUNGLER.png" alt=""></div>
+    <div class="item-slot" id="p7-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p7-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate camp2" id="plate-8">
     <div class="_20900" id="p8-gold">--</div>
@@ -1289,13 +1290,13 @@
     <div class="spell-icon" id="p8-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p8-hp-wrap"><div class="hp-ghost" id="p8-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p8-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p8-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p8-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p8-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/MID LANER.png" alt=""></div>
-    <div class="item-slot" id="p8-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p8-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p8-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p8-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p8-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p8-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/MID LANER.png" alt=""></div>
+    <div class="item-slot" id="p8-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p8-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate camp2" id="plate-9">
     <div class="_20900" id="p9-gold">--</div>
@@ -1313,13 +1314,13 @@
     <div class="spell-icon" id="p9-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p9-hp-wrap"><div class="hp-ghost" id="p9-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p9-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p9-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p9-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p9-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/ROAMER.png" alt=""></div>
-    <div class="item-slot" id="p9-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p9-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p9-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p9-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p9-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p9-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/ROAMER.png" alt=""></div>
+    <div class="item-slot" id="p9-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p9-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
   <div class="plate camp2" id="plate-10">
     <div class="_20900" id="p10-gold">--</div>
@@ -1337,13 +1338,13 @@
     <div class="spell-icon" id="p10-spell"><img src="" alt="" onerror="this.style.display='none'"></div>
     <div class="hp-bar-wrap" id="p10-hp-wrap"><div class="hp-ghost" id="p10-hp-ghost" style="width:255px"></div><div class="hp-fill" id="p10-hp-fill" style="width:255px"></div></div>
     <div class="level-circle" id="p10-level"><svg viewBox="0 0 58 58" xmlns="http://www.w3.org/2000/svg"><circle cx="29" cy="29" r="26" fill="none" stroke="#161616" stroke-width="6"/><circle cx="29" cy="29" r="26" fill="none" stroke="#005bff" stroke-width="6" stroke-dasharray="163.36" stroke-dashoffset="163.36" class="level-arc" id="p10-level-arc" transform="rotate(-90 29 29)"/><circle cx="29" cy="29" r="21" fill="white"/><text x="29" y="29" text-anchor="middle" dominant-baseline="central" fill="#161616" font-family="Anton" font-size="28" id="p10-level-text">1</text></svg></div>
-    <div class="role-icon"><img src="role/GOLD LANER.png" alt=""></div>
-    <div class="item-slot" id="p10-item-1"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p10-item-2"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p10-item-3"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p10-item-4"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p10-item-5"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
-    <div class="item-slot" id="p10-item-6"><img data-item-id="9999" src="items/99999.png" onerror="this.src='items/99999.png'"></div>
+    <div class="role-icon"><img src="assets/game/role/GOLD LANER.png" alt=""></div>
+    <div class="item-slot" id="p10-item-1"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-2"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-3"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-4"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-5"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
+    <div class="item-slot" id="p10-item-6"><img data-item-id="9999" src="assets/game/items/99999.png" onerror="this.src='assets/game/items/99999.png'"></div>
   </div>
 
 
@@ -1605,8 +1606,8 @@
       if (newId === p.equipState[i]) return;
       const imgEl = p.itemSlots[i].querySelector('img');
       imgEl.dataset.itemId = newId;
-      imgEl.src = newId === '9999' ? 'items/99999.png' : `items/${newId}.png`;
-      imgEl.onerror = () => { imgEl.src = 'items/99999.png'; };
+      imgEl.src = newId === '9999' ? 'assets/game/items/99999.png' : `assets/game/items/${newId}.png`;
+      imgEl.onerror = () => { imgEl.src = 'assets/game/items/99999.png'; };
       if (newId !== '9999') {
         imgEl.classList.remove('item-pop');
         void imgEl.offsetWidth;
@@ -1722,11 +1723,11 @@
     updateItems(state, (player.equip_list || []).slice(0, 6));
 
     const heroImg = document.getElementById(`p${n}-hero`).querySelector('img');
-    const heroSrc = `posthero/${player.heroid}_POST_HERO.png`;
+    const heroSrc = `assets/hero/post/${player.heroid}_POST_HERO.png`;
     if (heroImg.dataset.src !== heroSrc) { heroImg.dataset.src = heroSrc; heroImg.style.display = ''; heroImg.src = heroSrc; }
 
     const spellImg = document.getElementById(`p${n}-spell`).querySelector('img');
-    const spellSrc = `assets/led/skill/${player.skillid}.png`;
+    const spellSrc = `assets/overlay/led/skill/${player.skillid}.png`;
     if (spellImg.dataset.src !== spellSrc) { spellImg.dataset.src = spellSrc; spellImg.style.display = ''; spellImg.src = spellSrc; }
 
     updateLevelCircle(
@@ -1783,7 +1784,7 @@
     return String(n);
   }
 
-  const MPL_LOGO = 'assets/mpl2026logo.png';
+  const MPL_LOGO = 'assets/common/mpl2026logo.png';
   function _updateMidPanel(side, campList, campId, fallback) {
     const camp = campList.find(c => c.campid === campId);
     if (!camp) return;
@@ -1799,7 +1800,7 @@
       if (logoEl.dataset.team !== teamName) {
         logoEl.dataset.team = teamName;
         logoEl.onerror = () => { logoEl.onerror = null; logoEl.src = MPL_LOGO; };
-        logoEl.src = `logos/${teamName}.png`;
+        logoEl.src = `assets/team/logos/${teamName}.png`;
       }
     }
 
@@ -1853,7 +1854,7 @@
         ps.itemSlots.forEach(slot => {
           const img = slot.querySelector('img');
           img.dataset.itemId = '9999';
-          img.src = 'items/99999.png';
+          img.src = 'assets/game/items/99999.png';
         });
       }
     }
@@ -1882,8 +1883,7 @@
     dbgStatus(ref ? `ok — level=${ref.level} hp=${ref.cur_health_point}/${ref.max_health_point}` : 'seat_1 not found');
   }
 
-  pollSubInfo();
-  setInterval(pollSubInfo, POLL_MS);
+  if (window.GameRefresh) GameRefresh.loop(pollSubInfo); else { pollSubInfo(); setInterval(pollSubInfo, POLL_MS); }   // Game API refresh rate (Settings)
 
   /* ── Debug ── */
   function debugHP(reduction) {

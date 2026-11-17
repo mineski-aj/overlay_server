@@ -1,6 +1,6 @@
 /* ── [FEATURE: item-check] ──────────────────────────────────────
    Coordinates below are measured directly off
-   assets/ingame/ingameitemback2.png (887×282) — see the CSS block
+   assets/overlay/ingame/ingameitemback2.png (887×282) — see the CSS block
    in mploverlay_v7.css for the full measurement notes. */
 const IC_ROW_TOPS       = [8, 64, 120, 176, 232];
 const IC_GOLD_TOP_FIRST = 25;   /* first row's gold top; rest follow gap-based pitch */
@@ -75,7 +75,7 @@ function icBuildRow(i) {
     item.style.left = g.itemXs[s] + 'px';
     item.style.top  = g.top + 'px';
     item.alt = '';
-    item.onerror = () => { item.onerror = null; item.src = 'items/99999.png'; };
+    item.onerror = () => { item.onerror = null; item.src = 'assets/game/items/99999.png'; };
     items.push(item);
   }
 
@@ -128,7 +128,7 @@ function icBuildPanel() {
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   const isPlayoffs = document.documentElement.getAttribute('data-theme') === 'playoffs';
-  const icAssetDir = isAnniv ? '/assets/ingame/anniversary/' : isPlayoffs ? '/assets/ingame/playoffs/' : '/assets/ingame/';
+  const icAssetDir = isAnniv ? '/assets/overlay/ingame/anniversary/' : isPlayoffs ? '/assets/overlay/ingame/playoffs/' : '/assets/overlay/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'ic-bg';
@@ -176,7 +176,7 @@ function icUpdate(data) {
 
     for (let s = 0; s < 6; s++) {
       const id = r.equipIds[s] || '99999';
-      ref.items[s].src = `items/${id}.png`;
+      ref.items[s].src = `assets/game/items/${id}.png`;
     }
   }
 }

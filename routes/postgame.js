@@ -7,7 +7,7 @@ const { buildLeagueStats } = require('../lib/feeds');
 
 // GET /postgame — last completed game stats from file
 router.get('/postgame', (req, res) => {
-  const file = path.join(__dirname, '..', 'postgame.json');
+  const file = path.join(__dirname, '..', 'data', 'postgame.json');
   if (!fs.existsSync(file)) {
     return res.status(404).json({ error: "No postgame data yet" });
   }

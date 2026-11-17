@@ -191,7 +191,7 @@
 
   /* ── LOAD ── */
   function loadRoster() {
-    return fetch('/mainroster.json', { cache: 'no-store' })
+    return fetch('/data/mainroster.json', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (data) {
         roster = data;
@@ -235,7 +235,7 @@
   document.getElementById('save-btn').addEventListener('click', save);
 
   /* ── HELPERS ── */
-  function logoUrl(tag) { return '/logos/' + encodeURIComponent((tag || '').toUpperCase()) + '.png'; }
+  function logoUrl(tag) { return '/assets/team/logos/' + encodeURIComponent((tag || '').toUpperCase()) + '.png'; }
   function teamPlayers(teamId) {
     return Object.keys(roster.players)
       .filter(function (pid) { return String(roster.players[pid].teamId) === String(teamId); })

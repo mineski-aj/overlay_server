@@ -1,6 +1,6 @@
 /* ── [FEATURE: goldgraph-check] ─────────────────────────────────────
    Same fixed-clip / sliding-inner pattern as item-check. Background is
-   assets/ingame/graphbarback.png (887×282 — see the CSS block in
+   assets/overlay/ingame/graphbarback.png (887×282 — see the CSS block in
    mploverlay_v7.css for the exact layout). Inside it,
    .ggc-rect (the pasted .Rectangle_1 spec: 15,15, 857×253) is the white
    plotting canvas an SVG gold-difference chart draws into — same
@@ -47,9 +47,9 @@ const GGC_LABEL_MARGIN = 22; /* keeps a .ggc-diff-label's text-anchor=middle box
 const GGC_BLUE = '#5096d7', GGC_RED = '#f41100'; /* line/area chart + axis/diff labels */
 const GGC_ICON_BLUE = '#143ffc', GGC_ICON_RED = '#ee2626'; /* event icons/X marks on the line — deliberately a different, more saturated pair than the line chart's own colors */
 const GGC_ICONS = {
-  lord:   '/assets/consolidated_post/consolord.png',
-  turtle: '/assets/consolidated_post/consoturtle.png',
-  tower:  '/assets/consolidated_post/consotower.png',
+  lord:   '/assets/overlay/consolidated_post/consolord.png',
+  turtle: '/assets/overlay/consolidated_post/consoturtle.png',
+  tower:  '/assets/overlay/consolidated_post/consotower.png',
 };
 const GGC_EVENT_TYPES = ['lord', 'turtle', 'tower', 'kill']; /* same event scope as Consolidated Post's graph — assist/death are excluded there too */
 const GGC_LINE_POINTS = 160; /* fixed sample count for the plotted line/area — see ggcResample below for why this needs to be constant */
@@ -181,7 +181,7 @@ function ggcBuildPanel() {
 
   const bg = document.createElement('img');
   bg.className = 'ggc-bg';
-  bg.src = '/assets/ingame/graphbarback.png';
+  bg.src = '/assets/overlay/ingame/graphbarback.png';
   bg.alt = '';
   overlay.appendChild(bg);
 
@@ -195,11 +195,11 @@ function ggcBuildPanel() {
      own #scoreboard-tricode-c1/c2 and #sb-logo-c1/c2. */
   const headerBg = document.createElement('img');
   headerBg.className = 'ggc-header-bg';
-  /* Playoffs: same art with the white title trapezoid recoloured to the playoffs gold (assets/ingame/playoffs/graph_header.png). */
+  /* Playoffs: same art with the white title trapezoid recoloured to the playoffs gold (assets/overlay/ingame/playoffs/graph_header.png). */
   { const th = document.documentElement.getAttribute('data-theme');
-    headerBg.src = th === '10th_anniversary' ? '/assets/ingame/anniversary/graph_header.png'
-                 : th === 'playoffs'         ? '/assets/ingame/playoffs/graph_header.png'
-                 :                             '/assets/ingame/graph_header.png'; }
+    headerBg.src = th === '10th_anniversary' ? '/assets/overlay/ingame/anniversary/graph_header.png'
+                 : th === 'playoffs'         ? '/assets/overlay/ingame/playoffs/graph_header.png'
+                 :                             '/assets/overlay/ingame/graph_header.png'; }
   headerBg.alt = '';
   overlay.appendChild(headerBg);
 
@@ -368,7 +368,7 @@ registerPollHandler(function(data) {
     if (img && name && img.dataset.team !== name) {
       img.dataset.team  = name;
       img.style.display = 'none';
-      img.src = '/logos/' + name + '.png';
+      img.src = '/assets/team/logos/' + name + '.png';
     }
   });
 });

@@ -1,6 +1,6 @@
 /* ── [FEATURE: emblem-check] ──────────────────────────────────────
    Coordinates below are measured directly off
-   assets/ingame/emblemback.png (1920×286) — see the CSS block in
+   assets/overlay/ingame/emblemback.png (1920×286) — see the CSS block in
    mploverlay_v7.css for the full measurement notes.
 
    Slot 1-5 role resolution (seat_N isn't reliably lane-ordered) is
@@ -84,7 +84,7 @@ function eccBuildPanel() {
   if (!overlay) return;
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
-  const eccAssetDir = isAnniv ? 'assets/ingame/anniversary/' : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/' : 'assets/ingame/';
+  const eccAssetDir = isAnniv ? 'assets/overlay/ingame/anniversary/' : document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/' : 'assets/overlay/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'ecc-bg';
@@ -106,7 +106,7 @@ function eccBuildPanel() {
 eccBuildPanel();
 
 function eccRuneUrl(id) {
-  return id ? `emblem/square_${id}_RUNES.png` : null;
+  return id ? `assets/game/emblem/square_${id}_RUNES.png` : null;
 }
 
 function eccUpdate(data) {
@@ -118,7 +118,7 @@ function eccUpdate(data) {
     const ref     = eccRefs[i];
     if (!seat || !ref) continue;
 
-    if (seat.heroid) ref.portrait.src = `posthero/${seat.heroid}_POST_HERO.png`;
+    if (seat.heroid) ref.portrait.src = `assets/hero/post/${seat.heroid}_POST_HERO.png`;
     else              ref.portrait.removeAttribute('src');
 
     ref.nameInner.textContent = (seat.name || '').toUpperCase();

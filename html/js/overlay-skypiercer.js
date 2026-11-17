@@ -1,6 +1,6 @@
 /* ── [FEATURE: skypiercer] Sky Piercer stacks "eventer" ──
    Same shell as Item Pickup (overlay-items.js): label SKY PIERCER, the
-   Sky Piercer icon (Items/2014.png), and "<N> STACKS" where the time sits.
+   Sky Piercer icon (assets/game/items/2014.png), and "<N> STACKS" where the time sits.
    Fires per player whenever the stack value changes (shown 3s; each further change updates the number and adds 1s). The stack
    count comes from the game feed: player.extra_param.sky_piercer_stack.stack
    (falls back to player.sky_piercer_stack.stack). */
@@ -30,7 +30,7 @@ function buildSkyPiercerOverlay(i) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/overlay/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');
@@ -54,7 +54,7 @@ function buildSkyPiercerOverlay(i) {
   const itemIcon = document.createElement('img');
   itemIcon.className = 'evt-item-icon';
   itemIcon.alt = '';
-  itemIcon.src = `Items/${SKYPIERCER_ITEM_ID}.png`;
+  itemIcon.src = `assets/game/items/${SKYPIERCER_ITEM_ID}.png`;
   const sheen = document.createElement('div');
   sheen.className = 'evt-sheen';
   itemBox.appendChild(itemIcon);

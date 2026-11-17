@@ -104,7 +104,7 @@ const isPlayingConceal = { left: false, right: false };
     ids.add(t3id);
     recipes.forEach(id => ids.add(id));
   });
-  ids.forEach(id => { const img = new Image(); img.src = `Items/${id}.png`; });
+  ids.forEach(id => { const img = new Image(); img.src = `assets/game/items/${id}.png`; });
 })();
 
 var heroImagesPreloaded = false;
@@ -129,7 +129,9 @@ function normalizeId(val) {
   if (s === '9999') return '99999';
   return s;
 }
-var currentApiUrl = localStorage.getItem('overlayApiUrl') || DEFAULT_URL;
+/* M8 V2: always read the game feed through the server (/api/gamedata-proxy) — it holds the poller's cached copy AND converts the
+   raw battle feed to the seat_N shape every feature below reads (lib/rawAdapter.js). Never the upstream URL directly. */
+var currentApiUrl = '/api/gamedata-proxy';
 function getApiUrl() { return currentApiUrl; }
 // masterPoll() below guards against overlapping ticks with isFetching, but
 // that guard only resets in fetchData()'s own finally block — plain
@@ -266,11 +268,11 @@ function playNextQueued(i) {
 
 
 const ROLE_ICONS = {
-  1: `role/${encodeURIComponent('EXP LANER')}.png`,
-  2: `role/${encodeURIComponent('JUNGLER')}.png`,
-  3: `role/${encodeURIComponent('MID LANER')}.png`,
-  4: `role/${encodeURIComponent('ROAMER')}.png`,
-  5: `role/${encodeURIComponent('GOLD LANER')}.png`,
+  1: `assets/game/role/${encodeURIComponent('EXP LANER')}.png`,
+  2: `assets/game/role/${encodeURIComponent('JUNGLER')}.png`,
+  3: `assets/game/role/${encodeURIComponent('MID LANER')}.png`,
+  4: `assets/game/role/${encodeURIComponent('ROAMER')}.png`,
+  5: `assets/game/role/${encodeURIComponent('GOLD LANER')}.png`,
 };
 
 /* ── Feature toggles (SSE-controlled from dashboard) ── */

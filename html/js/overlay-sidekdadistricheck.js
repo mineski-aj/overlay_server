@@ -22,20 +22,20 @@ function skdcCampClass(camp) {
   return camp === 1 ? 'skdc-camp-blue' : 'skdc-camp-red';
 }
 
-/* /photos/SIGNATURE/<name>_SIGNATURE_resized.png — same convention as
+/* /assets/photo/SIGNATURE/<name>_SIGNATURE_resized.png — same convention as
    overlay-killevents.js's killEventPhotoSrc, for the featured player. */
 function skdcSignaturePhotoSrc(name) {
   if (!name) return '';
-  return `/photos/SIGNATURE/${encodeURIComponent(name)}_SIGNATURE_resized.png`;
+  return `/assets/photo/SIGNATURE/${encodeURIComponent(name)}_SIGNATURE_resized.png`;
 }
-/* /photos/FRONT/<name>_FRONT_resized.png for the 5 stat-bar photos —
+/* /assets/photo/FRONT/<name>_FRONT_resized.png for the 5 stat-bar photos —
    always FRONT regardless of that row's own camp (unlike
    sidegolddistricheck's LEFT/RIGHT-per-side sgdcPhotoSrc; this box is
    always in the same physical position within its row, not tied to
    team side). */
 function skdcSidePhotoSrc(name) {
   if (!name) return '';
-  return `/photos/FRONT/${encodeURIComponent(name + '_FRONT_resized.png')}`;
+  return `/assets/photo/FRONT/${encodeURIComponent(name + '_FRONT_resized.png')}`;
 }
 function skdcHeroSrc(heroid) {
   return heroid ? heroWebUrl(heroid) : '';
@@ -43,7 +43,7 @@ function skdcHeroSrc(heroid) {
 /* "Exp Laner" / "Gold Laner" / etc already match role/EXP LANER.png
    etc's naming exactly once uppercased — no lookup table needed. */
 function skdcRoleIconSrc(role) {
-  return role ? `role/${encodeURIComponent(role.toUpperCase())}.png` : '';
+  return role ? `assets/game/role/${encodeURIComponent(role.toUpperCase())}.png` : '';
 }
 
 /* Cross-references the live game-state poll (overlay-core.js's global
@@ -73,7 +73,7 @@ function skdcBuildPanel() {
 
   const bg = document.createElement('img');
   bg.className = 'sidecheck-bg';
-  bg.src = sidecheckThemedBg('assets/ingame/sidestatback.png');
+  bg.src = sidecheckThemedBg('assets/overlay/ingame/sidestatback.png');
   bg.alt = '';
   overlay.appendChild(bg);
 

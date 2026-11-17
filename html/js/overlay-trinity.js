@@ -16,7 +16,7 @@ function buildTrinityOverlay(i) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/overlay/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');
@@ -106,7 +106,7 @@ function triggerTrinity(i, t3ItemIds, label, core) {
   labelEl.textContent = label || 'CORE ITEMS ACHIEVED';
   labelEl.classList.toggle('big', isMarksman);
   items.forEach(({ itemIcon }, idx) => {
-    itemIcon.src = t3ItemIds[idx] ? `Items/${t3ItemIds[idx]}.png` : '';
+    itemIcon.src = t3ItemIds[idx] ? `assets/game/items/${t3ItemIds[idx]}.png` : '';
   });
   resetTrinity(i);
   clip.style.display = 'block';

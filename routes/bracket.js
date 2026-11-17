@@ -21,17 +21,17 @@ const state   = require('../lib/state');
 //   resolved — what the overlay draws: { [matchId]: { a, b, sa, sb } } with
 //              a/b already resolved to tricodes ('' = TBD) so the overlay
 //              never re-implements the winner/loser-of-match logic.
-const DATA_FILE = path.join(__dirname, '..', 'bracket_data.json');
+const DATA_FILE = path.join(__dirname, '..', 'data', 'bracket_data.json');
 function readData() {
   try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')); }
   catch (e) { return { m: {}, resolved: {} }; }
 }
 function dashboardPassword() {
-  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'config.json'), 'utf8')).dashboard_password || ''; }
+  try { return JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'config.json'), 'utf8')).dashboard_password || ''; }
   catch (e) { return ''; }
 }
 
-const CONFIG_FILE = path.join(__dirname, '..', 'bracket_config.json');
+const CONFIG_FILE = path.join(__dirname, '..', 'data', 'bracket_config.json');
 const DEFAULT_POSE = { rx: 0, ry: 0, rz: 0, scale: 1, x: 0, y: 0, persp: 1500 };
 const DEFAULT_CONFIG = { base: DEFAULT_POSE, keyframes: [], duration: 1200 };
 

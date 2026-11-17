@@ -471,6 +471,7 @@
       margin-bottom: 16px;
       flex-shrink: 0;
     }
+    .settings-section.api-hidden-m8 { display: none; }   /* M8 V2: only the battledata (Game) URL + HRM are used — other API fields hidden, code/routes untouched */
     .settings-section-hdr {
       padding: 12px 16px;
       border-bottom: 1px solid #1e1e2c;
@@ -1153,7 +1154,7 @@
   </div>
 
   <div class="settings-section">
-    <div class="settings-section-hdr">Game API</div>
+    <div class="settings-section-hdr">Battledata API (Game)</div>
     <div class="settings-section-body">
       <div class="settings-row">
         <label for="game-api-input">Base URL</label>
@@ -1161,10 +1162,20 @@
         <button id="game-api-apply" class="settings-btn">Apply</button>
         <span id="game-api-status" class="settings-status"></span>
       </div>
+      <div class="settings-row">
+        <label for="game-refresh-input">Refresh rate (ms)</label>
+        <input type="number" id="game-refresh-input" class="settings-input" min="50" max="5000" step="10" value="150" style="max-width:110px" />
+        <button id="game-refresh-apply" class="settings-btn">Apply</button>
+        <span id="game-refresh-status" class="settings-status"></span>
+      </div>
+      <div class="settings-row">
+        <label></label>
+        <span class="settings-status">How often the server polls the battledata API (default 150). Every live overlay page polls the server at this same rate — open pages pick up a change within ~10s. Allowed 50–5000.</span>
+      </div>
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Team Head to Head API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1176,7 +1187,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Player H2H API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1188,7 +1199,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Gold Distribution API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1200,7 +1211,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">KDA Distribution API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1212,7 +1223,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">MVP Highlights API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1224,7 +1235,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Standings API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1248,7 +1259,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Draft (Pick/Ban) API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1260,7 +1271,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Draft Recap API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1272,7 +1283,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Draft Index (Line-Up Rate) API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1284,7 +1295,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Draft Predict API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1299,7 +1310,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Post-Info API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1311,7 +1322,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Gold Info API (Gold Graph Check V2)</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1323,7 +1334,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Winrate API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1335,7 +1346,7 @@
     </div>
   </div>
 
-  <div class="settings-section">
+  <div class="settings-section api-hidden-m8">
     <div class="settings-section-hdr">Most Pick API</div>
     <div class="settings-section-body">
       <div class="settings-row">
@@ -1783,6 +1794,32 @@
 
   gameApiApply.addEventListener('click', saveGameApiUrl);
   gameApiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGameApiUrl(); });
+
+  /* ── Game API refresh rate (ms) ───────────────────────────── */
+  var grInput  = document.getElementById('game-refresh-input');
+  var grApply  = document.getElementById('game-refresh-apply');
+  var grStatus = document.getElementById('game-refresh-status');
+  fetch('/api/game-refresh', { cache: 'no-store' }).then(function(r){ return r.json(); }).then(function(d){
+    grInput.value = d.ms; if (d.min) grInput.min = d.min; if (d.max) grInput.max = d.max;
+  }).catch(function(){});
+  function saveGameRefresh() {
+    fetch('/api/game-refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ms: Number(grInput.value) })
+    }).then(function(r){ return r.json().then(function(d){ return { ok: r.ok, d: d }; }); }).then(function(x){
+      if (!x.ok) throw new Error(x.d && x.d.error || 'Error');
+      grInput.value = x.d.ms;                       // server clamps to its min/max
+      grStatus.textContent = 'Saved ✓ (' + x.d.ms + ' ms)';
+      grStatus.style.color = '#44cc88';
+      setTimeout(function(){ grStatus.textContent = ''; }, 2500);
+    }).catch(function(e){
+      grStatus.textContent = e.message || 'Error';
+      grStatus.style.color = '#ff4455';
+    });
+  }
+  grApply.addEventListener('click', saveGameRefresh);
+  grInput.addEventListener('keydown', function(e){ if (e.key === 'Enter') saveGameRefresh(); });
 
   /* ── Team Head to Head (Team Hexagon) API URL ─────────────── */
   var hexApiInput  = document.getElementById('hexagon-api-input');
@@ -3074,7 +3111,7 @@
     },
     {
       id: 'mploverlay7',
-      name: 'MPL Player Overlay v7',
+      name: 'Ingame',
       file: 'mploverlay_v7.html',
       previewDebugTester: true,
       killEventTrigger: true,
@@ -3084,6 +3121,22 @@
         { label: 'Recap Hide', action: '/overlay/fights/hide' },
         { label: 'Hide Bottom Overlays', action: '/overlay/bottomoverlays/hide' },
         { label: 'Hide Side Overlays',   action: '/overlay/sideoverlays/hide'   },
+        /* M8 V2: which lane Side Gold Distri shows, and which player Side KDA Distri features (no external API picks them now) */
+        { label: 'Gold Distri: EXP', action: '/overlay/distri/gold-role/exp' },
+        { label: 'Gold Distri: JUNGLE', action: '/overlay/distri/gold-role/jungler' },
+        { label: 'Gold Distri: MID', action: '/overlay/distri/gold-role/mid' },
+        { label: 'Gold Distri: ROAM', action: '/overlay/distri/gold-role/roam' },
+        { label: 'Gold Distri: GOLD', action: '/overlay/distri/gold-role/gold' },
+        { label: 'KDA Distri: Blue EXP', action: '/overlay/distri/kda/1/exp' },
+        { label: 'KDA Distri: Blue JUNGLE', action: '/overlay/distri/kda/1/jungler' },
+        { label: 'KDA Distri: Blue MID', action: '/overlay/distri/kda/1/mid' },
+        { label: 'KDA Distri: Blue ROAM', action: '/overlay/distri/kda/1/roam' },
+        { label: 'KDA Distri: Blue GOLD', action: '/overlay/distri/kda/1/gold' },
+        { label: 'KDA Distri: Red EXP', action: '/overlay/distri/kda/2/exp' },
+        { label: 'KDA Distri: Red JUNGLE', action: '/overlay/distri/kda/2/jungler' },
+        { label: 'KDA Distri: Red MID', action: '/overlay/distri/kda/2/mid' },
+        { label: 'KDA Distri: Red ROAM', action: '/overlay/distri/kda/2/roam' },
+        { label: 'KDA Distri: Red GOLD', action: '/overlay/distri/kda/2/gold' },
       ],
       checkToggles: [
         { name: 'Scoreboard',        key: 'scoreboard'       },
@@ -3204,11 +3257,21 @@
       ],
     },
     {
+      id: 'postgame',
+      name: 'Postgame',
+      file: 'postgame.html',
+      /* Always-on standalone page (background loop only) — no show/hide, nothing to control. */
+    },
+    {
       id: 'bpm-status',
       name: 'BPM Status',
       url: '/bpm/status',
     },
   ];
+
+  /* M8 V2: the Control sidebar only lists these overlays. Every other OVERLAYS entry is kept (its
+     wiring/state lookups still work) but is not shown — add an id here to bring it back. */
+  var CONTROL_VISIBLE = { mploverlay7: true, postgame: true };
 
   /* ── DOM helpers ──────────────────────────────────────────── */
   var _copyTipTimer = null;
@@ -5223,7 +5286,7 @@
       body.appendChild(keRow);
 
       /* Player photo source for the kill-event popup — 'Random Test' pulls a
-         random name from photos/SIGNATURE/ on each trigger; 'Live API' is the
+         random name from assets/photo/SIGNATURE/ on each trigger; 'Live API' is the
          hook point for wiring the real acting player once gamedata supplies one
          (currently a no-op: triggers without a playerName, so no photo shows).
          Doesn't apply to Wipe Out — that event has no acting player at all;
@@ -5408,6 +5471,7 @@
   }
 
   OVERLAYS.forEach(function (ov) {
+    if (!CONTROL_VISIBLE[ov.id]) return;
     var item  = el('div', 'ov-item');
     var dot   = el('div', 'ov-dot unknown');
     var name  = el('span', 'ov-name', ov.name);
@@ -5433,6 +5497,7 @@
     });
 
     OVERLAYS.forEach(function (ov) {
+      if (!dots[ov.id]) return;   // hidden from the Control sidebar (CONTROL_VISIBLE)
       var checkUrl = ov.url || (ov.file ? fileUrl(ov.file) : null);
       if (!checkUrl) { dots[ov.id].className = 'ov-dot unknown'; return; }
       fetch(checkUrl, { method: 'HEAD', cache: 'no-store' })
@@ -6503,12 +6568,12 @@
   ];
 
   /* ── Post H2H (mplfs.html) element defaults ───────────────────────
-     Positions follow assets/PostH2H/PostH2HGuide.png (a reasonable first
+     Positions follow assets/overlay/PostH2H/PostH2HGuide.png (a reasonable first
      pass, not pixel-perfect — nudge via this Edit tab). Player-card
      halves mirror MVP Highlights' #hl-plaque structure with '-home'/
      '-away' suffixed ids since both cards exist simultaneously. */
   var P2H_DEFAULTS = {
-    /* Redone against the real assets/PostH2H/*.png files — see the
+    /* Redone against the real assets/overlay/PostH2H/*.png files — see the
        matching comment above the .p2h-header CSS rule in mplfs.html
        for how these were measured (pixel-sampled off the guide image
        and the box assets, not eyeballed). Still inside the 1920x945
@@ -6565,7 +6630,7 @@
   ];
 
   /* ── MVP Scene (mplfs.html) element defaults ─────────────────────
-     Positions follow assets/mvp/mvpfsguide.png; the plaque row (team
+     Positions follow assets/overlay/mvp/mvpfsguide.png; the plaque row (team
      logo / role icon / name / KDA / GPM / KP%) sits on top of
      mvpfsblue.png/mvpfsred.png. */
   /* Bracket cells — mirrors BR_CELLS in mplfs.html (cell art 377x70; logo/name/score

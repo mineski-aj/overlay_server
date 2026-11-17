@@ -101,7 +101,7 @@
   const SPICE_SCALE = [1, 1.1, 1.2];
   const SPICY_SHAKE = 2.5; // rumble was tuned for the small meter box; the spicy art is much bigger
   const fireEl = document.getElementById('bpmmeter-fire');
-  ['spicy','spicetext'].forEach(n => [1,2,3].forEach(t => { new Image().src = `/assets/noisemeter/${n}${t}.png`; }));
+  ['spicy','spicetext'].forEach(n => [1,2,3].forEach(t => { new Image().src = `/assets/overlay/noisemeter/${n}${t}.png`; }));
   /* Heat-diffusion fire sim. Per-tier source heat + cooling set the flame
      height/brightness. 30fps cap; stops itself when hidden or tier is off. */
   const FW = 128, FH = 48;
@@ -168,8 +168,8 @@
     if (t === spiceTier) return;
     spiceTier = t;
     if (!t) { spicyEl.classList.remove('on'); spiceTextEl.classList.remove('on'); return; }
-    spicyEl.src = `/assets/noisemeter/spicy${t}.png`;
-    spiceTextEl.src = `/assets/noisemeter/spicetext${t}.png`;
+    spicyEl.src = `/assets/overlay/noisemeter/spicy${t}.png`;
+    spiceTextEl.src = `/assets/overlay/noisemeter/spicetext${t}.png`;
     // Individual `scale` property (not `transform`) so the tier pop and the shake don't fight.
     // Big, obvious pop: snap up to 1.35x fast, then settle to the tier size with an overshoot.
     spicePop(spicyPop, SPICE_SCALE[t-1]);

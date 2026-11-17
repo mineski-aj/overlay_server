@@ -9,7 +9,7 @@
 const sgcPanel = createSideCheck({
   clipId:     'sidegold-check-clip',
   overlayId:  'sidegold-check-overlay',
-  bgSrc:      'assets/ingame/sidestatbackgold.png',
+  bgSrc:      'assets/overlay/ingame/sidestatbackgold.png',
   statField:  'gold',
   formatStat: seat => sidecheckFormatK(seat && seat.gold),
 });

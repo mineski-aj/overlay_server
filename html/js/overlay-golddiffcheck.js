@@ -1,6 +1,6 @@
 /* ── [FEATURE: golddiff-check] ────────────────────────────────────
    Coordinates below are measured directly off
-   assets/ingame/golddiffback.png (858×286) and golddiffguide.png —
+   assets/overlay/ingame/golddiffback.png (858×286) and golddiffguide.png —
    see the CSS block in mploverlay_v7.css for the full measurement
    notes. 5 rows (one per lane), using the shared getPlayerByRole()
    from overlay-core.js to resolve lane → seat (seat_N isn't reliably
@@ -73,7 +73,7 @@ function gdcBuildRow(lane) {
   homeText.className = 'gdc-bar-text gdc-text-home';
   const homeIcon = document.createElement('img');
   homeIcon.className = 'gdc-gold-icon';
-  homeIcon.src = 'assets/ingame/golddifficon.png';
+  homeIcon.src = 'assets/overlay/ingame/golddifficon.png';
   homeIcon.alt = '';
   const homeAmount = document.createElement('span');
   homeAmount.textContent = gdcFormatGoldK(0);
@@ -108,7 +108,7 @@ function gdcBuildRow(lane) {
   awayText.className = 'gdc-bar-text gdc-text-away';
   const awayIcon = document.createElement('img');
   awayIcon.className = 'gdc-gold-icon';
-  awayIcon.src = 'assets/ingame/golddifficon.png';
+  awayIcon.src = 'assets/overlay/ingame/golddifficon.png';
   awayIcon.alt = '';
   const awayAmount = document.createElement('span');
   awayAmount.textContent = gdcFormatGoldK(0);
@@ -140,7 +140,7 @@ function gdcBuildPanel() {
 
   const isAnniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';
   const isPlayoffs = document.documentElement.getAttribute('data-theme') === 'playoffs';
-  const gdcAssetDir = isAnniv ? 'assets/ingame/anniversary/' : isPlayoffs ? 'assets/ingame/playoffs/' : 'assets/ingame/';
+  const gdcAssetDir = isAnniv ? 'assets/overlay/ingame/anniversary/' : isPlayoffs ? 'assets/overlay/ingame/playoffs/' : 'assets/overlay/ingame/';
 
   const bg = document.createElement('img');
   bg.className = 'gdc-bg';

@@ -258,8 +258,8 @@
   });
 
   /* ── RENDER ── */
-  function logoUrl(short) { return '/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
-  function mapUrl(name)   { return '/maps/' + encodeURIComponent(name) + '.png'; }
+  function logoUrl(short) { return '/assets/team/logos/' + encodeURIComponent((short || '').toUpperCase()) + '.png'; }
+  function mapUrl(name)   { return '/assets/game/maps/' + encodeURIComponent(name) + '.png'; }
 
   function render() {
     if (!state) return;

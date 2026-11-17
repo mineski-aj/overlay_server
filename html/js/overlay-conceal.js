@@ -22,7 +22,7 @@ function buildConcealOverlay(side) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/overlay/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');
@@ -70,7 +70,7 @@ const ROAMING_BOOT_CATS = {
   direhit:   new Set(['1514','3514','3524','3534','3544','3554','3564','3574']),
 };
 const CONCEAL_CAT_LABEL = { conceal: 'CONCEAL', encourage: 'ENCOURAGE', favor: 'FAVOR', direhit: 'DIRE HIT' };
-const CONCEAL_CAT_IMG   = { conceal: 'assets/conceal.webp', encourage: 'assets/encourage.webp', favor: 'assets/favor.webp', direhit: 'assets/direhit.webp' };
+const CONCEAL_CAT_IMG   = { conceal: 'assets/overlay/ingame/conceal.webp', encourage: 'assets/overlay/ingame/encourage.webp', favor: 'assets/overlay/ingame/favor.webp', direhit: 'assets/overlay/ingame/direhit.webp' };
 
 function detectRoamingBootCat(itemId) {
   for (const [cat, ids] of Object.entries(ROAMING_BOOT_CATS)) {

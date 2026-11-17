@@ -14,25 +14,25 @@
       font-family: 'General Sans';
       font-weight: 600;
       font-display: block;
-      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype');
+      src: local('GeneralSans-Semibold'), local('GeneralSans-SemiBold'), local('General Sans Semibold'), url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 700;
       font-display: block;
-      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype');
+      src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype');
     }
     @font-face {
       font-family: 'General Sans';
       font-weight: 500;
       font-display: block;
-      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype');
+      src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype');
     }
     @font-face {
       font-family: 'Anton';
       font-weight: 400;
       font-display: block;
-      src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype');
+      src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype');
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -94,7 +94,7 @@
 <body>
 <div id="canvas">
   <div id="hdp-root">
-    <img id="hdp-plate" src="/assets/Dynamic L3s/Headline Ticker.png" alt="">
+    <img id="hdp-plate" src="/assets/overlay/Dynamic L3s/Headline Ticker.png" alt="">
     <div id="hdp-headline"><span class="hdp-h-text"></span></div>
     <div id="hdp-ticker"><div class="hdp-label"></div><div class="hdp-items"></div></div>
     <div id="hdp-spon-cat" class="hdp-spon-fade"></div>
@@ -107,7 +107,7 @@
    checkOverlays key + SSE event 'headlineticker' (routes/overlay.js). Revealed left -> right with a clip-path wipe.
    • Headline (white container, Anton)  = Dynamic tab → Match Headline (/api/dynamic-content `match_headline`), shrunk to fit.
    • Ticker (gold container, General Sans) = Dynamic Stats rows toggled ON (/api/dynamic-stats):  TITLE · SUB TITLE · DATA.
-     Hero rows (Most Pick / Most Ban / Most Contested) show the hero photo (hero/thumb) + name + rate. The data is a continuous belt:
+     Hero rows (Most Pick / Most Ban / Most Contested) show the hero photo (assets/hero/full/thumb) + name + rate. The data is a continuous belt:
      items stream right -> left at BELT_SPEED, fade out under a CSS mask before the divider line, and loop forever. With 2+ rows ON the
      ticker switches to the next row every ROW_MS (10 s, a real timer) with a down-fade; a row toggled ON takes over straight away
      the same way, and a row toggled OFF is dropped. */
@@ -221,7 +221,7 @@
     if (d.kind === 'hero') {
       var img = document.createElement('img'); img.className = 'hdp-ph'; img.alt = '';
       img.onerror = function () { img.style.visibility = 'hidden'; };
-      img.src = '/hero/thumb/HERO_' + d.h.heroid + '_KOTAK.png';
+      img.src = '/assets/hero/full/thumb/HERO_' + d.h.heroid + '_KOTAK.png';
       var nm = document.createElement('span'); nm.className = 'hdp-nm'; nm.textContent = d.h.name;
       var rt = document.createElement('span'); rt.className = 'hdp-rt'; rt.textContent = d.h.rate + '%';
       it.appendChild(img); it.appendChild(nm); it.appendChild(rt);

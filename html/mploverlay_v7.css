@@ -1,7 +1,7 @@
-@font-face { font-family: 'General Sans'; font-weight: 500; font-display: block; src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype'); }
-@font-face { font-family: 'General Sans'; font-weight: 700; font-display: block; src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype'); }
-@font-face { font-family: 'General Sans'; font-weight: 600; font-display: block; src: local('GeneralSans-Semibold'), local('General Sans Semibold'), url('/fonts/GeneralSans-Semibold.otf') format('opentype'); }
-@font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'General Sans'; font-weight: 500; font-display: block; src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype'); }
+@font-face { font-family: 'General Sans'; font-weight: 700; font-display: block; src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype'); }
+@font-face { font-family: 'General Sans'; font-weight: 600; font-display: block; src: local('GeneralSans-Semibold'), local('General Sans Semibold'), url('/assets/fonts/GeneralSans-Semibold.otf') format('opentype'); }
+@font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype'); }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: transparent; overflow: hidden; }
@@ -1158,12 +1158,12 @@
     width: 294px;
     height: 69px;
     z-index: 267;
-    background-image: url('/assets/ingame/mapbacker.png');
+    background-image: url('/assets/overlay/ingame/mapbacker.png');
     background-size: 100% 100%;
     pointer-events: none;
   }
   /* Playoffs: gold logo square + white name bar (same 294x69 as the Regular art). */
-  [data-theme="playoffs"] #sb-map { background-image: url('/assets/ingame/playoffs/mapbacker.png'); }
+  [data-theme="playoffs"] #sb-map { background-image: url('/assets/overlay/ingame/playoffs/mapbacker.png'); }
   #sb-map-logo {
     position: absolute;
     left: 9px;
@@ -1399,7 +1399,7 @@
     animation: kill-photo-bounce 400ms ease-out;
   }
   /* Name tag — Rectangle_2: 552,1012 217×39, background is
-     assets/ingame/kill{blue,red}back.png (native 217×39, one per camp).
+     assets/overlay/ingame/kill{blue,red}back.png (native 217×39, one per camp).
      Role icon (Rectangle_4: 561,1016 31×31) and name (Rectangle_3:
      613,1016 151×30) are both given in the same coordinate frame as the
      plate itself, so relative to the plate's own top-left they sit at
@@ -1442,7 +1442,7 @@
     left: 9px; top: 4px;
     width: 31px; height: 31px;
     object-fit: contain;
-    filter: brightness(0); /* role/*.png icons are taupe by default — force solid black */
+    filter: brightness(0); /* assets/game/role/*.png icons are taupe by default — force solid black */
   }
   /* Fixed box (position/size never changes) — centers whatever the inner
      span ends up sized to. overflow:hidden is a hard safety net so a name
@@ -1564,11 +1564,11 @@
   }
 
   /* ── [FEATURE: item-check] ──────────────────────────────────────
-     Panel is a 1:1 render of assets/ingame/ingameitemback2.png
+     Panel is a 1:1 render of assets/overlay/ingame/ingameitemback2.png
      (887×282) — all child coordinates below are measured relative to
      that background image's own top-left. There's no separate middle
      "button" panel anymore — instead a banner
-     (assets/ingame/ingameitemlabel.png, 409×43) rides above the panel
+     (assets/overlay/ingame/ingameitemlabel.png, 409×43) rides above the panel
      sharing the same slide, same fixed-clip / sliding-inner pattern as
      golddiff-check's .gdc-smart chip (1px overlap with the panel top).
      Row tops (top:8, pitch 56 = 40px row + 16px gap): 8, 64, 120, 176, 232.
@@ -1768,7 +1768,7 @@
 
   /* ── [FEATURE: emblem-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check, but the
-     background (assets/ingame/emblemback.png) is a single full-width
+     background (assets/overlay/ingame/emblemback.png) is a single full-width
      (1920×286) image — coordinates below are measured directly off
      that asset (see emblemguide.png).
      5 cards per side, portrait width 150px, step 160.5px between
@@ -1828,7 +1828,7 @@
     position: absolute;
     width: 17px; height: 26px;
     object-fit: contain;
-    filter: brightness(0); /* role/*.png icons are taupe by default — force solid black */
+    filter: brightness(0); /* assets/game/role/*.png icons are taupe by default — force solid black */
   }
   .ecc-name {
     position: absolute;
@@ -1858,7 +1858,7 @@
 
   /* ── [FEATURE: golddiff-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check. Coordinates
-     measured directly off assets/ingame/golddiffback.png (858×286) and
+     measured directly off assets/overlay/ingame/golddiffback.png (858×286) and
      golddiffguide.png (for the golddiffsmart chip's position, which
      sits just above the panel, sharing the same slide so it moves in
      with everything else). Clip is 858×346 (61px chip + 286px panel,
@@ -2028,14 +2028,14 @@
 
   /* ── [FEATURE: goldgraph-check] ──────────────────────────────────────
      Same fixed-clip / sliding-inner pattern as item-check. Background is
-     assets/ingame/graphbarback.png (887×282, confirmed via `sips` — the
+     assets/overlay/ingame/graphbarback.png (887×282, confirmed via `sips` — the
      887 width matches item-check's own panel width exactly, as guessed).
      .ggc-rect is the white plotting canvas (the pasted .Rectangle_1
      spec: 857×253 at 15,15 — 14px bottom margin, 15px on the other three
      sides) the gold-diff chart draws into — same real intentional white
      backing as mplfs.html's #cpg-board, not placeholder design-tool
      noise.
-     60px header reserved above it (assets/ingame/graph_header.png, same
+     60px header reserved above it (assets/overlay/ingame/graph_header.png, same
      887px width) — same shape as Gold Diff Check's own #golddiff-check-
      overlay/.gdc-bg (346px tall overlay, .gdc-bg itself only 286px
      starting at top:60px): ONE clip/overlay slides in together as a
@@ -2363,7 +2363,7 @@
      taken, and future ones) — same fixed-clip / sliding-inner pattern
      as item-check, except the slide is horizontal (translateX from
      the right) instead of vertical. Coordinates measured directly off
-     assets/ingame/sidestatback.png (277×573) and sidestatguide.png.
+     assets/overlay/ingame/sidestatback.png (277×573) and sidestatguide.png.
      Header band: y0-48, title in Anton, centered.
      10 rows, ranked as ONE list across all 10 players by whichever
      stat that panel tracks (not per-team) — home rows stay blue, away
@@ -2542,12 +2542,12 @@
     position: absolute;
     left: 8px; top: 54px;
     width: 259px; height: 167px;
-    background-image: url('/assets/ingame/sidedistriback.png');
+    background-image: url('/assets/overlay/ingame/sidedistriback.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
   }
   [data-theme="10th_anniversary"] .sgdc-distriback {
-    background-image: url('/assets/ingame/anniversary/sidedistriback.png');
+    background-image: url('/assets/overlay/ingame/anniversary/sidedistriback.png');
   }
   /* Photo crop windows — Rectangle_2/Rectangle_2_copy, 128x128, flush
      against the distriback's top-left / top-right (3px gap between,
@@ -2620,7 +2620,7 @@
     position: absolute;
     left: 110px; top: 90px;
     width: 40px; height: 40px;
-    background-image: url('/assets/ingame/distrirole.png');
+    background-image: url('/assets/overlay/ingame/distrirole.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     display: flex;
@@ -2774,7 +2774,7 @@
     position: absolute;
     left: 138px; top: 78px;
     width: 40px; height: 40px;
-    background-image: url('/assets/ingame/distrirole.png');
+    background-image: url('/assets/overlay/ingame/distrirole.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     display: flex;
@@ -2822,8 +2822,8 @@
     background-size: 100% 100%;
     background-repeat: no-repeat;
   }
-  .skdc-nameplate.skdc-camp-blue { background-image: url('/assets/ingame/sidedistriblue.png'); }
-  .skdc-nameplate.skdc-camp-red  { background-image: url('/assets/ingame/sidedistrired.png');  }
+  .skdc-nameplate.skdc-camp-blue { background-image: url('/assets/overlay/ingame/sidedistriblue.png'); }
+  .skdc-nameplate.skdc-camp-red  { background-image: url('/assets/overlay/ingame/sidedistrired.png');  }
   .skdc-nameplate-name {
     position: absolute;
     left: 0; top: 0;
@@ -2865,8 +2865,8 @@
     background-size: 100% 100%;
     background-repeat: no-repeat;
   }
-  .skdc-stat-row.skdc-camp-blue { background-image: url('/assets/ingame/distristatblue.png'); }
-  .skdc-stat-row.skdc-camp-red  { background-image: url('/assets/ingame/distristatred.png');  }
+  .skdc-stat-row.skdc-camp-blue { background-image: url('/assets/overlay/ingame/distristatblue.png'); }
+  .skdc-stat-row.skdc-camp-red  { background-image: url('/assets/overlay/ingame/distristatred.png');  }
   .skdc-stat-photobox {
     position: absolute;
     left: 0; top: 0;
@@ -2945,7 +2945,7 @@
   .skdc-stat-kda-value .skdc-death-nonzero { color: #fe2626; }
 
   /* ── [FEATURE: player-ui] ──────────────────────────────────────
-     Per-player card, 1:1 render of assets/ingame/ui/uiblue.png /
+     Per-player card, 1:1 render of assets/overlay/ingame/ui/uiblue.png /
      uired.png (180×89 each) — coordinates measured directly off
      those assets (see uiguide.png). 5 cards per side, stacked
      downward with no gap (card height 89px). Away side is the same
@@ -3120,7 +3120,7 @@
     position: absolute;
     left: 658px; top: 81px;
     width: 602px; height: 78px;
-    background-image: url('/assets/ingame/ingame_stolenpng.png');
+    background-image: url('/assets/overlay/ingame/ingame_stolenpng.png');
     background-size: 602px 78px;
     transform: translateY(-100%);
     transition: transform 500ms cubic-bezier(.22, 1, .36, 1);
@@ -3292,8 +3292,8 @@
   .lordadv-icon {
     position: absolute; left: 20px; top: 17px; width: 30px; height: 30px;
     background: var(--lordadv-gold);
-    -webkit-mask: url('/assets/postgame/lord.png') center / contain no-repeat;
-            mask: url('/assets/postgame/lord.png') center / contain no-repeat;
+    -webkit-mask: url('/assets/overlay/postgame/lord.png') center / contain no-repeat;
+            mask: url('/assets/overlay/postgame/lord.png') center / contain no-repeat;
   }
   .lordadv-title {
     position: absolute; left: 58px; top: 3px; height: 58px; display: flex; align-items: center;

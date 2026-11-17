@@ -2,9 +2,9 @@
 <base href="/">
 <script src="html/js/cache-bust.js"></script>
 <style>
-@font-face { font-family: 'General Sans'; font-weight: 500; font-display: block; src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/fonts/GeneralSans-Medium.otf') format('opentype'); }
-@font-face { font-family: 'General Sans'; font-weight: 700; font-display: block; src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/fonts/GeneralSans-Bold.otf') format('opentype'); }
-@font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: local('Anton'), local('Anton Regular'), url('/fonts/Anton-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'General Sans'; font-weight: 500; font-display: block; src: local('GeneralSans-Medium'), local('General Sans Medium'), url('/assets/fonts/GeneralSans-Medium.otf') format('opentype'); }
+@font-face { font-family: 'General Sans'; font-weight: 700; font-display: block; src: local('GeneralSans-Bold'), local('General Sans Bold'), url('/assets/fonts/GeneralSans-Bold.otf') format('opentype'); }
+@font-face { font-family: 'Anton'; font-weight: 400; font-display: block; src: local('Anton'), local('Anton Regular'), url('/assets/fonts/Anton-Regular.ttf') format('truetype'); }
 </style>
 
 <style>
@@ -72,8 +72,8 @@
 
   /* ── Item pickup v2 ── */
   .item-overlay { width: 370px; }
-  .item-overlay-left  { background: url('assets/blueitem.png') center/cover no-repeat; }
-  .item-overlay-right { background: url('assets/reditem.png')  center/cover no-repeat; }
+  .item-overlay-left  { background: url('assets/overlay/ingame/legacy/blueitem.png') center/cover no-repeat; }
+  .item-overlay-right { background: url('assets/overlay/ingame/legacy/reditem.png')  center/cover no-repeat; }
   /* right-side: hero on right, work area on left */
   .item-overlay-right .item-hero-img  { left: auto; right: 2px; }
   .item-overlay-right .item-work-area { left: 0; }
@@ -292,11 +292,11 @@
   /* ── [FEATURE: conceal-overlay] ── */
   #conceal-overlay {
     width: 282px;
-    background: url('assets/backblue.png') center/cover no-repeat;
+    background: url('assets/overlay/ingame/legacy/backblue.png') center/cover no-repeat;
   }
   #conceal-overlay-r {
     width: 282px;
-    background: url('assets/backred.png') center/cover no-repeat;
+    background: url('assets/overlay/ingame/legacy/backred.png') center/cover no-repeat;
   }
   #conceal-overlay-r .conceal-hero-section { left: auto; right: 0; }
   #conceal-overlay-r .conceal-text-section { left: 0; }
@@ -336,8 +336,8 @@
     opacity: 0; transform: translateY(20px)
   }
   /* ── [REDESIGN: lvl15 v2] all players ── */
-  .overlay-container.left.lvl15-v2  { background: url('assets/blue15.png') center/cover no-repeat; }
-  .overlay-container.right.lvl15-v2 { background: url('assets/red15.png')  center/cover no-repeat; }
+  .overlay-container.left.lvl15-v2  { background: url('assets/overlay/ingame/legacy/blue15.png') center/cover no-repeat; }
+  .overlay-container.right.lvl15-v2 { background: url('assets/overlay/ingame/legacy/red15.png')  center/cover no-repeat; }
   .lvl15-v2 .lvl15-hero {
     position: absolute; left: 2px; top: 2px;
     width: 86px; height: 86px;
@@ -715,7 +715,7 @@ const concealRefs = {};
     ids.add(t3id);
     recipes.forEach(id => ids.add(id));
   });
-  ids.forEach(id => { const img = new Image(); img.src = `Items/${id}.png`; });
+  ids.forEach(id => { const img = new Image(); img.src = `assets/game/items/${id}.png`; });
 })();
 
 let heroImagesPreloaded = false;
@@ -726,7 +726,7 @@ function preloadHeroImages(data) {
     const r = getPlayer(data, i);
     if (r?.player?.heroid) {
       const img = new Image();
-      img.src = `hero/HERO_${r.player.heroid}_KOTAK.png`;
+      img.src = `assets/hero/full/HERO_${r.player.heroid}_KOTAK.png`;
     }
   }
 }
@@ -924,7 +924,7 @@ function triggerLvl15(i, timeStr, heroId) {
   outerGuard = setTimeout(cleanup, 5000);
 
   c.style.display    = 'block';
-  hero.src           = heroId ? `hero/HERO_${heroId}_KOTAK.png` : '';
+  hero.src           = heroId ? `assets/hero/full/HERO_${heroId}_KOTAK.png` : '';
   timeVal.textContent = timeStr || '--:--';
   resetLvl15(i);
   c.style.transform  = '';
@@ -1140,8 +1140,8 @@ function triggerTrinity(i, heroId, t3ItemIds, playerName, seatNum, label) {
 
   c.style.display    = 'block';
   c.style.willChange = 'transform';
-  hero.src = heroId ? `hero/HERO_${heroId}_KOTAK.png` : '';
-  items.forEach((el, idx) => { el.src = t3ItemIds[idx] ? `Items/${t3ItemIds[idx]}.png` : ''; });
+  hero.src = heroId ? `assets/hero/full/HERO_${heroId}_KOTAK.png` : '';
+  items.forEach((el, idx) => { el.src = t3ItemIds[idx] ? `assets/game/items/${t3ItemIds[idx]}.png` : ''; });
   prFirst.textContent = label || trinityLabel(seatNum, t3ItemIds);
   resetTrinity(i);
 
@@ -1237,11 +1237,11 @@ function triggerItem(i, heroId, recipeIds, newItemId, playerName, seatNum) {
 
   c.style.display    = 'block';
   c.style.willChange = 'transform';
-  hero.src     = heroId ? `hero/HERO_${heroId}_KOTAK.png` : '';
+  hero.src     = heroId ? `assets/hero/full/HERO_${heroId}_KOTAK.png` : '';
   roleIcon.src = ROLE_ICONS[seatNum] || '';
   nameEl.textContent = (playerName || '').toUpperCase();
   fitPlayerName(nameEl);
-  t3.src = `Items/${newItemId}.png`;
+  t3.src = `assets/game/items/${newItemId}.png`;
   resetItem(i);
 
   const n       = recipeIds.length;
@@ -1254,7 +1254,7 @@ function triggerItem(i, heroId, recipeIds, newItemId, playerName, seatNum) {
   const recipeEls = recipeIds.map((id, idx) => {
     const img = document.createElement('img');
     img.className = 'recipe-item';
-    img.src = `Items/${id}.png`; img.alt = id;
+    img.src = `assets/game/items/${id}.png`; img.alt = id;
     const itemLeft = startX + idx * (ITEM_SZ + gap);
     img.style.left = `${itemLeft}px`;
     work.insertBefore(img, flash);
@@ -1458,9 +1458,9 @@ function triggerSwap(i, heroId, soldId, boughtId, playerName, seatNum) {
   c.style.willChange = 'transform';
   items.forEach(el => { el.style.willChange = 'transform, opacity'; });
   swapIcon.style.willChange = 'transform, opacity, filter';
-  hero.src           = heroId   ? `hero/HERO_${heroId}_KOTAK.png` : '';
-  oldItem.src        = soldId   ? `Items/${soldId}.png`           : '';
-  newItem.src        = boughtId ? `Items/${boughtId}.png`         : '';
+  hero.src           = heroId   ? `assets/hero/full/HERO_${heroId}_KOTAK.png` : '';
+  oldItem.src        = soldId   ? `assets/game/items/${soldId}.png`           : '';
+  newItem.src        = boughtId ? `assets/game/items/${boughtId}.png`         : '';
   roleIcon.src       = ROLE_ICONS[seatNum] || '';
   nameEl.textContent = (playerName || '').toUpperCase();
   fitPlayerName(nameEl);
@@ -1581,11 +1581,11 @@ const DEBUG_RECIPE = ['2301','2002','2101'];
 
 /* seat 1-5 → role icon filename (spaces encoded) */
 const ROLE_ICONS = {
-  1: `role/${encodeURIComponent('EXP LANER')}.png`,
-  2: `role/${encodeURIComponent('JUNGLER')}.png`,
-  3: `role/${encodeURIComponent('MID LANER')}.png`,
-  4: `role/${encodeURIComponent('ROAMER')}.png`,
-  5: `role/${encodeURIComponent('GOLD LANER')}.png`,
+  1: `assets/game/role/${encodeURIComponent('EXP LANER')}.png`,
+  2: `assets/game/role/${encodeURIComponent('JUNGLER')}.png`,
+  3: `assets/game/role/${encodeURIComponent('MID LANER')}.png`,
+  4: `assets/game/role/${encodeURIComponent('ROAMER')}.png`,
+  5: `assets/game/role/${encodeURIComponent('GOLD LANER')}.png`,
 };
 
 /* ── Universal poll loop ── */
@@ -1774,8 +1774,8 @@ function buildT3Browser() {
     cell.className = 't3-cell';
     cell.dataset.id = id;
     const img = document.createElement('img');
-    img.src = `Items/${id}.png`;
-    img.onerror = () => { img.onerror = null; img.src = `Items/99999.png`; };
+    img.src = `assets/game/items/${id}.png`;
+    img.onerror = () => { img.onerror = null; img.src = `assets/game/items/99999.png`; };
     const lbl = document.createElement('span');
     lbl.textContent = id;
     cell.appendChild(img);
@@ -1910,7 +1910,7 @@ const ROAMING_BOOT_CATS = {
   direhit:   new Set(['1514','3514','3524','3534','3544','3554','3564','3574']),
 };
 const CONCEAL_CAT_LABEL = { conceal: 'CONCEAL', encourage: 'ENCOURAGE', favor: 'FAVOR', direhit: 'DIRE HIT' };
-const CONCEAL_CAT_IMG   = { conceal: 'assets/conceal.webp', encourage: 'assets/encourage.webp', favor: 'assets/favor.webp', direhit: 'assets/direhit.webp' };
+const CONCEAL_CAT_IMG   = { conceal: 'assets/overlay/ingame/conceal.webp', encourage: 'assets/overlay/ingame/encourage.webp', favor: 'assets/overlay/ingame/favor.webp', direhit: 'assets/overlay/ingame/direhit.webp' };
 
 function detectRoamingBootCat(itemId) {
   for (const [cat, ids] of Object.entries(ROAMING_BOOT_CATS)) {
@@ -2122,7 +2122,7 @@ buildConcealDebugButtons(9, 'right');
 
       const icon = iconsEl.children[i];
       icon.className         = 'tf-bar-icon' + (p.dead ? ' dead' : '');
-      icon.style.backgroundImage = `url('hero/HERO_${p.heroid}_KOTAK.png')`;
+      icon.style.backgroundImage = `url('assets/hero/full/HERO_${p.heroid}_KOTAK.png')`;
       icon.style.left        = `calc(${cum + pct / 2}%)`;
 
       cum += pct;

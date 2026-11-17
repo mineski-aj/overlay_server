@@ -8,9 +8,9 @@ const { readUrlForMode } = require('../lib/apiMode');
 // Draft Predict API URL (Settings → Draft Predict API) — the full upstream
 // URL including authKey/judgeId, not just a base + forwarded querystring,
 // since judgeId changes per match. See routes/devapi.js's /api/predictions-url.
-const PREDICTIONS_URL_FILE = path.join(__dirname, '..', 'predictions_api_url.json');
+const PREDICTIONS_URL_FILE = path.join(__dirname, '..', 'data', 'predictions_api_url.json');
 const PREDICTIONS_URL_DEFAULT = 'https://r3z8c353h3.ap-southeast-1.awsapprunner.com/api/live/predictions?authKey=18a86b9d-a35f-40d9-94ce-726779b3514a&judgeId=1370583970';
-const FIXTURE_FILE = path.join(__dirname, '..', 'predictions_test.json');
+const FIXTURE_FILE = path.join(__dirname, '..', 'data', 'predictions_test.json');
 
 // GET /proxy/predictions — proxy to the Draft Predict API, avoiding CORS.
 //
@@ -50,7 +50,7 @@ router.get('/proxy/predictions', async (req, res) => {
 // game API host (same host as the Game API URL in Settings, whichever
 // LIVE/WEB/DEBUG mode is active) serves /api/winrate-probability/ next to
 // /api/sub-info/; proxied here so the page stays same-origin.
-const GAME_URL_FILE = path.join(__dirname, '..', 'game_api_url.json');
+const GAME_URL_FILE = path.join(__dirname, '..', 'data', 'game_api_url.json');
 router.get('/api/winrate-probability', async (req, res) => {
   try {
     const gameUrl = readUrlForMode(GAME_URL_FILE, '').trim();

@@ -17,7 +17,7 @@ function buildSwapOverlay(i) {
 
   const bg = document.createElement('img');
   bg.className = 'evt-bg';
-  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/ingame/eventerback.png';
+  bg.src = document.documentElement.getAttribute('data-theme') === 'playoffs' ? 'assets/overlay/ingame/playoffs/ui/palyoffs_uistatback.png' : 'assets/overlay/ingame/eventerback.png';
   bg.alt = '';
 
   const label = document.createElement('span');
@@ -93,8 +93,8 @@ function triggerSwap(i, soldId, boughtId) {
   };
   outerGuard = setTimeout(cleanup, 4000);
 
-  oldIcon.src = soldId   ? `Items/${soldId}.png`   : '';
-  newIcon.src = boughtId ? `Items/${boughtId}.png` : '';
+  oldIcon.src = soldId   ? `assets/game/items/${soldId}.png`   : '';
+  newIcon.src = boughtId ? `assets/game/items/${boughtId}.png` : '';
   resetSwap(i);
   clip.style.display = 'block';
   requestAnimationFrame(() => requestAnimationFrame(() => {

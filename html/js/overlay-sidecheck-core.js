@@ -43,8 +43,8 @@ function sidecheckFormatK(v) {
    it's a plain global the others can call. */
 function sidecheckThemedBg(src) {
   const theme = document.documentElement.getAttribute('data-theme');
-  if (theme === '10th_anniversary') return src.replace('assets/ingame/', 'assets/ingame/anniversary/');
-  if (theme === 'playoffs') return src.replace('assets/ingame/', 'assets/ingame/playoffs/');
+  if (theme === '10th_anniversary') return src.replace('assets/overlay/ingame/', 'assets/overlay/ingame/anniversary/');
+  if (theme === 'playoffs') return src.replace('assets/overlay/ingame/', 'assets/overlay/ingame/playoffs/');
   return src;
 }
 
@@ -157,7 +157,7 @@ function createSideCheck(opts) {
 
     const bg = document.createElement('img');
     bg.className = 'sidecheck-bg';
-    bg.src = sidecheckThemedBg(opts.bgSrc || 'assets/ingame/sidestatback.png');
+    bg.src = sidecheckThemedBg(opts.bgSrc || 'assets/overlay/ingame/sidestatback.png');
     bg.alt = '';
     overlay.appendChild(bg);
 

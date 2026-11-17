@@ -7,7 +7,7 @@ const state   = require('../lib/state');
 const matchState = require('../lib/matchState');
 
 // GET /api/player-photos — basenames with both FRONT and VICTORY photos available
-const PHOTOS_DIR = path.join(__dirname, '..', 'photos');
+const PHOTOS_DIR = path.join(__dirname, '..', 'assets', 'photo');
 let _playerPhotoNames = null;
 router.get('/api/player-photos', (req, res) => {
   if (!_playerPhotoNames) {
@@ -29,12 +29,12 @@ router.get('/api/player-photos', (req, res) => {
 });
 
 // GET /api/hires-front-names — {UPPERNAME: exactFilename} map for
-// hires/FRONT/*_FRONT.png, used by Player H2H (Gold) to case-insensitively
+// assets/photo/hires/FRONT/*_FRONT.png, used by Player H2H (Gold) to case-insensitively
 // resolve the API's all-caps PLAYER field to the mixed-case filenames
 // actually on disk (e.g. "SHIZOU" -> "Shizou_FRONT.png"). Separate from
-// /api/player-photos above (photos/FRONT, resized thumbnails for kill
+// /api/player-photos above (assets/photo/FRONT, resized thumbnails for kill
 // events) — this is the full-res hires/FRONT set.
-const HIRES_FRONT_DIR = path.join(__dirname, '..', 'hires', 'FRONT');
+const HIRES_FRONT_DIR = path.join(__dirname, '..', 'assets', 'photo', 'hires', 'FRONT');
 let _hiresFrontMap = null;
 router.get('/api/hires-front-names', (req, res) => {
   if (!_hiresFrontMap) {
@@ -1255,7 +1255,7 @@ router.get('/overlay/debugoff', (req, res) => {
 // (the ` -toggled panel with SHOW/HIDE/PREVIEW buttons per feature, plus
 // any placeholder-data test tools like Final Team's) is reachable at all.
 // Defaults OFF so it's never silently live on a real broadcast machine.
-const DEBUG_MODE_FILE = path.join(__dirname, '..', 'debug_mode.json');
+const DEBUG_MODE_FILE = path.join(__dirname, '..', 'data', 'debug_mode.json');
 function readDebugMode() {
   try { return !!JSON.parse(fs.readFileSync(DEBUG_MODE_FILE, 'utf8')).enabled; }
   catch { return false; }

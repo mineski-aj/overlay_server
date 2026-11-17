@@ -5,13 +5,14 @@
 <base href="/">
 <script src="html/js/cache-bust.js"></script>
 <script src="html/js/theme-apply.js"></script>
+<script src="html/js/game-refresh.js"></script>
 <script src="html/js/overlay-sse-shim.js"></script>
 <title>LED Draft</title>
 <style>
-  @font-face { font-family: 'Anton'; font-weight: 400; src: url('fonts/Anton-Regular.ttf') format('truetype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('fonts/GeneralSans-Bold.otf') format('opentype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('fonts/GeneralSans-Semibold.otf') format('opentype'); }
-  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('fonts/GeneralSans-Medium.otf') format('opentype'); }
+  @font-face { font-family: 'Anton'; font-weight: 400; src: url('assets/fonts/Anton-Regular.ttf') format('truetype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 700; src: url('assets/fonts/GeneralSans-Bold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 600; src: url('assets/fonts/GeneralSans-Semibold.otf') format('opentype'); }
+  @font-face { font-family: 'General Sans'; font-weight: 500; src: url('assets/fonts/GeneralSans-Medium.otf') format('opentype'); }
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
@@ -31,7 +32,7 @@
     position: absolute;
     width: 1024px;
     height: 1024px;
-    background-image: url('assets/led/goldborder.png');
+    background-image: url('assets/overlay/led/goldborder.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     top: 0;
@@ -45,8 +46,8 @@
 /* ── Feature 1: Team HP Bar ── */
 #feature-teamhp {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none;
 }
 .thp-track {
@@ -136,7 +137,7 @@
    of the bottom 4px so the panel's own bottom border stays. */
 .mid-panel::after {
   content: ''; display: none; position: absolute; left: 0; top: 357px; width: 100%; height: 663px;
-  background: url('assets/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
+  background: url('assets/overlay/led/sidebacker_plain.png') repeat-y; background-size: 100% 90px;
   z-index: 0; pointer-events: none;
 }
 .mid-panel.led-mid-out::after, .mid-panel.led-mid-back::after { display: block; }
@@ -153,8 +154,8 @@
 /* ── Feature 2: Win Probability ── */
 #feature-winrate {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .wpr-track {
@@ -220,8 +221,8 @@
 /* ── Feature 3: Teamfight Damage ── */
 #feature-teamfight {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .tfd-col {
@@ -281,8 +282,8 @@
 @keyframes shimmer { 0%{transform:translateX(-110%)} 100%{transform:translateX(210%)} }
 #feature-draftpredict {
   position:absolute; left:1024px; top:0; width:484px; height:1024px;
-  background:url('assets/led/teamHPbar.png') left/50% 100% no-repeat,
-             url('assets/led/teamHPbar.png') right/50% 100% no-repeat;
+  background:url('assets/overlay/led/teamHPbar.png') left/50% 100% no-repeat,
+             url('assets/overlay/led/teamHPbar.png') right/50% 100% no-repeat;
   z-index:20; pointer-events:none; display:none; transform-origin:center center;
 }
 .dp-col {
@@ -424,7 +425,7 @@
     width: 242px;
     height: 1024px;
     top: 0;
-    background-image: url('assets/led/sidebacker.png');
+    background-image: url('assets/overlay/led/sidebacker.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
     z-index: 1;
@@ -505,11 +506,11 @@
   }
 
   /* Right plates — P6 to P10, stacked from top-right */
-  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/led/plateright.png'); }
-  #plate-7  { right: 12px; top: 212px; background-image: url('assets/led/plateright.png'); }
-  #plate-8  { right: 12px; top: 412px; background-image: url('assets/led/plateright.png'); }
-  #plate-9  { right: 12px; top: 612px; background-image: url('assets/led/plateright.png'); }
-  #plate-10 { right: 12px; top: 812px; background-image: url('assets/led/plateright.png'); }
+  #plate-6  { right: 12px; top: 12px;  background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-7  { right: 12px; top: 212px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-8  { right: 12px; top: 412px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-9  { right: 12px; top: 612px; background-image: url('assets/overlay/led/plateright.png'); }
+  #plate-10 { right: 12px; top: 812px; background-image: url('assets/overlay/led/plateright.png'); }
 
   /* ── Swap mode buttons ── */
   .dbg-btn.active-home { background: #0a1a0a; color: #00e375; border-color: #008452; }
@@ -872,7 +873,7 @@
     if (n >= 1000)    return (n / 1000).toFixed(1) + 'K';
     return String(n);
   }
-  const MPL_LOGO = 'assets/mpl2026logo.png';
+  const MPL_LOGO = 'assets/common/mpl2026logo.png';
   function _updateMidPanel(side, campList, campId, fallback) {
     const camp = campList.find(c => c.campid === campId);
     if (!camp) return;
@@ -882,7 +883,7 @@
     if (logoEl && logoEl.dataset.team !== teamName) {
       logoEl.dataset.team = teamName;
       logoEl.onerror = () => { logoEl.onerror = null; logoEl.src = MPL_LOGO; };
-      logoEl.src = `logos/${teamName}.png`;
+      logoEl.src = `assets/team/logos/${teamName}.png`;
     }
     const nameEl = document.getElementById(`mp-${side}-name`);
     if (nameEl) setText(nameEl, teamName);
@@ -993,9 +994,9 @@
   const PLAYOFFS = () => document.documentElement.getAttribute('data-theme') === 'playoffs';
   function ensureMedia(e) {
     if (e.matteVid) return;
-    e.matteVid = mk('video', '', e.slot); e.matteVid.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/draft/motion/s17_matte2.webm';
+    e.matteVid = mk('video', '', e.slot); e.matteVid.src = PLAYOFFS() ? 'assets/overlay/draft/playoffs/motion/picking_reveal_150x170.webm' : 'assets/overlay/draft/motion/s17_matte2.webm';
     e.matteVid.muted = true; e.matteVid.playsInline = true; e.matteVid.preload = 'none'; e.matteVid.style.display = 'none';
-    e.heroMatteVid = mk('video', '', e.slot); e.heroMatteVid.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/draft/motion/s17_matte2_alpha.webm';
+    e.heroMatteVid = mk('video', '', e.slot); e.heroMatteVid.src = PLAYOFFS() ? 'assets/overlay/draft/playoffs/motion/picking_reveal_150x170_alpha.webm' : 'assets/overlay/draft/motion/s17_matte2_alpha.webm';
     e.heroMatteVid.muted = true; e.heroMatteVid.playsInline = true; e.heroMatteVid.preload = 'none'; e.heroMatteVid.style.display = 'none';
   }
   function ensurePickAnim(e) {
@@ -1003,9 +1004,9 @@
     e.pickAnim = mk('video', 'dr-pickanim');
     e.slot.insertBefore(e.pickAnim, e.slot.firstChild.nextSibling);   // above the glow's slot, below the photo
     const anniv = document.documentElement.getAttribute('data-theme') === '10th_anniversary';   // Draft.html's isAnniversaryTheme()
-    e.pickAnim.src = PLAYOFFS() ? 'assets/draft/playoffs/motion/picking_bg_150x170.webm' : anniv
-      ? (e.campid === 1 ? 'assets/draft/anniversary/motion/pickingblue.webm' : 'assets/draft/anniversary/motion/pickingred.webm')
-      : (e.campid === 1 ? 'assets/motion/pickingblue.webm' : 'assets/motion/pickingred.webm');
+    e.pickAnim.src = PLAYOFFS() ? 'assets/overlay/draft/playoffs/motion/picking_bg_150x170.webm' : anniv
+      ? (e.campid === 1 ? 'assets/overlay/draft/anniversary/motion/pickingblue.webm' : 'assets/overlay/draft/anniversary/motion/pickingred.webm')
+      : (e.campid === 1 ? 'assets/webm/motion/pickingblue.webm' : 'assets/webm/motion/pickingred.webm');
     e.pickAnim.loop = true; e.pickAnim.muted = true; e.pickAnim.playsInline = true; e.pickAnim.preload = 'none';
   }
 
@@ -1042,7 +1043,7 @@
     if (h.name._t !== tri) { setText(h.name, tri); fitName(h.name, tri, 340, 119); }
     if (h.logo.dataset.team !== tri) {
       h.logo.dataset.team = tri;
-      if (tri) { h.logo.style.display = 'none'; h.logo.src = '/logos/' + tri + '.png'; } else { h.logo.style.display = 'none'; }
+      if (tri) { h.logo.style.display = 'none'; h.logo.src = '/assets/team/logos/' + tri + '.png'; } else { h.logo.style.display = 'none'; }
     }
   }
   function renderBars(campid, total, scored) {
@@ -1089,7 +1090,7 @@
     if (!name || p.idleName === name) return;
     resetPlayerPhoto(e, p);
     p.idleName = name; p.photoName = name; p.photoPhase = 'front';
-    e.photo.src = 'photos/FRONT/' + name + '_FRONT_resized.png';
+    e.photo.src = 'assets/photo/FRONT/' + name + '_FRONT_resized.png';
     e.photo.className = 'dr-photo front'; e.photo.style.display = 'block'; e.photo.style.opacity = '';
     void e.photo.offsetWidth;
     e.photo.classList.add('entering');
@@ -1105,7 +1106,7 @@
       img.style.transform = 'translateX(-50%) translateY(0)';
       img.classList.add('quickout');
       p.t2 = setTimeout(() => {
-        img.src = 'photos/VICTORY/' + p.photoName + '_VICTORY_resized.png';
+        img.src = 'assets/photo/VICTORY/' + p.photoName + '_VICTORY_resized.png';
         img.className = 'dr-photo'; img.style.transform = ''; img.style.opacity = '0';
         void img.offsetWidth;
         img.classList.add('bouncein');
@@ -1223,7 +1224,7 @@
 
     if (heroid !== p.heroid) {
       if (heroid > 0) {
-        e.hvid.src = 'assets/draft/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
+        e.hvid.src = 'assets/hero/webm/HERO_PICK_DRAFT_' + heroid + '.webm';
         e.loops = 0;
         e.hvid.currentTime = 0;
         if (p.heroid !== undefined) {                // live pick → matte reveal drives play() + display
@@ -1335,7 +1336,7 @@
   (function buildSimUI() {
     const wrap = document.getElementById('dbg-sim'); if (!wrap) return;
     let heroes = [[1, 'Miya']];
-    fetch('/heronames.json', { cache: 'no-store' }).then(r => r.json()).then(l => { heroes = (l || []).filter(h => h && h.id <= 133).map(h => [h.id, h.name]); }).catch(() => {});
+    fetch('/data/heronames.json', { cache: 'no-store' }).then(r => r.json()).then(l => { heroes = (l || []).filter(h => h && h.id <= 133).map(h => [h.id, h.name]); }).catch(() => {});
     const row = () => { const d = document.createElement('div'); d.className = 'dbg-row'; wrap.appendChild(d); return d; };
     const btn = (r, t, fn, cls) => { const b = document.createElement('div'); b.className = 'dbg-btn ' + (cls || ''); b.textContent = t; b.addEventListener('click', fn); r.appendChild(b); return b; };
     let r = row(); r.id = 'dbg-photo-row';
@@ -1350,7 +1351,7 @@
     });
   })();
 
-  pollSubInfo(); setInterval(pollSubInfo, POLL_MS * 2);
+  if (window.GameRefresh) GameRefresh.loop(pollSubInfo); else { pollSubInfo(); setInterval(pollSubInfo, POLL_MS * 2); }   // Game API refresh rate (Settings)
   pollMatchState(); setInterval(pollMatchState, 3000);
   setInterval(pollDraft, POLL_MS);
   setSwap((() => { try { return localStorage.getItem('ledSwap') === '1'; } catch (e) { return false; } })());

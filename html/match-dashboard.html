@@ -632,7 +632,7 @@
 
   /* ── ROSTER LOADING ── */
   function loadRoster() {
-    return fetch('/mainroster.json', { cache: 'no-store' })
+    return fetch('/data/mainroster.json', { cache: 'no-store' })
       .then(function (r) { return r.json(); })
       .then(function (data) { roster = data; populateTeamDropdowns(); populateTalentSelects(); })
       .catch(function () { console.warn('Could not load mainroster.json'); });
@@ -1505,7 +1505,7 @@
   }
 
   var LOGO_V = Date.now();
-  function logoUrl(tag) { return '/logos/' + tag + '.png?v=' + LOGO_V; }
+  function logoUrl(tag) { return '/assets/team/logos/' + tag + '.png?v=' + LOGO_V; }
 
   function makeTeamLogo(tag) {
     var img = document.createElement('img');

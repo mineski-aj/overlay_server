@@ -1,0 +1,2144 @@
+{
+    "code": 0,
+    "message": "success",
+    "dataid": 4080,
+    "data": {
+        "battleid": "3602901672447373227",
+        "start_time": "2026-10-28 23:03:09",
+        "win_camp": 1,
+        "roomname": "MDLID20261029M1G1",
+        "state": "end",
+        "state_left_time": 0,
+        "game_time": 1207,
+        "dataid": 4080,
+        "tortoise_left_time": 0,
+        "lord_left_time": 78,
+        "kill_lord_money_advantage": 1927,
+        "paused": false,
+        "camp_list": [
+            {
+                "campid": 1,
+                "team_name": "EVOS ICON",
+                "team_simple_name": "EVS",
+                "team_id": 10188,
+                "score": 18,
+                "kill_lord": 0,
+                "kill_tower": 7,
+                "total_money": 64879,
+                "player_list": [
+                    {
+                        "roleid": 2218987231,
+                        "zoneid": 50001,
+                        "name": "Fluffy",
+                        "team_name": "EVOS ICON",
+                        "team_simple_name": "EVS",
+                        "team_id": 10188,
+                        "judger": false,
+                        "campid": 1,
+                        "pos": 1,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 132,
+                        "heroid": 106,
+                        "skillid": 20100,
+                        "gold": 10483,
+                        "exp": 16675,
+                        "level": 15,
+                        "total_hurt": 166999,
+                        "total_damage": 52976,
+                        "total_heal": 32434,
+                        "total_damage_tower": 3128,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 20003,
+                        "kill_num": 0,
+                        "dead_num": 5,
+                        "assist_num": 11,
+                        "rune_map": {
+                            "1": 711,
+                            "2": 721,
+                            "3": 731
+                        },
+                        "equip_list": [
+                            3203,
+                            2301,
+                            3206,
+                            3204,
+                            3207,
+                            2201
+                        ],
+                        "map_pos": {
+                            "x": 35.820312,
+                            "y": 1.4807129
+                        },
+                        "xpm": 982,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 3492,
+                            "2": 46,
+                            "3": 470,
+                            "4": 688,
+                            "6": 1231
+                        },
+                        "ban_order": 16,
+                        "pick_order": 19,
+                        "control_time_ms": 18088,
+                        "total_heal_other": 0,
+                        "max_health_point": 9350,
+                        "cur_health_point": 7310,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 235,
+                        "magic_defense": 128
+                    },
+                    {
+                        "roleid": 1653525573,
+                        "zoneid": 50001,
+                        "name": "Reyna",
+                        "team_name": "EVOS ICON",
+                        "team_simple_name": "EVS",
+                        "team_id": 10188,
+                        "judger": false,
+                        "campid": 1,
+                        "pos": 2,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 81,
+                        "heroid": 133,
+                        "skillid": 20020,
+                        "gold": 15207,
+                        "exp": 16673,
+                        "level": 15,
+                        "total_hurt": 53121,
+                        "total_damage": 67533,
+                        "total_heal": 35526,
+                        "total_damage_tower": 3361,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 19,
+                        "rune_id": 20005,
+                        "kill_num": 4,
+                        "dead_num": 3,
+                        "assist_num": 9,
+                        "rune_map": {
+                            "1": 111,
+                            "2": 122,
+                            "3": 131
+                        },
+                        "equip_list": [
+                            3432,
+                            3009,
+                            2013,
+                            3001,
+                            3004,
+                            3008
+                        ],
+                        "map_pos": {
+                            "x": 36.617188,
+                            "y": -0.73913574
+                        },
+                        "xpm": 1401,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 2376,
+                            "2": 5251,
+                            "3": 470,
+                            "4": 549,
+                            "6": 2005
+                        },
+                        "ban_order": 14,
+                        "pick_order": 18,
+                        "control_time_ms": 8900,
+                        "total_heal_other": 0,
+                        "max_health_point": 5650,
+                        "cur_health_point": 4188,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 74,
+                        "magic_defense": 49
+                    },
+                    {
+                        "roleid": 1866747851,
+                        "zoneid": 50001,
+                        "name": "DrianW",
+                        "team_name": "EVOS ICON",
+                        "team_simple_name": "EVS",
+                        "team_id": 10188,
+                        "judger": false,
+                        "campid": 1,
+                        "pos": 3,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 22,
+                        "heroid": 71,
+                        "skillid": 20080,
+                        "gold": 11719,
+                        "exp": 16671,
+                        "level": 15,
+                        "total_hurt": 48582,
+                        "total_damage": 42160,
+                        "total_heal": 8434,
+                        "total_damage_tower": 5414,
+                        "dead": true,
+                        "revive_left_time": 37,
+                        "major_left_time": 2,
+                        "skill_left_time": 51,
+                        "rune_id": 20006,
+                        "kill_num": 1,
+                        "dead_num": 4,
+                        "assist_num": 8,
+                        "rune_map": {
+                            "1": 111,
+                            "2": 821,
+                            "3": 1231
+                        },
+                        "equip_list": [
+                            2304,
+                            3105,
+                            3102,
+                            3108,
+                            3101
+                        ],
+                        "map_pos": {
+                            "x": 22.007812,
+                            "y": -2.553711
+                        },
+                        "xpm": 1039,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 4327,
+                            "2": 468,
+                            "3": 470,
+                            "4": 762,
+                            "6": 1136
+                        },
+                        "ban_order": 5,
+                        "pick_order": 11,
+                        "control_time_ms": 8000,
+                        "total_heal_other": 0,
+                        "max_health_point": 4710,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 73,
+                        "magic_defense": 50
+                    },
+                    {
+                        "roleid": 1653525160,
+                        "zoneid": 50001,
+                        "name": "Alevaa",
+                        "team_name": "EVOS ICON",
+                        "team_simple_name": "EVS",
+                        "team_id": 10188,
+                        "judger": false,
+                        "campid": 1,
+                        "pos": 4,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 99,
+                        "heroid": 128,
+                        "skillid": 20050,
+                        "gold": 10694,
+                        "exp": 16669,
+                        "level": 15,
+                        "total_hurt": 123764,
+                        "total_damage": 21637,
+                        "total_heal": 59142,
+                        "total_damage_tower": 5469,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 22,
+                        "skill_left_time": 52,
+                        "rune_id": 20003,
+                        "kill_num": 0,
+                        "dead_num": 3,
+                        "assist_num": 13,
+                        "rune_map": {
+                            "1": 311,
+                            "2": 321,
+                            "3": 331
+                        },
+                        "equip_list": [
+                            3521,
+                            3210,
+                            3203,
+                            3206,
+                            3207
+                        ],
+                        "map_pos": {
+                            "x": 38.914062,
+                            "y": 0.5638428
+                        },
+                        "xpm": 887,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 863,
+                            "2": 719,
+                            "3": 350,
+                            "4": 611,
+                            "5": 1845,
+                            "6": 1387,
+                            "9": 363
+                        },
+                        "ban_order": 1,
+                        "pick_order": 7,
+                        "control_time_ms": 14593,
+                        "total_heal_other": 25593,
+                        "max_health_point": 9305,
+                        "cur_health_point": 2911,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 200,
+                        "magic_defense": 179
+                    },
+                    {
+                        "roleid": 1452557177,
+                        "zoneid": 50001,
+                        "name": "Xzorr",
+                        "team_name": "EVOS ICON",
+                        "team_simple_name": "EVS",
+                        "team_id": 10188,
+                        "judger": false,
+                        "campid": 1,
+                        "pos": 5,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 130,
+                        "heroid": 103,
+                        "skillid": 20100,
+                        "gold": 16776,
+                        "exp": 16693,
+                        "level": 15,
+                        "total_hurt": 112788,
+                        "total_damage": 85007,
+                        "total_heal": 45183,
+                        "total_damage_tower": 7944,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 9,
+                        "skill_left_time": 5,
+                        "rune_id": 20007,
+                        "kill_num": 13,
+                        "dead_num": 4,
+                        "assist_num": 3,
+                        "rune_map": {
+                            "1": 511,
+                            "2": 521,
+                            "3": 631
+                        },
+                        "equip_list": [
+                            3009,
+                            3207,
+                            3013,
+                            3001,
+                            2208,
+                            3007
+                        ],
+                        "map_pos": {
+                            "x": 35.570312,
+                            "y": 1.5317383
+                        },
+                        "xpm": 1124,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 7172,
+                            "2": 245,
+                            "3": 470,
+                            "4": 607,
+                            "6": 3726
+                        },
+                        "ban_order": 3,
+                        "pick_order": 10,
+                        "control_time_ms": 2200,
+                        "total_heal_other": 0,
+                        "max_health_point": 7340,
+                        "cur_health_point": 1981,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 93,
+                        "magic_defense": 57
+                    }
+                ],
+                "ban_hero_list": [
+                    132,
+                    81,
+                    22,
+                    99,
+                    130
+                ],
+                "kill_lord_advantage": null,
+                "enemy_area_get": [
+                    {
+                        "end_time": 120,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 0
+                    },
+                    {
+                        "end_time": 300,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 75
+                    },
+                    {
+                        "end_time": 720,
+                        "purple_buffer_num": 1,
+                        "orange_buffer_num": 1,
+                        "monster_gold": 726
+                    },
+                    {
+                        "end_time": 1080,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 0
+                    }
+                ],
+                "kill_tortoise": 3
+            },
+            {
+                "campid": 2,
+                "team_name": "KAGENDRA",
+                "team_simple_name": "KAGE",
+                "team_id": 10846,
+                "score": 19,
+                "kill_lord": 2,
+                "kill_tower": 8,
+                "total_money": 61181,
+                "player_list": [
+                    {
+                        "roleid": 1866747855,
+                        "zoneid": 50001,
+                        "name": "GHIZAOO",
+                        "team_name": "KAGENDRA",
+                        "team_simple_name": "KAGE",
+                        "team_id": 10846,
+                        "judger": false,
+                        "campid": 2,
+                        "pos": 6,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 88,
+                        "heroid": 123,
+                        "skillid": 20080,
+                        "gold": 12321,
+                        "exp": 16744,
+                        "level": 15,
+                        "total_hurt": 81492,
+                        "total_damage": 60409,
+                        "total_heal": 56210,
+                        "total_damage_tower": 8321,
+                        "dead": true,
+                        "revive_left_time": 48,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 20007,
+                        "kill_num": 5,
+                        "dead_num": 3,
+                        "assist_num": 9,
+                        "rune_map": {
+                            "1": 811,
+                            "2": 721,
+                            "3": 731
+                        },
+                        "equip_list": [
+                            2302,
+                            2013,
+                            3208,
+                            3009,
+                            3013,
+                            3204
+                        ],
+                        "map_pos": {
+                            "x": 38.328125,
+                            "y": 3.7441406
+                        },
+                        "xpm": 1203,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 4446,
+                            "2": 250,
+                            "3": 340,
+                            "4": 858,
+                            "6": 1871
+                        },
+                        "ban_order": 2,
+                        "pick_order": 8,
+                        "control_time_ms": 0,
+                        "total_heal_other": 0,
+                        "max_health_point": 7211,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 127,
+                        "magic_defense": 96
+                    },
+                    {
+                        "roleid": 1714915889,
+                        "zoneid": 50001,
+                        "name": "Nanjet",
+                        "team_name": "KAGENDRA",
+                        "team_simple_name": "KAGE",
+                        "team_id": 10846,
+                        "judger": false,
+                        "campid": 2,
+                        "pos": 7,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 92,
+                        "heroid": 127,
+                        "skillid": 20020,
+                        "gold": 14698,
+                        "exp": 16668,
+                        "level": 15,
+                        "total_hurt": 90231,
+                        "total_damage": 83289,
+                        "total_heal": 45778,
+                        "total_damage_tower": 4429,
+                        "dead": true,
+                        "revive_left_time": 55,
+                        "major_left_time": 0,
+                        "skill_left_time": 15,
+                        "rune_id": 20005,
+                        "kill_num": 9,
+                        "dead_num": 4,
+                        "assist_num": 5,
+                        "rune_map": {
+                            "1": 112,
+                            "2": 122,
+                            "3": 134
+                        },
+                        "equip_list": [
+                            3432,
+                            2013,
+                            3009,
+                            2208,
+                            3001
+                        ],
+                        "map_pos": {
+                            "x": 34.703125,
+                            "y": 1.5559082
+                        },
+                        "xpm": 1420,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 1985,
+                            "2": 4803,
+                            "3": 340,
+                            "4": 683,
+                            "6": 2331
+                        },
+                        "ban_order": 13,
+                        "pick_order": 17,
+                        "control_time_ms": 18750,
+                        "total_heal_other": 0,
+                        "max_health_point": 6778,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 133,
+                        "magic_defense": 100
+                    },
+                    {
+                        "roleid": 1463880565,
+                        "zoneid": 50001,
+                        "name": "Gangrimm",
+                        "team_name": "KAGENDRA",
+                        "team_simple_name": "KAGE",
+                        "team_id": 10846,
+                        "judger": false,
+                        "campid": 2,
+                        "pos": 8,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 125,
+                        "heroid": 110,
+                        "skillid": 20100,
+                        "gold": 10311,
+                        "exp": 16679,
+                        "level": 15,
+                        "total_hurt": 53753,
+                        "total_damage": 31482,
+                        "total_heal": 13181,
+                        "total_damage_tower": 1818,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 20001,
+                        "kill_num": 1,
+                        "dead_num": 3,
+                        "assist_num": 12,
+                        "rune_map": {
+                            "1": 611,
+                            "2": 721,
+                            "3": 731
+                        },
+                        "equip_list": [
+                            2302,
+                            3105,
+                            3208,
+                            3204,
+                            3207,
+                            2201
+                        ],
+                        "map_pos": {
+                            "x": 34.9375,
+                            "y": 4.970703
+                        },
+                        "xpm": 1014,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 3478,
+                            "2": 31,
+                            "3": 340,
+                            "4": 654,
+                            "6": 1252
+                        },
+                        "ban_order": 4,
+                        "pick_order": 9,
+                        "control_time_ms": 20500,
+                        "total_heal_other": 0,
+                        "max_health_point": 8765,
+                        "cur_health_point": 0,
+                        "max_mana": 1900,
+                        "cur_mana": 1818,
+                        "physical_defense": 138,
+                        "magic_defense": 88
+                    },
+                    {
+                        "roleid": 1866747820,
+                        "zoneid": 50001,
+                        "name": "BosskiddZy",
+                        "team_name": "KAGENDRA",
+                        "team_simple_name": "KAGE",
+                        "team_id": 10846,
+                        "judger": false,
+                        "campid": 2,
+                        "pos": 9,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 93,
+                        "heroid": 124,
+                        "skillid": 20100,
+                        "gold": 10293,
+                        "exp": 16689,
+                        "level": 15,
+                        "total_hurt": 81606,
+                        "total_damage": 15226,
+                        "total_heal": 16066,
+                        "total_damage_tower": 644,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 20003,
+                        "kill_num": 2,
+                        "dead_num": 4,
+                        "assist_num": 10,
+                        "rune_map": {
+                            "1": 811,
+                            "2": 121,
+                            "3": 331
+                        },
+                        "equip_list": [
+                            3561,
+                            3109,
+                            3207,
+                            3210,
+                            3203,
+                            1201
+                        ],
+                        "map_pos": {
+                            "x": 27.472656,
+                            "y": 6.1191406
+                        },
+                        "xpm": 890,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 468,
+                            "2": 471,
+                            "3": 340,
+                            "4": 616,
+                            "5": 1845,
+                            "6": 1522,
+                            "9": 475
+                        },
+                        "ban_order": 15,
+                        "pick_order": 20,
+                        "control_time_ms": 11434,
+                        "total_heal_other": 0,
+                        "max_health_point": 9900,
+                        "cur_health_point": 0,
+                        "max_mana": 1900,
+                        "cur_mana": 1597,
+                        "physical_defense": 169,
+                        "magic_defense": 121
+                    },
+                    {
+                        "roleid": 1866747874,
+                        "zoneid": 50001,
+                        "name": "MingFei",
+                        "team_name": "KAGENDRA",
+                        "team_simple_name": "KAGE",
+                        "team_id": 10846,
+                        "judger": false,
+                        "campid": 2,
+                        "pos": 10,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 122,
+                        "heroid": 108,
+                        "skillid": 20190,
+                        "gold": 13558,
+                        "exp": 16881,
+                        "level": 15,
+                        "total_hurt": 113472,
+                        "total_damage": 64787,
+                        "total_heal": 52988,
+                        "total_damage_tower": 3759,
+                        "dead": true,
+                        "revive_left_time": 53,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 20007,
+                        "kill_num": 2,
+                        "dead_num": 4,
+                        "assist_num": 10,
+                        "rune_map": {
+                            "1": 111,
+                            "2": 721,
+                            "3": 731
+                        },
+                        "equip_list": [
+                            2013,
+                            2208,
+                            2303,
+                            3004,
+                            3208,
+                            3013
+                        ],
+                        "map_pos": {
+                            "x": 38.875,
+                            "y": -0.25006104
+                        },
+                        "xpm": 1214,
+                        "hit_rate": null,
+                        "gold_map": {
+                            "1": 6068,
+                            "2": 479,
+                            "3": 340,
+                            "4": 733,
+                            "6": 1382
+                        },
+                        "ban_order": 6,
+                        "pick_order": 12,
+                        "control_time_ms": 11700,
+                        "total_heal_other": 0,
+                        "max_health_point": 7790,
+                        "cur_health_point": 141,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 111,
+                        "magic_defense": 58
+                    }
+                ],
+                "ban_hero_list": [
+                    88,
+                    92,
+                    125,
+                    93,
+                    122
+                ],
+                "kill_lord_advantage": [
+                    {
+                        "begin_time": 615,
+                        "end_time": 735,
+                        "gold": 2881,
+                        "exp": 4967,
+                        "tower_hp": 17947
+                    },
+                    {
+                        "begin_time": 849,
+                        "end_time": 969,
+                        "gold": 1658,
+                        "exp": -2293,
+                        "tower_hp": 7059
+                    }
+                ],
+                "enemy_area_get": [
+                    {
+                        "end_time": 120,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 0
+                    },
+                    {
+                        "end_time": 300,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 0
+                    },
+                    {
+                        "end_time": 480,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 107
+                    },
+                    {
+                        "end_time": 720,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 345
+                    },
+                    {
+                        "end_time": 1080,
+                        "purple_buffer_num": 0,
+                        "orange_buffer_num": 0,
+                        "monster_gold": 747
+                    }
+                ],
+                "kill_tortoise": 0
+            },
+            {
+                "campid": 5,
+                "team_name": "",
+                "team_simple_name": "",
+                "team_id": 0,
+                "score": 0,
+                "kill_lord": 0,
+                "kill_tower": 0,
+                "total_money": 0,
+                "player_list": [
+                    {
+                        "roleid": 1275771598,
+                        "zoneid": 50001,
+                        "name": "MDL OBS - 01",
+                        "team_name": "",
+                        "team_simple_name": "",
+                        "team_id": 0,
+                        "judger": true,
+                        "campid": 5,
+                        "pos": 11,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 0,
+                        "heroid": 0,
+                        "skillid": 0,
+                        "gold": 0,
+                        "exp": 0,
+                        "level": 1,
+                        "total_hurt": 0,
+                        "total_damage": 0,
+                        "total_heal": 0,
+                        "total_damage_tower": 0,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 0,
+                        "kill_num": 0,
+                        "dead_num": 0,
+                        "assist_num": 0,
+                        "rune_map": null,
+                        "equip_list": null,
+                        "map_pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "xpm": 0,
+                        "hit_rate": null,
+                        "gold_map": null,
+                        "ban_order": 0,
+                        "pick_order": 0,
+                        "control_time_ms": 0,
+                        "total_heal_other": 0,
+                        "max_health_point": 0,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 0,
+                        "magic_defense": 0
+                    },
+                    {
+                        "roleid": 1275770479,
+                        "zoneid": 50001,
+                        "name": "MDL OBS - 02",
+                        "team_name": "",
+                        "team_simple_name": "",
+                        "team_id": 0,
+                        "judger": true,
+                        "campid": 5,
+                        "pos": 12,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 0,
+                        "heroid": 0,
+                        "skillid": 0,
+                        "gold": 0,
+                        "exp": 0,
+                        "level": 1,
+                        "total_hurt": 0,
+                        "total_damage": 0,
+                        "total_heal": 0,
+                        "total_damage_tower": 0,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 0,
+                        "kill_num": 0,
+                        "dead_num": 0,
+                        "assist_num": 0,
+                        "rune_map": null,
+                        "equip_list": null,
+                        "map_pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "xpm": 0,
+                        "hit_rate": null,
+                        "gold_map": null,
+                        "ban_order": 0,
+                        "pick_order": 0,
+                        "control_time_ms": 0,
+                        "total_heal_other": 0,
+                        "max_health_point": 0,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 0,
+                        "magic_defense": 0
+                    },
+                    {
+                        "roleid": 1275772872,
+                        "zoneid": 50001,
+                        "name": "MDL REFEREEE 1",
+                        "team_name": "",
+                        "team_simple_name": "",
+                        "team_id": 0,
+                        "judger": true,
+                        "campid": 5,
+                        "pos": 13,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 0,
+                        "heroid": 0,
+                        "skillid": 0,
+                        "gold": 0,
+                        "exp": 0,
+                        "level": 1,
+                        "total_hurt": 0,
+                        "total_damage": 0,
+                        "total_heal": 0,
+                        "total_damage_tower": 0,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 0,
+                        "kill_num": 0,
+                        "dead_num": 0,
+                        "assist_num": 0,
+                        "rune_map": null,
+                        "equip_list": null,
+                        "map_pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "xpm": 0,
+                        "hit_rate": null,
+                        "gold_map": null,
+                        "ban_order": 0,
+                        "pick_order": 0,
+                        "control_time_ms": 0,
+                        "total_heal_other": 0,
+                        "max_health_point": 0,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 0,
+                        "magic_defense": 0
+                    },
+                    {
+                        "roleid": 1275772502,
+                        "zoneid": 50001,
+                        "name": "MDL ID REFEREE 3",
+                        "team_name": "",
+                        "team_simple_name": "",
+                        "team_id": 0,
+                        "judger": true,
+                        "campid": 5,
+                        "pos": 14,
+                        "banning": false,
+                        "picking": false,
+                        "ban_heroid": 0,
+                        "heroid": 0,
+                        "skillid": 0,
+                        "gold": 0,
+                        "exp": 0,
+                        "level": 1,
+                        "total_hurt": 0,
+                        "total_damage": 0,
+                        "total_heal": 0,
+                        "total_damage_tower": 0,
+                        "dead": false,
+                        "revive_left_time": 0,
+                        "major_left_time": 0,
+                        "skill_left_time": 0,
+                        "rune_id": 0,
+                        "kill_num": 0,
+                        "dead_num": 0,
+                        "assist_num": 0,
+                        "rune_map": null,
+                        "equip_list": null,
+                        "map_pos": {
+                            "x": 0,
+                            "y": 0
+                        },
+                        "xpm": 0,
+                        "hit_rate": null,
+                        "gold_map": null,
+                        "ban_order": 0,
+                        "pick_order": 0,
+                        "control_time_ms": 0,
+                        "total_heal_other": 0,
+                        "max_health_point": 0,
+                        "cur_health_point": 0,
+                        "max_mana": 0,
+                        "cur_mana": 0,
+                        "physical_defense": 0,
+                        "magic_defense": 0
+                    }
+                ],
+                "ban_hero_list": null,
+                "kill_lord_advantage": null,
+                "enemy_area_get": null,
+                "kill_tortoise": 0
+            }
+        ],
+        "incre_event_list": [
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 1,
+                "game_time": 120
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 2,
+                "game_time": 120
+            },
+            {
+                "event_type": "camp_kill_tortoise",
+                "campid": 1,
+                "game_time": 142
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 142,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "boss_name": "tortoise"
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 145
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 145,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1653525160,
+                "killed_camp": 1,
+                "killed_name": "Alevaa",
+                "assister": [
+                    1463880565,
+                    1866747855,
+                    1866747820
+                ],
+                "extra_param": [
+                    "first_blood"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 152
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 152,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 2218987231,
+                "killed_camp": 1,
+                "killed_name": "Fluffy",
+                "assister": [
+                    1463880565,
+                    1866747855,
+                    1866747820
+                ],
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 153
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 108,
+                "game_time": 153,
+                "killer_id": 1866747874,
+                "killer_camp": 2,
+                "killer_name": "MingFei",
+                "killed_id": 1452557177,
+                "killed_camp": 1,
+                "killed_name": "Xzorr",
+                "assister": [
+                    1463880565,
+                    1714915889
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 154
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 154,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "killed_id": 1714915889,
+                "killed_camp": 2,
+                "killed_name": "Nanjet",
+                "assister": [
+                    2218987231,
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 160
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 108,
+                "game_time": 160,
+                "killer_id": 1866747874,
+                "killer_camp": 2,
+                "killer_name": "MingFei",
+                "killed_id": 1653525573,
+                "killed_camp": 1,
+                "killed_name": "Reyna",
+                "assister": [
+                    1463880565,
+                    1866747855
+                ],
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_tortoise",
+                "campid": 1,
+                "game_time": 279
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 279,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "boss_name": "tortoise"
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 279
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 71,
+                "game_time": 279,
+                "killer_id": 1866747851,
+                "killer_camp": 1,
+                "killer_name": "DrianW",
+                "killed_id": 1866747820,
+                "killed_camp": 2,
+                "killed_name": "BosskiddZy",
+                "assister": [
+                    1653525573,
+                    2218987231
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 282
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 282,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747855,
+                "killed_camp": 2,
+                "killed_name": "GHIZAOO",
+                "assister": [
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 286
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 286,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1714915889,
+                "killed_camp": 2,
+                "killed_name": "Nanjet",
+                "assister": [
+                    1653525573,
+                    1653525160,
+                    2218987231,
+                    1866747851
+                ],
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 288
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 288,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747874,
+                "killed_camp": 2,
+                "killed_name": "MingFei",
+                "assister": [
+                    1653525160,
+                    1866747851,
+                    1653525573
+                ],
+                "extra_param": [
+                    "triple_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 292
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 292,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "killed_id": 1463880565,
+                "killed_camp": 2,
+                "killed_name": "Gangrimm",
+                "assister": [
+                    1866747851,
+                    1452557177,
+                    2218987231,
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 1,
+                "game_time": 300
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 2,
+                "game_time": 300
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 310
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "heroid": 71,
+                "game_time": 310,
+                "killer_id": 1866747851,
+                "killer_camp": 1,
+                "killer_name": "DrianW",
+                "tower_name": "mid_outer"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 320
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "heroid": 128,
+                "game_time": 320,
+                "killer_id": 1653525160,
+                "killer_camp": 1,
+                "killer_name": "Alevaa",
+                "tower_name": "up_outer"
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "game_time": 324,
+                "killer_camp": 1,
+                "tower_name": "down_outer"
+            },
+            {
+                "event_type": "camp_kill_tortoise",
+                "campid": 1,
+                "game_time": 408
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 408,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "boss_name": "tortoise"
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 409,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747874,
+                "killed_camp": 2,
+                "killed_name": "MingFei"
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 411
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 124,
+                "game_time": 411,
+                "killer_id": 1866747820,
+                "killer_camp": 2,
+                "killer_name": "BosskiddZy",
+                "killed_id": 1452557177,
+                "killed_camp": 1,
+                "killed_name": "Xzorr",
+                "assister": [
+                    1866747855,
+                    1866747874
+                ]
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 469
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 469,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "tower_name": "down_outer"
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 2,
+                "game_time": 480
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 491
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 491,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1866747851,
+                "killed_camp": 1,
+                "killed_name": "DrianW",
+                "assister": [
+                    1866747874,
+                    1866747820
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 493
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 493,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "killed_id": 1452557177,
+                "killed_camp": 1,
+                "killed_name": "Xzorr",
+                "assister": [
+                    1866747820,
+                    1463880565,
+                    1866747874
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 503
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 503,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "killed_id": 1653525573,
+                "killed_camp": 1,
+                "killed_name": "Reyna",
+                "assister": [
+                    1714915889,
+                    1866747820,
+                    1463880565
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 506
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 124,
+                "game_time": 506,
+                "killer_id": 1866747820,
+                "killer_camp": 2,
+                "killer_name": "BosskiddZy",
+                "killed_id": 2218987231,
+                "killed_camp": 1,
+                "killed_name": "Fluffy",
+                "assister": [
+                    1714915889,
+                    1866747874,
+                    1463880565,
+                    1866747855
+                ]
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 518
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 518,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "tower_name": "mid_outer"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 536
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "game_time": 536,
+                "killer_camp": 2,
+                "tower_name": "up_outer"
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 110,
+                "game_time": 584,
+                "killer_id": 1463880565,
+                "killer_camp": 2,
+                "killer_name": "Gangrimm",
+                "killed_id": 2218987231,
+                "killed_camp": 1,
+                "killed_name": "Fluffy",
+                "assister": [
+                    1866747855,
+                    1866747820,
+                    1714915889
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 597
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 597,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "killed_id": 1653525573,
+                "killed_camp": 1,
+                "killed_name": "Reyna",
+                "assister": [
+                    1463880565,
+                    1866747874,
+                    1714915889,
+                    1866747820
+                ]
+            },
+            {
+                "event_type": "camp_kill_lord",
+                "campid": 2,
+                "game_time": 615
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 615,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "boss_name": "lord"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 669
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "game_time": 669,
+                "killer_camp": 2,
+                "tower_name": "up_mid"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 674
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 674,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "tower_name": "down_mid"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 690
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "game_time": 690,
+                "killer_camp": 2,
+                "tower_name": "mid_mid"
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 1,
+                "game_time": 720
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 2,
+                "game_time": 720
+            },
+            {
+                "event_type": "camp_kill_lord_advantage",
+                "campid": 2,
+                "game_time": 735
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 792,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747820,
+                "killed_camp": 2,
+                "killed_name": "BosskiddZy",
+                "assister": [
+                    1866747851,
+                    2218987231,
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 818
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 818,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1866747851,
+                "killed_camp": 1,
+                "killed_name": "DrianW",
+                "assister": [
+                    1866747874,
+                    1866747855,
+                    1463880565
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 819
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 819,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 2218987231,
+                "killed_camp": 1,
+                "killed_name": "Fluffy",
+                "assister": [
+                    1866747874,
+                    1463880565,
+                    1866747855
+                ],
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 820,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1653525160,
+                "killed_camp": 1,
+                "killed_name": "Alevaa",
+                "assister": [
+                    1463880565,
+                    1866747855,
+                    1866747874
+                ],
+                "extra_param": [
+                    "triple_kill"
+                ]
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 840,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "killed_id": 1452557177,
+                "killed_camp": 1,
+                "killed_name": "Xzorr"
+            },
+            {
+                "event_type": "camp_kill_lord",
+                "campid": 2,
+                "game_time": 849
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 849,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "boss_name": "lord"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 882
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "game_time": 882,
+                "killer_camp": 2,
+                "tower_name": "down_inner"
+            },
+            {
+                "event_type": "camp_kill_lord_advantage",
+                "campid": 2,
+                "game_time": 969
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 1,
+                "game_time": 1080
+            },
+            {
+                "event_type": "enemy_area_get_data",
+                "campid": 2,
+                "game_time": 1080
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 1089
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 1089,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1866747851,
+                "killed_camp": 1,
+                "killed_name": "DrianW",
+                "assister": [
+                    1866747820,
+                    1866747874
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1090
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1090,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1463880565,
+                "killed_camp": 2,
+                "killed_name": "Gangrimm",
+                "assister": [
+                    2218987231,
+                    1653525160,
+                    1866747851,
+                    1653525573
+                ]
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1093,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747874,
+                "killed_camp": 2,
+                "killed_name": "MingFei",
+                "assister": [
+                    1653525573,
+                    1866747851,
+                    1653525160
+                ],
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 1094
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 123,
+                "game_time": 1094,
+                "killer_id": 1866747855,
+                "killer_camp": 2,
+                "killer_name": "GHIZAOO",
+                "killed_id": 2218987231,
+                "killed_camp": 1,
+                "killed_name": "Fluffy",
+                "assister": [
+                    1463880565
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1095
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1095,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747855,
+                "killed_camp": 2,
+                "killed_name": "GHIZAOO",
+                "assister": [
+                    2218987231,
+                    1653525160
+                ],
+                "extra_param": [
+                    "triple_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 2,
+                "game_time": 1105
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 1105,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1653525160,
+                "killed_camp": 1,
+                "killed_name": "Alevaa",
+                "assister": [
+                    1866747820
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1114
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 1114,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "killed_id": 1866747820,
+                "killed_camp": 2,
+                "killed_name": "BosskiddZy",
+                "assister": [
+                    1452557177
+                ]
+            },
+            {
+                "event_type": "camp_ace",
+                "campid": 2,
+                "game_time": 1114
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1114,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1714915889,
+                "killed_camp": 2,
+                "killed_name": "Nanjet",
+                "assister": [
+                    1653525573
+                ]
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 2,
+                "game_time": 1125
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 2,
+                "game_time": 1125,
+                "killer_camp": 2,
+                "tower_name": "up_inner"
+            },
+            {
+                "event_type": "kill_boss",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 1138,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "extra_param": [
+                    "steal"
+                ],
+                "boss_name": "lord"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 1171
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "game_time": 1171,
+                "killer_camp": 1,
+                "tower_name": "mid_mid"
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 1179
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1179,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "tower_name": "mid_inner"
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1184
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1184,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1463880565,
+                "killed_camp": 2,
+                "killed_name": "Gangrimm",
+                "assister": [
+                    1653525160,
+                    1653525573,
+                    2218987231,
+                    1866747851
+                ]
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 2,
+                "heroid": 127,
+                "game_time": 1191,
+                "killer_id": 1714915889,
+                "killer_camp": 2,
+                "killer_name": "Nanjet",
+                "killed_id": 1866747851,
+                "killed_camp": 1,
+                "killed_name": "DrianW",
+                "assister": [
+                    1866747874,
+                    1866747820
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1194
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1194,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747820,
+                "killed_camp": 2,
+                "killed_name": "BosskiddZy",
+                "assister": [
+                    1653525573,
+                    2218987231,
+                    1866747851,
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1200
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1200,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1866747855,
+                "killed_camp": 2,
+                "killed_name": "GHIZAOO",
+                "extra_param": [
+                    "double_kill"
+                ]
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 1202
+            },
+            {
+                "event_type": "camp_kill_tower",
+                "campid": 1,
+                "game_time": 1203
+            },
+            {
+                "event_type": "kill_tower",
+                "campid": 1,
+                "game_time": 1203,
+                "killer_camp": 1,
+                "tower_name": "up_mid"
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 133,
+                "game_time": 1204,
+                "killer_id": 1653525573,
+                "killer_camp": 1,
+                "killer_name": "Reyna",
+                "killed_id": 1866747874,
+                "killed_camp": 2,
+                "killed_name": "MingFei",
+                "assister": [
+                    2218987231,
+                    1452557177,
+                    1653525160
+                ]
+            },
+            {
+                "event_type": "camp_kill_hero",
+                "campid": 1,
+                "game_time": 1204
+            },
+            {
+                "event_type": "camp_ace",
+                "campid": 2,
+                "game_time": 1206
+            },
+            {
+                "event_type": "kill_hero",
+                "campid": 1,
+                "heroid": 103,
+                "game_time": 1206,
+                "killer_id": 1452557177,
+                "killer_camp": 1,
+                "killer_name": "Xzorr",
+                "killed_id": 1714915889,
+                "killed_camp": 2,
+                "killed_name": "Nanjet",
+                "assister": [
+                    1653525160,
+                    2218987231,
+                    1653525573
+                ],
+                "extra_param": [
+                    "triple_kill",
+                    "lengendary"
+                ]
+            }
+        ],
+        "rune_2023": true,
+        "banpick_paused": false,
+        "game_patch": "2.2.16",
+        "play_mode_id": 15
+    }
+}

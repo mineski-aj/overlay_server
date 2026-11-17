@@ -27,7 +27,7 @@
    "mid", "roam", "gold") — different from the main game API's
    ROLE_ORDER convention ("exp_laner", "jungler", "mid_laner",
    "roamer", "gold_laner", see overlay-core.js). Both map onto the
-   same role/<LABEL>.png icon set. */
+   same assets/game/role/<LABEL>.png icon set. */
 const SGDC_ROLE_SHORT_LABEL = {
   exp:     'EXP LANER',
   jungler: 'JUNGLER',
@@ -70,22 +70,22 @@ function sgdcRoleIconSrc(role, camp1, camp2) {
     const crossRole = sgdcFindRoleByName(camp1 && camp1.name) || sgdcFindRoleByName(camp2 && camp2.name);
     label = crossRole && SGDC_ROLE_LABEL[crossRole];
   }
-  return label ? `role/${encodeURIComponent(label)}.png` : '';
+  return label ? `assets/game/role/${encodeURIComponent(label)}.png` : '';
 }
 
-/* /photos/LEFT/<ign>_LEFT_resized.png (home) / /photos/RIGHT/<ign>_RIGHT_resized.png
+/* /assets/photo/LEFT/<ign>_LEFT_resized.png (home) / /assets/photo/RIGHT/<ign>_RIGHT_resized.png
    (away) — same convention as mplfs.html's wlPhotoUrl (Waiting Lobby
    spotlight), just the lower-res /photos folder instead of /hires. */
 function sgdcPhotoSrc(name, side) {
   if (!name) return '';
   const folder = side === 'home' ? 'LEFT' : 'RIGHT';
-  return `/photos/${folder}/${encodeURIComponent(name + '_' + folder + '_resized.png')}`;
+  return `/assets/photo/${folder}/${encodeURIComponent(name + '_' + folder + '_resized.png')}`;
 }
 
-/* posthero/<heroid>_POST_HERO.png — same asset convention as
+/* assets/hero/post/<heroid>_POST_HERO.png — same asset convention as
    ingame_red.html/ingame_blue.html's hero portraits. */
 function sgdcHeroSrc(heroid) {
-  return heroid ? `posthero/${heroid}_POST_HERO.png` : '';
+  return heroid ? `assets/hero/post/${heroid}_POST_HERO.png` : '';
 }
 
 function sgdcFormatGold(v) {
@@ -175,7 +175,7 @@ function sgdcBuildPanel() {
 
   const bg = document.createElement('img');
   bg.className = 'sidecheck-bg';
-  bg.src = sidecheckThemedBg('assets/ingame/sidestatback.png');
+  bg.src = sidecheckThemedBg('assets/overlay/ingame/sidestatback.png');
   bg.alt = '';
   overlay.appendChild(bg);
 
